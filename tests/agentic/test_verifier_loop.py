@@ -284,6 +284,108 @@ def test_loop_applies_safe_verifier_patch_before_calling_rewriter(tmp_path: Path
     assert (tmp_path / "attempt_1_output.txt").read_text() == "abd\nsecond line"
 
 
+def test_loop_rewrites_only_unresolved_issues_after_applying_patches(
+    tmp_path: Path,
+) -> None:
+    patchable = AgenticIssue(
+        type="localized_character_error",
+        line_index=0,
+        current_text="contry",
+        expected_text="country",
+    )
+    missing_content = AgenticIssue(
+        type="missing_text",
+        line_index=1,
+        evidence="Two definition lines visible in the image are absent.",
+        suggested_fix="Restore the missing definition lines from the image.",
+    )
+    verifier_outputs = [
+        AgenticVerifierDecision(
+            decision="retry",
+            confidence=0.9,
+            issues=[patchable, missing_content],
+            retry_instruction="Correct both transcription problems.",
+        ),
+        AgenticVerifierDecision(decision="accept", confidence=0.95),
+    ]
+
+    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
+        return verifier_outputs[attempt]
+
+    def rewrite(
+        output: str,
+        decision: AgenticVerifierDecision,
+        attempt: int,
+    ) -> str:
+        assert output == "country\nheadword"
+        assert decision.issues == [missing_content]
+        assert decision.retry_instruction == "Correct both transcription problems."
+        assert attempt == 1
+        return "country\nheadword\nrestored definition"
+
+    result = run_bounded_verifier_loop(
+        stage="stage1",
+        initial_output="contry\nheadword",
+        artifact_dir=tmp_path,
+        output_suffix=".txt",
+        verify=verify,
+        rewrite=rewrite,
+        config=AgenticLoopConfig(max_iterations=1, prefer_verifier_patches=True),
+    )
+
+    assert result.output == "country\nheadword\nrestored definition"
+    assert result.stop_reason == "accepted"
+    assert result.rewrite_count == 1
+
+
+def test_loop_passes_failed_patches_to_rewriter_as_unresolved(tmp_path: Path) -> None:
+    applied = AgenticIssue(
+        type="localized_character_error",
+        line_index=0,
+        current_text="abc",
+        expected_text="abd",
+    )
+    failed = AgenticIssue(
+        type="localized_character_error",
+        line_index=1,
+        current_text="text-not-present",
+        expected_text="replacement",
+    )
+    verifier_outputs = [
+        AgenticVerifierDecision(
+            decision="retry",
+            confidence=0.9,
+            issues=[applied, failed],
+        ),
+        AgenticVerifierDecision(decision="accept", confidence=0.95),
+    ]
+
+    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
+        return verifier_outputs[attempt]
+
+    def rewrite(
+        output: str,
+        decision: AgenticVerifierDecision,
+        attempt: int,
+    ) -> str:
+        assert output == "abd\nsecond line"
+        assert decision.issues == [failed]
+        return "abd\nreplacement"
+
+    result = run_bounded_verifier_loop(
+        stage="stage1",
+        initial_output="abc\nsecond line",
+        artifact_dir=tmp_path,
+        output_suffix=".txt",
+        verify=verify,
+        rewrite=rewrite,
+        config=AgenticLoopConfig(max_iterations=1, prefer_verifier_patches=True),
+    )
+
+    assert result.output == "abd\nreplacement"
+    assert result.rewrite_count == 1
+
+
 def test_loop_records_rewriter_usage_when_rewriter_runs(tmp_path: Path) -> None:
     verifier_outputs = [
         AgenticVerifierDecision(
