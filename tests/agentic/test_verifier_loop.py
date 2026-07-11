@@ -634,10 +634,7 @@ def test_normalize_promotes_wrong_page_reject_to_recover() -> None:
             )
         ],
     )
-    promoted = normalize_catastrophic_decision(
-        raw,
-        AgenticLoopConfig(catastrophic_recovery_enabled=True),
-    )
+    promoted = normalize_catastrophic_decision(raw)
     assert promoted.decision == "recover"
 
 
@@ -671,10 +668,7 @@ def test_loop_catastrophic_recovery_rewrites_whole_page(tmp_path: Path) -> None:
         output_suffix=".txt",
         verify=verify,
         rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            catastrophic_recovery_enabled=True,
-        ),
+        config=AgenticLoopConfig(max_iterations=2),
     )
 
     assert result.output == "fresh page transcription"
@@ -716,7 +710,6 @@ def test_loop_catastrophic_recovery_bypasses_low_confidence_gate(tmp_path: Path)
         rewrite=rewrite,
         config=AgenticLoopConfig(
             max_iterations=2,
-            catastrophic_recovery_enabled=True,
             min_retry_confidence=0.8,
         ),
     )
@@ -760,7 +753,6 @@ def test_loop_catastrophic_recovery_bypasses_vague_retry(tmp_path: Path) -> None
         rewrite=rewrite,
         config=AgenticLoopConfig(
             max_iterations=2,
-            catastrophic_recovery_enabled=True,
             require_concrete_retry_issue=True,
         ),
     )
@@ -789,10 +781,7 @@ def test_whole_page_retry_promotes_to_recover_from_retry_instruction() -> None:
         retry_instruction="Perform a complete fresh transcription of the full page.",
     )
 
-    promoted = normalize_catastrophic_decision(
-        decision,
-        AgenticLoopConfig(catastrophic_recovery_enabled=True),
-    )
+    promoted = normalize_catastrophic_decision(decision)
 
     assert promoted.decision == "recover"
 

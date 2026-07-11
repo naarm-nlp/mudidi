@@ -143,7 +143,6 @@ def test_chukchi_agentic_hallucination_recovery(
         agentic_reasoning_effort="low",
         agentic_evaluator_reasoning_effort=evaluator_reasoning,
         agentic_rewriter_reasoning_effort=rewriter_reasoning,
-        agentic_catastrophic_recovery=True,
     )
     ocr_result = OCRPageResult(
         source_image=str(case.image_path),

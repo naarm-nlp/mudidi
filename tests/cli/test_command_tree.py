@@ -78,7 +78,6 @@ def test_public_command_tree_parses_agentic_overrides() -> None:
             "8",
             "--no-agentic-verifier-patches",
             "--no-agentic-concrete-retry-gate",
-            "--agentic-catastrophic-recovery",
         ]
     )
 
@@ -94,7 +93,19 @@ def test_public_command_tree_parses_agentic_overrides() -> None:
     assert args.agentic_max_patches_per_attempt == 8
     assert args.agentic_verifier_patches is False
     assert args.agentic_require_concrete_retry is False
-    assert args.agentic_catastrophic_recovery is True
+
+
+@pytest.mark.parametrize(
+    "flag",
+    ["--agentic-catastrophic-recovery", "--no-agentic-catastrophic-recovery"],
+)
+def test_public_command_tree_rejects_removed_catastrophic_recovery_flag(
+    flag: str,
+) -> None:
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(
+            ["run", "--pages", "pages", "--output-dir", "output", flag]
+        )
 
 
 def test_omitted_agentic_options_remain_sparse() -> None:

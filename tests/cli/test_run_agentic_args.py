@@ -39,7 +39,6 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
             "7",
             "--no-agentic-verifier-patches",
             "--no-agentic-concrete-retry-gate",
-            "--agentic-catastrophic-recovery",
         ]
     )
 
@@ -68,7 +67,18 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
     assert forwarded[forwarded.index("--agentic-max-patches-per-attempt") + 1] == "7"
     assert "--no-agentic-verifier-patches" in forwarded
     assert "--no-agentic-concrete-retry-gate" in forwarded
-    assert "--agentic-catastrophic-recovery" in forwarded
+
+
+@pytest.mark.parametrize(
+    "flag",
+    ["--agentic-catastrophic-recovery", "--no-agentic-catastrophic-recovery"],
+)
+def test_run_rejects_removed_catastrophic_recovery_flag(flag: str) -> None:
+    parser = argparse.ArgumentParser()
+    run_cli.register_run_arguments(parser)
+
+    with pytest.raises(SystemExit):
+        parser.parse_args([flag])
 
 
 def test_run_rejects_removed_patch_only_verifier_flag() -> None:

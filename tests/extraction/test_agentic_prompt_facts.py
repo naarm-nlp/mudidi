@@ -57,6 +57,13 @@ def test_agentic_prompts_require_localized_retry_evidence() -> None:
     assert "minimum necessary edit" in rewriter_prompt
 
 
+def test_stage1_verifier_always_allows_catastrophic_recovery() -> None:
+    prompt = _stage1_verifier_system_prompt()
+
+    assert "use decision=recover instead of reject" in prompt
+    assert "re-transcribe the entire page" in prompt
+
+
 def test_agentic_verifier_max_tokens_defaults_to_safe_budget(monkeypatch) -> None:
     monkeypatch.delenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, raising=False)
 

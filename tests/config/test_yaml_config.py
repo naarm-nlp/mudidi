@@ -59,6 +59,29 @@ surprise: true
         load_yaml_config(path)
 
 
+def test_yaml_config_rejects_removed_catastrophic_recovery_option(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "removed-agentic-option.yaml"
+    path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: dictionary.pdf
+output:
+  directory: output
+agentic:
+  stage1: true
+  catastrophic_recovery: false
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="catastrophic_recovery"):
+        load_yaml_config(path)
+
+
 def test_yaml_config_rejects_command_kind_mismatch(tmp_path: Path) -> None:
     path = tmp_path / "benchmark.yaml"
     path.write_text(
