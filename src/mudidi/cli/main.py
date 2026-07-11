@@ -64,12 +64,6 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         help="Minimum verifier confidence required before a rewrite.",
     )
     group.add_argument(
-        "--agentic-max-patches-per-attempt",
-        type=int,
-        default=argparse.SUPPRESS,
-        help="Maximum exact patches accepted in one correction round.",
-    )
-    group.add_argument(
         "--agentic-verifier-patches",
         action=argparse.BooleanOptionalAction,
         default=argparse.SUPPRESS,

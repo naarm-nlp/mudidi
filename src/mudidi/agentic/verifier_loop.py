@@ -28,7 +28,6 @@ AgenticStopReason = Literal[
     "repeated_issue",
     "low_confidence_retry",
     "vague_retry",
-    "patch_quality_rejected",
     "catastrophic_recovery",
 ]
 
@@ -102,7 +101,6 @@ class AgenticLoopConfig(BaseModel):
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
     require_concrete_retry_issue: bool = True
     prefer_verifier_patches: bool = True
-    max_patches_per_attempt: int | None = Field(default=16, ge=1)
 
 
 class AgenticAttempt(BaseModel):
@@ -383,10 +381,6 @@ def _apply_verifier_patches(
     )
 
 
-def _patch_issue_count(decision: AgenticVerifierDecision) -> int:
-    return sum(1 for issue in decision.issues if _infer_issue_patch(issue) is not None)
-
-
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -519,18 +513,6 @@ def run_bounded_verifier_loop(
                 attempts=attempts,
                 artifact_dir=artifact_dir,
             )
-
-        if not is_catastrophic and config.max_patches_per_attempt is not None:
-            patch_count = _patch_issue_count(decision)
-            if patch_count > config.max_patches_per_attempt:
-                return _finish(
-                    stage=stage,
-                    output=current,
-                    stop_reason="patch_quality_rejected",
-                    rewrite_count=rewrite_count,
-                    attempts=attempts,
-                    artifact_dir=artifact_dir,
-                )
 
         signature = _issue_signature(decision)
         if (

@@ -242,14 +242,6 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "(default: 0.55).",
     )
     parser.add_argument(
-        "--agentic-max-patches-per-attempt",
-        type=int,
-        default=16,
-        dest="agentic_max_patches_per_attempt",
-        help="Reject a verifier correction round with more exact patches than "
-        "this count (default: 16).",
-    )
-    parser.add_argument(
         "--no-agentic-verifier-patches",
         action="store_true",
         dest="no_agentic_verifier_patches",
@@ -414,13 +406,6 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
                 str(run_args.agentic_min_retry_confidence),
             ]
         )
-    if run_args.agentic_max_patches_per_attempt != 16:
-        argv.extend(
-            [
-                "--agentic-max-patches-per-attempt",
-                str(run_args.agentic_max_patches_per_attempt),
-            ]
-        )
     if run_args.no_agentic_verifier_patches:
         argv.append("--no-agentic-verifier-patches")
     if run_args.no_agentic_concrete_retry_gate:
@@ -467,7 +452,6 @@ _RUN_OVERRIDE_PATHS = {
     "agentic_evaluator_reasoning": "agentic.evaluator_reasoning",
     "agentic_rewriter_reasoning": "agentic.rewriter_reasoning",
     "agentic_min_retry_confidence": "agentic.min_retry_confidence",
-    "agentic_max_patches_per_attempt": "agentic.max_patches_per_attempt",
     "agentic_verifier_patches": "agentic.verifier_patches",
     "agentic_require_concrete_retry": "agentic.require_concrete_retry",
 }
@@ -663,7 +647,6 @@ def execution_namespace_from_config(
         agentic_evaluator_reasoning_effort=agentic.evaluator_reasoning,
         agentic_rewriter_reasoning_effort=agentic.rewriter_reasoning,
         agentic_min_retry_confidence=agentic.min_retry_confidence,
-        agentic_max_patches_per_attempt=agentic.max_patches_per_attempt,
         no_agentic_verifier_patches=not agentic.verifier_patches,
         no_agentic_concrete_retry_gate=not agentic.require_concrete_retry,
         batch_size=runtime.batch_size,

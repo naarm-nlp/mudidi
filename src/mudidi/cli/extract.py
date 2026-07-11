@@ -828,9 +828,6 @@ def _build_strategy(
                 "no_agentic_verifier_patches",
                 False,
             ),
-            agentic_max_patches_per_attempt=int(
-                getattr(args, "agentic_max_patches_per_attempt", 16)
-            ),
         )
     raise ValueError(f"Unknown strategy: {args.strategy}")
 
@@ -1506,14 +1503,6 @@ Examples:
         dest="agentic_min_retry_confidence",
         help="Minimum verifier confidence required before a retry can rewrite "
         "(default: 0.55).",
-    )
-    parser.add_argument(
-        "--agentic-max-patches-per-attempt",
-        type=int,
-        default=16,
-        dest="agentic_max_patches_per_attempt",
-        help="Reject a verifier correction round with more exact patches than "
-        "this count (default: 16).",
     )
     parser.add_argument(
         "--no-agentic-verifier-patches",

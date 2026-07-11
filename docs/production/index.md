@@ -79,15 +79,16 @@ agentic:
 
 Every Boolean agentic option has an explicit negative form. For example,
 `--no-stage1-agentic` and `--no-agentic-verifier-patches` can override values
-enabled in YAML. Model, reasoning, retry-confidence, and patch-limit options
-are listed under the agentic group in the
+enabled in YAML. Model, reasoning, and retry-confidence options are listed
+under the agentic group in the
 [CLI reference](../reference/cli.md#mudidi-run).
 
 When a verifier decision mixes exact patches with issues that require model
 rewriting, MUDIDI applies the unambiguous patches first and passes the patched
 output plus only the unresolved issues to the rewriter. The combined correction
 uses one `max_iterations` slot. Decisions containing only successful patches do
-not call the rewriter.
+not call the rewriter. There is no per-attempt patch-count limit; every
+unambiguous patch in the verifier decision is attempted.
 
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
 transcript and parse rules. Stage 1 catastrophic whole-page recovery is always

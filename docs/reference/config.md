@@ -78,7 +78,6 @@ agentic:  # AgenticConfig; optional
   evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
   rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
   min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
-  max_patches_per_attempt: 16  # integer; default: 16; >= 1
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
 runtime:  # RuntimeConfig; optional
@@ -176,7 +175,6 @@ agentic:  # AgenticConfig; optional
   evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
   rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
   min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
-  max_patches_per_attempt: 16  # integer; default: 16; >= 1
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
 runtime:  # RuntimeConfig; optional
@@ -278,7 +276,6 @@ base:  # BenchmarkRunConfig; required
     evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
     rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
     min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
-    max_patches_per_attempt: 16  # integer; default: 16; >= 1
     verifier_patches: true  # boolean; default: true
     require_concrete_retry: true  # boolean; default: true
   runtime:  # RuntimeConfig; optional

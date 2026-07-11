@@ -480,7 +480,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         agentic_min_retry_confidence: float = 0.55,
         agentic_require_concrete_retry_issue: bool = True,
         agentic_prefer_verifier_patches: bool = True,
-        agentic_max_patches_per_attempt: int | None = 16,
     ):
         if stage1_mode not in ("column", "flat"):
             raise ValueError(f"stage1_mode must be 'column' or 'flat', got {stage1_mode!r}")
@@ -520,7 +519,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             min_retry_confidence=agentic_min_retry_confidence,
             require_concrete_retry_issue=agentic_require_concrete_retry_issue,
             prefer_verifier_patches=agentic_prefer_verifier_patches,
-            max_patches_per_attempt=agentic_max_patches_per_attempt,
         )
         self.agentic_evaluator_model = agentic_evaluator_model
         self.agentic_rewriter_model = agentic_rewriter_model

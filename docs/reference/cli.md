@@ -41,7 +41,6 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--agentic-evaluator-reasoning {none,low,medium,high}]
                   [--agentic-rewriter-reasoning {none,low,medium,high}]
                   [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
-                  [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
                   [--agentic-verifier-patches | --no-agentic-verifier-patches]
                   [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
 
@@ -92,9 +91,6 @@ agentic verifier-rewriter options:
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.
-  --agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT
-                        Maximum exact patches accepted in one correction
-                        round.
   --agentic-verifier-patches, --no-agentic-verifier-patches
                         Enable or disable exact verifier patches before model
                         rewriting.
@@ -141,7 +137,6 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
                             [--agentic-evaluator-reasoning {none,low,medium,high}]
                             [--agentic-rewriter-reasoning {none,low,medium,high}]
                             [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
-                            [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
                             [--agentic-verifier-patches | --no-agentic-verifier-patches]
                             [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
                             [--dataset-dir DATASET_DIR]
@@ -200,9 +195,6 @@ agentic verifier-rewriter options:
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.
-  --agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT
-                        Maximum exact patches accepted in one correction
-                        round.
   --agentic-verifier-patches, --no-agentic-verifier-patches
                         Enable or disable exact verifier patches before model
                         rewriting.

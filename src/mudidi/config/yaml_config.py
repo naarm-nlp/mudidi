@@ -132,7 +132,6 @@ class AgenticConfig(_StrictModel):
     evaluator_reasoning: ReasoningEffort | None = None
     rewriter_reasoning: ReasoningEffort | None = None
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
-    max_patches_per_attempt: int = Field(default=16, ge=1)
     verifier_patches: bool = True
     require_concrete_retry: bool = True
 
