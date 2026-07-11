@@ -572,9 +572,20 @@ def run_bounded_verifier_loop(
             patch_result = _apply_verifier_patches(current, decision)
             rewrite_input = patch_result.output
             if patch_result.unresolved_issues:
-                rewrite_decision = decision.model_copy(
-                    update={"issues": list(patch_result.unresolved_issues)}
-                )
+                decision_updates: dict[str, Any] = {
+                    "issues": list(patch_result.unresolved_issues)
+                }
+                if patch_result.applied_issues:
+                    unresolved_instructions = [
+                        issue.suggested_fix.strip()
+                        for issue in patch_result.unresolved_issues
+                        if issue.suggested_fix.strip()
+                    ]
+                    decision_updates["retry_instruction"] = (
+                        "\n".join(unresolved_instructions)
+                        or "Resolve only the remaining verifier issues."
+                    )
+                rewrite_decision = decision.model_copy(update=decision_updates)
             elif patch_result.applied_issues:
                 rewritten = patch_result.output
                 needs_rewriter = False
