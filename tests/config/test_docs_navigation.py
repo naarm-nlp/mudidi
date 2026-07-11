@@ -32,9 +32,8 @@ def test_desktop_header_is_hidden_and_parent_items_expand() -> None:
     ).read_text(encoding="utf-8")
 
     assert ".md-header" in css
-    assert "height: 0" in css
-    assert ".md-header__inner > :not(.md-search)" in css
-    assert ".md-header .md-search" in css
+    assert ".md-nav__search-spacer" in css
+    assert "position: static" in css
     assert ".md-nav__toggle:checked ~ .md-nav" in css
     assert "grid-template-rows" in css
     assert 'querySelectorAll(".md-nav__item--nested")' in javascript
