@@ -1,6 +1,8 @@
 # YAML configuration
 
-YAML is optional for a minimal run and recommended for repeatable or advanced work.
+YAML is optional for a minimal run and recommended for repeatable or advanced
+work. Common model, stage, and agentic settings can also be supplied explicitly
+on the CLI; omitted CLI options never overwrite YAML values.
 
 ```bash
 uv run mudidi config validate examples/configs/production/directory-inference.yaml

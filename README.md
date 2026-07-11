@@ -51,6 +51,16 @@ uv run mudidi run \
   --dry-run
 ```
 
+Enable bounded verifier-rewriter retries directly when needed:
+
+```bash
+uv run mudidi run \
+  --pages path/to/dictionary-pages \
+  --output-dir outputs/my-dictionary \
+  --stage1-agentic \
+  --stage2-agentic
+```
+
 Outputs are written under:
 
 ```text

@@ -37,8 +37,6 @@ theme:
     - navigation.instant.progress
     - navigation.path
     - navigation.sections
-    - navigation.tabs
-    - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - search.highlight
@@ -47,6 +45,10 @@ theme:
     - toc.follow
   icon:
     repo: octicons/mark-github-24
+extra_css:
+  - stylesheets/navigation.css
+extra_javascript:
+  - javascripts/toc-panel.js
 plugins:
   - search
   - mkdocstrings:
@@ -72,16 +74,9 @@ nav:
       - Quickstart: getting-started/quickstart.md
       - YAML configuration: getting-started/configuration.md
       - uv environments: uv.md
-  - Production Inference:
-      - Overview: production/index.md
-      - Directory input: production/directory.md
-      - PDF input: production/pdf.md
-      - Stages and agentic retries: production/stages-agentic.md
-      - Outputs: production/outputs.md
+  - Production Inference: production/index.md
   - Benchmarking & Evaluation:
       - Overview: benchmarking/index.md
-      - Extraction: benchmarking/extraction.md
-      - Evaluation: benchmarking/evaluation.md
       - Advanced VLM backends: benchmarking/vlm.md
   - Concepts:
       - Pipeline: concepts/pipeline.md

@@ -32,7 +32,19 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--stage-1-model STAGE_1_MODEL]
                   [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
                   [--stage-2-pass-2-model STAGE_2_PASS_2_MODEL] [--overwrite]
-                  [--dry-run]
+                  [--dry-run] [--stage1-agentic | --no-stage1-agentic]
+                  [--stage2-agentic | --no-stage2-agentic]
+                  [--agentic-max-iterations AGENTIC_MAX_ITERATIONS]
+                  [--agentic-evaluator-model AGENTIC_EVALUATOR_MODEL]
+                  [--agentic-rewriter-model AGENTIC_REWRITER_MODEL]
+                  [--agentic-reasoning {none,low,medium,high}]
+                  [--agentic-evaluator-reasoning {none,low,medium,high}]
+                  [--agentic-rewriter-reasoning {none,low,medium,high}]
+                  [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
+                  [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
+                  [--agentic-verifier-patches | --no-agentic-verifier-patches]
+                  [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
+                  [--agentic-catastrophic-recovery | --no-agentic-catastrophic-recovery]
 
 options:
   -h, --help            show this help message and exit
@@ -53,6 +65,45 @@ options:
   --stage-2-pass-2-model STAGE_2_PASS_2_MODEL
   --overwrite
   --dry-run
+
+agentic verifier-rewriter options:
+  --stage1-agentic, --no-stage1-agentic
+                        Enable or disable bounded Stage 1 verification and
+                        rewriting.
+  --stage2-agentic, --no-stage2-agentic
+                        Enable or disable bounded Stage 2 verification and
+                        rewriting.
+  --agentic-max-iterations AGENTIC_MAX_ITERATIONS
+                        Maximum rewrite attempts for each enabled agentic
+                        stage.
+  --agentic-evaluator-model AGENTIC_EVALUATOR_MODEL
+                        Model used for verifier calls; defaults to the current
+                        stage model.
+  --agentic-rewriter-model AGENTIC_REWRITER_MODEL
+                        Model used for correction calls; defaults to the
+                        current stage model.
+  --agentic-reasoning {none,low,medium,high}
+                        Shared reasoning effort for verifier and rewriter
+                        calls.
+  --agentic-evaluator-reasoning {none,low,medium,high}
+                        Verifier reasoning effort; overrides --agentic-
+                        reasoning.
+  --agentic-rewriter-reasoning {none,low,medium,high}
+                        Rewriter reasoning effort; overrides --agentic-
+                        reasoning.
+  --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
+                        Minimum verifier confidence required before a rewrite.
+  --agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT
+                        Maximum exact patches accepted in one correction
+                        round.
+  --agentic-verifier-patches, --no-agentic-verifier-patches
+                        Enable or disable exact verifier patches before model
+                        rewriting.
+  --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
+                        Require or waive localized evidence before retrying.
+  --agentic-catastrophic-recovery, --no-agentic-catastrophic-recovery
+                        Enable or disable Stage 1 whole-page corruption
+                        recovery.
 ```
 
 ## `mudidi benchmark`
@@ -85,6 +136,19 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
                             [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
                             [--stage-2-pass-2-model STAGE_2_PASS_2_MODEL]
                             [--overwrite] [--dry-run]
+                            [--stage1-agentic | --no-stage1-agentic]
+                            [--stage2-agentic | --no-stage2-agentic]
+                            [--agentic-max-iterations AGENTIC_MAX_ITERATIONS]
+                            [--agentic-evaluator-model AGENTIC_EVALUATOR_MODEL]
+                            [--agentic-rewriter-model AGENTIC_REWRITER_MODEL]
+                            [--agentic-reasoning {none,low,medium,high}]
+                            [--agentic-evaluator-reasoning {none,low,medium,high}]
+                            [--agentic-rewriter-reasoning {none,low,medium,high}]
+                            [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
+                            [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
+                            [--agentic-verifier-patches | --no-agentic-verifier-patches]
+                            [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
+                            [--agentic-catastrophic-recovery | --no-agentic-catastrophic-recovery]
                             [--dataset-dir DATASET_DIR]
                             [--samples-dir SAMPLES_DIR]
                             [--languages LANGUAGES [LANGUAGES ...]]
@@ -113,6 +177,45 @@ options:
   --samples-dir SAMPLES_DIR
   --languages LANGUAGES [LANGUAGES ...]
   --experiment-name EXPERIMENT_NAME
+
+agentic verifier-rewriter options:
+  --stage1-agentic, --no-stage1-agentic
+                        Enable or disable bounded Stage 1 verification and
+                        rewriting.
+  --stage2-agentic, --no-stage2-agentic
+                        Enable or disable bounded Stage 2 verification and
+                        rewriting.
+  --agentic-max-iterations AGENTIC_MAX_ITERATIONS
+                        Maximum rewrite attempts for each enabled agentic
+                        stage.
+  --agentic-evaluator-model AGENTIC_EVALUATOR_MODEL
+                        Model used for verifier calls; defaults to the current
+                        stage model.
+  --agentic-rewriter-model AGENTIC_REWRITER_MODEL
+                        Model used for correction calls; defaults to the
+                        current stage model.
+  --agentic-reasoning {none,low,medium,high}
+                        Shared reasoning effort for verifier and rewriter
+                        calls.
+  --agentic-evaluator-reasoning {none,low,medium,high}
+                        Verifier reasoning effort; overrides --agentic-
+                        reasoning.
+  --agentic-rewriter-reasoning {none,low,medium,high}
+                        Rewriter reasoning effort; overrides --agentic-
+                        reasoning.
+  --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
+                        Minimum verifier confidence required before a rewrite.
+  --agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT
+                        Maximum exact patches accepted in one correction
+                        round.
+  --agentic-verifier-patches, --no-agentic-verifier-patches
+                        Enable or disable exact verifier patches before model
+                        rewriting.
+  --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
+                        Require or waive localized evidence before retrying.
+  --agentic-catastrophic-recovery, --no-agentic-catastrophic-recovery
+                        Enable or disable Stage 1 whole-page corruption
+                        recovery.
 ```
 
 ## `mudidi benchmark sweep`

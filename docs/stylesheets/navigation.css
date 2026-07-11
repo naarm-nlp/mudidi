@@ -1,0 +1,120 @@
+/* Desktop documentation tree: docked and independently scrollable. */
+@media screen and (min-width: 48em) {
+  .md-grid {
+    max-width: 76rem;
+  }
+
+  .md-header__button[for="__drawer"] {
+    display: none;
+  }
+
+  .md-main__inner {
+    align-items: stretch;
+  }
+
+  .md-sidebar--primary {
+    display: block !important;
+    flex: 0 0 13rem;
+    height: calc(100vh - 2.4rem) !important;
+    left: auto !important;
+    order: 0;
+    position: sticky !important;
+    right: auto !important;
+    top: 2.4rem;
+    transform: none !important;
+    width: 13rem;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    bottom: auto;
+    height: 100%;
+    left: auto;
+    margin: 0;
+    overflow-y: auto;
+    position: relative;
+    right: auto;
+    top: auto;
+  }
+
+  .md-content {
+    order: 1;
+  }
+
+  /* Page outline: a compact right rail until the reader opens it. */
+  .md-sidebar--secondary.toc-panel {
+    display: flex !important;
+    flex: 0 0 2.4rem;
+    flex-direction: column;
+    height: calc(100vh - 2.4rem) !important;
+    margin-left: 0.4rem;
+    min-width: 2.4rem;
+    order: 2;
+    overflow: hidden;
+    position: sticky;
+    top: 2.4rem;
+    transition: flex-basis 180ms ease, min-width 180ms ease, width 180ms ease;
+    width: 2.4rem;
+  }
+
+  .md-sidebar--secondary.toc-panel--open {
+    flex-basis: 12.1rem;
+    min-width: 12.1rem;
+    width: 12.1rem;
+  }
+
+  .toc-panel .md-sidebar__scrollwrap {
+    display: none;
+    height: 100%;
+    margin: 0;
+    overflow-y: auto;
+  }
+
+  .toc-panel--open .md-sidebar__scrollwrap {
+    display: block;
+  }
+
+  .toc-panel__toggle {
+    align-items: center;
+    border-left: 0.15rem solid var(--md-primary-fg-color);
+    color: var(--md-default-fg-color--light);
+    cursor: pointer;
+    display: flex;
+    flex: 0 0 auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    gap: 0.35rem;
+    justify-content: center;
+    min-height: 7rem;
+    padding: 0.5rem 0.4rem;
+    writing-mode: vertical-rl;
+  }
+
+  .toc-panel__toggle:hover,
+  .toc-panel__toggle:focus-visible {
+    background: var(--md-default-fg-color--lightest);
+    color: var(--md-accent-fg-color);
+  }
+
+  .toc-panel__toggle:focus-visible {
+    outline: 0.1rem solid var(--md-accent-fg-color);
+    outline-offset: -0.1rem;
+  }
+
+  .toc-panel--open .toc-panel__toggle {
+    border-bottom: 0.05rem solid var(--md-default-fg-color--lightest);
+    border-left: 0;
+    justify-content: space-between;
+    min-height: auto;
+    writing-mode: horizontal-tb;
+  }
+
+  .toc-panel__chevron {
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 180ms ease;
+  }
+
+  .toc-panel--open .toc-panel__chevron {
+    transform: rotate(180deg);
+  }
+}

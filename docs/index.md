@@ -23,17 +23,18 @@ when you need to override the defaults.
 ## Production inference
 
 Use [Production Inference](production/index.md) to digitize your own dictionary
-from a [directory of page images](production/directory.md) or a
-[source PDF](production/pdf.md). The production guide also covers
-[stage selection and agentic retries](production/stages-agentic.md) and the
-[generated output layout](production/outputs.md).
+from a [directory of page images](production/index.md#directory-input) or a
+[source PDF](production/index.md#pdf-input). The production guide also covers
+[stage selection](production/index.md#pipeline-stages),
+[agentic retries](production/index.md#agentic-retries), and the
+[generated output layout](production/index.md#output-layout).
 
 ## Benchmarking and evaluation
 
 Use [Benchmarking & Evaluation](benchmarking/index.md) for reproducible dataset
 experiments, multi-configuration sweeps, and Stage 1 or Stage 2 evaluation.
-Start with the [extraction workflows](benchmarking/extraction.md), then review
-the [evaluation guide](benchmarking/evaluation.md). Specialized OCR and VLM
+Start with the [extraction workflows](benchmarking/index.md#benchmark-extraction),
+then review the [evaluation guide](benchmarking/index.md#evaluation). Specialized OCR and VLM
 backends are documented separately under [Advanced VLM backends](benchmarking/vlm.md).
 
 ## Configuration

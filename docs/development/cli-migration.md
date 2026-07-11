@@ -8,7 +8,8 @@
 | `mudidi eval stage2 ...` | `mudidi benchmark evaluate stage2 --config evaluation.yaml` |
 | `mudidi-eval-flat` | `mudidi benchmark evaluate stage1` |
 | `mudidi-eval-stage2-mdf` | `mudidi benchmark evaluate stage2` |
-| Advanced reasoning/agentic/cache/VLM flags | Typed YAML sections |
+| Agentic flags | `mudidi run --stage1-agentic` / `--stage2-agentic` and related options, or typed YAML |
+| Advanced pipeline/cache/VLM settings | Typed YAML sections |
 | `--stage1-mode column` | `pipeline.stage1_mode: column` |
 | `--parse-rules-file PATH` | `pipeline.parse_rules_file: PATH` |
 | `--toolbox-pdf PATH` | `input.toolbox_pdf: PATH` |
