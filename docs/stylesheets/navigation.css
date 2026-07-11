@@ -5,36 +5,36 @@
 /* Desktop documentation tree: docked and independently scrollable. */
 @media screen and (min-width: 48em) {
   .md-header {
-    background: transparent;
+    background: var(--md-primary-fg-color);
     box-shadow: none;
     height: 0;
     left: 0;
+    padding: 0 0.6rem;
     position: fixed;
-    top: 0;
+    top: 2.3rem;
     width: 13rem;
     z-index: 10;
   }
 
   .md-header__inner {
-    height: 0;
+    height: auto;
     margin: 0;
     max-width: none;
     padding: 0;
-    width: 13rem;
+    width: 100%;
   }
 
   .md-header__inner > :not(.md-search) {
     display: none !important;
   }
 
+  /* Search occupies a reserved sidebar row rather than overlaying navigation. */
   .md-header .md-search {
     display: block;
-    height: 2.4rem;
-    left: 0.6rem;
+    margin-top: 0.65rem;
     padding: 0;
-    position: absolute;
-    top: 7.2rem;
-    width: 11.8rem;
+    position: static;
+    width: 100%;
   }
 
   .md-header .md-search__inner {
