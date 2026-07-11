@@ -34,6 +34,8 @@ def test_desktop_header_is_hidden_and_parent_items_expand() -> None:
     assert ".md-header" in css
     assert "display: none" in css
     assert ".md-nav__search" in css
+    assert ".md-nav__toggle:checked ~ .md-nav" in css
+    assert "grid-template-rows" in css
     assert 'querySelectorAll(".md-nav__item--nested")' in javascript
     assert 'setAttribute("aria-expanded"' in javascript
     assert "event.preventDefault()" in javascript
