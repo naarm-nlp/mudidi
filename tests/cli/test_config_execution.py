@@ -114,6 +114,31 @@ agentic:
     assert config.agentic.require_concrete_retry is False
 
 
+def test_agentic_cli_values_apply_without_yaml(tmp_path: Path) -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "run",
+            "--pages",
+            str(tmp_path / "pages"),
+            "--output-dir",
+            str(tmp_path / "output"),
+            "--stage1-agentic",
+            "--agentic-max-iterations",
+            "3",
+            "--agentic-reasoning",
+            "medium",
+        ]
+    )
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.agentic.stage1 is True
+    assert config.agentic.stage2 is False
+    assert config.agentic.max_iterations == 3
+    assert config.agentic.reasoning == "medium"
+
+
 def test_common_cli_input_paths_override_yaml_as_absolute_paths(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(
