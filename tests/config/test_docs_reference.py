@@ -60,3 +60,19 @@ def test_every_generated_configuration_block_is_valid_yaml() -> None:
     assert len(blocks) == 5
     for block in blocks:
         assert isinstance(yaml.safe_load(block), dict)
+
+
+def test_templates_show_effective_kind_defaults_and_valid_required_examples() -> None:
+    rendered = render_config_reference()
+    blocks = {
+        data["kind"]: data
+        for block in re.findall(r"```yaml\n(.*?)\n```", rendered, flags=re.DOTALL)
+        if isinstance((data := yaml.safe_load(block)), dict)
+    }
+
+    assert blocks["inference"]["input"]["pages"] == "path/to/pages"
+    assert blocks["inference"]["runtime"]["use_alphabet"] is False
+    assert blocks["benchmark_run"]["input"]["dataset_dir"] == "path/to/dataset"
+    assert blocks["benchmark_run"]["pipeline"]["stage1_source"] == "gold"
+    assert blocks["stage1_evaluation"]["input"]["predicted"] == "path/to/predicted"
+    assert blocks["stage1_evaluation"]["input"]["gold"] == "path/to/gold"
