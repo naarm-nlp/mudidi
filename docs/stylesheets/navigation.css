@@ -1,5 +1,63 @@
+.md-nav__search-spacer {
+  display: none;
+}
+
 /* Desktop documentation tree: docked and independently scrollable. */
 @media screen and (min-width: 48em) {
+  .md-header {
+    background: transparent;
+    box-shadow: none;
+    height: 0;
+    left: 0;
+    position: fixed;
+    top: 0;
+    width: 13rem;
+    z-index: 10;
+  }
+
+  .md-header__inner {
+    height: 0;
+    margin: 0;
+    max-width: none;
+    padding: 0;
+    width: 13rem;
+  }
+
+  .md-header__inner > :not(.md-search) {
+    display: none !important;
+  }
+
+  .md-header .md-search {
+    display: block;
+    height: 2.4rem;
+    left: 0.6rem;
+    padding: 0;
+    position: absolute;
+    top: 7.2rem;
+    width: 11.8rem;
+  }
+
+  .md-header .md-search__inner {
+    height: 2.4rem;
+    opacity: 1;
+    position: relative;
+    top: auto;
+    transform: none;
+    width: 100%;
+  }
+
+  .md-header .md-search__overlay {
+    display: none;
+  }
+
+  .md-header .md-search__form {
+    border-radius: 1.2rem;
+  }
+
+  .md-header .md-search__output {
+    width: 100%;
+  }
+
   .md-grid {
     max-width: 76rem;
   }
@@ -10,17 +68,89 @@
 
   .md-main__inner {
     align-items: stretch;
+    margin-top: 0;
+  }
+
+  /* Replace Material's drill-down view with an in-place accordion tree. */
+  .md-nav--primary,
+  .md-nav--primary .md-nav {
+    background: transparent;
+    display: block;
+    flex-direction: initial;
+    height: auto;
+    left: auto;
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    z-index: auto;
+  }
+
+  .md-nav--primary > .md-nav__source {
+    display: none;
+  }
+
+  .md-nav__search-spacer {
+    background: var(--md-primary-fg-color);
+    display: block;
+    height: 3.6rem;
+  }
+
+  .md-nav--primary .md-nav__link[for="__toc"] {
+    display: none;
+  }
+
+  .md-nav--primary .md-nav__link[for="__toc"] + .md-nav__link {
+    display: flex;
+  }
+
+  .md-nav--primary .md-nav__link[for="__toc"] ~ .md-nav {
+    display: none;
+  }
+
+  .md-nav--primary .md-nav__item--nested > .md-nav > .md-nav__title {
+    display: none;
+  }
+
+  .md-nav--primary .md-nav__toggle ~ .md-nav {
+    display: grid;
+    grid-template-rows: minmax(0, 0fr);
+    opacity: 0;
+    transform: none;
+    transition: grid-template-rows 180ms ease, opacity 180ms ease;
+    visibility: collapse;
+  }
+
+  .md-nav--primary .md-nav__toggle ~ .md-nav > .md-nav__list {
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .md-nav--primary .md-nav__toggle:checked ~ .md-nav {
+    grid-template-rows: minmax(0, 1fr);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .md-nav--primary
+    .md-nav__item--nested
+    > .md-nav__toggle:checked
+    ~ .md-nav__link
+    .md-nav__icon::after {
+    transform: rotate(90deg);
   }
 
   .md-sidebar--primary {
     display: block !important;
     flex: 0 0 13rem;
-    height: calc(100vh - 2.4rem) !important;
+    height: 100vh !important;
     left: auto !important;
     order: 0;
     position: sticky !important;
     right: auto !important;
-    top: 2.4rem;
+    top: 0;
     transform: none !important;
     width: 13rem;
   }
@@ -45,13 +175,13 @@
     display: flex !important;
     flex: 0 0 2.4rem;
     flex-direction: column;
-    height: calc(100vh - 2.4rem) !important;
+    height: 100vh !important;
     margin-left: 0.4rem;
     min-width: 2.4rem;
     order: 2;
     overflow: hidden;
     position: sticky;
-    top: 2.4rem;
+    top: 0;
     transition: flex-basis 180ms ease, min-width 180ms ease, width 180ms ease;
     width: 2.4rem;
   }

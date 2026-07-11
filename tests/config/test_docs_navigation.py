@@ -20,9 +20,9 @@ def test_docs_navigation_uses_sidebar_search_and_custom_templates() -> None:
         ROOT / "docs/overrides/partials/nav.html"
     ).read_text(encoding="utf-8")
 
-    assert 'include "partials/search.html"' not in header
-    assert 'include "partials/search.html"' in navigation
-    assert "md-nav__search" in navigation
+    assert 'include "partials/search.html"' in header
+    assert 'include "partials/search.html"' not in navigation
+    assert "md-nav__search-spacer" in navigation
 
 
 def test_desktop_header_is_hidden_and_parent_items_expand() -> None:
@@ -32,8 +32,9 @@ def test_desktop_header_is_hidden_and_parent_items_expand() -> None:
     ).read_text(encoding="utf-8")
 
     assert ".md-header" in css
-    assert "display: none" in css
-    assert ".md-nav__search" in css
+    assert "height: 0" in css
+    assert ".md-header__inner > :not(.md-search)" in css
+    assert ".md-header .md-search" in css
     assert ".md-nav__toggle:checked ~ .md-nav" in css
     assert "grid-template-rows" in css
     assert 'querySelectorAll(".md-nav__item--nested")' in javascript
