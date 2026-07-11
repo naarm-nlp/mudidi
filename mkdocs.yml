@@ -5,51 +5,11 @@ repo_url: https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Mu
 repo_name: DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary
 edit_uri: edit/main/docs/
 theme:
-  name: material
-  custom_dir: docs/overrides
-  language: en
-  palette:
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: teal
-      accent: amber
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: teal
-      accent: amber
-      toggle:
-        icon: material/brightness-4
-        name: Switch to system preference
-  features:
-    - content.code.annotate
-    - content.code.copy
-    - content.tabs.link
-    - content.tooltips
-    - navigation.footer
-    - navigation.instant
-    - navigation.instant.prefetch
-    - navigation.instant.progress
-    - navigation.path
-    - navigation.top
-    - navigation.tracking
-    - search.highlight
-    - search.share
-    - search.suggest
-    - toc.follow
-  icon:
-    repo: octicons/mark-github-24
-extra_css:
-  - stylesheets/navigation.css
-extra_javascript:
-  - javascripts/navigation.js
-  - javascripts/toc-panel.js
+  name: readthedocs
+  locale: en
+  navigation_depth: 4
+  collapse_navigation: false
+  sticky_navigation: true
 plugins:
   - search
   - mkdocstrings:
