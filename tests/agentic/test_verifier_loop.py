@@ -319,7 +319,9 @@ def test_loop_rewrites_only_unresolved_issues_after_applying_patches(
     ) -> str:
         assert output == "country\nheadword"
         assert decision.issues == [missing_content]
-        assert decision.retry_instruction == "Correct both transcription problems."
+        assert decision.retry_instruction == (
+            "Restore the missing definition lines from the image."
+        )
         assert attempt == 1
         return "country\nheadword\nrestored definition"
 
