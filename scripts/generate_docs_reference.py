@@ -14,6 +14,7 @@ from mudidi.config.yaml_config import MudidiConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
+_MISSING = object()
 
 _CONFIG_REFERENCE_SECTIONS = (
     (
@@ -105,13 +106,23 @@ def _schema_comment(
     definitions: dict[str, Any],
     *,
     required: bool,
+    example: Any = _MISSING,
 ) -> str:
     """Describe type, default, and numeric constraints as a YAML comment."""
     details = [_schema_type(schema, definitions)]
     if required:
         details.append("required")
     elif "default" in schema:
-        details.append(f"default: {json.dumps(schema['default'])}")
+        default = schema["default"]
+        if (
+            default is not None
+            and example is not _MISSING
+            and not isinstance(example, (dict, list))
+            and example != default
+        ):
+            details.append(f"effective default: {json.dumps(example)}")
+        else:
+            details.append(f"default: {json.dumps(default)}")
     else:
         details.append("optional")
     if "minimum" in schema:
@@ -125,8 +136,15 @@ def _schema_comment(
     return "; ".join(details)
 
 
-def _scalar_example(schema: dict[str, Any], definitions: dict[str, Any]) -> Any:
+def _scalar_example(
+    schema: dict[str, Any],
+    definitions: dict[str, Any],
+    *,
+    example: Any = _MISSING,
+) -> Any:
     """Choose a readable YAML value for a scalar schema node."""
+    if example is not _MISSING and not isinstance(example, (dict, list)):
+        return example
     if "const" in schema:
         return schema["const"]
     if "default" in schema:
@@ -148,6 +166,8 @@ def _scalar_example(schema: dict[str, Any], definitions: dict[str, Any]) -> Any:
         return max(float(resolved.get("minimum", 0.0)), 0.1)
     if schema_type == "boolean":
         return False
+    if schema_type == "array":
+        return []
     return None
 
 
@@ -161,12 +181,19 @@ def _render_yaml_mapping(
     definitions: dict[str, Any],
     *,
     indent: int = 0,
+    example: dict[str, Any] | None = None,
 ) -> list[str]:
     """Render every property in a model schema as an annotated YAML mapping."""
     resolved = _resolve_schema(schema, definitions)
     required_fields = set(resolved.get("required", []))
     lines: list[str] = []
-    for name, field_schema in resolved.get("properties", {}).items():
+    properties = resolved.get("properties", {})
+    names = list(properties)
+    if "kind" in names:
+        names.remove("kind")
+        names.insert(1 if names and names[0] == "version" else 0, "kind")
+    for name in names:
+        field_schema = properties[name]
         if name == "source_config":
             continue
         lines.extend(
@@ -176,6 +203,7 @@ def _render_yaml_mapping(
                 definitions,
                 indent=indent,
                 required=name in required_fields,
+                example=(example or {}).get(name, _MISSING),
             )
         )
     return lines
@@ -188,35 +216,64 @@ def _render_yaml_field(
     *,
     indent: int,
     required: bool,
+    example: Any = _MISSING,
 ) -> list[str]:
     """Render one scalar, nested model, sequence, or free-form mapping field."""
     prefix = " " * indent
-    comment = _schema_comment(schema, definitions, required=required)
+    comment = _schema_comment(
+        schema,
+        definitions,
+        required=required,
+        example=example,
+    )
     resolved = _resolve_schema(schema, definitions)
 
     if resolved.get("type") == "object" and "properties" in resolved:
         return [
             f"{prefix}{name}:  # {comment}",
-            *_render_yaml_mapping(resolved, definitions, indent=indent + 2),
+            *_render_yaml_mapping(
+                resolved,
+                definitions,
+                indent=indent + 2,
+                example=example if isinstance(example, dict) else None,
+            ),
         ]
 
     if resolved.get("type") == "object":
         additional = resolved.get("additionalProperties")
         if isinstance(additional, dict):
             child = _resolve_schema(additional, definitions)
+            mapping_example = example if isinstance(example, dict) else {}
+            example_key = next(iter(mapping_example), "example_key")
+            example_child = mapping_example.get(example_key, _MISSING)
             lines = [f"{prefix}{name}:  # {comment}"]
             if child.get("type") == "array":
-                lines.append(f"{prefix}  example_key:")
+                lines.append(f"{prefix}  {example_key}:")
+                item_example = (
+                    example_child[0]
+                    if isinstance(example_child, list) and example_child
+                    else _MISSING
+                )
                 lines.extend(
                     _render_yaml_list_item(
-                        child.get("items", {}), definitions, indent=indent + 4
+                        child.get("items", {}),
+                        definitions,
+                        indent=indent + 4,
+                        example=item_example,
                     )
                 )
             else:
+                value = _scalar_example(child, definitions, example=example_child)
                 lines.append(
-                    f"{prefix}  dotted.field.path: {_yaml_scalar(_scalar_example(child, definitions))}"
+                    f"{prefix}  {example_key}: {_yaml_scalar(value)}"
                 )
             return lines
+        if isinstance(example, dict) and example:
+            example_key, example_value = next(iter(example.items()))
+            return [
+                f"{prefix}{name}:  # {comment}",
+                f"{prefix}  {example_key}: {_yaml_scalar(example_value)}",
+            ]
         return [
             f"{prefix}{name}:  # {comment}",
             f'{prefix}  dotted.field.path: "value"',
@@ -226,13 +283,20 @@ def _render_yaml_field(
         items = resolved.get("items", {})
         item = _resolve_schema(items, definitions)
         if item.get("type") == "object":
+            item_example = example[0] if isinstance(example, list) and example else _MISSING
             return [
                 f"{prefix}{name}:  # {comment}",
-                *_render_yaml_list_item(items, definitions, indent=indent + 2),
+                *_render_yaml_list_item(
+                    items,
+                    definitions,
+                    indent=indent + 2,
+                    example=item_example,
+                ),
             ]
-        return [f"{prefix}{name}: []  # {comment}"]
+        value = _scalar_example(schema, definitions, example=example)
+        return [f"{prefix}{name}: {_yaml_scalar(value)}  # {comment}"]
 
-    value = _scalar_example(schema, definitions)
+    value = _scalar_example(schema, definitions, example=example)
     return [f"{prefix}{name}: {_yaml_scalar(value)}  # {comment}"]
 
 
@@ -241,12 +305,18 @@ def _render_yaml_list_item(
     definitions: dict[str, Any],
     *,
     indent: int,
+    example: Any = _MISSING,
 ) -> list[str]:
     """Render one representative item while retaining all nested item fields."""
     prefix = " " * indent
     resolved = _resolve_schema(schema, definitions)
     if resolved.get("type") == "object" and "properties" in resolved:
-        mapping = _render_yaml_mapping(resolved, definitions, indent=indent)
+        mapping = _render_yaml_mapping(
+            resolved,
+            definitions,
+            indent=indent,
+            example=example if isinstance(example, dict) else None,
+        )
         if not mapping:
             return [f"{prefix}- {{}}"]
         first, *rest = mapping
@@ -256,12 +326,74 @@ def _render_yaml_list_item(
         ]
     if resolved.get("type") == "object":
         return [f'{prefix}- example_key: "value"']
-    return [f"{prefix}- {_yaml_scalar(_scalar_example(schema, definitions))}"]
+    return [
+        f"{prefix}- {_yaml_scalar(_scalar_example(schema, definitions, example=example))}"
+    ]
+
+
+def _reference_example(adapter: TypeAdapter[Any], kind: str) -> dict[str, Any]:
+    """Build a valid minimal config whose resolved values seed each template."""
+    examples: dict[str, dict[str, Any]] = {
+        "inference": {
+            "version": 1,
+            "kind": "inference",
+            "input": {"pages": "path/to/pages"},
+            "output": {"directory": "path/to/output"},
+        },
+        "benchmark_run": {
+            "version": 1,
+            "kind": "benchmark_run",
+            "input": {"dataset_dir": "path/to/dataset"},
+            "output": {"directory": "path/to/output"},
+        },
+        "benchmark_sweep": {
+            "version": 1,
+            "kind": "benchmark_sweep",
+            "name": "example-sweep",
+            "base": {
+                "version": 1,
+                "kind": "benchmark_run",
+                "input": {"dataset_dir": "path/to/dataset"},
+                "output": {"directory": "path/to/output"},
+            },
+            "axes": {
+                "model": [
+                    {"id": "example-model", "set": {"models.stage1": "provider/model"}}
+                ]
+            },
+            "experiment_name": "{model}",
+        },
+        "stage1_evaluation": {
+            "version": 1,
+            "kind": "stage1_evaluation",
+            "input": {
+                "predicted": "path/to/predicted",
+                "gold": "path/to/gold",
+            },
+            "output": {"directory": "path/to/output"},
+        },
+        "stage2_evaluation": {
+            "version": 1,
+            "kind": "stage2_evaluation",
+            "input": {
+                "predicted": "path/to/predicted",
+                "gold": "path/to/gold",
+            },
+            "output": {"directory": "path/to/output"},
+        },
+    }
+    config = adapter.validate_python(examples[kind])
+    return config.model_dump(
+        mode="json",
+        by_alias=True,
+        exclude={"source_config"},
+    )
 
 
 def render_config_reference() -> str:
     """Render an exhaustive, YAML-shaped reference for every configuration kind."""
-    schema = TypeAdapter(MudidiConfig).json_schema()
+    adapter = TypeAdapter(MudidiConfig)
+    schema = adapter.json_schema()
     definitions = schema["$defs"]
     sections = [
         "# YAML configuration reference",
@@ -300,7 +432,11 @@ def render_config_reference() -> str:
                 f"Run with `{command}`.",
                 "",
                 "```yaml",
-                *_render_yaml_mapping(definitions[definition_name], definitions),
+                *_render_yaml_mapping(
+                    definitions[definition_name],
+                    definitions,
+                    example=_reference_example(adapter, kind),
+                ),
                 "```",
                 "",
             ]

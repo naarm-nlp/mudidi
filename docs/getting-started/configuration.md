@@ -19,7 +19,8 @@ Configuration rules:
 - Lists supplied on the CLI replace YAML lists.
 - API keys remain in `.env`.
 
-See the generated [configuration schema](../reference/config.md).
+See the generated [YAML configuration reference](../reference/config.md) for
+complete templates containing every available field and subfield.
 
 ## Benchmark sweeps
 

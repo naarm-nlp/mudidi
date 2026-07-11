@@ -41,7 +41,8 @@ backends are documented separately under [Advanced VLM backends](benchmarking/vl
 
 MUDIDI uses strict, versioned YAML configurations for advanced workflows. See
 the [configuration guide](getting-started/configuration.md) for practical usage
-and the generated [configuration schema](reference/config.md) for every field.
+and the generated [YAML configuration reference](reference/config.md) for every
+field and subfield.
 
 ## Reference
 
