@@ -50,7 +50,7 @@ def test_config_reference_is_exhaustive_yaml_shaped_documentation() -> None:
 
     schema = TypeAdapter(MudidiConfig).json_schema()
     for key in _public_schema_keys(schema):
-        assert re.search(rf"(?m)^\s*{re.escape(key)}:", rendered), key
+        assert re.search(rf"(?m)^\s*(?:-\s+)?{re.escape(key)}:", rendered), key
 
 
 def test_every_generated_configuration_block_is_valid_yaml() -> None:
