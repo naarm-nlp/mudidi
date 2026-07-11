@@ -831,9 +831,6 @@ def _build_strategy(
             agentic_max_patches_per_attempt=int(
                 getattr(args, "agentic_max_patches_per_attempt", 16)
             ),
-            agentic_catastrophic_recovery=bool(
-                getattr(args, "agentic_catastrophic_recovery", False)
-            ),
         )
     raise ValueError(f"Unknown strategy: {args.strategy}")
 
@@ -1531,14 +1528,6 @@ Examples:
         dest="no_agentic_concrete_retry_gate",
         help="Allow retry decisions without localized evidence. Useful only for "
         "ablation; the default gate is safer.",
-    )
-    parser.add_argument(
-        "--agentic-catastrophic-recovery",
-        action="store_true",
-        dest="agentic_catastrophic_recovery",
-        help="When Stage 1 agentic verifier detects wrong-page or whole-page "
-        "corruption, discard the transcript and re-transcribe the entire page "
-        "from the image (decision=recover).",
     )
 
     args = resolved_args if resolved_args is not None else parser.parse_args()

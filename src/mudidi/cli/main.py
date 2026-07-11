@@ -82,12 +82,6 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         default=argparse.SUPPRESS,
         help="Require or waive localized evidence before retrying.",
     )
-    group.add_argument(
-        "--agentic-catastrophic-recovery",
-        action=argparse.BooleanOptionalAction,
-        default=argparse.SUPPRESS,
-        help="Enable or disable Stage 1 whole-page corruption recovery.",
-    )
 
 
 def _add_sparse_run_arguments(parser: argparse.ArgumentParser) -> None:

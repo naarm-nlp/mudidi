@@ -260,7 +260,7 @@ def _transcription_to_tsv(result: TranscriptionResponse) -> str:
     return "\n".join(rows)
 
 
-def _stage1_verifier_system_prompt(*, catastrophic_recovery_enabled: bool = False) -> str:
+def _stage1_verifier_system_prompt() -> str:
     base = (
         "You are a conservative verifier for Stage 1 dictionary OCR. "
         "Judge whether the transcript faithfully copies the current page image. "
@@ -274,8 +274,6 @@ def _stage1_verifier_system_prompt(*, catastrophic_recovery_enabled: bool = Fals
         "retry issue that asks for a text edit; if you cannot specify the exact "
         "span, do not request retry for that issue."
     )
-    if not catastrophic_recovery_enabled:
-        return base
     return (
         base
         + " When the transcript is from the wrong page, largely hallucinated, or "
@@ -483,7 +481,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         agentic_require_concrete_retry_issue: bool = True,
         agentic_prefer_verifier_patches: bool = True,
         agentic_max_patches_per_attempt: int | None = 16,
-        agentic_catastrophic_recovery: bool = False,
     ):
         if stage1_mode not in ("column", "flat"):
             raise ValueError(f"stage1_mode must be 'column' or 'flat', got {stage1_mode!r}")
@@ -518,14 +515,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.stage1_typography = stage1_typography
         self.stage1_agentic = stage1_agentic
         self.stage2_agentic = stage2_agentic
-        self.agentic_catastrophic_recovery = agentic_catastrophic_recovery
         self.agentic_loop_config = AgenticLoopConfig(
             max_iterations=agentic_max_iterations,
             min_retry_confidence=agentic_min_retry_confidence,
             require_concrete_retry_issue=agentic_require_concrete_retry_issue,
             prefer_verifier_patches=agentic_prefer_verifier_patches,
             max_patches_per_attempt=agentic_max_patches_per_attempt,
-            catastrophic_recovery_enabled=agentic_catastrophic_recovery,
         )
         self.agentic_evaluator_model = agentic_evaluator_model
         self.agentic_rewriter_model = agentic_rewriter_model
@@ -1153,9 +1148,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         messages = [
             {
                 "role": "system",
-                "content": _stage1_verifier_system_prompt(
-                    catastrophic_recovery_enabled=self.agentic_catastrophic_recovery,
-                ),
+                "content": _stage1_verifier_system_prompt(),
             },
             {"role": "user", "content": content},
         ]

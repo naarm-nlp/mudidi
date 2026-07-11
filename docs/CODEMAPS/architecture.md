@@ -71,7 +71,7 @@ CLI (cli/)
 
 ## Agentic Extension
 
-`agentic/verifier_loop.py` — bounded verifier-rewriter loop used by `TwoStageLLMExtraction` for Stage 1/2 quality retries. The verifier may request safe exact patches; Stage 1 can discard a catastrophically corrupted transcript and re-transcribe its page image when explicitly enabled.
+`agentic/verifier_loop.py` — bounded verifier-rewriter loop used by `TwoStageLLMExtraction` for Stage 1/2 quality retries. The verifier may request safe exact patches; Stage 1 automatically discards a catastrophically corrupted transcript and re-transcribes its page image.
 
 ## Key Design Boundaries
 

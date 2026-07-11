@@ -264,14 +264,6 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "ablation; the default gate is safer.",
     )
     parser.add_argument(
-        "--agentic-catastrophic-recovery",
-        action="store_true",
-        dest="agentic_catastrophic_recovery",
-        help="When Stage 1 agentic verifier detects wrong-page or whole-page "
-        "corruption, discard the transcript and re-transcribe the entire page "
-        "from the image (decision=recover).",
-    )
-    parser.add_argument(
         "--prompts-file",
         type=str,
         default=None,
@@ -433,8 +425,6 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
         argv.append("--no-agentic-verifier-patches")
     if run_args.no_agentic_concrete_retry_gate:
         argv.append("--no-agentic-concrete-retry-gate")
-    if run_args.agentic_catastrophic_recovery:
-        argv.append("--agentic-catastrophic-recovery")
     if run_args.prompts_file:
         argv.extend(["--prompts-file", run_args.prompts_file])
     forward_model_argv(argv, run_args)
@@ -480,7 +470,6 @@ _RUN_OVERRIDE_PATHS = {
     "agentic_max_patches_per_attempt": "agentic.max_patches_per_attempt",
     "agentic_verifier_patches": "agentic.verifier_patches",
     "agentic_require_concrete_retry": "agentic.require_concrete_retry",
-    "agentic_catastrophic_recovery": "agentic.catastrophic_recovery",
 }
 
 _EVALUATION_OVERRIDE_PATHS = {
@@ -677,7 +666,6 @@ def execution_namespace_from_config(
         agentic_max_patches_per_attempt=agentic.max_patches_per_attempt,
         no_agentic_verifier_patches=not agentic.verifier_patches,
         no_agentic_concrete_retry_gate=not agentic.require_concrete_retry,
-        agentic_catastrophic_recovery=agentic.catastrophic_recovery,
         batch_size=runtime.batch_size,
         limit=runtime.limit,
         overwrite=runtime.overwrite,

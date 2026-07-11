@@ -135,7 +135,6 @@ class AgenticConfig(_StrictModel):
     max_patches_per_attempt: int = Field(default=16, ge=1)
     verifier_patches: bool = True
     require_concrete_retry: bool = True
-    catastrophic_recovery: bool = False
 
 
 class RuntimeConfig(_StrictModel):

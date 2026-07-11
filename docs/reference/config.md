@@ -81,7 +81,6 @@ agentic:  # AgenticConfig; optional
   max_patches_per_attempt: 16  # integer; default: 16; >= 1
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
-  catastrophic_recovery: false  # boolean; default: false
 runtime:  # RuntimeConfig; optional
   batch_size: 1  # integer; default: 1; >= 1
   limit: null  # integer | null; default: null
@@ -180,7 +179,6 @@ agentic:  # AgenticConfig; optional
   max_patches_per_attempt: 16  # integer; default: 16; >= 1
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
-  catastrophic_recovery: false  # boolean; default: false
 runtime:  # RuntimeConfig; optional
   batch_size: 1  # integer; default: 1; >= 1
   limit: null  # integer | null; default: null
@@ -283,7 +281,6 @@ base:  # BenchmarkRunConfig; required
     max_patches_per_attempt: 16  # integer; default: 16; >= 1
     verifier_patches: true  # boolean; default: true
     require_concrete_retry: true  # boolean; default: true
-    catastrophic_recovery: false  # boolean; default: false
   runtime:  # RuntimeConfig; optional
     batch_size: 1  # integer; default: 1; >= 1
     limit: null  # integer | null; default: null

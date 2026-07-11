@@ -103,7 +103,6 @@ class AgenticLoopConfig(BaseModel):
     require_concrete_retry_issue: bool = True
     prefer_verifier_patches: bool = True
     max_patches_per_attempt: int | None = Field(default=16, ge=1)
-    catastrophic_recovery_enabled: bool = False
 
 
 class AgenticAttempt(BaseModel):
@@ -192,11 +191,8 @@ def _is_whole_page_retry(decision: AgenticVerifierDecision) -> bool:
 
 def normalize_catastrophic_decision(
     decision: AgenticVerifierDecision,
-    config: AgenticLoopConfig,
 ) -> AgenticVerifierDecision:
-    """Promote reject/vague-retry to recover when catastrophic recovery is enabled."""
-    if not config.catastrophic_recovery_enabled:
-        return decision
+    """Promote catastrophic reject or whole-page retry decisions to recover."""
     if decision.decision == "recover":
         return decision
     if decision.decision == "reject" and _has_catastrophic_issue(decision):
@@ -459,7 +455,7 @@ def run_bounded_verifier_loop(
 
     for attempt in range(config.max_iterations + 1):
         raw_decision, verifier_usage = _split_verify_result(verify(current, attempt))
-        decision = normalize_catastrophic_decision(raw_decision, config)
+        decision = normalize_catastrophic_decision(raw_decision)
         attempt_record = AgenticAttempt(
             attempt=attempt,
             decision=decision,

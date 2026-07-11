@@ -75,13 +75,12 @@ agentic:
   stage1: true
   stage2: true
   max_iterations: 2
-  catastrophic_recovery: true
 ```
 
 Every Boolean agentic option has an explicit negative form. For example,
 `--no-stage1-agentic` and `--no-agentic-verifier-patches` can override values
-enabled in YAML. Model, reasoning, retry-confidence, patch-limit, and recovery
-options are listed under the agentic group in the
+enabled in YAML. Model, reasoning, retry-confidence, and patch-limit options
+are listed under the agentic group in the
 [CLI reference](../reference/cli.md#mudidi-run).
 
 When a verifier decision mixes exact patches with issues that require model
@@ -91,8 +90,9 @@ uses one `max_iterations` slot. Decisions containing only successful patches do
 not call the rewriter.
 
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
-transcript and parse rules. Catastrophic whole-page recovery applies only to
-Stage 1.
+transcript and parse rules. Stage 1 catastrophic whole-page recovery is always
+available when its verifier identifies a wrong-page, hallucinated, or broadly
+corrupted transcript; it does not require a separate option.
 
 ## Output layout
 

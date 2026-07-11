@@ -44,7 +44,6 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
                   [--agentic-verifier-patches | --no-agentic-verifier-patches]
                   [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
-                  [--agentic-catastrophic-recovery | --no-agentic-catastrophic-recovery]
 
 options:
   -h, --help            show this help message and exit
@@ -101,9 +100,6 @@ agentic verifier-rewriter options:
                         rewriting.
   --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
                         Require or waive localized evidence before retrying.
-  --agentic-catastrophic-recovery, --no-agentic-catastrophic-recovery
-                        Enable or disable Stage 1 whole-page corruption
-                        recovery.
 ```
 
 ## `mudidi benchmark`
@@ -148,7 +144,6 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
                             [--agentic-max-patches-per-attempt AGENTIC_MAX_PATCHES_PER_ATTEMPT]
                             [--agentic-verifier-patches | --no-agentic-verifier-patches]
                             [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
-                            [--agentic-catastrophic-recovery | --no-agentic-catastrophic-recovery]
                             [--dataset-dir DATASET_DIR]
                             [--samples-dir SAMPLES_DIR]
                             [--languages LANGUAGES [LANGUAGES ...]]
@@ -213,9 +208,6 @@ agentic verifier-rewriter options:
                         rewriting.
   --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
                         Require or waive localized evidence before retrying.
-  --agentic-catastrophic-recovery, --no-agentic-catastrophic-recovery
-                        Enable or disable Stage 1 whole-page corruption
-                        recovery.
 ```
 
 ## `mudidi benchmark sweep`
