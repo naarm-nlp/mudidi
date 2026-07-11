@@ -84,6 +84,12 @@ enabled in YAML. Model, reasoning, retry-confidence, patch-limit, and recovery
 options are listed under the agentic group in the
 [CLI reference](../reference/cli.md#mudidi-run).
 
+When a verifier decision mixes exact patches with issues that require model
+rewriting, MUDIDI applies the unambiguous patches first and passes the patched
+output plus only the unresolved issues to the rewriter. The combined correction
+uses one `max_iterations` slot. Decisions containing only successful patches do
+not call the rewriter.
+
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
 transcript and parse rules. Catastrophic whole-page recovery applies only to
 Stage 1.

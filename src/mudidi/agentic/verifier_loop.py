@@ -8,6 +8,7 @@ artifacts.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 import json
 from pathlib import Path
@@ -124,6 +125,15 @@ class AgenticLoopResult(BaseModel):
     attempt_count: int
     attempts: list[AgenticAttempt]
     agentic_usage_summary: dict[str, Any] = Field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class VerifierPatchResult:
+    """Output and issue disposition from deterministic verifier patches."""
+
+    output: str
+    applied_issues: tuple[AgenticIssue, ...]
+    unresolved_issues: tuple[AgenticIssue, ...]
 
 
 VerifyReturn = AgenticVerifierDecision | tuple[AgenticVerifierDecision, dict[str, Any]]
@@ -327,22 +337,24 @@ def _infer_issue_patch(issue: AgenticIssue) -> tuple[str, str] | None:
 def _apply_verifier_patches(
     output: str,
     decision: AgenticVerifierDecision,
-) -> str | None:
-    """Apply exact verifier-provided span edits when every edit is unambiguous."""
-    edits = [(issue, _infer_issue_patch(issue)) for issue in decision.issues]
-    edits = [(issue, patch) for issue, patch in edits if patch is not None]
-    if not edits:
-        return None
+) -> VerifierPatchResult:
+    """Apply unambiguous edits and retain every issue that was not fixed."""
 
     lines = output.splitlines()
     trailing_newline = output.endswith("\n")
-    changed = False
     patched_output = output
+    applied: list[AgenticIssue] = []
+    unresolved: list[AgenticIssue] = []
 
-    for issue, patch in edits:
+    for issue in decision.issues:
+        patch = _infer_issue_patch(issue)
+        if patch is None:
+            unresolved.append(issue)
+            continue
         current_text, expected_text = patch
         if issue.line_index is not None:
             if issue.line_index < 0 or issue.line_index >= len(lines):
+                unresolved.append(issue)
                 continue
             patched_line = _replace_once(
                 lines[issue.line_index],
@@ -350,23 +362,29 @@ def _apply_verifier_patches(
                 expected_text,
             )
             if patched_line is None:
+                unresolved.append(issue)
                 continue
             lines[issue.line_index] = patched_line
             if patched_line == "":
                 lines.pop(issue.line_index)
-            changed = True
             patched_output = "\n".join(lines) + ("\n" if trailing_newline else "")
+            applied.append(issue)
             continue
 
         patched = _replace_once(patched_output, current_text, expected_text)
         if patched is None:
+            unresolved.append(issue)
             continue
         patched_output = patched
         lines = patched_output.splitlines()
         trailing_newline = patched_output.endswith("\n")
-        changed = True
+        applied.append(issue)
 
-    return patched_output if changed else None
+    return VerifierPatchResult(
+        output=patched_output,
+        applied_issues=tuple(applied),
+        unresolved_issues=tuple(unresolved),
+    )
 
 
 def _patch_issue_count(decision: AgenticVerifierDecision) -> int:
@@ -547,11 +565,22 @@ def run_bounded_verifier_loop(
 
         next_attempt = attempt + 1
         rewritten = None
+        rewrite_input = current
+        rewrite_decision = decision
+        needs_rewriter = True
         if not is_catastrophic and config.prefer_verifier_patches:
-            rewritten = _apply_verifier_patches(current, decision)
-        if rewritten is None:
+            patch_result = _apply_verifier_patches(current, decision)
+            rewrite_input = patch_result.output
+            if patch_result.unresolved_issues:
+                rewrite_decision = decision.model_copy(
+                    update={"issues": list(patch_result.unresolved_issues)}
+                )
+            elif patch_result.applied_issues:
+                rewritten = patch_result.output
+                needs_rewriter = False
+        if needs_rewriter:
             rewritten, rewrite_usage = _split_rewrite_result(
-                rewrite(current, decision, next_attempt)
+                rewrite(rewrite_input, rewrite_decision, next_attempt)
             )
             if rewrite_usage:
                 attempt_record.rewrite_usage = rewrite_usage
