@@ -35,8 +35,6 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
             "low",
             "--agentic-min-retry-confidence",
             "0.7",
-            "--agentic-max-patches-per-attempt",
-            "7",
             "--no-agentic-verifier-patches",
             "--no-agentic-concrete-retry-gate",
         ]
@@ -64,7 +62,6 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
     assert forwarded[forwarded.index("--agentic-evaluator-reasoning") + 1] == "high"
     assert forwarded[forwarded.index("--agentic-rewriter-reasoning") + 1] == "low"
     assert forwarded[forwarded.index("--agentic-min-retry-confidence") + 1] == "0.7"
-    assert forwarded[forwarded.index("--agentic-max-patches-per-attempt") + 1] == "7"
     assert "--no-agentic-verifier-patches" in forwarded
     assert "--no-agentic-concrete-retry-gate" in forwarded
 
@@ -79,6 +76,14 @@ def test_run_rejects_removed_catastrophic_recovery_flag(flag: str) -> None:
 
     with pytest.raises(SystemExit):
         parser.parse_args([flag])
+
+
+def test_run_rejects_removed_patch_limit_option() -> None:
+    parser = argparse.ArgumentParser()
+    run_cli.register_run_arguments(parser)
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--agentic-max-patches-per-attempt", "7"])
 
 
 def test_run_rejects_removed_patch_only_verifier_flag() -> None:

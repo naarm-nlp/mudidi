@@ -74,8 +74,6 @@ def test_public_command_tree_parses_agentic_overrides() -> None:
             "low",
             "--agentic-min-retry-confidence",
             "0.7",
-            "--agentic-max-patches-per-attempt",
-            "8",
             "--no-agentic-verifier-patches",
             "--no-agentic-concrete-retry-gate",
         ]
@@ -90,7 +88,6 @@ def test_public_command_tree_parses_agentic_overrides() -> None:
     assert args.agentic_evaluator_reasoning == "high"
     assert args.agentic_rewriter_reasoning == "low"
     assert args.agentic_min_retry_confidence == 0.7
-    assert args.agentic_max_patches_per_attempt == 8
     assert args.agentic_verifier_patches is False
     assert args.agentic_require_concrete_retry is False
 
@@ -105,6 +102,21 @@ def test_public_command_tree_rejects_removed_catastrophic_recovery_flag(
     with pytest.raises(SystemExit):
         build_parser().parse_args(
             ["run", "--pages", "pages", "--output-dir", "output", flag]
+        )
+
+
+def test_public_command_tree_rejects_removed_patch_limit_option() -> None:
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(
+            [
+                "run",
+                "--pages",
+                "pages",
+                "--output-dir",
+                "output",
+                "--agentic-max-patches-per-attempt",
+                "8",
+            ]
         )
 
 

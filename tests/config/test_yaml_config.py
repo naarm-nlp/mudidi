@@ -82,6 +82,27 @@ agentic:
         load_yaml_config(path)
 
 
+def test_yaml_config_rejects_removed_patch_limit_option(tmp_path: Path) -> None:
+    path = tmp_path / "removed-patch-limit.yaml"
+    path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: dictionary.pdf
+output:
+  directory: output
+agentic:
+  stage1: true
+  max_patches_per_attempt: 16
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="max_patches_per_attempt"):
+        load_yaml_config(path)
+
+
 def test_yaml_config_rejects_command_kind_mismatch(tmp_path: Path) -> None:
     path = tmp_path / "benchmark.yaml"
     path.write_text(

@@ -439,7 +439,9 @@ def test_loop_records_rewriter_usage_when_rewriter_runs(tmp_path: Path) -> None:
     assert (tmp_path / "attempt_1_rewrite_usage.json").is_file()
 
 
-def test_loop_rejects_too_many_patch_issues(tmp_path: Path) -> None:
+def test_loop_applies_all_unambiguous_patches_without_a_count_limit(
+    tmp_path: Path,
+) -> None:
     issues = [
         AgenticIssue(
             type="exact_text_patch",
@@ -447,10 +449,12 @@ def test_loop_rejects_too_many_patch_issues(tmp_path: Path) -> None:
             current_text=f"old{i}",
             expected_text=f"new{i}",
         )
-        for i in range(3)
+        for i in range(20)
     ]
 
     def verify(output: str, attempt: int) -> AgenticVerifierDecision:
+        if attempt == 1:
+            return AgenticVerifierDecision(decision="accept", confidence=0.95)
         return AgenticVerifierDecision(
             decision="retry",
             confidence=0.9,
@@ -458,20 +462,21 @@ def test_loop_rejects_too_many_patch_issues(tmp_path: Path) -> None:
         )
 
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run when patch count exceeds gate")
+        raise AssertionError("unambiguous patches should not call the rewriter")
 
     result = run_bounded_verifier_loop(
         stage="stage1",
-        initial_output="old0\nold1\nold2",
+        initial_output="\n".join(f"old{i}" for i in range(20)),
         artifact_dir=tmp_path,
         output_suffix=".txt",
         verify=verify,
         rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, max_patches_per_attempt=2),
+        config=AgenticLoopConfig(max_iterations=2),
     )
 
-    assert result.stop_reason == "patch_quality_rejected"
-    assert result.rewrite_count == 0
+    assert result.output == "\n".join(f"new{i}" for i in range(20))
+    assert result.stop_reason == "accepted"
+    assert result.rewrite_count == 1
 
 
 def test_loop_infers_line_patch_from_simple_suggested_fix(tmp_path: Path) -> None:
