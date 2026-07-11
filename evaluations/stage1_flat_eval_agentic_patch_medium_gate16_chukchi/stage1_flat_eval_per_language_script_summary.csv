@@ -1,3 +1,0 @@
-experiment,language,language_script,GCER,WER,TextEdit,precision,recall,f1
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,Chukchi-Russian,Chukchi-Cyrillic Extended,0.053333,0.296296,0.053262,0.9467,0.948,0.9474
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,Chukchi-Russian,Russian-Cyrillic,0.010458,0.064,0.010458,0.9895,0.9895,0.9895

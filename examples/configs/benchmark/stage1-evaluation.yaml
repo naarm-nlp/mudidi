@@ -1,0 +1,14 @@
+version: 1
+kind: stage1_evaluation
+
+input:
+  dataset_dir: ../../../dataset/MUDIDI/dictionaries
+  pred_root: ../../../outputs/benchmark/stage-1
+
+output:
+  directory: ../../../evaluations/stage1_flat_eval_benchmark
+
+evaluation:
+  all_experiments: true
+  workers: 1
+  character_alignment: quick_match

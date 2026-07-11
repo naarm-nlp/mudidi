@@ -291,7 +291,11 @@ def experiment_names_for_eval(
     return args.experiment_names
 
 
-def main() -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    config: object | None = None,
+) -> int:
     parser = argparse.ArgumentParser(
         description="Evaluate Stage 1 flat OCR transcription (eval-flat)",
     )
@@ -381,7 +385,36 @@ def main() -> int:
             "Use cpu_count-2 on batch nodes (e.g. 14 on a 16-core allocation)."
         ),
     )
-    args = parser.parse_args()
+    if config is None:
+        args = parser.parse_args(argv)
+    else:
+        from mudidi.config.yaml_config import Stage1EvaluationConfig
+
+        if not isinstance(config, Stage1EvaluationConfig):
+            raise TypeError("Stage 1 evaluation requires Stage1EvaluationConfig")
+        options = config.evaluation
+        args = argparse.Namespace(
+            predicted=str(config.input.predicted) if config.input.predicted else None,
+            gold=str(config.input.gold) if config.input.gold else None,
+            samples_dir=None,
+            dataset_dir=(
+                str(config.input.dataset_dir) if config.input.dataset_dir else None
+            ),
+            pred_root=str(config.input.pred_root) if config.input.pred_root else None,
+            experiment_names=list(options.experiment_names) or None,
+            languages=config.input.languages,
+            all_experiments=options.all_experiments,
+            experiment_name_contains=options.experiment_name_contains,
+            include_vlm_ocr=options.include_vlm_ocr,
+            stage1_output_subdir=options.stage1_output_subdir,
+            output_dir=str(config.output.directory),
+            metrics=options.metrics,
+            alignment_threshold=options.alignment_threshold,
+            character_alignment=options.character_alignment,
+            per_language_script=options.per_language_script,
+            overwrite=options.overwrite,
+            workers=options.workers,
+        )
     if args.workers < 1:
         parser.error("--workers must be >= 1")
 

@@ -19,9 +19,20 @@ from mudidi.config.run_config import (
     page_run_phases,
     stage_from_cli,
 )
+from mudidi.config.yaml_config import (
+    BenchmarkRunConfig,
+    BenchmarkSweepConfig,
+    InferenceConfig,
+    Stage1EvaluationConfig,
+    Stage2EvaluationConfig,
+    load_yaml_config,
+)
 
 __all__ = [
     "EXTRACT_STAGE_CHOICES",
+    "BenchmarkRunConfig",
+    "BenchmarkSweepConfig",
+    "InferenceConfig",
     "MEDIA_REFERENCE_CHOICES",
     "MediaReferenceMode",
     "OutputLayout",
@@ -30,6 +41,9 @@ __all__ = [
     "PromptMode",
     "RUN_STAGE_CHOICES",
     "RunConfig",
+    "Stage1EvaluationConfig",
+    "Stage2EvaluationConfig",
+    "load_yaml_config",
     "output_layout_from_config",
     "runs_stage1",
     "runs_stage2_any",

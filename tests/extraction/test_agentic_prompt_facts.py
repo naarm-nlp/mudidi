@@ -1,6 +1,9 @@
+import pytest
+
 from mudidi.extraction.llm_two_stage import (
-    _numbered_lines,
-    _stage1_patch_verifier_system_prompt,
+    AGENTIC_VERIFIER_MAX_TOKENS_ENV,
+    DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS,
+    _agentic_verifier_max_tokens,
     _stage1_rewriter_system_prompt,
     _stage1_verifier_system_prompt,
     _stage2_rewriter_system_prompt,
@@ -54,10 +57,37 @@ def test_agentic_prompts_require_localized_retry_evidence() -> None:
     assert "minimum necessary edit" in rewriter_prompt
 
 
-def test_stage1_patch_verifier_prompt_is_patch_only() -> None:
-    prompt = _stage1_patch_verifier_system_prompt()
+def test_agentic_verifier_max_tokens_defaults_to_safe_budget(monkeypatch) -> None:
+    monkeypatch.delenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, raising=False)
 
-    assert "patch-only verifier" in prompt
-    assert "exact line-local patch" in prompt
-    assert "broad alphabet-wide substitutions" in prompt
-    assert _numbered_lines("first\nsecond") == "0\tfirst\n1\tsecond"
+    assert _agentic_verifier_max_tokens() == DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS
+    assert DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS > 0
+
+
+def test_agentic_verifier_max_tokens_blank_env_uses_default(monkeypatch) -> None:
+    monkeypatch.setenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, " ")
+
+    assert _agentic_verifier_max_tokens() == DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS
+
+
+def test_agentic_verifier_max_tokens_reads_env_override(monkeypatch) -> None:
+    monkeypatch.setenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, "16000")
+
+    assert _agentic_verifier_max_tokens() == 16000
+
+
+def test_agentic_verifier_max_tokens_accepts_minimum_positive_value(monkeypatch) -> None:
+    monkeypatch.setenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, "1")
+
+    assert _agentic_verifier_max_tokens() == 1
+
+
+@pytest.mark.parametrize("bad_value", ["0", "-1", "abc", "1.5"])
+def test_agentic_verifier_max_tokens_rejects_invalid_env(
+    monkeypatch,
+    bad_value: str,
+) -> None:
+    monkeypatch.setenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV, bad_value)
+
+    with pytest.raises(ValueError, match="positive integer"):
+        _agentic_verifier_max_tokens()

@@ -1,0 +1,14 @@
+version: 1
+kind: stage2_evaluation
+
+input:
+  dataset_dir: ../../../dataset/MUDIDI/dictionaries
+  pred_root: ../../../outputs/benchmark/stage-2-e2e
+
+output:
+  directory: ../../../evaluations/stage2_mdf_eval_e2e
+
+evaluation:
+  all_experiments: true
+  record_threshold: 0.6
+  line_threshold: 0.7

@@ -5,7 +5,7 @@ set -euo pipefail
 #   {entry}/outputs/stage-2/<experiment-name>/<stem>/<stem>.mdf.txt
 #
 # This script targets the current MUDIDI CLI:
-#   uv run mudidi run --benchmark --stage 2 ...
+#   uv run python -m mudidi.cli.extract --benchmark --stage 2 ...
 #
 # Stage 2 direct MDF is now the only Stage 2 extraction mode, so the old
 # dictionary-extractor flag `--stage2-mode direct_mdf` is no longer used.
@@ -69,7 +69,7 @@ run_stage2() {
         experiment="${experiment}_${STAGE2_EXPERIMENT_SUFFIX}"
     fi
 
-    if ! uv run mudidi run \
+    if ! uv run python -m mudidi.cli.extract \
         --benchmark \
         --strategy two_stage \
         --stage 2 \

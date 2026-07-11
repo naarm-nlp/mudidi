@@ -126,7 +126,11 @@ def _write_baseline_comparison_csv(
             writer.writerow(out)
 
 
-def main() -> int:
+def main(
+    argv: list[str] | None = None,
+    *,
+    config: object | None = None,
+) -> int:
     parser = argparse.ArgumentParser(description="Evaluate Stage 2 MDF against gold")
     parser.add_argument("-p", "--predicted", help="Predicted .mdf.txt")
     parser.add_argument("-g", "--gold", help="Gold .mdf.txt")
@@ -187,7 +191,44 @@ def main() -> int:
         default=None,
         help="Optional dictionary_languages.yaml for per-language MDF metrics.",
     )
-    args = parser.parse_args()
+    if config is None:
+        args = parser.parse_args(argv)
+    else:
+        from mudidi.config.yaml_config import Stage2EvaluationConfig
+
+        if not isinstance(config, Stage2EvaluationConfig):
+            raise TypeError("Stage 2 evaluation requires Stage2EvaluationConfig")
+        options = config.evaluation
+        args = argparse.Namespace(
+            predicted=str(config.input.predicted) if config.input.predicted else None,
+            gold=str(config.input.gold) if config.input.gold else None,
+            samples_dir=None,
+            dataset_dir=(
+                str(config.input.dataset_dir) if config.input.dataset_dir else None
+            ),
+            pred_root=str(config.input.pred_root) if config.input.pred_root else None,
+            experiment_names=list(options.experiment_names) or None,
+            languages=config.input.languages,
+            all_experiments=options.all_experiments,
+            output_dir=str(config.output.directory),
+            baseline_summary=(
+                str(options.baseline_summary) if options.baseline_summary else None
+            ),
+            baseline_experiment=options.baseline_experiment,
+            comparison_output=(
+                str(options.comparison_output) if options.comparison_output else None
+            ),
+            record_threshold=options.record_threshold,
+            line_threshold=options.line_threshold,
+            marker_sub_list=(
+                str(options.marker_sub_list) if options.marker_sub_list else None
+            ),
+            dictionary_languages=(
+                str(options.dictionary_languages)
+                if options.dictionary_languages
+                else None
+            ),
+        )
 
     evaluator = MdfEvaluator(
         record_threshold=args.record_threshold,

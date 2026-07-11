@@ -35,7 +35,7 @@ run_stage2() {
   echo "  model=$model  pages=$PAGES"
   echo "════════════════════════════════════════════════════════════"
 
-  uv run mudidi run \
+  uv run python -m mudidi.cli.extract \
     --pages "$PDF" \
     --dict-pages "$PAGES" \
     --output-dir "$out" \

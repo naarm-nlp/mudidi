@@ -1,11 +1,11 @@
 # MUDIDI examples
 
-Minimal scripts for inference and evaluation. Edit paths in each script if you use a different dictionary or page range.
+Minimal scripts and validated YAML configurations for production inference and benchmarking.
 
 ## Prerequisites
 
 1. `uv sync` and API keys in `.env` (see root [README](../README.md)).
-2. Download the [MUDIDI dataset](https://huggingface.co/datasets/DavidSamuell/mudidi) to `dataset/mudidi/` (for directory mode and eval).
+2. Download the [MUDIDI dataset](https://huggingface.co/datasets/DavidSamuell/mudidi) to `dataset/MUDIDI/` (for directory mode and evaluation).
 3. For PDF mode: place a full dictionary scan under `inputs/` (see comment in `inference/run_pdf_mode.sh`).
 
 ## Scripts
@@ -27,6 +27,6 @@ bash examples/evaluation/run_stage1_eval.sh
 bash examples/evaluation/run_stage2_eval.sh
 ```
 
-Pass extra flags through any script, e.g. `bash examples/inference/run_directory_mode.sh --overwrite`.
+Pass common overrides through any script, e.g. `bash examples/inference/run_directory_mode.sh --overwrite`. Advanced settings live in the referenced YAML files.
 
 Paper benchmark numbers are frozen in [`evaluations/`](../evaluations/).

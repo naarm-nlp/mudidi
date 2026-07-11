@@ -1,6 +1,0 @@
-experiment,language,page,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.185897,0.142857,0.105263,156,127,29,21,3
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.164122,0.560976,0.291694,1048,924,172,41,23
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.084525,0.142857,0.029928,769,704,65,21,3
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0

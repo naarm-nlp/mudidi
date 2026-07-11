@@ -1,0 +1,159 @@
+version: 1
+kind: benchmark_sweep
+name: stage1-full-benchmark
+
+# Provenance: complete 30-language experiment slots found under
+# outputs/benchmark/stage-1. One-off agentic/debug slots are intentionally omitted.
+base:
+  version: 1
+  kind: benchmark_run
+
+  input:
+    dataset_dir: ../../../dataset/MUDIDI/dictionaries
+    languages:
+      - Canala-English
+      - Chepang-English
+      - Efik-English
+      - Na-English-Chinese-French
+      - Reel-English
+      - Ritharngu-English
+      - Shilluk-English
+      - Evenki-Russian
+      - Chukchi-Russian
+      - Circassian-English-Turkish
+      - Nahuatl-French
+      - Khmer-English
+      - Malay-English
+      - Kashmiri-English
+      - Greek-English
+      - Telugu-English
+      - Iñupiatun Eskimo-English
+      - Vernacular Syriac-Kurdish_Turkish-English
+      - Syriac-English
+      - Tiri-English
+      - Thai-Russian
+      - Assyrian-English
+      - Yiddish-English
+      - Georgian-Russian
+      - Japanese-English
+      - Punjabi-English
+      - Gujarati-English
+      - Gojri-English-Hindi
+      - Bengalese-English
+      - Sanskrit-English
+
+  output:
+    directory: ../../../outputs/benchmark/stage-1
+
+  pipeline:
+    stage: "1"
+    strategy: two_stage
+    stage1_mode: flat
+
+  models:
+    stage1_reasoning: low
+
+  runtime:
+    use_alphabet: true
+    use_ocr_hint: false
+    use_introduction: false
+    one_page_per_entry: false
+
+# Explicit experiments are used because this benchmark combines LLM, Mathpix,
+# and three local VLM backends rather than one homogeneous Cartesian product.
+# Mathpix runs first so its Markdown can feed gemini31pro_flat_alpha_ocr.
+experiments:
+  - id: Mathpix-OCR
+    set:
+      pipeline.strategy: mathpix_ocr
+      runtime.use_alphabet: false
+
+  - id: gemini3flash_flat_alpha
+    set:
+      models.stage1: gemini/gemini-3-flash-preview
+      runtime.use_alphabet: true
+
+  - id: gemini3flash_flat_noalpha
+    set:
+      models.stage1: gemini/gemini-3-flash-preview
+      runtime.use_alphabet: false
+
+  - id: gemini31pro_flat_alpha
+    set:
+      models.stage1: gemini/gemini-3.1-pro-preview
+      runtime.use_alphabet: true
+
+  - id: gemini31pro_flat_noalpha
+    set:
+      models.stage1: gemini/gemini-3.1-pro-preview
+      runtime.use_alphabet: false
+
+  - id: gemini31pro_flat_alpha_ocr
+    set:
+      models.stage1: gemini/gemini-3.1-pro-preview
+      runtime.use_alphabet: true
+      runtime.use_ocr_hint: true
+      runtime.ocr_hint_experiment: Mathpix-OCR
+
+  - id: gpt55_flat_alpha
+    set:
+      models.stage1: openrouter/openai/gpt-5.5
+      runtime.use_alphabet: true
+
+  - id: gpt55_flat_noalpha
+    set:
+      models.stage1: openrouter/openai/gpt-5.5
+      runtime.use_alphabet: false
+
+  - id: claudeopus47_flat_alpha
+    set:
+      models.stage1: openrouter/anthropic/claude-opus-4.7
+      runtime.use_alphabet: true
+
+  - id: claudeopus47_flat_noalpha
+    set:
+      models.stage1: openrouter/anthropic/claude-opus-4.7
+      runtime.use_alphabet: false
+
+  - id: qwen3vl235_flat_alpha
+    set:
+      models.stage1: openrouter/qwen/qwen3-vl-235b-a22b-instruct
+      runtime.use_alphabet: true
+
+  - id: qwen3vl235_flat_noalpha
+    set:
+      models.stage1: openrouter/qwen/qwen3-vl-235b-a22b-instruct
+      runtime.use_alphabet: false
+
+  - id: MinerU2.5-Pro
+    set:
+      pipeline.strategy: vlm_ocr
+      vlm.model: mineru2.5-pro
+      runtime.use_alphabet: false
+
+  - id: PaddleOCR-VL-1.5
+    set:
+      pipeline.strategy: vlm_ocr
+      vlm.model: paddleocr-vl-1.5
+      runtime.use_alphabet: false
+      vlm.paddle_auto_server: false
+
+  - id: GLM-OCR-flat_alpha
+    set:
+      pipeline.strategy: vlm_ocr
+      vlm.model: glm-ocr
+      runtime.use_alphabet: true
+      vlm.glm_backend: transformers
+      vlm.glm_auto_server: false
+
+  - id: GLM-OCR-flat_noalpha
+    set:
+      pipeline.strategy: vlm_ocr
+      vlm.model: glm-ocr
+      runtime.use_alphabet: false
+      vlm.glm_backend: transformers
+      vlm.glm_auto_server: false
+
+sweep:
+  max_runs: 20
+  failure_policy: continue

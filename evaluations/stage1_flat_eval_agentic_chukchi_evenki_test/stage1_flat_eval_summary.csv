@@ -1,3 +1,0 @@
-experiment,language,alphabet,ocr-hint,page_count,TextEdit,GCER,WER,typography_f1,ReadOrderEdit
-gemini35flash_flat_alpha_agentic,Chukchi-Russian,true,false,3,0.018508,0.017857,0.116402,1.0,0.0
-gemini35flash_flat_alpha_agentic,Evenki-Russian,true,false,3,0.022052,0.020017,0.112917,0.9695,0.0

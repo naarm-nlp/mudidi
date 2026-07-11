@@ -451,13 +451,13 @@ class MdfEvaluator:
     @staticmethod
     def _language_script_metric_row(quality: CharacterQualityMetrics) -> dict:
         return {
+            "gold_word_count": quality.total_words_gold,
+            "gold_grapheme_count": quality.total_graphemes_gold,
             "GCER": round(quality.gcer, 6),
             "WER": round(quality.wer, 6),
             "TextEdit": round(quality.text_edit, 6),
-            "total_graphemes_gold": quality.total_graphemes_gold,
             "total_graphemes_pred": quality.total_graphemes_pred,
             "total_grapheme_edits": quality.total_grapheme_edits,
-            "total_words_gold": quality.total_words_gold,
             "total_word_edits": quality.total_word_edits,
         }
 
@@ -636,13 +636,13 @@ class MdfEvaluator:
             "language",
             "page",
             "language_script",
+            "gold_word_count",
+            "gold_grapheme_count",
             "GCER",
             "WER",
             "TextEdit",
-            "total_graphemes_gold",
             "total_graphemes_pred",
             "total_grapheme_edits",
-            "total_words_gold",
             "total_word_edits",
         ]
         rows = [
@@ -666,6 +666,8 @@ class MdfEvaluator:
             "experiment",
             "language",
             "language_script",
+            "gold_word_count",
+            "gold_grapheme_count",
             "GCER",
             "WER",
             "TextEdit",
@@ -679,14 +681,17 @@ class MdfEvaluator:
                     grouped[(language, language_script)].append(quality)
             for (language, language_script), qualities in sorted(grouped.items()):
                 merged = merge_character_quality(qualities)
+                metric_row = self._language_script_metric_row(merged)
                 rows.append(
                     {
                         "experiment": exp,
                         "language": language,
                         "language_script": language_script,
-                        "GCER": round(merged.gcer, 6),
-                        "WER": round(merged.wer, 6),
-                        "TextEdit": round(merged.text_edit, 6),
+                        "gold_word_count": metric_row["gold_word_count"],
+                        "gold_grapheme_count": metric_row["gold_grapheme_count"],
+                        "GCER": metric_row["GCER"],
+                        "WER": metric_row["WER"],
+                        "TextEdit": metric_row["TextEdit"],
                     }
                 )
 

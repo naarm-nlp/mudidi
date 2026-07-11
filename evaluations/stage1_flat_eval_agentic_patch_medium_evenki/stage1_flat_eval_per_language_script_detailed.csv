@@ -1,7 +1,0 @@
-experiment,language,page,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits,precision,recall,f1
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_1,Evenki-Cyrillic,0.01092,0.06422,0.01092,641,641,7,109,7,0.9891,0.9891,0.9891
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_1,Russian-Cyrillic,0.011065,0.053846,0.011065,723,723,8,130,7,0.9889,0.9889,0.9889
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_2,Evenki-Cyrillic,0.022222,0.127273,0.022222,675,675,15,110,14,0.9778,0.9778,0.9778
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_2,Russian-Cyrillic,0.079511,0.568182,0.079511,654,654,52,88,50,0.922,0.922,0.922
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_3,Evenki-Cyrillic,0.065546,0.39759,0.065546,595,595,39,83,33,0.9345,0.9345,0.9345
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,page_3,Russian-Cyrillic,0.095294,0.57554,0.095294,850,850,81,139,80,0.9047,0.9047,0.9047

@@ -1,6 +1,0 @@
-experiment,language,language_script,GCER,WER,TextEdit
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Chinese-Han,0.185897,0.142857,0.105263
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,English-Latin,0.164122,0.560976,0.291694
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,French-Latin,0.084525,0.142857,0.029928
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Na-IPA,0.040359,0.269231,0.075458
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Na-Latin,0.0,0.0,0.0

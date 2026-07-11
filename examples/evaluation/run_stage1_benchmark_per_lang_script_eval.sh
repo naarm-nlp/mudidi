@@ -93,7 +93,7 @@ if [[ "${#LANGUAGES[@]}" -gt 0 ]]; then
     EVAL_ARGS+=( --languages "${LANGUAGES[@]}" )
 fi
 
-uv run mudidi eval stage1 "${EVAL_ARGS[@]}"
+uv run mudidi benchmark evaluate stage1 "${EVAL_ARGS[@]}"
 
 echo ""
 echo "General summary:       ${OUTPUT_DIR}/stage1_flat_eval_summary.csv"

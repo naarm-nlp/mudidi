@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import re
+import shutil
 import subprocess
 import threading
 import time
@@ -29,7 +30,7 @@ from mudidi.evaluation.stage2.mdf_evaluator import MdfEvaluator
 from mudidi.evaluation.stage1.flat_evaluator import FlatStage1Evaluator
 from mudidi.paths import PARSE_RULES_FILENAME, PARSE_RULES_USAGE_FILENAME
 from mudidi.extraction.sample_entry import (
-    configure_sample_entry_args,
+    configure_benchmark_entry_args,
     report_entry_input_failures,
     stage1_context_inputs_apply,
     validate_configured_sample_entry,
@@ -308,7 +309,7 @@ _STRATEGIES = {
     "two_stage": TwoStageLLMExtraction,
 }
 
-_STRATEGY_CHOICES = list(_STRATEGIES.keys()) + ["vlm_ocr"]
+_STRATEGY_CHOICES = list(_STRATEGIES.keys()) + ["vlm_ocr", "mathpix_ocr"]
 
 _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 _PDF_EXTS = {".pdf"}
@@ -593,7 +594,11 @@ def _per_page_inputs_stage2(
 
 
 def _write_run_config(
-    target_dir: Path, manifest: Dict[str, Any], *, force: bool
+    target_dir: Path,
+    manifest: Dict[str, Any],
+    *,
+    force: bool,
+    resolved_config: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Write a run_config.json into ``target_dir`` honoring the resume guard.
 
@@ -612,6 +617,13 @@ def _write_run_config(
     path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+    if resolved_config is not None:
+        resolved_path = target_dir / "resolved_config.json"
+        if force or not resolved_path.exists():
+            resolved_path.write_text(
+                json.dumps(resolved_config, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
 
 
 def _build_stage1_manifest(
@@ -787,15 +799,22 @@ def _build_strategy(
             stage1_typography=bool(getattr(args, "stage1_typography", False)),
             stage1_agentic=bool(getattr(args, "stage1_agentic", False)),
             stage2_agentic=bool(getattr(args, "stage2_agentic", False)),
-            stage1_agentic_patch_verifier=bool(
-                getattr(args, "stage1_agentic_patch_verifier", False)
-            ),
             agentic_max_iterations=int(
                 getattr(args, "agentic_max_iterations", 2) or 0
             ),
             agentic_evaluator_model=getattr(args, "agentic_evaluator_model", None),
             agentic_rewriter_model=getattr(args, "agentic_rewriter_model", None),
             agentic_reasoning_effort=getattr(args, "agentic_reasoning_effort", "low"),
+            agentic_evaluator_reasoning_effort=getattr(
+                args,
+                "agentic_evaluator_reasoning_effort",
+                None,
+            ),
+            agentic_rewriter_reasoning_effort=getattr(
+                args,
+                "agentic_rewriter_reasoning_effort",
+                None,
+            ),
             agentic_min_retry_confidence=float(
                 getattr(args, "agentic_min_retry_confidence", 0.55)
             ),
@@ -804,9 +823,6 @@ def _build_strategy(
                 "no_agentic_concrete_retry_gate",
                 False,
             ),
-            agentic_max_rewrite_delta_ratio=float(
-                getattr(args, "agentic_max_rewrite_delta_ratio", 0.75)
-            ),
             agentic_prefer_verifier_patches=not getattr(
                 args,
                 "no_agentic_verifier_patches",
@@ -814,6 +830,9 @@ def _build_strategy(
             ),
             agentic_max_patches_per_attempt=int(
                 getattr(args, "agentic_max_patches_per_attempt", 16)
+            ),
+            agentic_catastrophic_recovery=bool(
+                getattr(args, "agentic_catastrophic_recovery", False)
             ),
         )
     raise ValueError(f"Unknown strategy: {args.strategy}")
@@ -896,7 +915,7 @@ def _prepare_parse_rules_samples(
 # ---------------------------------------------------------------------------
 
 
-def main():
+def main(*, resolved_args: argparse.Namespace | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Batch-extract dictionary entries from a directory of page images.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1280,9 +1299,9 @@ Examples:
     parser.add_argument(
         "--stage1-mode",
         choices=["column", "flat"],
-        default="column",
+        default="flat",
         help="Stage-1 *write* format for two_stage when running stage 1 or all: "
-        "column TSV (default) or flat text (eval-flat).",
+        "flat text (default) or column TSV (deprecated).",
     )
     parser.add_argument(
         "--prompts-file",
@@ -1440,13 +1459,6 @@ Examples:
         "loop before saving the final MDF artifact.",
     )
     parser.add_argument(
-        "--stage1-agentic-patch-verifier",
-        action="store_true",
-        dest="stage1_agentic_patch_verifier",
-        help="For Stage 1 agentic mode, use a patch-only verifier schema that "
-        "can only request exact line-local text replacements.",
-    )
-    parser.add_argument(
         "--agentic-max-iterations",
         type=int,
         default=2,
@@ -1475,20 +1487,28 @@ Examples:
         "(default: low).",
     )
     parser.add_argument(
+        "--agentic-evaluator-reasoning",
+        choices=["none", "low", "medium", "high"],
+        default=None,
+        dest="agentic_evaluator_reasoning_effort",
+        help="Reasoning effort for agentic verifier/evaluator calls. Defaults "
+        "to --agentic-reasoning when omitted.",
+    )
+    parser.add_argument(
+        "--agentic-rewriter-reasoning",
+        choices=["none", "low", "medium", "high"],
+        default=None,
+        dest="agentic_rewriter_reasoning_effort",
+        help="Reasoning effort for agentic correction/rewrite calls. Defaults "
+        "to --agentic-reasoning when omitted.",
+    )
+    parser.add_argument(
         "--agentic-min-retry-confidence",
         type=float,
         default=0.55,
         dest="agentic_min_retry_confidence",
         help="Minimum verifier confidence required before a retry can rewrite "
         "(default: 0.55).",
-    )
-    parser.add_argument(
-        "--agentic-max-rewrite-delta-ratio",
-        type=float,
-        default=0.75,
-        dest="agentic_max_rewrite_delta_ratio",
-        help="Reject a correction attempt when normalized text delta is larger "
-        "than this ratio (default: 0.75).",
     )
     parser.add_argument(
         "--agentic-max-patches-per-attempt",
@@ -1512,8 +1532,16 @@ Examples:
         help="Allow retry decisions without localized evidence. Useful only for "
         "ablation; the default gate is safer.",
     )
+    parser.add_argument(
+        "--agentic-catastrophic-recovery",
+        action="store_true",
+        dest="agentic_catastrophic_recovery",
+        help="When Stage 1 agentic verifier detects wrong-page or whole-page "
+        "corruption, discard the transcript and re-transcribe the entire page "
+        "from the image (decision=recover).",
+    )
 
-    args = parser.parse_args()
+    args = resolved_args if resolved_args is not None else parser.parse_args()
     attach_stage_models(args)
 
     if getattr(args, "pages", None):
@@ -1544,8 +1572,14 @@ Examples:
 
     _normalize_experiment_names(args, parser)
 
-    if args.stage1_mode == "flat" and args.strategy not in ("two_stage",):
-        parser.error("--stage1-mode flat requires --strategy two_stage")
+    if args.stage1_mode == "flat" and args.strategy not in (
+        "two_stage",
+        "vlm_ocr",
+        "mathpix_ocr",
+    ):
+        parser.error(
+            "--stage1-mode flat requires two_stage, vlm_ocr, or mathpix_ocr"
+        )
 
     if getattr(args, "batch_size", 1) < 1:
         parser.error("--batch-size must be >= 1")
@@ -1617,6 +1651,43 @@ Examples:
                 "unless --samples-dir is used."
             )
         return _run_single_entry_vlm(args, parser)
+
+    if args.strategy == "mathpix_ocr":
+        from mudidi.extraction.mathpix_ocr import (
+            run_mathpix_ocr_batch,
+            run_mathpix_ocr_entry,
+        )
+        from mudidi.ocr.mathpix_convert import MathpixConvertClient, MathpixConvertError
+
+        if args.samples_dir:
+            samples_root = Path(args.samples_dir)
+            if not samples_root.is_dir():
+                parser.error(f"--samples-dir must be a directory: {samples_root}")
+            try:
+                entries = _discover_sample_entries(samples_root, args.languages)
+            except ValueError as exc:
+                parser.error(str(exc))
+            return run_mathpix_ocr_batch(args, entries)
+        if not args.input_image or not args.output:
+            parser.error(
+                "--input-image and --output are required for mathpix_ocr "
+                "unless --samples-dir is used."
+            )
+        try:
+            client = MathpixConvertClient(
+                poll_interval_seconds=args.mathpix_poll_interval_seconds,
+                max_wait_seconds=args.mathpix_max_wait_seconds,
+                request_timeout_seconds=args.mathpix_request_timeout_seconds,
+            )
+        except MathpixConvertError as exc:
+            print(exc)
+            return 1
+        return run_mathpix_ocr_entry(
+            args,
+            Path(args.input_image),
+            Path(args.output),
+            client=client,
+        )
 
     if args.samples_dir:
         return _run_samples_dir(args, parser)
@@ -1844,21 +1915,52 @@ def _run_samples_dir(args, parser) -> int:
     )
 
     any_failure = False
+    attempted = 0
+    configured_output_root = Path(args.output)
     for entry_dir in entries:
-        snippets_dir = entry_dir / "snippets"
-        if not snippets_dir.is_dir():
-            print(f"[skip] {entry_dir.name}: no snippets/ folder")
+        pages_dir, _ = configure_benchmark_entry_args(
+            args, entry_dir, configured_output_root
+        )
+        if not pages_dir.is_dir():
+            print(
+                f"[skip] {entry_dir.name}: no snippets/ or Dictionary pages/ folder"
+            )
             continue
 
-        configure_sample_entry_args(args, entry_dir)
+        predictions_root = getattr(args, "stage1_predictions_root", None)
+        if predictions_root:
+            source_slot = (
+                Path(predictions_root)
+                / entry_dir.name
+                / args.stage1_output_subdir
+                / args.experiment_name
+            )
+            destination_slot = (
+                Path(args.output)
+                / args.stage1_output_subdir
+                / args.experiment_name
+            )
+            if not source_slot.is_dir():
+                print(
+                    f"[failed] {entry_dir.name}: missing Stage 1 prediction slot "
+                    f"{source_slot}"
+                )
+                any_failure = True
+                continue
+            if source_slot.resolve() != destination_slot.resolve():
+                shutil.copytree(source_slot, destination_slot, dirs_exist_ok=True)
 
         print("\n" + "#" * 60)
         print(f"# Entry: {entry_dir.name}")
         print("#" * 60)
+        attempted += 1
         rc = _run_single_entry(args, parser)
         if rc != 0:
             any_failure = True
 
+    if attempted == 0:
+        print(f"No runnable entries found under {samples_root}")
+        return 1
     return 1 if any_failure else 0
 
 
@@ -1886,6 +1988,11 @@ def _run_single_entry(args, parser) -> int:
     # ── Output dir (set up early so we can cache rendered PDF pages) ──────────
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
+    resolved_config = getattr(args, "resolved_config_snapshot", None)
+    if resolved_config is not None:
+        resolved_config = json.loads(json.dumps(resolved_config))
+        resolved_config["input"]["pages"] = str(input_path.resolve())
+        resolved_config["output"]["directory"] = str(output_dir.resolve())
     run_config = RunConfig.from_namespace(args)
     layout = output_layout_from_config(run_config)
     stage1_dir = layout.stage1_root
@@ -2045,6 +2152,7 @@ def _run_single_entry(args, parser) -> int:
                     else None,
                 ),
                 force=args.overwrite,
+                resolved_config=resolved_config,
             )
             _write_run_usage(
                 output_dir,
@@ -2137,6 +2245,7 @@ def _run_single_entry(args, parser) -> int:
                 stage1_dir,
                 _build_stage1_manifest(args, input_dir, images, ocr_dir),
                 force=args.overwrite,
+                resolved_config=resolved_config,
             )
         if runs_stage2_any(args.stage):
             _write_run_config(
@@ -2152,6 +2261,7 @@ def _run_single_entry(args, parser) -> int:
                     else None,
                 ),
                 force=args.overwrite,
+                resolved_config=resolved_config,
             )
     print("=" * 60)
 

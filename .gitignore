@@ -20,6 +20,7 @@ build/
 .ruff_cache/
 .coverage
 htmlcov/
+site/
 
 # Logs and local run artifacts
 logs/
@@ -35,6 +36,8 @@ CLAUDE.md
 .*
 !.gitignore
 !.env.example
+!.github/
+!.github/**
 
 # Label Studio workspaces and renders (regenerate locally)
 label-studio/workspaces/
@@ -77,3 +80,5 @@ dataset/
 examples-dev/
 CLAUDE.md
 dictionaries/
+tmp
+experiment-results

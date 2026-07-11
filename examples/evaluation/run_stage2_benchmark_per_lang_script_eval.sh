@@ -60,7 +60,7 @@ else
     EVAL_ARGS+=(--all-experiments)
 fi
 
-uv run mudidi eval stage2 "${EVAL_ARGS[@]}" "$@"
+uv run mudidi benchmark evaluate stage2 "${EVAL_ARGS[@]}" "$@"
 
 echo ""
 echo "Summary:                      ${OUTPUT_DIR}/stage2_mdf_eval_summary.csv"

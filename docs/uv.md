@@ -2,7 +2,7 @@
 
 This project is managed entirely with [`uv`](https://docs.astral.sh/uv/). Do not invoke `pip` or bare `python` for project work — console scripts and locked dependencies only resolve through the project virtualenv (`.venv/`).
 
-**Python 3.10+** is required. On first `uv sync`, uv uses a suitable interpreter on your `PATH` or downloads one automatically.
+**Python 3.11+** is required. On first `uv sync`, uv uses a suitable interpreter on your `PATH` or downloads one automatically.
 
 ## First time on a new machine
 
@@ -16,6 +16,7 @@ Optional dependency groups:
 
 ```bash
 uv sync --extra dev                  # pytest (for running tests)
+uv sync --extra docs                 # MkDocs Material + mkdocstrings
 uv sync --extra paddle               # paddlepaddle + paddleocr in main .venv (lightweight OCR only)
 ```
 
@@ -34,25 +35,25 @@ mudidi run --help
 
 Always commit `uv.lock` alongside `pyproject.toml` so collaborators get an identical environment.
 
-## CLI entry points
+## CLI entry point
 
-The primary interface is the unified `mudidi` command. Legacy standalone scripts remain for shell sweeps and backwards compatibility.
+The public interface is the unified `mudidi` command.
 
 | Command | Purpose |
 | --- | --- |
-| `mudidi run` | Stage 1 / Stage 2 extraction (inference or `--benchmark`) |
-| `mudidi eval stage1` | Stage 1 flat evaluation vs gold |
-| `mudidi eval stage2` | Stage 2 MDF evaluation vs gold |
-| `mudidi-eval-flat` | Same as `mudidi eval stage1` |
-| `mudidi-eval-stage2-mdf` | Same as `mudidi eval stage2` |
+| `mudidi run` | Production Stage 1 / Stage 2 inference |
+| `mudidi benchmark run` | Benchmark extraction |
+| `mudidi benchmark evaluate stage1` | Stage 1 evaluation |
+| `mudidi benchmark evaluate stage2` | Stage 2 evaluation |
+| `mudidi config validate` | Offline YAML validation |
 
 ```bash
 uv run mudidi run --help
-uv run mudidi eval stage1 --help     # dispatches to mudidi-eval-flat
-uv run mudidi eval stage2 --help     # dispatches to mudidi-eval-stage2-mdf
+uv run mudidi benchmark run --help
+uv run mudidi benchmark evaluate stage1 --help
 ```
 
-**Renamed from older docs:** `mudidi-extract` → `mudidi run`. There is no `mudidi-evaluate` in current releases (legacy TSV eval was removed).
+See the [CLI migration guide](development/cli-migration.md) for removed command names.
 
 ### Inference (new dictionary)
 
@@ -60,15 +61,12 @@ uv run mudidi eval stage2 --help     # dispatches to mudidi-eval-stage2-mdf
 uv run mudidi run \
   --pages my-dict/snippets \
   --output-dir my-dict/outputs \
-  --stage all \
-  --stage-1-model gemini/gemini-3-flash-preview \
-  --stage-2-pass-1-model gemini/gemini-3.1-pro-preview \
-  --stage-2-pass-2-model gemini/gemini-3.1-pro-preview
+  --dry-run
 ```
 
 ### Benchmark dataset (HF layout)
 
-Download the gated dataset to `dataset/mudidi/`, then use the public examples:
+Download the gated dataset to `dataset/MUDIDI/`, then use the public examples:
 
 ```bash
 bash examples/inference/run_directory_mode.sh
@@ -76,7 +74,7 @@ bash examples/evaluation/run_stage1_eval.sh
 bash examples/evaluation/run_stage2_eval.sh
 ```
 
-See [`examples/README.md`](../examples/README.md) for PDF mode, env overrides, and the full workflow.
+See the repository's `examples/README.md` for PDF mode, env overrides, and the full workflow.
 
 ## Ad-hoc scripts
 

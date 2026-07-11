@@ -1,0 +1,21 @@
+version: 1
+kind: inference
+
+input:
+  pages: ../../../inputs/Carolinian-English-Dictionary.pdf
+  dictionary_pages: 50-52
+  introduction_pages: 1-3
+
+output:
+  directory: ../../../outputs/carolinian-english
+
+pipeline:
+  stage: all
+  stage1_mode: flat
+  parse_rules_pages: ["50"]
+
+models:
+  default: gemini/gemini-3-flash-preview
+  stage2_pass1: gemini/gemini-3.1-pro-preview
+  stage2_pass2: gemini/gemini-3.1-pro-preview
+  stage2_reasoning: high

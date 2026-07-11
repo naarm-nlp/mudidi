@@ -1,3 +1,0 @@
-experiment,language,language_script,GCER,WER,TextEdit,precision,recall,f1
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,Evenki-Cyrillic,0.03192,0.178808,0.03192,0.9681,0.9681,0.9681
-gemini35flash_flat_alpha_agentic_patch_medium_12k,Evenki-Russian,Russian-Cyrillic,0.063314,0.383754,0.063314,0.9371,0.9371,0.9371

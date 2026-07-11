@@ -8,15 +8,5 @@
 # Usage (from repo root): bash examples/inference/run_pdf_mode.sh
 
 uv run mudidi run \
-  --pages inputs/Carolinian-English-Dictionary.pdf \
-  --dict-pages 50-52 \
-  --intro-pages 1-3 \
-  --parse-rules-page 50 \
-  --output-dir outputs/carolinian-english \
-  --stage all \
-  --strategy two_stage \
-  --stage1-mode flat \
-  --stage-1-model gemini/gemini-3-flash-preview \
-  --stage-2-pass-1-model gemini/gemini-3.1-pro-preview \
-  --stage-2-pass-2-model gemini/gemini-3.1-pro-preview \
-  --stage2-reasoning high
+  --config examples/configs/production/pdf-inference.yaml \
+  "$@"

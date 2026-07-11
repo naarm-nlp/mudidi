@@ -26,12 +26,10 @@ from mudidi.utils.image import (
     model_supports_pdf_input,
 )
 from mudidi.utils.mdf_export import normalize_mdf_text
-from mudidi.llm.prompts import (
-    format_current_page_block,
-    page_boundary_rules_prompt,
-)
+from mudidi.llm.prompts import page_boundary_rules_prompt
 from mudidi.utils.page_context import (
     PageContext,
+    format_current_page_block,
     format_neighbor_text_block,
     format_page_image_order_note,
 )

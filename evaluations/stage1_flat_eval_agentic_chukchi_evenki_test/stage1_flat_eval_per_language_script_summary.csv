@@ -1,5 +1,0 @@
-experiment,language,language_script,GCER,WER,TextEdit,precision,recall,f1
-gemini35flash_flat_alpha_agentic,Chukchi-Russian,Chukchi-Cyrillic Extended,0.041333,0.240741,0.041223,0.9628,0.9653,0.964
-gemini35flash_flat_alpha_agentic,Chukchi-Russian,Russian-Cyrillic,0.011765,0.072,0.011765,0.9882,0.9882,0.9882
-gemini35flash_flat_alpha_agentic,Evenki-Russian,Evenki-Cyrillic,0.030874,0.175497,0.030874,0.9696,0.9691,0.9694
-gemini35flash_flat_alpha_agentic,Evenki-Russian,Russian-Cyrillic,0.033229,0.201681,0.033214,0.9668,0.9672,0.967

@@ -1,2 +1,0 @@
-experiment,language,alphabet,ocr-hint,page_count,TextEdit,GCER,WER,typography_f1,ReadOrderEdit
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,Chukchi-Russian,true,false,3,0.025848,0.026968,0.137566,1.0,0.0

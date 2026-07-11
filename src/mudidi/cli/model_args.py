@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import warnings
 from dataclasses import dataclass
-from typing import Sequence
 
 DEFAULT_MODEL = "gemini/gemini-3-flash-preview"
 

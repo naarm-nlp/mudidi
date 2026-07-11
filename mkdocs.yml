@@ -1,0 +1,56 @@
+site_name: MUDIDI
+site_description: Multilingual dictionary digitization with language models
+site_url: https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/
+repo_url: https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary
+repo_name: DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: false
+            heading_level: 2
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: .
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - YAML configuration: getting-started/configuration.md
+      - uv environments: uv.md
+  - Production Inference:
+      - Overview: production/index.md
+      - Directory input: production/directory.md
+      - PDF input: production/pdf.md
+      - Stages and agentic retries: production/stages-agentic.md
+      - Outputs: production/outputs.md
+  - Benchmarking & Evaluation:
+      - Overview: benchmarking/index.md
+      - Extraction: benchmarking/extraction.md
+      - Evaluation: benchmarking/evaluation.md
+      - Advanced VLM backends: benchmarking/vlm.md
+  - Concepts:
+      - Pipeline: concepts/pipeline.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration schema: reference/config.md
+      - Python API: reference/python-api.md
+  - Development:
+      - Architecture: development/architecture.md
+      - Public docs deployment: development/pages.md
+      - CLI migration: development/cli-migration.md

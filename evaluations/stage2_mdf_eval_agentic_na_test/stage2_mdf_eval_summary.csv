@@ -1,2 +1,0 @@
-experiment,language,page,Record_Accuracy,MDF_Fields_F1,ReadOrderEdit,Field_Value_GCER,Field_Value_WER,Headword_GCER,Gloss_GCER,source_na_GCER,source_na_WER,target_en_GCER,target_en_WER,target_fr_GCER,target_fr_WER,target_zh_GCER,target_zh_WER
-gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,1.0,0.6,0.0,0.126016,0.216387,0.044118,0.112385,0.146789,0.5,0.120623,0.185185,0.104839,0.165746,0.10625,0.285714

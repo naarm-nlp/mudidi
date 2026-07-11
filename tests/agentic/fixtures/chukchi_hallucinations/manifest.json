@@ -1,0 +1,89 @@
+{
+  "dictionary": "Chukchi-Russian",
+  "notes": [
+    "Synthetic bad Stage 1 outputs for agentic hallucination evaluation.",
+    "Typography tags are intentionally absent from fixtures.",
+    "OCR hint is intentionally disabled by the test harness."
+  ],
+  "cases": [
+    {
+      "id": "page_3_localized",
+      "page": "page_3",
+      "fixture": "page_3_localized.txt",
+      "gold": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Stage 1 Gold OCR/page_3/page_3_stage1_GOLD_flat.txt",
+      "image": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Dictionary pages/page_3.png",
+      "expected_path": "localized_retry",
+      "forbidden_markers": [
+        "HALLUCINATED_METADATA",
+        "аркычетыХ",
+        "несуществу́ющий при́знак",
+        "вы́мышленный смысл"
+      ],
+      "fixture_markers": [
+        "атӄатык хрома́ть\nатӄатык хрома́ть"
+      ],
+      "gold_required_tokens": [
+        "апԓёратвака",
+        "аркычеты",
+        "атӄэԓгын",
+        "ачыӈык"
+      ]
+    },
+    {
+      "id": "page_3_semantic_overwrite",
+      "page": "page_3",
+      "fixture": "page_3_semantic_overwrite.txt",
+      "gold": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Stage 1 Gold OCR/page_3/page_3_stage1_GOLD_flat.txt",
+      "image": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Dictionary pages/page_3.png",
+      "expected_path": "llm_rewrite",
+      "forbidden_markers": [
+        "СЛОВАРНАЯ СТРАНИЦА 3",
+        "спустя короткий промежуток времени",
+        "сильный человек",
+        "ачьэӄты воображаемая птица из словарной памяти"
+      ],
+      "fixture_markers": [
+        "СЛОВАРНАЯ СТРАНИЦА 3",
+        "ачьэӄты воображаемая птица из словарной памяти",
+        "апԓёратвака немного позже"
+      ],
+      "must_remove_markers": [
+        "СЛОВАРНАЯ СТРАНИЦА 3",
+        "ачьэӄты воображаемая птица из словарной памяти"
+      ],
+      "gold_required_tokens": [
+        "апԓёратвака",
+        "аркычеты",
+        "атӄэԓгын",
+        "ачыӈык",
+        "ачьэӄ"
+      ]
+    },
+    {
+      "id": "page_48_catastrophic",
+      "page": "page_48",
+      "fixture": "page_48_catastrophic.txt",
+      "gold": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Stage 1 Gold OCR/page_48/page_48_stage1_GOLD_flat.txt",
+      "image": "dataset/MUDIDI/dictionaries/Chukchi-Russian/Dictionary pages/page_48.png",
+      "expected_path": "recover",
+      "forbidden_markers": [
+        "ХАЛЛЮЦИНИРОВАННАЯ_СТРОКА",
+        "анъалёк",
+        "рытгырԓын",
+        "OCR_ENGINE_SUMMARY",
+        "апԓёратвака"
+      ],
+      "fixture_markers": [
+        "апԓёратвака",
+        "ХАЛЛЮЦИНИРОВАННАЯ_СТРОКА",
+        "OCR_ENGINE_SUMMARY"
+      ],
+      "gold_required_tokens": [
+        "айгоон",
+        "айкоԓ",
+        "аквыӈ",
+        "аԓвагты"
+      ]
+    }
+  ]
+}

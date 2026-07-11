@@ -60,6 +60,56 @@ def configure_sample_entry_args(args: Any, entry_dir: Path) -> tuple[Path, Path]
     return snippets_dir, output_dir
 
 
+def configure_benchmark_entry_args(
+    args: Any,
+    entry_dir: Path,
+    output_root: Path,
+) -> tuple[Path, Path]:
+    """Discover either supported benchmark layout under one dictionary entry."""
+
+    pages_dir = entry_dir / "Dictionary pages"
+    if not pages_dir.is_dir():
+        pages_dir = entry_dir / "snippets"
+    output_dir = output_root / entry_dir.name
+    args.input_image = str(pages_dir)
+    args.output = str(output_dir)
+    args.entry_dir = str(entry_dir)
+
+    alphabet_candidates = (
+        entry_dir / "Alphabet list" / "alphabet.txt",
+        entry_dir / "alphabet.txt",
+    )
+    args.alphabet = None
+    if not getattr(args, "no_alphabet", False):
+        args.alphabet = next(
+            (str(path) for path in alphabet_candidates if path.is_file()),
+            None,
+        )
+
+    language_config = entry_dir / "dictionary_languages.yaml"
+    args.dictionary_languages = (
+        str(language_config) if language_config.is_file() else None
+    )
+    hint_experiment = getattr(args, "ocr_hint_experiment", None)
+    if hint_experiment and not getattr(args, "no_ocr_hint", False):
+        args.ocr_text = str(output_dir / "ocr-hints" / hint_experiment)
+    args.intro = None
+    if not getattr(args, "no_intro", False):
+        for name in (
+            "introduction",
+            "Introduction",
+            "intro",
+            "Intro",
+            "preface",
+            "Preface",
+        ):
+            candidate = entry_dir / name
+            if candidate.exists():
+                args.intro = str(candidate)
+                break
+    return pages_dir, output_dir
+
+
 def validate_alphabet_file(path: Path) -> list[str]:
     """Return validation errors for an alphabet file (empty list if OK)."""
     if not path.is_file():

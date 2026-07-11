@@ -135,8 +135,10 @@ def test_stage2_language_script_csvs_are_long_format(tmp_path: Path) -> None:
     assert not any(col.startswith("LangScript_") for col in overall_cols)
     assert overall_cols[:3] == ["experiment", "language", "page"]
     assert "page_id" not in overall_cols
-    assert "total_graphemes_gold" in detailed_cols
-    assert "total_graphemes_gold" not in summary_cols
+    assert "gold_grapheme_count" in detailed_cols
+    assert "gold_word_count" in detailed_cols
+    assert "gold_grapheme_count" in summary_cols
+    assert "gold_word_count" in summary_cols
     assert detailed_cols[:4] == ["experiment", "language", "page", "language_script"]
     assert summary_cols[:3] == ["experiment", "language", "language_script"]
     assert {(row["language"], row["page"], row["language_script"]) for row in detailed_rows} == {

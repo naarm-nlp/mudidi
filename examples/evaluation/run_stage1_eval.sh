@@ -3,7 +3,6 @@
 #
 # Usage (from repo root): bash examples/evaluation/run_stage1_eval.sh
 
-uv run mudidi eval stage1 \
-  -p outputs/evenki-russian/stage-1/page_1/page_1_stage1_flat.txt \
-  -g "dataset/mudidi/dictionaries/Evenki-Russian/Stage 1 Gold OCR/page_1/page_1_stage1_GOLD_flat.txt" \
-  -o outputs/evenki-russian/eval/stage1
+uv run mudidi benchmark evaluate stage1 \
+  --config examples/configs/benchmark/stage1-evaluation.yaml \
+  "$@"

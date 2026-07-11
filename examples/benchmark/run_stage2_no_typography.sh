@@ -139,7 +139,7 @@ run_stage2() {
         echo " Output dir:   ${output_dir}"
         echo "------------------------------------------------------------"
 
-        if ! uv run mudidi run \
+        if ! uv run python -m mudidi.cli.extract \
             --benchmark \
             --strategy two_stage \
             --stage 2 \

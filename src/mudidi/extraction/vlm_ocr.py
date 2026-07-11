@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from mudidi.extraction.sample_entry import (
-    configure_sample_entry_args,
+    configure_benchmark_entry_args,
     report_entry_input_failures,
     validate_configured_sample_entry,
 )
@@ -246,6 +246,7 @@ def run_vlm_ocr_batch(args: Any, entries: list[Path]) -> int:
     global_no_alphabet = getattr(args, "no_alphabet", False)
     saved_experiment_name = args.experiment_name
     saved_no_alphabet = global_no_alphabet
+    output_root = Path(args.output)
 
     paddle_server: Any = None
     glm_server: Any = None
@@ -296,7 +297,9 @@ def run_vlm_ocr_batch(args: Any, entries: list[Path]) -> int:
                     print("=" * 60)
 
                 for entry_dir in entries:
-                    snippets_dir, output_dir = configure_sample_entry_args(args, entry_dir)
+                    snippets_dir, output_dir = configure_benchmark_entry_args(
+                        args, entry_dir, output_root
+                    )
                     if not snippets_dir.is_dir():
                         print(f"[skip] {entry_dir.name}: no snippets/ folder")
                         continue

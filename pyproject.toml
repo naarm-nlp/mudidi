@@ -29,6 +29,10 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+docs = [
+    "mkdocs-material>=9.6",
+    "mkdocstrings[python]>=0.29",
+]
 paddle = [
     "paddlepaddle",
     "paddleocr",
@@ -36,8 +40,6 @@ paddle = [
 
 [project.scripts]
 mudidi = "mudidi.cli.main:main"
-mudidi-eval-flat = "mudidi.cli.evaluate_stage1:main"
-mudidi-eval-stage2-mdf = "mudidi.cli.evaluate_stage2_mdf:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mudidi"]

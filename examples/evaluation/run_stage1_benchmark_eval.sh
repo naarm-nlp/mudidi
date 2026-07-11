@@ -28,7 +28,7 @@ EVAL_ARGS=(
     "$@"
 )
 
-uv run mudidi eval stage1 "${EVAL_ARGS[@]}"
+uv run mudidi benchmark evaluate stage1 "${EVAL_ARGS[@]}"
 
 echo ""
 echo "Summary: ${OUTPUT_DIR}/stage1_flat_eval_summary.csv"

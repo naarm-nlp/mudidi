@@ -32,6 +32,7 @@ Stage 2 emits free-form MDF text (Pass 2) after marker discovery (Pass 1).
 
 import copy
 import json
+import os
 import re
 import threading
 import time
@@ -42,9 +43,7 @@ from pydantic import BaseModel
 
 from mudidi.agentic.verifier_loop import (
     AgenticLoopConfig,
-    AgenticPatchVerifierDecision,
     AgenticVerifierDecision,
-    patch_decision_to_verifier_decision,
     run_bounded_verifier_loop,
 )
 from mudidi.evaluation.stage2.mdf_parser import parse_mdf
@@ -75,14 +74,33 @@ from mudidi.llm import client as llm
 from mudidi.config.run_config import PromptMode
 from mudidi.llm.prompts import (
     stage_1_flat_system_prompt,
-    stage_1_neighbor_image_urls,
     stage_1_system_prompt,
     stage_1_user,
-    format_stage1_page_context_preamble,
 )
 from mudidi.utils.image import image_data_url, mime_type_for_path
 from mudidi.utils.io import read_docx_text
 from mudidi.utils.page_context import PageContext
+
+
+DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS = 12000
+AGENTIC_VERIFIER_MAX_TOKENS_ENV = "MUDIDI_AGENTIC_VERIFIER_MAX_TOKENS"
+AGENTIC_VERIFIER_MAX_TOKENS_ERROR = (
+    f"{AGENTIC_VERIFIER_MAX_TOKENS_ENV} must be a positive integer"
+)
+
+
+def _agentic_verifier_max_tokens() -> int:
+    """Resolve verifier output budget from env, with a production-safe default."""
+    raw = os.getenv(AGENTIC_VERIFIER_MAX_TOKENS_ENV)
+    if raw is None or not raw.strip():
+        return DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError(AGENTIC_VERIFIER_MAX_TOKENS_ERROR) from exc
+    if value < 1:
+        raise ValueError(AGENTIC_VERIFIER_MAX_TOKENS_ERROR)
+    return value
 
 
 def _stage1_response_schema(*, flat: bool, typography: bool) -> Type[BaseModel]:
@@ -242,8 +260,8 @@ def _transcription_to_tsv(result: TranscriptionResponse) -> str:
     return "\n".join(rows)
 
 
-def _stage1_verifier_system_prompt() -> str:
-    return (
+def _stage1_verifier_system_prompt(*, catastrophic_recovery_enabled: bool = False) -> str:
+    base = (
         "You are a conservative verifier for Stage 1 dictionary OCR. "
         "Judge whether the transcript faithfully copies the current page image. "
         "Do not reward interpretation or correction. Return only structured JSON "
@@ -256,6 +274,28 @@ def _stage1_verifier_system_prompt() -> str:
         "retry issue that asks for a text edit; if you cannot specify the exact "
         "span, do not request retry for that issue."
     )
+    if not catastrophic_recovery_enabled:
+        return base
+    return (
+        base
+        + " When the transcript is from the wrong page, largely hallucinated, or "
+        "too corrupted for localized fixes, use decision=recover instead of reject. "
+        "For recover, describe the catastrophic problem in issues with evidence "
+        "grounded in the page image; localized current_text/expected_text spans "
+        "are optional because the correction will re-transcribe the entire page."
+    )
+
+
+def _stage1_catastrophic_rewriter_system_prompt() -> str:
+    return (
+        "You are a Stage 1 dictionary OCR model performing a full-page "
+        "re-transcription. The previous transcript was catastrophically wrong "
+        "(wrong page, largely hallucinated, or too corrupted for localized fixes). "
+        "Discard the previous transcript entirely. Transcribe all visible text on "
+        "the page image from scratch. Use the page image as the sole authority. "
+        "Do not parse entries or assign MDF fields. Return only the requested "
+        "structured Stage 1 JSON."
+    )
 
 
 def _stage1_rewriter_system_prompt() -> str:
@@ -266,21 +306,6 @@ def _stage1_rewriter_system_prompt() -> str:
         "fields. Make the minimum necessary edit for each localized finding and "
         "leave unrelated lines unchanged. Return only the requested structured "
         "Stage 1 JSON."
-    )
-
-
-def _stage1_patch_verifier_system_prompt() -> str:
-    return (
-        "You are a conservative patch-only verifier for Stage 1 dictionary OCR. "
-        "Judge whether the current transcript faithfully copies the page image. "
-        "Return only structured JSON matching the schema. Use decision=accept "
-        "when the transcript is good enough. Use decision=retry only when every "
-        "requested correction can be expressed as an exact line-local patch: "
-        "line_index, old exact substring currently present on that line, new exact "
-        "replacement, patch confidence, and brief visual evidence. Do not propose "
-        "broad alphabet-wide substitutions or conceptual rewrites. If you are not "
-        "sure the exact old substring appears once on that exact line, do not patch "
-        "it. Use decision=reject only when correction is unsafe."
     )
 
 
@@ -302,10 +327,6 @@ def _stage2_verifier_system_prompt() -> str:
 
 def _grounding_tokens(text: str) -> list[str]:
     return [token.casefold() for token in re.findall(r"[\w'-]+", text, flags=re.UNICODE)]
-
-
-def _numbered_lines(text: str) -> str:
-    return "\n".join(f"{index}\t{line}" for index, line in enumerate(text.splitlines()))
 
 
 def _stage2_grounding_summary(transcribed_text: str, output: str) -> str:
@@ -452,16 +473,17 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage1_typography: bool = False,
         stage1_agentic: bool = False,
         stage2_agentic: bool = False,
-        stage1_agentic_patch_verifier: bool = False,
         agentic_max_iterations: int = 2,
         agentic_evaluator_model: Optional[str] = None,
         agentic_rewriter_model: Optional[str] = None,
         agentic_reasoning_effort: str = "low",
+        agentic_evaluator_reasoning_effort: Optional[str] = None,
+        agentic_rewriter_reasoning_effort: Optional[str] = None,
         agentic_min_retry_confidence: float = 0.55,
         agentic_require_concrete_retry_issue: bool = True,
-        agentic_max_rewrite_delta_ratio: float | None = 0.75,
         agentic_prefer_verifier_patches: bool = True,
         agentic_max_patches_per_attempt: int | None = 16,
+        agentic_catastrophic_recovery: bool = False,
     ):
         if stage1_mode not in ("column", "flat"):
             raise ValueError(f"stage1_mode must be 'column' or 'flat', got {stage1_mode!r}")
@@ -496,18 +518,28 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.stage1_typography = stage1_typography
         self.stage1_agentic = stage1_agentic
         self.stage2_agentic = stage2_agentic
-        self.stage1_agentic_patch_verifier = stage1_agentic_patch_verifier
+        self.agentic_catastrophic_recovery = agentic_catastrophic_recovery
         self.agentic_loop_config = AgenticLoopConfig(
             max_iterations=agentic_max_iterations,
             min_retry_confidence=agentic_min_retry_confidence,
             require_concrete_retry_issue=agentic_require_concrete_retry_issue,
-            max_rewrite_delta_ratio=agentic_max_rewrite_delta_ratio,
             prefer_verifier_patches=agentic_prefer_verifier_patches,
             max_patches_per_attempt=agentic_max_patches_per_attempt,
+            catastrophic_recovery_enabled=agentic_catastrophic_recovery,
         )
         self.agentic_evaluator_model = agentic_evaluator_model
         self.agentic_rewriter_model = agentic_rewriter_model
         self.agentic_reasoning_effort = agentic_reasoning_effort
+        self.agentic_evaluator_reasoning_effort = (
+            agentic_evaluator_reasoning_effort
+            if agentic_evaluator_reasoning_effort is not None
+            else agentic_reasoning_effort
+        )
+        self.agentic_rewriter_reasoning_effort = (
+            agentic_rewriter_reasoning_effort
+            if agentic_rewriter_reasoning_effort is not None
+            else agentic_reasoning_effort
+        )
         self._field_map_lock = threading.Lock()
         self._field_map: Optional[FieldMapPrompt] = None
 
@@ -739,14 +771,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             ocr_hint=ocr_hint,
             guides=self.stage1_guides,
         )
-        if self.prompt_mode == "inference" and page_context is not None:
-            preamble = format_stage1_page_context_preamble(page_context)
-            user_text = f"{preamble}\n\n{user_text}"
 
         content: list = [{"type": "text", "text": user_text}]
-        if self.prompt_mode == "inference" and page_context is not None:
-            for url in stage_1_neighbor_image_urls(page_context):
-                content.append({"type": "image_url", "image_url": {"url": url}})
         if alphabet_image_url:
             content.append(
                 {"type": "image_url", "image_url": {"url": alphabet_image_url}}
@@ -970,6 +996,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             return self.transcribe_model
         return self.stage2_pass2_model
 
+    def _agentic_evaluator_reasoning_for_stage(self, _stage: str) -> str:
+        return self.agentic_evaluator_reasoning_effort
+
+    def _agentic_rewriter_reasoning_for_stage(self, _stage: str) -> str:
+        return self.agentic_rewriter_reasoning_effort
+
     def _write_agentic_failure(
         self,
         artifact_dir: Path,
@@ -1105,15 +1137,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         page_context: PageContext | None,
         attempt: int,
     ) -> tuple[AgenticVerifierDecision, Dict[str, Any]]:
-        if self.stage1_agentic_patch_verifier:
-            return self._verify_stage1_output_with_patch_schema(
-                output,
-                image_path=image_path,
-                ocr_result=ocr_result,
-                page_context=page_context,
-                attempt=attempt,
-            )
-
         mime = mime_type_for_path(image_path)
         content: list = [
             {
@@ -1128,7 +1151,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}},
         ]
         messages = [
-            {"role": "system", "content": _stage1_verifier_system_prompt()},
+            {
+                "role": "system",
+                "content": _stage1_verifier_system_prompt(
+                    catastrophic_recovery_enabled=self.agentic_catastrophic_recovery,
+                ),
+            },
             {"role": "user", "content": content},
         ]
         result, _, usage = llm.complete_structured(
@@ -1136,46 +1164,10 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             messages=messages,
             response_schema=AgenticVerifierDecision,
             temperature=self.temperature,
-            max_tokens=4096,
-            reasoning_effort=self.agentic_reasoning_effort,
+            max_tokens=_agentic_verifier_max_tokens(),
+            reasoning_effort=self._agentic_evaluator_reasoning_for_stage("stage1"),
         )
         return result, usage
-
-    def _verify_stage1_output_with_patch_schema(
-        self,
-        output: str,
-        *,
-        image_path: str,
-        ocr_result: OCRPageResult,
-        page_context: PageContext | None,
-        attempt: int,
-    ) -> tuple[AgenticVerifierDecision, Dict[str, Any]]:
-        mime = mime_type_for_path(image_path)
-        content: list = [
-            {
-                "type": "text",
-                "text": self._stage1_patch_verifier_user_text(
-                    output,
-                    ocr_result=ocr_result,
-                    page_context=page_context,
-                    attempt=attempt,
-                ),
-            },
-            {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}},
-        ]
-        messages = [
-            {"role": "system", "content": _stage1_patch_verifier_system_prompt()},
-            {"role": "user", "content": content},
-        ]
-        result, _, usage = llm.complete_structured(
-            model=self._agentic_evaluator_model_for_stage("stage1"),
-            messages=messages,
-            response_schema=AgenticPatchVerifierDecision,
-            temperature=self.temperature,
-            max_tokens=12000,
-            reasoning_effort=self.agentic_reasoning_effort,
-        )
-        return patch_decision_to_verifier_decision(result), usage
 
     def _rewrite_stage1_output(
         self,
@@ -1192,21 +1184,31 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             flat=self.stage1_mode == "flat",
             typography=self.stage1_typography,
         )
+        is_catastrophic = decision.decision == "recover"
+        if is_catastrophic:
+            user_text = self._stage1_catastrophic_rewriter_user_text(
+                output,
+                decision=decision,
+                ocr_result=ocr_result,
+                page_context=page_context,
+                attempt=attempt,
+            )
+            system_prompt = _stage1_catastrophic_rewriter_system_prompt()
+        else:
+            user_text = self._stage1_rewriter_user_text(
+                output,
+                decision=decision,
+                ocr_result=ocr_result,
+                page_context=page_context,
+                attempt=attempt,
+            )
+            system_prompt = _stage1_rewriter_system_prompt()
         content: list = [
-            {
-                "type": "text",
-                "text": self._stage1_rewriter_user_text(
-                    output,
-                    decision=decision,
-                    ocr_result=ocr_result,
-                    page_context=page_context,
-                    attempt=attempt,
-                ),
-            },
+            {"type": "text", "text": user_text},
             {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}},
         ]
         messages = [
-            {"role": "system", "content": _stage1_rewriter_system_prompt()},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": content},
         ]
         result, _, usage = llm.complete_structured(
@@ -1215,7 +1217,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             response_schema=response_schema,
             temperature=self.temperature,
             max_tokens=64000,
-            reasoning_effort=self.agentic_reasoning_effort,
+            reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage1"),
         )
         if self.stage1_mode == "flat":
             return (
@@ -1249,8 +1251,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             messages=messages,
             response_schema=AgenticVerifierDecision,
             temperature=self.temperature,
-            max_tokens=4096,
-            reasoning_effort=self.agentic_reasoning_effort,
+            max_tokens=_agentic_verifier_max_tokens(),
+            reasoning_effort=self._agentic_evaluator_reasoning_for_stage("stage2"),
         )
         return result, usage
 
@@ -1281,7 +1283,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             messages=messages,
             temperature=self.temperature,
             max_tokens=64000,
-            reasoning_effort=self.agentic_reasoning_effort,
+            reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage2"),
         )
         return text.strip(), usage
 
@@ -1293,15 +1295,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         page_context: PageContext | None,
         attempt: int,
     ) -> str:
-        context = ""
-        if page_context is not None:
-            context = "\n\n<page_context>\n" + format_stage1_page_context_preamble(page_context) + "\n</page_context>"
+        del page_context
         ocr_hint = ocr_result.raw_text if ocr_result else ""
         return (
             f"Attempt: {attempt}\n"
             f"Stage 1 mode: {self.stage1_mode}\n"
             f"Typography tags expected: {self.stage1_typography}\n"
-            f"{context}\n\n"
             "<ocr_reference>\n"
             f"{ocr_hint}\n"
             "</ocr_reference>\n\n"
@@ -1313,35 +1312,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             "wrong reading order, and malformed output structure."
         )
 
-    def _stage1_patch_verifier_user_text(
-        self,
-        output: str,
-        *,
-        ocr_result: OCRPageResult,
-        page_context: PageContext | None,
-        attempt: int,
-    ) -> str:
-        context = ""
-        if page_context is not None:
-            context = "\n\n<page_context>\n" + format_stage1_page_context_preamble(page_context) + "\n</page_context>"
-        ocr_hint = ocr_result.raw_text if ocr_result else ""
-        return (
-            f"Attempt: {attempt}\n"
-            f"Stage 1 mode: {self.stage1_mode}\n"
-            f"Typography tags expected: {self.stage1_typography}\n"
-            f"{context}\n\n"
-            "<ocr_reference>\n"
-            f"{ocr_hint}\n"
-            "</ocr_reference>\n\n"
-            "<stage1_output_numbered_lines>\n"
-            f"{_numbered_lines(output)}\n"
-            "</stage1_output_numbered_lines>\n\n"
-            "Evaluate whether the Stage 1 output is faithful to the page image. "
-            "If you choose retry, return only exact patches whose old substring "
-            "appears once on the stated numbered line. Prefer no patch over a "
-            "risky patch. Do not ask for broad script normalization."
-        )
-
     def _stage1_rewriter_user_text(
         self,
         output: str,
@@ -1351,15 +1321,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         page_context: PageContext | None,
         attempt: int,
     ) -> str:
-        context = ""
-        if page_context is not None:
-            context = "\n\n<page_context>\n" + format_stage1_page_context_preamble(page_context) + "\n</page_context>"
+        del page_context
         ocr_hint = ocr_result.raw_text if ocr_result else ""
         return (
             f"Correction attempt: {attempt}\n"
             f"Stage 1 mode: {self.stage1_mode}\n"
             f"Typography tags expected: {self.stage1_typography}\n"
-            f"{context}\n\n"
             "<ocr_reference>\n"
             f"{ocr_hint}\n"
             "</ocr_reference>\n\n"
@@ -1372,6 +1339,36 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             "Correct only the verifier-identified problems. Preserve visible "
             "characters and line/row order. Return only the required structured "
             "Stage 1 JSON schema."
+        )
+
+    def _stage1_catastrophic_rewriter_user_text(
+        self,
+        output: str,
+        *,
+        decision: AgenticVerifierDecision,
+        ocr_result: OCRPageResult,
+        page_context: PageContext | None,
+        attempt: int,
+    ) -> str:
+        del page_context
+        del ocr_result
+        ocr_hint = ""
+        return (
+            f"Catastrophic recovery attempt: {attempt}\n"
+            f"Stage 1 mode: {self.stage1_mode}\n"
+            f"Typography tags expected: {self.stage1_typography}\n"
+            "<ocr_reference>\n"
+            f"{ocr_hint}\n"
+            "</ocr_reference>\n\n"
+            "<verifier_json>\n"
+            f"{decision.model_dump_json(indent=2)}\n"
+            "</verifier_json>\n\n"
+            "<discarded_unreliable_transcript>\n"
+            f"{output}\n"
+            "</discarded_unreliable_transcript>\n\n"
+            "Perform a complete fresh transcription of the page image. Do not "
+            "reuse or minimally edit the discarded transcript. Return only the "
+            "required structured Stage 1 JSON schema."
         )
 
     # ------------------------------------------------------------------

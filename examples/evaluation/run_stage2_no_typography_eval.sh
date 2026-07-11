@@ -32,7 +32,7 @@ LANGUAGES=(
     "Iñupiatun Eskimo-English"
 )
 
-uv run mudidi eval stage2 \
+uv run mudidi benchmark evaluate stage2 \
     --dataset-dir "${DATASET_DIR}" \
     --pred-root "${PRED_ROOT}" \
     --experiment-name "${EXPERIMENT_NAME}" \

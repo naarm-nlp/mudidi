@@ -1,0 +1,21 @@
+version: 1
+kind: inference
+
+input:
+  pages: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/Dictionary pages
+  alphabet: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/Alphabet list/alphabet.txt
+  dictionary_languages: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/dictionary_languages.yaml
+
+output:
+  directory: ../../../outputs/evenki-russian
+
+pipeline:
+  stage: all
+  stage1_mode: flat
+  parse_rules_pages: ["1"]
+
+models:
+  default: gemini/gemini-3-flash-preview
+  stage2_pass1: gemini/gemini-3.1-pro-preview
+  stage2_pass2: gemini/gemini-3.1-pro-preview
+  stage2_reasoning: high

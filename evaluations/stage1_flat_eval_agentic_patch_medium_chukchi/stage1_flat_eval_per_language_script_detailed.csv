@@ -1,7 +1,0 @@
-experiment,language,page,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits,precision,recall,f1
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_26,Chukchi-Cyrillic Extended,0.108247,0.586207,0.108247,194,194,21,29,17,0.8918,0.8918,0.8918
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_26,Russian-Cyrillic,0.001972,0.012048,0.001972,507,507,1,83,1,0.998,0.998,0.998
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.065455,0.410256,0.065217,275,276,18,39,16,0.9348,0.9382,0.9365
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_3,Russian-Cyrillic,0.0,0.0,0.0,453,453,0,70,0,1.0,1.0,1.0
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_48,Chukchi-Cyrillic Extended,0.007117,0.05,0.007117,281,281,2,40,2,0.9929,0.9929,0.9929
-gemini35flash_flat_alpha_agentic_patch_medium,Chukchi-Russian,page_48,Russian-Cyrillic,0.033333,0.164948,0.033333,570,570,19,97,16,0.9667,0.9667,0.9667

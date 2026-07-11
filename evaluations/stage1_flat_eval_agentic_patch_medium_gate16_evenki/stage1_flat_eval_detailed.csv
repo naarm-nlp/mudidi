@@ -1,5 +1,0 @@
-experiment,alphabet,ocr-hint,page_id,TextEdit,GCER,WER,typography_f1,ReadOrderEdit
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,true,false,Evenki-Russian/page_1,0.007878,0.006698,0.038117,0.9748,0.0
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,true,false,Evenki-Russian/page_2,0.041407,0.041298,0.272727,0.9387,0.0
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,true,false,Evenki-Russian/page_3,0.044897,0.042898,0.238554,0.9263,0.0
-gemini35flash_flat_alpha_agentic_patch_medium_gate16,,,__aggregate__,0.030671,0.029391,0.171086,0.9484,0.0
