@@ -6,6 +6,90 @@ import argparse
 from pathlib import Path
 
 
+def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register agentic YAML overrides without implicit defaults."""
+    group = parser.add_argument_group("agentic verifier-rewriter options")
+    group.add_argument(
+        "--stage1-agentic",
+        action=argparse.BooleanOptionalAction,
+        dest="agentic_stage1",
+        default=argparse.SUPPRESS,
+        help="Enable or disable bounded Stage 1 verification and rewriting.",
+    )
+    group.add_argument(
+        "--stage2-agentic",
+        action=argparse.BooleanOptionalAction,
+        dest="agentic_stage2",
+        default=argparse.SUPPRESS,
+        help="Enable or disable bounded Stage 2 verification and rewriting.",
+    )
+    group.add_argument(
+        "--agentic-max-iterations",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Maximum rewrite attempts for each enabled agentic stage.",
+    )
+    group.add_argument(
+        "--agentic-evaluator-model",
+        default=argparse.SUPPRESS,
+        help="Model used for verifier calls; defaults to the current stage model.",
+    )
+    group.add_argument(
+        "--agentic-rewriter-model",
+        default=argparse.SUPPRESS,
+        help="Model used for correction calls; defaults to the current stage model.",
+    )
+    group.add_argument(
+        "--agentic-reasoning",
+        choices=["none", "low", "medium", "high"],
+        default=argparse.SUPPRESS,
+        help="Shared reasoning effort for verifier and rewriter calls.",
+    )
+    group.add_argument(
+        "--agentic-evaluator-reasoning",
+        choices=["none", "low", "medium", "high"],
+        default=argparse.SUPPRESS,
+        help="Verifier reasoning effort; overrides --agentic-reasoning.",
+    )
+    group.add_argument(
+        "--agentic-rewriter-reasoning",
+        choices=["none", "low", "medium", "high"],
+        default=argparse.SUPPRESS,
+        help="Rewriter reasoning effort; overrides --agentic-reasoning.",
+    )
+    group.add_argument(
+        "--agentic-min-retry-confidence",
+        type=float,
+        default=argparse.SUPPRESS,
+        help="Minimum verifier confidence required before a rewrite.",
+    )
+    group.add_argument(
+        "--agentic-max-patches-per-attempt",
+        type=int,
+        default=argparse.SUPPRESS,
+        help="Maximum exact patches accepted in one correction round.",
+    )
+    group.add_argument(
+        "--agentic-verifier-patches",
+        action=argparse.BooleanOptionalAction,
+        default=argparse.SUPPRESS,
+        help="Enable or disable exact verifier patches before model rewriting.",
+    )
+    group.add_argument(
+        "--agentic-concrete-retry-gate",
+        action=argparse.BooleanOptionalAction,
+        dest="agentic_require_concrete_retry",
+        default=argparse.SUPPRESS,
+        help="Require or waive localized evidence before retrying.",
+    )
+    group.add_argument(
+        "--agentic-catastrophic-recovery",
+        action=argparse.BooleanOptionalAction,
+        default=argparse.SUPPRESS,
+        help="Enable or disable Stage 1 whole-page corruption recovery.",
+    )
+
+
 def _add_sparse_run_arguments(parser: argparse.ArgumentParser) -> None:
     """Register common YAML overrides without implicit defaults."""
     parser.add_argument("--config", type=Path, default=argparse.SUPPRESS)
@@ -41,6 +125,7 @@ def _add_sparse_run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--overwrite", action="store_true", default=argparse.SUPPRESS)
     parser.add_argument("--dry-run", action="store_true", default=False)
+    _add_sparse_agentic_arguments(parser)
 
 
 def _add_sparse_evaluation_arguments(parser: argparse.ArgumentParser) -> None:

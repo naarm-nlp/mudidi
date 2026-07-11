@@ -468,6 +468,19 @@ _RUN_OVERRIDE_PATHS = {
     "stage_2_pass_2_model": "models.stage2_pass2",
     "overwrite": "runtime.overwrite",
     "experiment_name": "runtime.experiment_name",
+    "agentic_stage1": "agentic.stage1",
+    "agentic_stage2": "agentic.stage2",
+    "agentic_max_iterations": "agentic.max_iterations",
+    "agentic_evaluator_model": "agentic.evaluator_model",
+    "agentic_rewriter_model": "agentic.rewriter_model",
+    "agentic_reasoning": "agentic.reasoning",
+    "agentic_evaluator_reasoning": "agentic.evaluator_reasoning",
+    "agentic_rewriter_reasoning": "agentic.rewriter_reasoning",
+    "agentic_min_retry_confidence": "agentic.min_retry_confidence",
+    "agentic_max_patches_per_attempt": "agentic.max_patches_per_attempt",
+    "agentic_verifier_patches": "agentic.verifier_patches",
+    "agentic_require_concrete_retry": "agentic.require_concrete_retry",
+    "agentic_catastrophic_recovery": "agentic.catastrophic_recovery",
 }
 
 _EVALUATION_OVERRIDE_PATHS = {
