@@ -1,0 +1,59 @@
+/* Keep the complete documentation navigation docked on the right on desktop. */
+@media screen and (min-width: 48em) {
+  .md-grid {
+    max-width: 76rem;
+  }
+
+  .md-header__button[for="__drawer"] {
+    display: none;
+  }
+
+  .md-main__inner {
+    align-items: stretch;
+  }
+
+  .md-content {
+    order: 1;
+  }
+
+  .md-sidebar--secondary {
+    display: none !important;
+  }
+
+  .md-sidebar--primary {
+    display: block !important;
+    flex: 0 0 13rem;
+    height: calc(100vh - 2.4rem);
+    left: auto !important;
+    margin-left: 1.2rem;
+    order: 2;
+    position: sticky !important;
+    right: auto !important;
+    top: 2.4rem;
+    transform: none !important;
+    width: 13rem;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    bottom: auto;
+    height: 100%;
+    left: auto;
+    margin: 0;
+    overflow-y: auto;
+    position: relative;
+    right: auto;
+    top: auto;
+  }
+}
+
+/* On smaller screens, retain the drawer but make it open from the right. */
+@media screen and (max-width: 47.984375em) {
+  [dir="ltr"] .md-sidebar--primary {
+    left: auto;
+    right: -12.1rem;
+  }
+
+  [dir="ltr"] [data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(-12.1rem);
+  }
+}
