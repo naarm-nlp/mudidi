@@ -49,6 +49,63 @@ def test_public_command_tree_parses_common_input_overrides() -> None:
     assert args.dictionary_languages == "languages.yaml"
 
 
+def test_public_command_tree_parses_agentic_overrides() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "run",
+            "--pages",
+            "pages",
+            "--output-dir",
+            "output",
+            "--stage1-agentic",
+            "--stage2-agentic",
+            "--agentic-max-iterations",
+            "3",
+            "--agentic-evaluator-model",
+            "provider/evaluator",
+            "--agentic-rewriter-model",
+            "provider/rewriter",
+            "--agentic-reasoning",
+            "medium",
+            "--agentic-evaluator-reasoning",
+            "high",
+            "--agentic-rewriter-reasoning",
+            "low",
+            "--agentic-min-retry-confidence",
+            "0.7",
+            "--agentic-max-patches-per-attempt",
+            "8",
+            "--no-agentic-verifier-patches",
+            "--no-agentic-concrete-retry-gate",
+            "--agentic-catastrophic-recovery",
+        ]
+    )
+
+    assert args.agentic_stage1 is True
+    assert args.agentic_stage2 is True
+    assert args.agentic_max_iterations == 3
+    assert args.agentic_evaluator_model == "provider/evaluator"
+    assert args.agentic_rewriter_model == "provider/rewriter"
+    assert args.agentic_reasoning == "medium"
+    assert args.agentic_evaluator_reasoning == "high"
+    assert args.agentic_rewriter_reasoning == "low"
+    assert args.agentic_min_retry_confidence == 0.7
+    assert args.agentic_max_patches_per_attempt == 8
+    assert args.agentic_verifier_patches is False
+    assert args.agentic_require_concrete_retry is False
+    assert args.agentic_catastrophic_recovery is True
+
+
+def test_omitted_agentic_options_remain_sparse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        ["run", "--pages", "pages", "--output-dir", "output"]
+    )
+
+    assert not any(name.startswith("agentic_") for name in vars(args))
+
+
 def test_public_command_tree_parses_benchmark_samples_override() -> None:
     parser = build_parser()
     args = parser.parse_args(

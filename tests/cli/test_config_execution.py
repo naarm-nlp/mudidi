@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
     execution_namespace_from_config,
     preview_extraction_config,
@@ -65,6 +66,52 @@ runtime:
     assert config.models.default == "provider/cli"
     assert config.runtime.batch_size == 4
     assert config.output.directory == tmp_path / "original-output"
+
+
+def test_agentic_cli_values_override_yaml_and_preserve_omitted_fields(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: pages
+output:
+  directory: output
+agentic:
+  stage1: true
+  stage2: true
+  max_iterations: 4
+  evaluator_model: provider/yaml-evaluator
+  verifier_patches: true
+  require_concrete_retry: true
+""".strip(),
+        encoding="utf-8",
+    )
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "run",
+            "--config",
+            str(path),
+            "--no-stage1-agentic",
+            "--agentic-max-iterations",
+            "2",
+            "--no-agentic-verifier-patches",
+            "--no-agentic-concrete-retry-gate",
+        ]
+    )
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.agentic.stage1 is False
+    assert config.agentic.stage2 is True
+    assert config.agentic.max_iterations == 2
+    assert config.agentic.evaluator_model == "provider/yaml-evaluator"
+    assert config.agentic.verifier_patches is False
+    assert config.agentic.require_concrete_retry is False
 
 
 def test_common_cli_input_paths_override_yaml_as_absolute_paths(tmp_path: Path) -> None:
