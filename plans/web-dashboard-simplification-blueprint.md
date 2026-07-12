@@ -678,6 +678,27 @@ When implementation discovers that an assumption is wrong:
 5. Continue only after the mutation is explicit and reviewable. Never silently
    rename internal `parse_rules` contracts or weaken the approval boundary.
 
+### Plan mutation — MDF manual redistribution provenance (2026-07-13)
+
+Observed evidence:
+
+- The local 65-page PDF identifies SIL Toolbox/MDF material and matches the
+  recorded size and SHA-256, but it contains no extracted license statement.
+- SIL's MDF page makes related manuals available for download, and SIL's general
+  site terms say many software projects use open licenses; neither statement
+  establishes the license of this exact extracted 65-page document.
+- SIL's standard freeware agreement permits copying a complete SIL product but
+  also says a Product Element may not be included in another product unless its
+  individual terms allow it.
+
+Impact: the technical implementation and package tests include the PDF, but the
+branch must not be released or merged with that binary until the repository
+owner confirms redistribution permission for this exact document. If permission
+cannot be documented, replace the packaged asset with a user-provided/local
+manual or an official-download/cache workflow, then update the built-in option,
+tests, and documentation. This mutation does not affect the MDF parsing guide
+workflow or custom-manual upload.
+
 ## Anti-pattern checklist
 
 Reject an implementation that:
