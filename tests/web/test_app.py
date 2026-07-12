@@ -136,3 +136,57 @@ def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> Non
     assert response.status_code == 422
     assert "API key cannot be empty" in response.text
     assert "value=" not in response.text
+
+
+def test_new_run_accepts_uploaded_page_images_into_managed_input(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "quality": "verified",
+        },
+        files=[
+            ("page_files", ("page_1.png", b"first image", "image/png")),
+            ("page_files", ("page_2.jpg", b"second image", "image/jpeg")),
+        ],
+    )
+
+    assert response.status_code == 200
+    runs = app.state.run_store.list_runs()
+    assert len(runs) == 1
+    config = app.state.job_controller.load_inference_config(runs[0].run_id)
+    assert config.input.pages is not None
+    assert config.input.pages.parent.parent == (tmp_path / "app-data" / "uploads").resolve()
+    assert sorted(path.name for path in config.input.pages.iterdir()) == [
+        "page_1.png",
+        "page_2.jpg",
+    ]
+
+
+def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "transcription",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "quality": "standard",
+        },
+        files={"page_files": ("../escape.png", b"image", "image/png")},
+    )
+
+    assert response.status_code == 422
+    assert app.state.run_store.list_runs() == []
+    assert not (tmp_path / "app-data" / "escape.png").exists()
