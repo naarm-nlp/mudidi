@@ -159,3 +159,27 @@ def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -
     assert prepared.status_code == 200
     assert "Review your run" in prepared.text
     assert len(app.state.run_store.list_runs()) == 2
+
+
+def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> None:
+    vault = CredentialVault(environ={})
+    vault.set_temporary(Provider.ANTHROPIC, "sk-ant-resume")
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=vault,
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    app.state.run_store.transition(run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    app.state.run_store.interrupt(run_id)
+
+    detail = client.get(f"/runs/{run_id}")
+    assert "Resume run" in detail.text
+
+    response = client.post(f"/runs/{run_id}/resume", follow_redirects=False)
+
+    assert response.status_code == 303
+    app.state.job_controller.wait(run_id, timeout=10)
+    assert app.state.run_store.get_run(run_id).status is RunStatus.AWAITING_PARSE_RULES_REVIEW

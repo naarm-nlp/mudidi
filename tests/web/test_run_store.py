@@ -137,3 +137,23 @@ def test_presets_round_trip_non_secret_typed_configuration(
     assert loaded.provider == "anthropic"
     assert loaded.config == config
     assert store.list_presets() == [loaded]
+
+
+def test_approved_pass2_interruption_resumes_directly_to_pass2(store: RunStore) -> None:
+    store.create_run("run-pass2")
+    store.transition("run-pass2", RunStatus.VALIDATED)
+    store.transition("run-pass2", RunStatus.QUEUED)
+    store.transition("run-pass2", RunStatus.DISCOVERING_PARSE_RULES)
+    store.transition("run-pass2", RunStatus.AWAITING_PARSE_RULES_REVIEW)
+    store.authorize_pass2(
+        "run-pass2",
+        review_id="review-1",
+        approval_digest="a" * 64,
+    )
+    store.interrupt("run-pass2")
+
+    resumed = store.resume_pass2("run-pass2")
+
+    assert resumed.status is RunStatus.RUNNING_STAGE2
+    assert resumed.review_id == "review-1"
+    assert resumed.approval_digest == "a" * 64
