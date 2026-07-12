@@ -463,6 +463,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage2_toolbox_pdf: Optional[str] = None,
         parse_rules_gold: bool = False,
         parse_rules_file: Optional[str] = None,
+        approved_parse_rules: DictionaryMarkerCheatsheet | None = None,
         parse_rules_samples: Optional[List[tuple[str, str, str]]] = None,
         prompt_mode: PromptMode = "benchmark",
         prompt_cache: str = "auto",
@@ -506,6 +507,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         )
         self.parse_rules_gold = parse_rules_gold
         self.parse_rules_file = Path(parse_rules_file) if parse_rules_file else None
+        self.approved_parse_rules = approved_parse_rules
         self.parse_rules_samples = parse_rules_samples or []
         self.prompt_mode: PromptMode = prompt_mode
         self.prompt_cache = prompt_cache
@@ -853,7 +855,11 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 )
 
             cache_path = self.stage2_experiment_dir / PARSE_RULES_FILENAME
-            if self.parse_rules_gold:
+            if self.approved_parse_rules is not None:
+                # Web approval loads and authenticates immutable bytes before
+                # construction. Never resolve a path/cache again for Pass 2.
+                self._field_map = self.approved_parse_rules
+            elif self.parse_rules_gold:
                 if self.entry_dir is None:
                     raise ValueError(
                         "parse_rules_gold requires entry_dir to locate outputs/stage-2-gold/"

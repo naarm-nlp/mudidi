@@ -832,11 +832,19 @@ def preview_extraction_config(
 
 def execute_extraction_config(
     config: InferenceConfig | BenchmarkRunConfig,
+    *,
+    approved_parse_rules: object | None = None,
 ) -> int:
-    """Execute one previously validated typed extraction configuration."""
+    """Execute one typed extraction configuration.
+
+    ``approved_parse_rules`` is an already authenticated in-memory model used
+    by the web approval path. It is intentionally excluded from resolved
+    configuration serialization.
+    """
 
     configure_prompts(default_prompts_path())
     namespace = execution_namespace_from_config(config)
+    namespace.approved_parse_rules = approved_parse_rules
     _write_resolved_config(config)
     from mudidi.cli import extract as extract_module
 

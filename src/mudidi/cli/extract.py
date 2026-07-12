@@ -791,6 +791,7 @@ def _build_strategy(
                 if getattr(args, "parse_rules_file", None)
                 else None
             ),
+            approved_parse_rules=getattr(args, "approved_parse_rules", None),
             parse_rules_samples=parse_rules_samples,
             prompt_mode=getattr(args, "prompt_mode", "benchmark"),
             prompt_cache=getattr(args, "prompt_cache", "auto"),
