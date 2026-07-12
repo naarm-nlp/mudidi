@@ -10,13 +10,22 @@ from starlette.datastructures import UploadFile
 _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 _SUPPORTED_SUFFIXES = _IMAGE_SUFFIXES | {".pdf"}
 _MAX_FILES = 5_000
+_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 
 class InputMaterializer:
     """Copy validated PDF or page-image uploads beneath the app data root."""
 
-    def __init__(self, *, data_dir: Path) -> None:
+    def __init__(
+        self,
+        *,
+        data_dir: Path,
+        max_total_bytes: int = _MAX_UPLOAD_BYTES,
+    ) -> None:
+        if max_total_bytes < 1:
+            raise ValueError("upload byte limit must be positive")
         self.root = data_dir.expanduser().resolve() / "uploads"
+        self.max_total_bytes = max_total_bytes
 
     async def materialize(self, run_id: str, uploads: list[UploadFile]) -> Path:
         """Return a managed PDF or image directory for one run."""
@@ -39,12 +48,16 @@ class InputMaterializer:
             raise ValueError("managed upload directory already exists")
         destination = run_root if suffixes[0] == ".pdf" else run_root / "pages"
         destination.mkdir(parents=True)
+        total_bytes = 0
         try:
             for upload, name in zip(uploads, names, strict=True):
                 target = destination / name
                 temporary = target.with_suffix(target.suffix + ".part")
                 with temporary.open("wb") as stream:
                     while chunk := await upload.read(1024 * 1024):
+                        total_bytes += len(chunk)
+                        if total_bytes > self.max_total_bytes:
+                            raise ValueError("uploaded input is too large")
                         stream.write(chunk)
                     stream.flush()
                 temporary.replace(target)
@@ -61,6 +74,13 @@ class InputMaterializer:
 
 def _validated_name(filename: str | None) -> str:
     name = filename or ""
-    if not name or name in {".", ".."} or Path(name).name != name:
+    if (
+        not name
+        or name in {".", ".."}
+        or "/" in name
+        or "\\" in name
+        or "\0" in name
+        or Path(name).name != name
+    ):
         raise ValueError("uploaded filenames must not contain path components")
     return name

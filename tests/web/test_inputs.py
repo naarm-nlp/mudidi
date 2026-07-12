@@ -15,7 +15,7 @@ from mudidi.web.inputs import InputMaterializer
 def test_materializer_rejects_chunked_content_above_cumulative_limit(
     tmp_path: Path,
 ) -> None:
-    materializer = InputMaterializer(data_dir=tmp_path, max_total_bytes=5)  # type: ignore[call-arg]
+    materializer = InputMaterializer(data_dir=tmp_path, max_total_bytes=5)
     upload = UploadFile(filename="page_1.png", file=BytesIO(b"123456"))
 
     with pytest.raises(ValueError, match="too large"):
