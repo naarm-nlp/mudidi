@@ -18,7 +18,7 @@
         <a href="#history"><span>◷</span> Run history</a>
       </nav>
       <div class="sidebar-footer">
-        <a href="#providers">API providers</a>
+        <a href="/providers">API providers</a>
         <a href="https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/">Documentation</a>
         <span class="local-badge">● Running locally</span>
       </div>
@@ -73,7 +73,10 @@
                 </select>
               </label>
               <label>Model
-                <input name="model" value="gemini/gemini-3.1-pro-preview" required>
+                <input name="model" list="model-catalog" value="gemini/gemini-3.1-pro-preview" required>
+                <datalist id="model-catalog">
+                  {% for model in models %}<option value="{{ model.model_id }}">{{ model.display_name }}</option>{% endfor %}
+                </datalist>
               </label>
               <label>Quality
                 <select name="quality">

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -13,12 +13,18 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from mudidi.config.yaml_config import validate_config_paths
 from mudidi.web.forms import NewRunForm
+from mudidi.web.credentials import CredentialVault
+from mudidi.web.models import ModelCatalog, Provider
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
 
 
-def create_app(*, data_dir: Path | None = None) -> FastAPI:
+def create_app(
+    *,
+    data_dir: Path | None = None,
+    credential_vault: CredentialVault | None = None,
+) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
     Args:
@@ -40,6 +46,8 @@ def create_app(*, data_dir: Path | None = None) -> FastAPI:
         openapi_url=None,
     )
     app.state.data_dir = resolved_data_dir
+    app.state.credential_vault = credential_vault or CredentialVault()
+    app.state.model_catalog = ModelCatalog.bundled()
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["127.0.0.1", "localhost", "testserver"],
@@ -57,7 +65,10 @@ def create_app(*, data_dir: Path | None = None) -> FastAPI:
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="home.html",
-            context={"active_page": "new-run"},
+            context={
+                "active_page": "new-run",
+                "models": app.state.model_catalog.options,
+            },
         )
 
     @app.get("/healthz")
@@ -89,6 +100,40 @@ def create_app(*, data_dir: Path | None = None) -> FastAPI:
             context={"summary": run_form.to_summary()},
         )
 
+    @app.get("/providers", response_class=HTMLResponse)
+    async def providers(request: Request) -> HTMLResponse:
+        """Render provider key availability and the bundled model fallback."""
+
+        return _render_providers(request, app)
+
+    @app.post("/providers/{provider_name}/credential", response_class=HTMLResponse)
+    async def set_provider_credential(
+        request: Request,
+        provider_name: str,
+    ) -> HTMLResponse:
+        """Store one temporary provider credential in process memory."""
+
+        try:
+            provider = Provider(provider_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="unknown provider") from exc
+        submitted = await request.form()
+        api_key = str(submitted.get("api_key", ""))
+        try:
+            app.state.credential_vault.set_temporary(provider, api_key)
+        except ValueError:
+            return _render_providers(
+                request,
+                app,
+                message="API key cannot be empty",
+                status_code=422,
+            )
+        return _render_providers(
+            request,
+            app,
+            message="Temporary key ready",
+        )
+
     return app
 
 
@@ -96,3 +141,33 @@ def _error_count(exc: ValidationError | ValueError) -> int:
     if isinstance(exc, ValidationError):
         return len(exc.errors())
     return 1
+
+
+def _render_providers(
+    request: Request,
+    app: FastAPI,
+    *,
+    message: str | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    direct_providers = (
+        Provider.ANTHROPIC,
+        Provider.OPENAI,
+        Provider.GEMINI,
+        Provider.OPENROUTER,
+    )
+    return _TEMPLATES.TemplateResponse(
+        request=request,
+        name="providers.html",
+        context={
+            "providers": direct_providers,
+            "statuses": {
+                provider.value: app.state.credential_vault.status(provider)
+                for provider in direct_providers
+            },
+            "models": app.state.model_catalog.options,
+            "catalog_as_of": app.state.model_catalog.as_of,
+            "message": message,
+        },
+        status_code=status_code,
+    )

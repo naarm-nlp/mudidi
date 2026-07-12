@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>API providers · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="standalone">
+    <main class="providers-page">
+      <a class="back-link" href="/">← New run</a>
+      <header class="page-heading">
+        <span class="eyebrow">Local settings</span>
+        <h1>API providers</h1>
+        <p>Use a key from <code>.env</code>, or enter a temporary key kept only in this server process.</p>
+      </header>
+      {% if message %}<div class="notice" role="status">{{ message }}</div>{% endif %}
+      <section class="provider-grid">
+        {% for provider in providers %}
+        {% set status = statuses[provider.value] %}
+        <form class="panel provider-card" method="post" action="/providers/{{ provider.value }}/credential">
+          <div class="provider-title">
+            <h2>{{ provider.value | title }}</h2>
+            <span class="status-pill {{ 'ready' if status.available else '' }}">
+              {{ status.source.value if status.available else 'Key required' }}
+            </span>
+          </div>
+          <label for="key-{{ provider.value }}">Temporary API key</label>
+          <div class="input-row">
+            <input id="key-{{ provider.value }}" name="api_key" type="password" autocomplete="off" placeholder="Paste key for this session">
+            <button type="submit">Use temporarily</button>
+          </div>
+        </form>
+        {% endfor %}
+      </section>
+
+      <section class="panel catalog-panel">
+        <div class="panel-heading"><div><span class="eyebrow">Bundled fallback · {{ catalog_as_of }}</span><h2>Recommended multimodal models</h2></div></div>
+        <div class="model-list">
+          {% for model in models %}
+          <article>
+            <div><strong>{{ model.display_name }}</strong><code>{{ model.model_id }}</code></div>
+            <span>{{ model.provider.value }}</span>
+          </article>
+          {% endfor %}
+          <article class="custom-model">
+            <div><strong>Custom LiteLLM model</strong><code>provider/your-model-id</code></div>
+            <span>Always available</span>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
