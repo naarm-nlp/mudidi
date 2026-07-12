@@ -684,6 +684,11 @@ Observed evidence:
 
 - The local 65-page PDF identifies SIL Toolbox/MDF material and matches the
   recorded size and SHA-256, but it contains no extracted license statement.
+- Full-document text inspection found no occurrence of copyright, license,
+  permission, redistribution, Creative Commons, terms-of-use, or
+  all-rights-reserved language. Its metadata says it was created in Microsoft
+  Word on 2026-05-22 by `KarenB`, so it appears to be a locally assembled
+  excerpt rather than an original SIL distribution carrying its own license.
 - SIL's MDF page makes related manuals available for download, and SIL's general
   site terms say many software projects use open licenses; neither statement
   establishes the license of this exact extracted 65-page document.
