@@ -101,9 +101,12 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .demo-launch { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1136px; margin: 0 auto 40px; padding: 15px 20px; border: 1px solid #b9ddd6; border-radius: 10px; color: #195950; background: var(--color-accent-soft); font-size: 13px; }
 .demo-launch button { padding: 9px 14px; border: 0; border-radius: 7px; color: #fff; background: var(--color-accent); }
 .history-list { padding: 8px 24px; }
-.run-row { display: grid; grid-template-columns: 1fr 170px 240px; align-items: center; gap: 16px; padding: 17px 5px; border-bottom: 1px solid var(--color-line); }
+.run-row { display: grid; grid-template-columns: 1fr 170px 240px 100px; align-items: center; gap: 16px; padding: 17px 5px; border-bottom: 1px solid var(--color-line); }
 .run-row span { color: var(--color-accent); font-weight: 700; }
 .run-row small { color: var(--color-muted); text-align: right; }
+.history-filters { display: grid; grid-template-columns: 1fr 190px 190px auto; align-items: end; gap: 12px; margin-bottom: 18px; padding: 18px; }
+.history-filters label { margin: 0; }
+.history-filters input, .history-filters select { width: 100%; margin-top: 7px; padding: 9px 10px; border: 1px solid var(--color-line); border-radius: 7px; background: #fff; }
 .empty-state { padding: 35px 10px; text-align: center; color: var(--color-muted); }
 .detail-nav { display: flex; justify-content: space-between; align-items: center; }
 .progress-track { height: 10px; margin: 18px 0 25px; overflow: hidden; border-radius: 5px; background: #e6ebee; }
@@ -156,7 +159,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .sidebar-footer { display: none; }
   .content-grid { grid-template-columns: 1fr; }
   .provider-grid, .form-grid { grid-template-columns: 1fr; }
-  .run-row { grid-template-columns: 1fr; }
+  .run-row, .history-filters { grid-template-columns: 1fr; }
   .artifact-row, .page-columns, .metric-grid { grid-template-columns: 1fr; }
   .run-row small { text-align: left; }
   .topbar, .workspace { padding-left: 22px; padding-right: 22px; }

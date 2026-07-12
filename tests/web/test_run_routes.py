@@ -51,7 +51,9 @@ def test_event_stream_replays_persisted_events_as_sse(tmp_path: Path) -> None:
     assert response.headers["content-type"].startswith("text/event-stream")
     assert "event: stage.started" in response.text
     assert "event: run.completed" in response.text
-    data_lines = [line[6:] for line in response.text.splitlines() if line.startswith("data: ")]
+    data_lines = [
+        line[6:] for line in response.text.splitlines() if line.startswith("data: ")
+    ]
     assert json.loads(data_lines[-1])["type"] == "run.completed"
 
 

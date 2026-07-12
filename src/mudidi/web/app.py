@@ -357,17 +357,32 @@ def create_app(
         )
 
     @app.get("/history", response_class=HTMLResponse)
-    async def run_history(request: Request) -> HTMLResponse:
+    async def run_history(
+        request: Request,
+        q: str = "",
+        status: str = "",
+        provider: str = "",
+    ) -> HTMLResponse:
         """Render durable newest-first local run history."""
 
+        runs = app.state.run_store.list_runs()
+        query = q.strip().casefold()
+        if query:
+            runs = [run for run in runs if query in run.run_id.casefold()]
+        if status:
+            runs = [run for run in runs if run.status.value == status]
+        if provider:
+            runs = [run for run in runs if run.provider == provider]
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="history.html",
             context={
-                "runs": [
-                    _run_view(app.state.run_store, run)
-                    for run in app.state.run_store.list_runs()
-                ]
+                "runs": [_run_view(app.state.run_store, run) for run in runs],
+                "filters": {"q": q, "status": status, "provider": provider},
+                "statuses": tuple(RunStatus),
+                "providers": tuple(
+                    provider for provider in Provider if provider is not Provider.CUSTOM
+                ),
             },
         )
 
