@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
@@ -10,6 +11,8 @@ from mudidi.web.jobs import JobController
 
 _TEXT_SUFFIXES = {".txt", ".tsv", ".mdf", ".json", ".jsonl", ".log"}
 _MAX_PREVIEW_BYTES = 512_000
+_PAGE_ID = re.compile(r"^page_[A-Za-z0-9_-]+$")
+_SOURCE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".pdf"}
 
 
 class ArtifactAccessError(ValueError):
@@ -148,6 +151,30 @@ class ArtifactService:
         truncated = len(raw) > _MAX_PREVIEW_BYTES
         text = raw[:_MAX_PREVIEW_BYTES].decode("utf-8", errors="replace")
         return text + ("\n… preview truncated …" if truncated else "")
+
+    def source_page(self, run_id: str, page_id: str) -> Path:
+        """Resolve one source page beneath the run's validated input directory."""
+
+        if not _PAGE_ID.fullmatch(page_id):
+            raise ArtifactAccessError("invalid source page identifier")
+        pages = self.controller.load_inference_config(run_id).input.pages
+        if pages is None or not pages.is_dir() or pages.is_symlink():
+            raise ArtifactAccessError("source page directory is unavailable")
+        root = pages.resolve(strict=True)
+        for candidate in root.iterdir():
+            if (
+                candidate.is_file()
+                and not candidate.is_symlink()
+                and candidate.stem == page_id
+                and candidate.suffix.lower() in _SOURCE_SUFFIXES
+            ):
+                resolved = candidate.resolve(strict=True)
+                try:
+                    resolved.relative_to(root)
+                except ValueError as exc:
+                    raise ArtifactAccessError("source page escapes input root") from exc
+                return resolved
+        raise ArtifactAccessError("source page was not found")
 
     def usage_summary(self, run_id: str) -> UsageSummary:
         """Aggregate page usage JSON without double-counting run summaries."""

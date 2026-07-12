@@ -35,7 +35,9 @@ def _prepared_app(tmp_path: Path) -> tuple[object, TestClient, str, Path]:
     )
     stage1 = output / "stage-1/page_1"
     stage1.mkdir(parents=True)
-    (stage1 / "page_1_stage1_flat.txt").write_text("hello transcription", encoding="utf-8")
+    (stage1 / "page_1_stage1_flat.txt").write_text(
+        "hello transcription", encoding="utf-8"
+    )
     stage2 = output / "stage-2/page_1"
     stage2.mkdir(parents=True)
     (stage2 / "page_1.mdf.txt").write_text("\\lx hello\n\\ge gloss", encoding="utf-8")
@@ -107,9 +109,7 @@ def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
     outputs = client.get(f"/runs/{run_id}/outputs")
     pages = client.get(f"/runs/{run_id}/pages")
     usage = client.get(f"/runs/{run_id}/usage")
-    download = client.get(
-        f"/runs/{run_id}/artifacts/stage-2/page_1/page_1.mdf.txt"
-    )
+    download = client.get(f"/runs/{run_id}/artifacts/stage-2/page_1/page_1.mdf.txt")
 
     assert outputs.status_code == 200
     assert "page_1.mdf.txt" in outputs.text
@@ -131,7 +131,9 @@ def test_download_route_hides_traversal_as_not_found(tmp_path: Path) -> None:
     assert response.status_code == 404
 
 
-def test_page_detail_combines_safe_source_and_generated_evidence(tmp_path: Path) -> None:
+def test_page_detail_combines_safe_source_and_generated_evidence(
+    tmp_path: Path,
+) -> None:
     _app, client, run_id, _output = _prepared_app(tmp_path)
 
     detail = client.get(f"/runs/{run_id}/pages/page_1")

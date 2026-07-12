@@ -512,6 +512,72 @@ def create_app(
             context={"run_id": run_id, "pages": page_views},
         )
 
+    @app.get("/runs/{run_id}/pages/{page_id}", response_class=HTMLResponse)
+    async def page_detail(request: Request, run_id: str, page_id: str) -> HTMLResponse:
+        """Combine source, generated text, page events, and artifact metadata."""
+
+        try:
+            page = next(
+                item
+                for item in app.state.artifacts.list_pages(run_id)
+                if item.page_id == page_id
+            )
+            source = app.state.artifacts.source_page(run_id, page_id)
+            stage1 = (
+                app.state.artifacts.preview_text(run_id, page.stage1.relative_path)
+                if page.stage1
+                else None
+            )
+            stage2 = (
+                app.state.artifacts.preview_text(run_id, page.stage2.relative_path)
+                if page.stage2
+                else None
+            )
+            related = [
+                artifact
+                for artifact in app.state.artifacts.list_artifacts(run_id)
+                if page_id in artifact.relative_path.parts
+            ]
+            events = [
+                event
+                for event in app.state.run_store.list_events(run_id)
+                if str(event.get("page", ""))
+                in {page_id, page_id.removeprefix("page_")}
+            ]
+        except (
+            ArtifactAccessError,
+            KeyError,
+            OSError,
+            StopIteration,
+            ValueError,
+        ) as exc:
+            raise HTTPException(status_code=404, detail="page not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="page_detail.html",
+            context={
+                "run_id": run_id,
+                "page_id": page_id,
+                "source_is_image": source.suffix.lower() != ".pdf",
+                "stage1": stage1,
+                "stage2": stage2,
+                "events": events,
+                "artifacts": related,
+            },
+        )
+
+    @app.get("/runs/{run_id}/pages/{page_id}/source")
+    async def source_page(run_id: str, page_id: str) -> FileResponse:
+        """Serve only a validated source page from the configured input root."""
+
+        try:
+            path = app.state.artifacts.source_page(run_id, page_id)
+        except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
+            raise HTTPException(
+                status_code=404, detail="source page not found"
+            ) from exc
+        return FileResponse(path)
+
     @app.get("/runs/{run_id}/usage", response_class=HTMLResponse)
     async def run_usage(request: Request, run_id: str) -> HTMLResponse:
         """Render token and cost totals from generated usage artifacts."""
