@@ -26,6 +26,27 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Parse Rules" in response.text
     assert 'name="dictionary_pages"' in response.text
     assert 'name="stage1_model"' in response.text
+    assert 'name="stage2_pass1_model"' in response.text
+    assert 'name="stage2_pass2_model"' in response.text
+    assert 'name="stage1_custom_model"' in response.text
+    assert 'name="openrouter_provider"' in response.text
+    assert 'data-model-provider="openai"' in response.text
+    assert 'data-model-provider="anthropic"' in response.text
+    assert 'data-model-provider="gemini"' in response.text
+    assert 'data-model-provider="openrouter"' in response.text
+    assert 'data-pipeline-stages="stage1"' in response.text
+    assert "GPT-5.6 Sol" in response.text
+    assert "GPT-5.6 Terra" in response.text
+    assert "GPT-5.6 Luna" in response.text
+    assert "Claude Fable 5" in response.text
+    assert "Claude Opus 4.8" in response.text
+    assert "Claude Sonnet 5" in response.text
+    assert "Claude Haiku 4.5" in response.text
+    assert "Gemini 3.1 Pro" in response.text
+    assert "Gemini 3.5 Flash" in response.text
+    assert "Gemini 3.1 Flash-Lite" in response.text
+    assert "Other / advanced provider" in response.text
+    assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
     assert 'name="media_reference"' in response.text
     assert 'name="strategy"' in response.text

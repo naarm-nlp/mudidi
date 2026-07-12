@@ -234,6 +234,23 @@ def test_inference_namespace_carries_dictionary_profile_without_a_file(
     assert namespace.dictionary_languages is None
 
 
+def test_execution_namespace_carries_openrouter_endpoint_provider(tmp_path: Path) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "models": {
+                "default": "openrouter/anthropic/claude-sonnet-5",
+                "openrouter_provider": "anthropic",
+            },
+        }
+    )
+
+    namespace = execution_namespace_from_config(config)
+
+    assert namespace.openrouter_provider == "anthropic"
+
+
 def test_minimal_production_config_does_not_require_optional_alphabet(
     tmp_path: Path,
 ) -> None:

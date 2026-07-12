@@ -19,10 +19,19 @@ from mudidi.web.models import _fetch_json
 def test_catalog_contains_current_official_multimodal_families() -> None:
     catalog = ModelCatalog.bundled()
 
-    assert catalog.get("openai/gpt-5.6").image_input is True
+    assert catalog.get("openai/gpt-5.6-sol").image_input is True
+    assert catalog.get("openai/gpt-5.6-terra").image_input is True
+    assert catalog.get("openai/gpt-5.6-luna").image_input is True
+    assert catalog.get("anthropic/claude-fable-5").image_input is True
     assert catalog.get("anthropic/claude-opus-4-8").image_input is True
     assert catalog.get("anthropic/claude-sonnet-5").image_input is True
+    assert catalog.get("anthropic/claude-haiku-4-5").image_input is True
+    assert catalog.get("gemini/gemini-3.1-pro-preview").image_input is True
     assert catalog.get("gemini/gemini-3.5-flash").image_input is True
+    assert catalog.get("gemini/gemini-3.1-flash-lite").image_input is True
+    assert catalog.get("openrouter/openai/gpt-5.6-sol").image_input is True
+    assert catalog.get("openrouter/anthropic/claude-opus-4-8").image_input is True
+    assert catalog.get("openrouter/google/gemini-3.1-pro-preview").image_input is True
 
 
 @pytest.mark.parametrize("provider", list(Provider))

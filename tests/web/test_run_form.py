@@ -96,6 +96,47 @@ def test_stage_specific_models_override_default(tmp_path: Path) -> None:
     assert config.models.stage2_pass2 == "openai/gpt-5.4"
 
 
+def test_stage_models_accept_provider_specific_other_values(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        pipeline="transcription",
+        provider="anthropic",
+        model=None,
+        stage1_model="__other__",
+        stage1_custom_model="claude-private-vision",
+    ).to_inference_config()
+
+    assert config.models.default == "anthropic/claude-private-vision"
+    assert config.models.stage1 == "anthropic/claude-private-vision"
+    assert config.models.stage2_pass1 is None
+    assert config.models.stage2_pass2 is None
+
+
+def test_openrouter_endpoint_provider_is_typed_and_optional(tmp_path: Path) -> None:
+    automatic = _form(
+        tmp_path,
+        provider="openrouter",
+        model="openrouter/anthropic/claude-sonnet-5",
+    ).to_inference_config()
+    pinned = _form(
+        tmp_path,
+        provider="openrouter",
+        model="openrouter/anthropic/claude-sonnet-5",
+        openrouter_provider="anthropic",
+    ).to_inference_config()
+
+    assert automatic.models.openrouter_provider == "auto"
+    assert pinned.models.openrouter_provider == "anthropic"
+
+
+def test_none_reasoning_uses_lowest_supported_dashboard_level(tmp_path: Path) -> None:
+    config = _form(tmp_path, reasoning="none").to_inference_config()
+
+    assert config.models.stage1_reasoning == "low"
+    assert config.models.stage2_reasoning == "low"
+    assert config.agentic.reasoning == "low"
+
+
 def test_form_rejects_unknown_provider(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="provider"):
         _form(tmp_path, provider="mystery")
