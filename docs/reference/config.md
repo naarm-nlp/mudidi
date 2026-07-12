@@ -50,8 +50,9 @@ input:  # InputConfig; required
     targets:  # list[ProfileLanguage]; required
       - language: "value"  # string; required
         script: "value"  # string; required
-    page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+    page_layout: "value"  # string; required
     information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    other_information_types: null  # string | null; default: null
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -156,8 +157,9 @@ input:  # InputConfig; required
     targets:  # list[ProfileLanguage]; required
       - language: "value"  # string; required
         script: "value"  # string; required
-    page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+    page_layout: "value"  # string; required
     information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    other_information_types: null  # string | null; default: null
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -266,8 +268,9 @@ base:  # BenchmarkRunConfig; required
       targets:  # list[ProfileLanguage]; required
         - language: "value"  # string; required
           script: "value"  # string; required
-      page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+      page_layout: "value"  # string; required
       information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+      other_information_types: null  # string | null; default: null
     toolbox_pdf: null  # path | null; default: null
     languages: null  # list[string] | null; default: null
   output:  # OutputConfig; required

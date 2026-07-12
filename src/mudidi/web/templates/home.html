@@ -115,16 +115,15 @@
             <details class="profile-panel">
               <summary>Dictionary Profile (optional)</summary>
               <p>Answering these questions can improve extraction accuracy. Leave the whole section blank if you are unsure.</p>
-              <div class="form-grid">
-                <label>1. What language are the dictionary headwords written in?
-                  <input name="profile_headword_language" placeholder="e.g. Chukchi">
-                </label>
-                <label>3. Which script does the headword language use?
-                  <input name="profile_headword_script" placeholder="e.g. Cyrillic">
-                </label>
-              </div>
               <fieldset>
-                <legend>2–3. Which languages are used for translations, glosses, or definitions, and which script does each use?</legend>
+                <legend>1–2. What language are the dictionary headwords written in, and what script do they use?</legend>
+                <div class="editor-row">
+                  <input name="profile_headword_language" aria-label="Headword language" placeholder="e.g. Chukchi">
+                  <input name="profile_headword_script" aria-label="Headword script" placeholder="e.g. Cyrillic">
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?</legend>
                 <div id="profile-target-rows">
                   <div class="editor-row">
                     <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
@@ -134,18 +133,11 @@
                 </div>
                 <button type="button" data-add="profile-target">Add another language</button>
               </fieldset>
-              <label>4. How is information arranged on the page?
-                <select name="profile_page_layout">
-                  <option value="">Select an arrangement</option>
-                  <option value="inline_entries">Entries run inline or vertically</option>
-                  <option value="aligned_language_columns">Languages use aligned columns</option>
-                  <option value="independent_entry_columns">Page columns contain independent entries</option>
-                  <option value="mixed_or_variable">Mixed or variable layout</option>
-                  <option value="unknown">Other or uncertain</option>
-                </select>
+              <label>5. How is information arranged on the page?
+                <textarea name="profile_page_layout" rows="3" placeholder="For example: There are two columns; each column contains independent dictionary entries."></textarea>
               </label>
               <fieldset>
-                <legend>5. Which information types appear in an entry?</legend>
+                <legend>6. Which information types appear in an entry?</legend>
                 {% for value, label in [
                   ('translation', 'Translation'), ('definition', 'Definition'),
                   ('gloss', 'Gloss'), ('part_of_speech', 'Part of speech'),
@@ -154,8 +146,11 @@
                   ('cross_reference', 'Cross-reference'), ('variant', 'Variant'),
                   ('grammar', 'Grammar'), ('other', 'Other')
                 ] %}
-                  <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"> {{ label }}</span></label>
+                  <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"{% if value == 'other' %} data-profile-other-toggle{% endif %}> {{ label }}</span></label>
                 {% endfor %}
+                <label id="profile-other-information" hidden>Other information types
+                  <textarea name="profile_other_information_types" rows="2" disabled placeholder="Type one or more information types, separated by commas"></textarea>
+                </label>
               </fieldset>
             </details>
             <details>

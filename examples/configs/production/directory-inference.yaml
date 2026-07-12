@@ -11,7 +11,7 @@ input:
     targets:
       - language: Russian
         script: Cyrillic
-    page_layout: inline_entries
+    page_layout: There are two columns; each column contains independent dictionary entries.
     information_types: [translation, part_of_speech, example]
 
 output:

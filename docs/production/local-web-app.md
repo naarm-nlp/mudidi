@@ -39,7 +39,7 @@ The **New Run** screen exposes the production settings most users need:
 
 The **Dictionary Profile** is optional. If you know the headword language,
 translation/definition languages, their scripts, the page arrangement, and the
-information types present in an entry, providing those five answers can improve
+information types present in an entry, providing those details can improve
 extraction accuracy. The profile is guidance rather than source text: MUDIDI
 still verifies it against the scanned page. Leave the entire section blank when
 you do not know the answers.

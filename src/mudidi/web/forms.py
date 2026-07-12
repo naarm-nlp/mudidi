@@ -22,7 +22,6 @@ from mudidi.config.yaml_config import (
 from mudidi.schemas.dictionary_profile import (
     DictionaryProfile,
     InformationType,
-    PageLayout,
     ProfileLanguage,
 )
 
@@ -72,8 +71,9 @@ class NewRunForm(BaseModel):
     profile_headword_script: str | None = None
     profile_target_languages: list[str] = Field(default_factory=list)
     profile_target_scripts: list[str] = Field(default_factory=list)
-    profile_page_layout: PageLayout | None = None
+    profile_page_layout: str | None = Field(default=None, max_length=2000)
     profile_information_types: list[InformationType] = Field(default_factory=list)
+    profile_other_information_types: str | None = Field(default=None, max_length=1000)
     toolbox_pdf: Path | None = None
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
@@ -299,6 +299,7 @@ class NewRunForm(BaseModel):
                 self.profile_target_scripts,
                 self.profile_page_layout,
                 self.profile_information_types,
+                _clean_optional(self.profile_other_information_types),
             )
         )
         if not has_any_answer:
@@ -314,7 +315,7 @@ class NewRunForm(BaseModel):
             )
         ):
             raise ValueError(
-                "Complete all five Dictionary Profile questions, or leave all of them blank"
+                "Complete all Dictionary Profile questions, or leave all of them blank"
             )
         if len(self.profile_target_languages) != len(self.profile_target_scripts):
             raise ValueError(
@@ -342,6 +343,9 @@ class NewRunForm(BaseModel):
             targets=targets,
             page_layout=page_layout,
             information_types=self.profile_information_types,
+            other_information_types=_clean_optional(
+                self.profile_other_information_types
+            ),
         )
 
 

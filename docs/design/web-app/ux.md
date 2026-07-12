@@ -47,10 +47,11 @@ Stage 1 options are conditionally visible: flat/column mode, introduction,
 alphabet, OCR hint, and guide file. Dashboard runs always disable typography
 preservation.
 
-An optional **Dictionary Profile** asks only for the headword language,
-translation/gloss/definition languages, each language's script, page
-arrangement, and entry information types. The UI explains that these answers
-can improve accuracy, while leaving the whole profile blank remains valid.
+An optional **Dictionary Profile** pairs each language with its script, accepts
+a free-form page-arrangement description, and lists common entry information
+types. Selecting **Other** reveals a free-form field for one or more additional
+types. The UI explains that these answers can improve accuracy, while leaving
+the whole profile blank remains valid.
 
 When Stage 2 is selected, users choose either:
 

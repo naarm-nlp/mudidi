@@ -18,6 +18,19 @@ document.addEventListener("click", (event) => {
   }
 });
 
+const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
+const otherInformationField = document.querySelector("#profile-other-information");
+if (otherInformationToggle && otherInformationField) {
+  const otherInformationInput = otherInformationField.querySelector("textarea");
+  const synchronizeOtherInformation = () => {
+    const selected = otherInformationToggle.checked;
+    otherInformationField.hidden = !selected;
+    if (otherInformationInput) otherInformationInput.disabled = !selected;
+  };
+  otherInformationToggle.addEventListener("change", synchronizeOtherInformation);
+  synchronizeOtherInformation();
+}
+
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {
   const eventSource = new EventSource(liveRun.content);

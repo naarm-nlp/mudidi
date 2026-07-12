@@ -91,7 +91,8 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
 - Standard or verified quality preset
-- Optional five-question Dictionary Profile for language, script, layout, and
+- Optional Dictionary Profile with paired language/script questions, a
+  free-form layout description, and
   entry-information context
 
 ### Advanced
