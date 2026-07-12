@@ -29,7 +29,9 @@ def test_generic_transition_cannot_bypass_parse_rule_review(store: RunStore) -> 
         store.transition("run-1", RunStatus.RUNNING_STAGE2)
 
 
-def test_pass2_start_requires_review_state_and_records_approval(store: RunStore) -> None:
+def test_pass2_start_requires_review_state_and_records_approval(
+    store: RunStore,
+) -> None:
     store.create_run("run-1")
     store.transition("run-1", RunStatus.VALIDATED)
     store.transition("run-1", RunStatus.QUEUED)

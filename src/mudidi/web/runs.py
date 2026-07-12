@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 
+from mudidi.config.yaml_config import InferenceConfig
+
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -50,6 +52,17 @@ class RunRecord:
     approval_digest: str | None
     created_at: datetime
     updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PresetRecord:
+    """Reusable non-secret production configuration."""
+
+    preset_id: str
+    name: str
+    provider: str
+    config: InferenceConfig
+    created_at: datetime
 
 
 _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
@@ -177,6 +190,13 @@ class RunStore:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
                     approved_at TEXT
+                );
+                CREATE TABLE IF NOT EXISTS presets (
+                    preset_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE,
+                    provider TEXT NOT NULL,
+                    config_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
                 );
                 """
             )
@@ -382,6 +402,7 @@ class RunStore:
             "runs",
             "run_events",
             "parse_rule_reviews",
+            "presets",
             "schema_migrations",
         }:
             raise ValueError("unknown table")
@@ -436,6 +457,55 @@ class RunStore:
             RunStatus.RUNNING_STAGE2,
         }
         return [run for run in self.list_runs() if run.status in active]
+
+    def create_preset(
+        self,
+        preset_id: str,
+        *,
+        name: str,
+        provider: str,
+        config: InferenceConfig,
+    ) -> PresetRecord:
+        """Persist one validated configuration without credentials."""
+
+        cleaned_name = name.strip()
+        if not preset_id.strip() or not cleaned_name:
+            raise ValueError("preset id and name must not be empty")
+        if len(cleaned_name) > 80:
+            raise ValueError("preset name must be at most 80 characters")
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO presets(preset_id, name, provider, config_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    preset_id,
+                    cleaned_name,
+                    provider,
+                    config.model_dump_json(),
+                    _now().isoformat(),
+                ),
+            )
+        return self.get_preset(preset_id)
+
+    def get_preset(self, preset_id: str) -> PresetRecord:
+        """Load one typed preset or raise ``KeyError``."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM presets WHERE preset_id = ?", (preset_id,)
+            ).fetchone()
+        if row is None:
+            raise KeyError(preset_id)
+        return _preset_from_row(row)
+
+    def list_presets(self) -> list[PresetRecord]:
+        """Return presets ordered by name for a stable picker."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM presets ORDER BY name, preset_id"
+            ).fetchall()
+        return [_preset_from_row(row) for row in rows]
 
     def create_parse_rule_review(
         self,
@@ -602,6 +672,16 @@ def _record_from_row(row: sqlite3.Row) -> RunRecord:
         approval_digest=row["approval_digest"],
         created_at=datetime.fromisoformat(row["created_at"]),
         updated_at=datetime.fromisoformat(row["updated_at"]),
+    )
+
+
+def _preset_from_row(row: sqlite3.Row) -> PresetRecord:
+    return PresetRecord(
+        preset_id=str(row["preset_id"]),
+        name=str(row["name"]),
+        provider=str(row["provider"]),
+        config=InferenceConfig.model_validate_json(str(row["config_json"])),
+        created_at=datetime.fromisoformat(str(row["created_at"])),
     )
 
 

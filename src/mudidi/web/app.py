@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -21,7 +22,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from mudidi.config.yaml_config import validate_config_paths
+from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
@@ -323,6 +324,62 @@ def create_app(
             },
         )
 
+    @app.get("/presets", response_class=HTMLResponse)
+    async def presets(request: Request) -> HTMLResponse:
+        """List reusable non-secret configurations."""
+
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="presets.html",
+            context={"presets": app.state.run_store.list_presets()},
+        )
+
+    @app.post("/runs/{run_id}/presets")
+    async def save_run_preset(request: Request, run_id: str) -> RedirectResponse:
+        """Save the prepared run's typed configuration as a reusable preset."""
+
+        try:
+            run = app.state.run_store.get_run(run_id)
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError) as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        submitted = await request.form()
+        name = str(submitted.get("name", ""))
+        try:
+            app.state.run_store.create_preset(
+                f"preset-{uuid4().hex[:12]}",
+                name=name,
+                provider=str(run.provider),
+                config=config,
+            )
+        except (ValueError, sqlite3.IntegrityError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return RedirectResponse("/presets", status_code=303)
+
+    @app.post("/presets/{preset_id}/prepare", response_class=HTMLResponse)
+    async def prepare_preset(request: Request, preset_id: str) -> HTMLResponse:
+        """Revalidate a preset and clone it into a fresh prepared run."""
+
+        try:
+            preset = app.state.run_store.get_preset(preset_id)
+            validate_config_paths(preset.config)
+            provider = Provider(preset.provider)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="preset not found") from exc
+        except (ValueError, ValidationError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        run_id = f"run-{uuid4().hex[:12]}"
+        app.state.job_controller.prepare_inference(
+            run_id,
+            config=preset.config,
+            provider=provider,
+        )
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={"summary": _config_summary(preset.config), "run_id": run_id},
+        )
+
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
     async def run_detail(request: Request, run_id: str) -> HTMLResponse:
         """Render current state and persisted event progress for one run."""
@@ -564,6 +621,21 @@ def _error_count(exc: ValidationError | ValueError) -> int:
     if isinstance(exc, ValidationError):
         return len(exc.errors())
     return 1
+
+
+def _config_summary(config: InferenceConfig) -> dict[str, str]:
+    return {
+        "input": str(config.input.pages),
+        "output": str(config.output.directory),
+        "pipeline": str(config.pipeline.stage),
+        "model": config.models.default,
+        "quality": (
+            "verified" if config.agentic.stage1 or config.agentic.stage2 else "standard"
+        ),
+        "parse_rules": (
+            "Not used" if config.pipeline.stage == "1" else "Human approval required"
+        ),
+    }
 
 
 def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, bool]:
