@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-import subprocess
+# Dedicated worker processes use fixed argument vectors and never invoke a shell.
+import subprocess  # nosec B404
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -228,7 +229,8 @@ class JobController:
             if fail:
                 command.append("--fail")
             try:
-                process = subprocess.Popen(
+                # Command is a fixed Python module argv; user input is never executable.
+                process = subprocess.Popen(  # nosec B603
                     command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -290,7 +292,8 @@ class JobController:
         with self._lock:
             if any(worker.process.poll() is None for worker in self._workers.values()):
                 raise RuntimeError("another inference worker is active")
-            process = subprocess.Popen(
+            # Command is a fixed Python module argv; user input is never executable.
+            process = subprocess.Popen(  # nosec B603
                 command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

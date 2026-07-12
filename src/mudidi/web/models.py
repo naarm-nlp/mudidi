@@ -7,7 +7,16 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
+
+_MODEL_API_HOSTS = {
+    "api.anthropic.com",
+    "api.openai.com",
+    "generativelanguage.googleapis.com",
+    "openrouter.ai",
+}
+_MAX_MODEL_RESPONSE_BYTES = 5 * 1024 * 1024
 
 
 class Provider(StrEnum):
@@ -281,9 +290,16 @@ def _parse_live_model(
 
 
 def _fetch_json(url: str, headers: Mapping[str, str]) -> dict[str, Any]:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or parsed.hostname not in _MODEL_API_HOSTS:
+        raise ValueError("model discovery URL is not allowlisted")
     request = Request(url, headers=dict(headers), method="GET")
-    with urlopen(request, timeout=5) as response:  # noqa: S310 - fixed allowlisted URLs
-        payload = json.loads(response.read().decode("utf-8"))
+    # Scheme and host are checked against the fixed provider allowlist above.
+    with urlopen(request, timeout=5) as response:  # nosec B310
+        raw = response.read(_MAX_MODEL_RESPONSE_BYTES + 1)
+    if len(raw) > _MAX_MODEL_RESPONSE_BYTES:
+        raise ValueError("provider model list response is too large")
+    payload = json.loads(raw.decode("utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("provider response is not an object")
     return payload

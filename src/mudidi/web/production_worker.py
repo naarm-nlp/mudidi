@@ -50,7 +50,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args = build_parser().parse_args(argv)
     credential_message = sys.stdin.readline().strip()
-    secret_value = ""
+    # Empty redaction sentinel; populated only from the private credential message.
+    secret_value = ""  # nosec B105
     sequence = args.sequence_start
     try:
         if credential_message and credential_message != "{}":

@@ -13,6 +13,7 @@ from mudidi.web.models import (
     Provider,
     normalize_custom_model,
 )
+from mudidi.web.models import _fetch_json
 
 
 def test_catalog_contains_current_official_multimodal_families() -> None:
@@ -154,3 +155,8 @@ def test_live_discovery_normalizes_official_provider_payloads(
     assert [model.model_id for model in models] == [expected]
     assert requests
     assert "private-key" not in repr(models)
+
+
+def test_model_fetch_rejects_non_allowlisted_url_before_network_access() -> None:
+    with pytest.raises(ValueError, match="allowlisted"):
+        _fetch_json("file:///etc/passwd", {})
