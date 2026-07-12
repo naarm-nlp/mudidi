@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import base64
-import json
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -177,17 +176,14 @@ def test_home_uses_accessible_pipeline_radios_and_agentic_controls(
     assert "Expert OCR backends" not in response.text
 
 
-def test_bundled_mdf_manual_is_downloadable(tmp_path: Path) -> None:
+def test_dashboard_does_not_redistribute_an_mdf_manual(tmp_path: Path) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/assets/mdf-manual")
 
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/pdf"
-    assert "attachment" in response.headers["content-disposition"]
-    assert len(response.content) == 530_169
-    assert (
-        hashlib.sha256(response.content).hexdigest()
-        == "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015"
-    )
+    assert response.status_code == 404
+    assert not files("mudidi.assets").joinpath("MDFReferenceManual.pdf").is_file()
+    assert not (
+        Path(__file__).parents[2] / "assets" / "Pages from ToolboxReferenceManual.pdf"
+    ).is_file()
 
 
 @pytest.mark.parametrize(
@@ -230,11 +226,25 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="stage2_guides"' not in response.text
     assert "Representative MDF parsing guide pages" in response.text
     assert 'name="mdf_manual_source" value="none"' in response.text
-    assert 'name="mdf_manual_source" value="bundled"' in response.text
     assert 'name="mdf_manual_source" value="upload"' in response.text
+    assert 'name="mdf_manual_source" value="bundled"' not in response.text
     assert 'name="custom_mdf_manual" type="file"' in response.text
-    assert 'href="/assets/mdf-manual"' in response.text
-    assert "65-page" in response.text
+    assert "Upload my own MDF manual" in response.text
+    assert "Continue without an MDF manual" in response.text
+    assert "Open the official SIL MDF documentation" in response.text
+    assert (
+        'href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf"'
+        in response.text
+    )
+    assert 'target="_blank"' in response.text
+    assert 'rel="noopener noreferrer"' in response.text
+    assert "pages 31–95" in response.text
+    assert "65 pages" in response.text
+
+
+def test_removed_bundled_manual_source_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="mdf_manual_source"):
+        _form(tmp_path, mdf_manual_source="bundled")
 
 
 def test_preview_materializes_all_context_inputs_into_run_bundle(
@@ -288,40 +298,3 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
         "Use the custom nt marker."
     )
 
-
-def test_bundled_manual_is_copied_into_run_bundle(tmp_path: Path) -> None:
-    app = create_app(data_dir=tmp_path / "app-data")
-    client = TestClient(app)
-
-    response = client.post(
-        "/runs/preview",
-        data={
-            "output_directory": str(tmp_path / "output"),
-            "pipeline": "complete",
-            "provider": "anthropic",
-            "model": "anthropic/claude-sonnet-5",
-            "reasoning": "low",
-            "mdf_manual_source": "bundled",
-        },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
-    )
-
-    assert response.status_code == 200
-    run = app.state.run_store.list_runs()[0]
-    config = app.state.job_controller.load_inference_config(run.run_id)
-    assert config.input.toolbox_pdf is not None
-    assert config.input.toolbox_pdf.parent == (
-        tmp_path / "app-data" / "runs" / run.run_id / "inputs" / "mdf_manual"
-    ).resolve()
-    assert hashlib.sha256(config.input.toolbox_pdf.read_bytes()).hexdigest() == (
-        "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015"
-    )
-    metadata = json.loads(
-        (config.input.toolbox_pdf.parent / "metadata.json").read_text(encoding="utf-8")
-    )
-    assert metadata == {
-        "filename": "MUDIDI-MDF-Manual.pdf",
-        "pages": 65,
-        "sha256": "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015",
-        "source": "bundled",
-    }
