@@ -132,3 +132,30 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
     assert "[REDACTED]" in response.text
     assert "sk-ant-live-log-secret" not in response.text
     assert "Older log output was truncated" in response.text
+
+
+def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+
+    saved = client.post(
+        f"/runs/{run_id}/presets",
+        data={"name": "My verified setup"},
+        follow_redirects=False,
+    )
+
+    assert saved.status_code == 303
+    preset = app.state.run_store.list_presets()[0]
+    page = client.get("/presets")
+    assert page.status_code == 200
+    assert "My verified setup" in page.text
+
+    prepared = client.post(
+        f"/presets/{preset.preset_id}/prepare",
+        follow_redirects=False,
+    )
+
+    assert prepared.status_code == 200
+    assert "Review your run" in prepared.text
+    assert len(app.state.run_store.list_runs()) == 2

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.runs import (
     ActiveRunExistsError,
     InvalidRunTransition,
@@ -105,3 +106,32 @@ def test_api_keys_are_not_columns_or_serialized_values(store: RunStore) -> None:
 
     assert not any("key" in column or "secret" in column for column in columns)
     assert "sk-test-secret" not in repr(run)
+
+
+def test_presets_round_trip_non_secret_typed_configuration(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "output"},
+            "models": {"default": "anthropic/claude-sonnet-5"},
+        }
+    )
+
+    created = store.create_preset(
+        "preset-1",
+        name="Verified dictionary",
+        provider="anthropic",
+        config=config,
+    )
+    loaded = store.get_preset("preset-1")
+
+    assert created == loaded
+    assert loaded.name == "Verified dictionary"
+    assert loaded.provider == "anthropic"
+    assert loaded.config == config
+    assert store.list_presets() == [loaded]
