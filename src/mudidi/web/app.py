@@ -1001,11 +1001,7 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
         "mdf_manual": (
             "Not used"
             if manual is None
-            else (
-                "Bundled 65-page manual"
-                if manual.name == "MUDIDI-MDF-Manual.pdf"
-                else "Custom upload"
-            )
+            else "Custom upload"
         ),
         "mdf_parsing_guide": (
             "Not used" if config.pipeline.stage == "1" else "Human approval required"

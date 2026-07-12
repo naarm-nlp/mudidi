@@ -87,12 +87,14 @@ material.
 
 The MDF manual choices are:
 
-1. No manual.
-2. Bundled 65-page manual, with token-cost warning and download link.
-3. Custom or shortened PDF upload.
+1. Upload my own MDF manual.
+2. Open the official SIL MDF documentation in a new browser tab.
+3. Continue without an MDF manual.
 
-The UI recommends a shortened PDF containing only relevant marker pages when
-the marker set is already known.
+The help text explains that the relevant MDF section of the official manual is
+pages 31–95 (65 pages), and recommends uploading only the pages needed for the
+dictionary to improve relevance and reduce token cost. MUDIDI does not package
+or redistribute the SIL manual.
 
 Representative MDF parsing guide pages include help explaining that Stage 2
 samples them to infer dictionary-specific MDF markers and entry structure.

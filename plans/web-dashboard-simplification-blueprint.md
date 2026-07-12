@@ -704,6 +704,14 @@ manual or an official-download/cache workflow, then update the built-in option,
 tests, and documentation. This mutation does not affect the MDF parsing guide
 workflow or custom-manual upload.
 
+Resolution (2026-07-13): published SIL terms did not establish permission to
+bundle the extracted 65-page PDF. Both repository copies, the package manifest,
+the application download route, and the bundled-source option were removed.
+The dashboard now offers a user upload, a direct link to SIL's official Toolbox
+Reference Manual, or no manual. Its help text recommends extracting the relevant
+pages from pages 31–95 before uploading them. This resolution supersedes the
+earlier bundled-asset steps and acceptance criteria in this blueprint.
+
 ## Anti-pattern checklist
 
 Reject an implementation that:

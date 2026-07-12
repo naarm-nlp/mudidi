@@ -81,17 +81,20 @@ These names refer to different things:
 
 For the MDF manual, choose one of:
 
-- no manual;
-- the bundled official 65-page manual;
-- a custom or shortened PDF.
+- upload your own MDF manual PDF;
+- open the
+  [official SIL Toolbox Reference Manual](http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf)
+  in a new browser tab; or
+- continue without an MDF manual.
 
-The full manual covers all MDF markers and can increase input tokens and cost.
-If you already know which markers your dictionary needs, extract only the
-relevant manual pages and upload the shorter PDF. The dashboard also provides a
-download link so you can inspect the bundled manual before deciding.
+The relevant MDF information in SIL's manual starts on page 31 and spans pages
+31–95 (65 pages). For better relevance and lower token cost, extract only the
+pages your dictionary needs from that section and upload the shortened PDF. The
+same recommendation appears in the dashboard's MDF-manual information tooltip.
 
-Whichever manual is selected is copied into the run-owned input bundle. It is
-optional and does not replace the dictionary-specific MDF parsing guide.
+MUDIDI does not bundle or redistribute SIL's manual. A PDF is copied into the
+run-owned input bundle only when you upload it yourself. The manual is optional
+and does not replace the dictionary-specific MDF parsing guide.
 
 ## Agentic verification
 
