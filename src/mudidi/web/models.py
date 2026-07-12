@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
+from urllib.request import Request, urlopen
 
 
 class Provider(StrEnum):
@@ -26,6 +30,47 @@ class ModelOption:
     image_input: bool
     recommended_for: tuple[str, ...]
     source_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class LiveModelOption:
+    """Provider-returned model with only non-secret display metadata."""
+
+    model_id: str
+    display_name: str
+    provider: Provider
+    image_input: bool | None
+
+
+class ModelDiscoveryError(RuntimeError):
+    """Safe provider-list failure that never includes request credentials."""
+
+
+FetchModels = Callable[[str, Mapping[str, str]], dict[str, Any]]
+
+
+class ModelDiscovery:
+    """Fetch current models from fixed official provider endpoints."""
+
+    def __init__(self, *, fetch: FetchModels | None = None) -> None:
+        self._fetch = fetch or _fetch_json
+
+    def discover(
+        self,
+        provider: Provider,
+        *,
+        api_key: str,
+    ) -> tuple[LiveModelOption, ...]:
+        """Return normalized provider models or a credential-safe error."""
+
+        try:
+            url, headers = _discovery_request(provider, api_key)
+            payload = self._fetch(url, headers)
+            return _parse_live_models(provider, payload)
+        except Exception as exc:
+            raise ModelDiscoveryError(
+                f"{provider.value} model discovery failed; bundled models remain available"
+            ) from exc
 
 
 class ModelCatalog:
@@ -146,3 +191,99 @@ def normalize_custom_model(provider: Provider, model_id: str) -> str:
     if cleaned.startswith(prefix):
         return cleaned
     return f"{prefix}{cleaned}"
+
+
+def _discovery_request(
+    provider: Provider,
+    api_key: str,
+) -> tuple[str, dict[str, str]]:
+    if provider is Provider.OPENAI:
+        return (
+            "https://api.openai.com/v1/models",
+            {"Authorization": f"Bearer {api_key}"},
+        )
+    if provider is Provider.ANTHROPIC:
+        return (
+            "https://api.anthropic.com/v1/models?limit=1000",
+            {"x-api-key": api_key, "anthropic-version": "2023-06-01"},
+        )
+    if provider is Provider.GEMINI:
+        return (
+            "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000",
+            {"x-goog-api-key": api_key},
+        )
+    if provider is Provider.OPENROUTER:
+        return (
+            "https://openrouter.ai/api/v1/models?input_modalities=image",
+            {"Authorization": f"Bearer {api_key}"},
+        )
+    raise ValueError("custom routing has no provider model-list endpoint")
+
+
+def _parse_live_models(
+    provider: Provider,
+    payload: dict[str, Any],
+) -> tuple[LiveModelOption, ...]:
+    raw_models = payload.get("models" if provider is Provider.GEMINI else "data", [])
+    if not isinstance(raw_models, list):
+        raise ValueError("provider model list is malformed")
+    found: dict[str, LiveModelOption] = {}
+    for raw in raw_models:
+        if not isinstance(raw, dict):
+            continue
+        parsed = _parse_live_model(provider, raw)
+        if parsed is not None:
+            found[parsed.model_id] = parsed
+    return tuple(found[model_id] for model_id in sorted(found))
+
+
+def _parse_live_model(
+    provider: Provider,
+    raw: dict[str, Any],
+) -> LiveModelOption | None:
+    raw_id = str(raw.get("name" if provider is Provider.GEMINI else "id", ""))
+    if provider is Provider.GEMINI:
+        methods = raw.get("supportedGenerationMethods", [])
+        if "generateContent" not in methods:
+            return None
+        raw_id = str(raw.get("baseModelId") or raw_id.removeprefix("models/"))
+        display = str(raw.get("displayName") or raw_id)
+        image_input: bool | None = True
+    elif provider is Provider.OPENROUTER:
+        architecture = raw.get("architecture", {})
+        modalities = (
+            architecture.get("input_modalities", [])
+            if isinstance(architecture, dict)
+            else []
+        )
+        if "image" not in modalities:
+            return None
+        display = str(raw.get("name") or raw_id)
+        image_input = True
+    elif provider is Provider.OPENAI:
+        if not raw_id.startswith(("gpt-", "o")):
+            return None
+        display = raw_id
+        image_input = None
+    else:
+        if not raw_id.startswith("claude-"):
+            return None
+        display = str(raw.get("display_name") or raw_id)
+        image_input = True
+    if not raw_id:
+        return None
+    return LiveModelOption(
+        model_id=normalize_custom_model(provider, raw_id),
+        display_name=display,
+        provider=provider,
+        image_input=image_input,
+    )
+
+
+def _fetch_json(url: str, headers: Mapping[str, str]) -> dict[str, Any]:
+    request = Request(url, headers=dict(headers), method="GET")
+    with urlopen(request, timeout=5) as response:  # noqa: S310 - fixed allowlisted URLs
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("provider response is not an object")
+    return payload

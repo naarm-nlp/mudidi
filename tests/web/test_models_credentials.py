@@ -32,12 +32,17 @@ def test_every_provider_allows_custom_model_entry(provider: Provider) -> None:
 
 
 def test_direct_provider_prefix_is_added_to_unqualified_custom_model() -> None:
-    assert normalize_custom_model(Provider.OPENAI, "gpt-private") == "openai/gpt-private"
+    assert (
+        normalize_custom_model(Provider.OPENAI, "gpt-private") == "openai/gpt-private"
+    )
     assert (
         normalize_custom_model(Provider.ANTHROPIC, "claude-private")
         == "anthropic/claude-private"
     )
-    assert normalize_custom_model(Provider.GEMINI, "gemini-private") == "gemini/gemini-private"
+    assert (
+        normalize_custom_model(Provider.GEMINI, "gemini-private")
+        == "gemini/gemini-private"
+    )
 
 
 def test_openrouter_keeps_explicit_routing_namespace() -> None:

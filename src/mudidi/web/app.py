@@ -28,7 +28,12 @@ from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
 from mudidi.web.inputs import InputMaterializer
-from mudidi.web.models import ModelCatalog, Provider
+from mudidi.web.models import (
+    ModelCatalog,
+    ModelDiscovery,
+    ModelDiscoveryError,
+    Provider,
+)
 from mudidi.web.parse_rules import ParseRuleReviewService
 from mudidi.web.runs import RunRecord, RunStatus, RunStore
 
@@ -49,6 +54,7 @@ def create_app(
     data_dir: Path | None = None,
     credential_vault: CredentialVault | None = None,
     offline_inference: bool = False,
+    model_discovery: ModelDiscovery | None = None,
 ) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
@@ -73,6 +79,8 @@ def create_app(
     app.state.data_dir = resolved_data_dir
     app.state.credential_vault = credential_vault or CredentialVault()
     app.state.model_catalog = ModelCatalog.bundled()
+    app.state.model_discovery = model_discovery or ModelDiscovery()
+    app.state.live_models = {}
     app.state.run_store = RunStore(resolved_data_dir / "mudidi-web.sqlite3")
     app.state.parse_rule_reviews = ParseRuleReviewService(
         store=app.state.run_store,
@@ -139,7 +147,7 @@ def create_app(
             name="home.html",
             context={
                 "active_page": "new-run",
-                "models": app.state.model_catalog.options,
+                "models": _all_models(app),
             },
         )
 
@@ -270,6 +278,45 @@ def create_app(
             request,
             app,
             message="Temporary key ready",
+        )
+
+    @app.post("/providers/{provider_name}/models/refresh", response_class=HTMLResponse)
+    async def refresh_provider_models(
+        request: Request,
+        provider_name: str,
+    ) -> HTMLResponse:
+        """Refresh a provider's current non-secret model list in memory."""
+
+        try:
+            provider = Provider(provider_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="unknown provider") from exc
+        credential = app.state.credential_vault.resolve(provider)
+        if credential is None:
+            return _render_providers(
+                request,
+                app,
+                message="Add this provider's API key before refreshing models",
+                status_code=409,
+            )
+        try:
+            models = await asyncio.to_thread(
+                app.state.model_discovery.discover,
+                provider,
+                api_key=credential.get_secret_value(),
+            )
+        except ModelDiscoveryError as exc:
+            return _render_providers(
+                request,
+                app,
+                message=str(exc),
+                status_code=502,
+            )
+        app.state.live_models[provider] = models
+        return _render_providers(
+            request,
+            app,
+            message=f"Loaded {len(models)} current {provider.value} models",
         )
 
     @app.post("/runs/demo")
@@ -675,10 +722,21 @@ def _render_providers(
                 for provider in direct_providers
             },
             "models": app.state.model_catalog.options,
+            "live_models": tuple(
+                model for models in app.state.live_models.values() for model in models
+            ),
             "catalog_as_of": app.state.model_catalog.as_of,
             "message": message,
         },
         status_code=status_code,
+    )
+
+
+def _all_models(app: FastAPI) -> tuple[object, ...]:
+    live = tuple(model for models in app.state.live_models.values() for model in models)
+    bundled_ids = {model.model_id for model in app.state.model_catalog.options}
+    return app.state.model_catalog.options + tuple(
+        model for model in live if model.model_id not in bundled_ids
     )
 
 

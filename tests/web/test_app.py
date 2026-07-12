@@ -202,9 +202,13 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
     assert not (tmp_path / "app-data" / "escape.png").exists()
 
 
-def test_provider_refresh_adds_live_models_without_persisting_key(tmp_path: Path) -> None:
+def test_provider_refresh_adds_live_models_without_persisting_key(
+    tmp_path: Path,
+) -> None:
     class FakeDiscovery:
-        def discover(self, provider: Provider, *, api_key: str) -> tuple[LiveModelOption, ...]:
+        def discover(
+            self, provider: Provider, *, api_key: str
+        ) -> tuple[LiveModelOption, ...]:
             assert provider is Provider.OPENAI
             assert api_key == "sk-openai-live"
             return (

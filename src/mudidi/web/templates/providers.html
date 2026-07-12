@@ -31,6 +31,7 @@
             <button type="submit">Use temporarily</button>
           </div>
         </form>
+        <form method="post" action="/providers/{{ provider.value }}/models/refresh"><button type="submit">Refresh available models</button></form>
         {% endfor %}
       </section>
 
@@ -41,6 +42,12 @@
           <article>
             <div><strong>{{ model.display_name }}</strong><code>{{ model.model_id }}</code></div>
             <span>{{ model.provider.value }}</span>
+          </article>
+          {% endfor %}
+          {% for model in live_models %}
+          <article>
+            <div><strong>{{ model.display_name }}</strong><code>{{ model.model_id }}</code></div>
+            <span>Live · {{ model.provider.value }}</span>
           </article>
           {% endfor %}
           <article class="custom-model">
