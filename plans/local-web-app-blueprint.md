@@ -1,6 +1,6 @@
 # Blueprint: MUDIDI Local Web Application
 
-Status: reviewed; critical approval-boundary findings incorporated  
+Status: reviewed; critical approval-boundary findings incorporated
 Objective: ship a localhost production-inference website that reuses MUDIDI's
 typed configuration and extraction engine, requires only local files and an LLM
 API key, and enforces human approval of Stage 2 parse rules.
@@ -113,8 +113,8 @@ final review. Default coding models are sufficient for presentation work.
 
 ## Step 1 — Configuration-native staged execution and progress contracts
 
-Branch: `web/execution-contracts`  
-Depends on: none  
+Branch: `web/execution-contracts`
+Depends on: none
 Rollback: revert this PR; no database or UI artifacts exist yet.
 
 ### Context brief
@@ -190,8 +190,8 @@ uv run pytest -q
 
 ## Step 2 — FastAPI/Jinja/HTMX foundation and application shell
 
-Branch: `web/application-foundation`  
-Depends on: Step 1 contracts, but may use a fake execution service initially  
+Branch: `web/application-foundation`
+Depends on: Step 1 contracts, but may use a fake execution service initially
 Rollback: remove the optional dependency group and `web/` package.
 
 ### Context brief
@@ -254,8 +254,8 @@ uv build
 
 ## Step 3 — SQLite persistence and subprocess job controller
 
-Branch: `web/job-controller`  
-Depends on: Step 1  
+Branch: `web/job-controller`
+Depends on: Step 1
 Rollback: remove app database files; output artifacts remain untouched.
 
 ### Context brief
@@ -315,8 +315,8 @@ uv run pytest tests/web/test_run_states.py tests/web/test_jobs.py \
 
 ## Step 4 — New Run wizard and typed production configuration
 
-Branch: `web/run-wizard`  
-Depends on: Steps 2 and 3a  
+Branch: `web/run-wizard`
+Depends on: Steps 2 and 3a
 Rollback: retain shell; remove wizard routes/forms.
 
 ### Context brief
@@ -370,8 +370,8 @@ uv run pytest tests/web/test_wizard.py tests/web/test_form_config.py \
 
 ## Step 5 — Provider credentials and model catalog
 
-Branch: `web/model-catalog`  
-Depends on: Step 2; coordinate form integration with Step 4  
+Branch: `web/model-catalog`
+Depends on: Step 2; coordinate form integration with Step 4
 Rollback: custom model entry remains available.
 
 ### Context brief
@@ -423,8 +423,8 @@ uv run pytest tests/web/test_model_catalog.py tests/web/test_credentials.py -q
 
 ## Step 6 — Active Run, SSE progress, page detail, usage and history
 
-Branch: `web/run-monitoring`  
-Depends on: Steps 3 and 4  
+Branch: `web/run-monitoring`
+Depends on: Steps 3 and 4
 Rollback: job controller remains usable via tests/internal API.
 
 ### Context brief
@@ -476,8 +476,8 @@ uv run pytest tests/e2e/test_web_run.py -q
 
 ## Step 7 — Mandatory parse-rule review, approval and Pass 2 resume
 
-Branch: `web/parse-rule-review`  
-Depends on: Steps 1, 3, 4 and 6  
+Branch: `web/parse-rule-review`
+Depends on: Steps 1, 3, 4 and 6
 Rollback: Stage 2 web execution remains disabled; never bypass approval.
 
 ### Context brief
@@ -553,8 +553,8 @@ uv run pytest tests/e2e/test_parse_rule_checkpoint.py -q
 
 ## Step 8 — Packaging, hardening, E2E acceptance and release documentation
 
-Branch: `web/release-hardening`  
-Depends on: Steps 2–7  
+Branch: `web/release-hardening`
+Depends on: Steps 2–7
 Rollback: do not advertise/install the web extra; CLI remains supported.
 
 ### Context brief
