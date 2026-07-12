@@ -134,5 +134,5 @@ def test_agentic_and_manual_controls_follow_pipeline(
     page.locator('input[name="pipeline"][value="structure"]').check()
     expect(page.get_by_label("Verify Stage 1")).to_be_disabled()
     expect(page.locator("[data-mdf-manual]")).to_be_visible()
-    page.get_by_label("Upload a custom or shortened MDF manual").check()
+    page.get_by_label("Upload my own MDF manual").check()
     expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()
