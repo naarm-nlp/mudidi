@@ -54,16 +54,14 @@ def test_structured_editor_saves_normalized_draft(tmp_path: Path) -> None:
 
     response = client.post(
         f"/runs/{run_id}/parse-rules/draft",
-        data=[
-            ("dictionary_name", "Edited dictionary"),
-            ("marker_code", "\\lx"),
-            ("marker_description", "Lexeme"),
-            ("marker_code", "ge"),
-            ("marker_description", "Gloss"),
-            ("rule", "Keep printed order."),
-            ("abbreviation_key", "v."),
-            ("abbreviation_value", "verb"),
-        ],
+        data={
+            "dictionary_name": "Edited dictionary",
+            "marker_code": ["\\lx", "ge"],
+            "marker_description": ["Lexeme", "Gloss"],
+            "rule": ["Keep printed order."],
+            "abbreviation_key": ["v."],
+            "abbreviation_value": ["verb"],
+        },
     )
 
     assert response.status_code == 200
@@ -78,13 +76,11 @@ def test_invalid_structured_draft_remains_in_review(tmp_path: Path) -> None:
 
     response = client.post(
         f"/runs/{run_id}/parse-rules/draft",
-        data=[
-            ("dictionary_name", "Example"),
-            ("marker_code", "lx"),
-            ("marker_description", "Headword"),
-            ("marker_code", "\\lx"),
-            ("marker_description", "Duplicate"),
-        ],
+        data={
+            "dictionary_name": "Example",
+            "marker_code": ["lx", "\\lx"],
+            "marker_description": ["Headword", "Duplicate"],
+        },
     )
 
     assert response.status_code == 422
@@ -106,3 +102,26 @@ def test_explicit_approval_redirects_with_recorded_digest(tmp_path: Path) -> Non
     assert review.status is ReviewStatus.APPROVED
     assert review.approval_digest is not None
     assert app.state.run_store.get_run(run_id).status is RunStatus.RUNNING_STAGE2
+
+
+def test_approve_validates_and_freezes_current_form_edits(tmp_path: Path) -> None:
+    app, client, run_id = _review_app(tmp_path)
+
+    response = client.post(
+        f"/runs/{run_id}/parse-rules/approve",
+        data={
+            "dictionary_name": "Approved edit",
+            "marker_code": ["lx", "ge"],
+            "marker_description": ["Edited headword", "Gloss"],
+            "rule": ["Use the edited rule."],
+            "abbreviation_key": ["adj."],
+            "abbreviation_value": ["adjective"],
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    review = app.state.parse_rule_reviews.get(run_id)
+    approved = review.approved_snapshot_path.read_text(encoding="utf-8")  # type: ignore[union-attr]
+    assert "Approved edit" in approved
+    assert "Use the edited rule." in approved
