@@ -88,9 +88,15 @@ For the MDF manual, choose one of:
 - continue without an MDF manual.
 
 The relevant MDF information in SIL's manual starts on page 31 and spans pages
-31–95 (65 pages). For better relevance and lower token cost, extract only the
-pages your dictionary needs from that section and upload the shortened PDF. The
-same recommendation appears in the dashboard's MDF-manual information tooltip.
+31–95 (65 pages). For better relevance and lower token cost, extract and upload
+only the pages describing MDF markers or tags relevant to your dictionary.
+
+If you do not know which markers are relevant, first run **Complete
+digitization** without an MDF manual. At the human checkpoint, inspect the MDF
+parsing guide inferred by the LLM from your dictionary pages. You can then start
+a new run and upload only the corresponding marker pages from the official
+manual. The same workflow appears in the dashboard's MDF-manual information
+tooltip.
 
 MUDIDI does not bundle or redistribute SIL's manual. A PDF is copied into the
 run-owned input bundle only when you upload it yourself. The manual is optional

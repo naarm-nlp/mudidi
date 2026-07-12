@@ -92,9 +92,12 @@ The MDF manual choices are:
 3. Continue without an MDF manual.
 
 The help text explains that the relevant MDF section of the official manual is
-pages 31–95 (65 pages), and recommends uploading only the pages needed for the
-dictionary to improve relevance and reduce token cost. MUDIDI does not package
-or redistribute the SIL manual.
+pages 31–95 (65 pages), and recommends uploading only the marker/tag pages
+needed for the dictionary to improve relevance and reduce token cost. When the
+user does not know which markers are relevant, it directs them to run Complete
+digitization without a manual, inspect the LLM-inferred MDF parsing guide at the
+human checkpoint, and then start a new run with only the corresponding manual
+pages. MUDIDI does not package or redistribute the SIL manual.
 
 Representative MDF parsing guide pages include help explaining that Stage 2
 samples them to infer dictionary-specific MDF markers and entry structure.
