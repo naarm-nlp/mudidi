@@ -158,6 +158,45 @@ class JobController:
         )
         self._spawn(run_id, command, credential=credential)
 
+    def resume_inference(
+        self,
+        run_id: str,
+        *,
+        credential: ResolvedCredential | None,
+        offline_executor: bool = False,
+    ) -> None:
+        """Resume the durable phase without bypassing parse-rule approval."""
+
+        run = self.store.get_run(run_id)
+        if run.status is RunStatus.CREDENTIALS_REQUIRED and run.resume_phase is None:
+            self.start_inference(
+                run_id,
+                credential=credential,
+                offline_executor=offline_executor,
+            )
+            return
+        if run.resume_phase == "parse_rule_review":
+            self.store.resume(run_id, credentials_available=True)
+            return
+        if run.resume_phase == "stage2_pass2":
+            if self.parse_rule_reviews is None:
+                raise RuntimeError("Pass 2 resume requires parse-rule review service")
+            approval = self.parse_rule_reviews.approved_capability(run_id)
+            self.store.resume_pass2(run_id)
+            self.start_pass2(
+                run_id,
+                approval=approval,
+                credential=credential,
+                offline_executor=offline_executor,
+            )
+            return
+        self.store.resume(run_id, credentials_available=True)
+        self.start_inference(
+            run_id,
+            credential=credential,
+            offline_executor=offline_executor,
+        )
+
     def start_fake(
         self,
         run_id: str,

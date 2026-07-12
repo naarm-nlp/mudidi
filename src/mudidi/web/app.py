@@ -618,6 +618,35 @@ def create_app(
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
+    @app.post("/runs/{run_id}/resume")
+    async def resume_run(request: Request, run_id: str) -> HTMLResponse:
+        """Resume only the phase justified by the run's durable metadata."""
+
+        try:
+            run = app.state.run_store.get_run(run_id)
+            provider = Provider(str(run.provider))
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        credential = app.state.credential_vault.resolve(provider)
+        if credential is None and provider is not Provider.CUSTOM:
+            if run.status is RunStatus.INTERRUPTED:
+                app.state.run_store.resume(run_id, credentials_available=False)
+            return _TEMPLATES.TemplateResponse(
+                request=request,
+                name="credential_required.html",
+                context={"run_id": run_id, "provider": provider.value},
+                status_code=409,
+            )
+        try:
+            app.state.job_controller.resume_inference(
+                run_id,
+                credential=credential,
+                offline_executor=app.state.offline_inference,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
     @app.get("/runs/{run_id}/events")
     async def run_events(request: Request, run_id: str) -> StreamingResponse:
         """Replay and tail persisted events using resumable server-sent events."""
@@ -768,6 +797,8 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         },
         "review_available": review_row is not None,
         "review_status": review_row.get("status") if review_row else None,
+        "resume_available": run.status
+        in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED},
     }
 
 

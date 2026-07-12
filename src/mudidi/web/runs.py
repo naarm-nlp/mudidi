@@ -383,9 +383,11 @@ class RunStore:
         """Resume only to the phase justified by persisted provenance."""
 
         run = self.get_run(run_id)
-        if run.status is not RunStatus.INTERRUPTED:
+        if run.status not in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED}:
             raise InvalidRunTransition(f"cannot resume {run.status}")
         if not credentials_available:
+            if run.status is RunStatus.CREDENTIALS_REQUIRED:
+                return run
             return self.transition(run_id, RunStatus.CREDENTIALS_REQUIRED)
         if run.resume_phase == "parse_rule_review":
             return self.transition(run_id, RunStatus.AWAITING_PARSE_RULES_REVIEW)
@@ -394,6 +396,36 @@ class RunStore:
         ):
             return self.transition(run_id, RunStatus.AWAITING_PARSE_RULES_REVIEW)
         return self.transition(run_id, RunStatus.QUEUED)
+
+    def resume_pass2(self, run_id: str) -> RunRecord:
+        """Resume approved Pass 2 without reopening the earlier pipeline."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT * FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(run_id)
+            status = RunStatus(row["status"])
+            if status not in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED}:
+                raise InvalidRunTransition(f"cannot resume Pass 2 from {status}")
+            if row["resume_phase"] != "stage2_pass2" or not (
+                row["review_id"] and row["approval_digest"]
+            ):
+                raise InvalidRunTransition("Pass 2 resume requires durable approval")
+            try:
+                connection.execute(
+                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                    (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
+                )
+                connection.commit()
+            except sqlite3.IntegrityError as exc:
+                connection.rollback()
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
+        return self.get_run(run_id)
 
     def schema_columns(self, table: str) -> list[str]:
         """Return columns for an allowlisted application table."""

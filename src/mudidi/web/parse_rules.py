@@ -136,6 +136,14 @@ class ParseRuleReviewService:
         _atomic_write(review.generated_path.parent / "parse-rules.json", raw)
         return self._mint_existing(committed)
 
+    def approved_capability(self, run_id: str) -> ApprovedParseRules:
+        """Reconstruct the authenticated capability for an approved review."""
+
+        review = self.get(run_id)
+        if review.status is not ReviewStatus.APPROVED:
+            raise ValueError("parse-rule review is not approved")
+        return self._mint_existing(review)
+
     def _create_from_bytes(
         self,
         run_id: str,

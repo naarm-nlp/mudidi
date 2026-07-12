@@ -144,6 +144,35 @@ def test_direct_pass2_cannot_be_prepared_from_browser_config(tmp_path: Path) -> 
         raise AssertionError("direct web Pass 2 preparation must be rejected")
 
 
+def test_interrupted_approved_pass2_resumes_from_authenticated_snapshot(
+    tmp_path: Path,
+) -> None:
+    store, reviews, controller = _controller(tmp_path)
+    controller.prepare_inference(
+        "resume-pass2",
+        config=_config(tmp_path),
+        provider=Provider.ANTHROPIC,
+    )
+    controller.start_inference(
+        "resume-pass2",
+        credential=_credential(),
+        offline_executor=True,
+    )
+    controller.wait("resume-pass2", timeout=10)
+    reviews.approve("resume-pass2")
+    store.interrupt("resume-pass2")
+
+    controller.resume_inference(
+        "resume-pass2",
+        credential=_credential(),
+        offline_executor=True,
+    )
+    controller.wait("resume-pass2", timeout=10)
+
+    assert store.get_run("resume-pass2").status is RunStatus.COMPLETED
+    assert (tmp_path / "output/stage-2/page_1/page_1_mdf.txt").is_file()
+
+
 def test_production_failure_uses_sequence_after_stage_started(
     tmp_path: Path,
     monkeypatch: object,

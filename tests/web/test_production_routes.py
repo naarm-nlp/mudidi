@@ -182,4 +182,7 @@ def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> No
 
     assert response.status_code == 303
     app.state.job_controller.wait(run_id, timeout=10)
-    assert app.state.run_store.get_run(run_id).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    assert (
+        app.state.run_store.get_run(run_id).status
+        is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    )
