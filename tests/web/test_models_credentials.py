@@ -8,6 +8,7 @@ import pytest
 
 from mudidi.web.credentials import CredentialSource, CredentialVault
 from mudidi.web.models import (
+    ModelDiscovery,
     ModelCatalog,
     Provider,
     normalize_custom_model,
@@ -93,3 +94,58 @@ def test_missing_credential_has_non_secret_status() -> None:
 
     assert status.available is False
     assert status.source is CredentialSource.MISSING
+
+
+@pytest.mark.parametrize(
+    ("provider", "payload", "expected"),
+    [
+        (Provider.OPENAI, {"data": [{"id": "gpt-5.6"}]}, "openai/gpt-5.6"),
+        (
+            Provider.ANTHROPIC,
+            {"data": [{"id": "claude-sonnet-5", "display_name": "Sonnet 5"}]},
+            "anthropic/claude-sonnet-5",
+        ),
+        (
+            Provider.GEMINI,
+            {
+                "models": [
+                    {
+                        "name": "models/gemini-3.5-flash",
+                        "displayName": "Gemini 3.5 Flash",
+                        "supportedGenerationMethods": ["generateContent"],
+                    }
+                ]
+            },
+            "gemini/gemini-3.5-flash",
+        ),
+        (
+            Provider.OPENROUTER,
+            {
+                "data": [
+                    {
+                        "id": "anthropic/claude-sonnet-5",
+                        "name": "Claude Sonnet 5",
+                        "architecture": {"input_modalities": ["text", "image"]},
+                    }
+                ]
+            },
+            "openrouter/anthropic/claude-sonnet-5",
+        ),
+    ],
+)
+def test_live_discovery_normalizes_official_provider_payloads(
+    provider: Provider,
+    payload: dict[str, object],
+    expected: str,
+) -> None:
+    requests: list[tuple[str, Mapping[str, str]]] = []
+
+    def fetch(url: str, headers: Mapping[str, str]) -> dict[str, object]:
+        requests.append((url, headers))
+        return payload
+
+    models = ModelDiscovery(fetch=fetch).discover(provider, api_key="private-key")
+
+    assert [model.model_id for model in models] == [expected]
+    assert requests
+    assert "private-key" not in repr(models)
