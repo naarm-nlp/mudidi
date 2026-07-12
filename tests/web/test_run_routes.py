@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from mudidi.web.app import create_app
@@ -103,3 +104,41 @@ def test_history_filters_by_query_status_and_provider(tmp_path: Path) -> None:
     assert "beta-dictionary" not in response.text
     assert 'name="status"' in response.text
     assert 'name="provider"' in response.text
+
+
+def test_terminal_run_deletion_removes_local_metadata_but_not_outputs(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    run_id = "delete-terminal"
+    app.state.run_store.create_run(run_id)
+    app.state.run_store.transition(run_id, RunStatus.CANCELLED)
+    bundle = app.state.inputs.bundle(run_id)
+    bundle.mkdir(parents=True)
+    (bundle / "input.txt").write_text("managed", encoding="utf-8")
+    output = tmp_path / "output"
+    output.mkdir()
+    (output / "result.txt").write_text("keep", encoding="utf-8")
+
+    response = TestClient(app).post(
+        f"/runs/{run_id}/delete",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/history"
+    with pytest.raises(KeyError):
+        app.state.run_store.get_run(run_id)
+    assert not bundle.parent.exists()
+    assert (output / "result.txt").read_text(encoding="utf-8") == "keep"
+
+
+def test_nonterminal_run_cannot_be_deleted(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    app.state.run_store.create_run("keep-validated")
+    app.state.run_store.transition("keep-validated", RunStatus.VALIDATED)
+
+    response = TestClient(app).post("/runs/keep-validated/delete")
+
+    assert response.status_code == 409
+    assert app.state.run_store.get_run("keep-validated").status is RunStatus.VALIDATED
