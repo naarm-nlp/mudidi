@@ -70,7 +70,11 @@ def test_llm_derived_page_text_is_html_escaped(tmp_path: Path) -> None:
     from mudidi.web.models import Provider
 
     config = InferenceConfig.model_validate(
-        {"input": {"pages": pages}, "output": {"directory": output}, "pipeline": {"stage": "1"}}
+        {
+            "input": {"pages": pages},
+            "output": {"directory": output},
+            "pipeline": {"stage": "1"},
+        }
     )
     app.state.job_controller.prepare_inference(
         "xss-run", config=config, provider=Provider.ANTHROPIC

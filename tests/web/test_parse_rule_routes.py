@@ -85,7 +85,10 @@ def test_invalid_structured_draft_remains_in_review(tmp_path: Path) -> None:
 
     assert response.status_code == 422
     assert "duplicate marker" in response.text
-    assert app.state.run_store.get_run(run_id).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    assert (
+        app.state.run_store.get_run(run_id).status
+        is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    )
 
 
 def test_explicit_approval_redirects_with_recorded_digest(tmp_path: Path) -> None:

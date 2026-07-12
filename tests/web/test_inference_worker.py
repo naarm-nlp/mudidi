@@ -61,7 +61,9 @@ def test_pass2_forwards_same_loaded_rule_object(config: InferenceConfig) -> None
     approved = _approved()
     captured: list[object] = []
 
-    def execute(_config: InferenceConfig, *, approved_parse_rules: object = None) -> int:
+    def execute(
+        _config: InferenceConfig, *, approved_parse_rules: object = None
+    ) -> int:
         captured.append(approved_parse_rules)
         return 0
 
