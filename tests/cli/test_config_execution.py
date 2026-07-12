@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
@@ -158,7 +159,6 @@ output:
         intro=tmp_path / "intro.pdf",
         intro_pages="2-4",
         alphabet=tmp_path / "alphabet.txt",
-        dictionary_languages=tmp_path / "languages.yaml",
         dry_run=True,
     )
 
@@ -167,7 +167,21 @@ output:
     assert config.input.introduction == (tmp_path / "intro.pdf").resolve()
     assert config.input.introduction_pages == "2-4"
     assert config.input.alphabet == (tmp_path / "alphabet.txt").resolve()
-    assert config.input.dictionary_languages == (tmp_path / "languages.yaml").resolve()
+
+
+def test_inference_config_rejects_legacy_dictionary_languages_file(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValidationError, match="dictionary_profile"):
+        InferenceConfig.model_validate(
+            {
+                "input": {
+                    "pages": tmp_path / "pages",
+                    "dictionary_languages": tmp_path / "languages.yaml",
+                },
+                "output": {"directory": tmp_path / "output"},
+            }
+        )
 
 
 def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None:
