@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from mudidi.cli.model_args import DEFAULT_MODEL
 from mudidi.config.run_config import RunStage
+from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.utils.pdf_split import parse_page_spec
 
 ConfigKind = Literal[
@@ -69,6 +70,7 @@ class InputConfig(_StrictModel):
     alphabet: Path | None = None
     ocr_text: Path | None = None
     dictionary_languages: Path | None = None
+    dictionary_profile: DictionaryProfile | None = None
     toolbox_pdf: Path | None = None
     languages: list[str] | None = None
 
@@ -229,6 +231,11 @@ class InferenceConfig(_ExtractionConfig):
             raise ValueError("input.pages is required for inference")
         if self.pipeline.stage1_source == "gold":
             raise ValueError("inference does not support stage1_source: gold")
+        if self.input.dictionary_languages is not None:
+            raise ValueError(
+                "input.dictionary_languages is benchmark-only; use the optional "
+                "input.dictionary_profile for production inference"
+            )
         return self
 
 

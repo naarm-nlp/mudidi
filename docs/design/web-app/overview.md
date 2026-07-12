@@ -91,12 +91,14 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
 - Standard or verified quality preset
+- Optional five-question Dictionary Profile for language, script, layout, and
+  entry-information context
 
 ### Advanced
 
 - Stage-specific models and reasoning
-- Flat/column Stage 1 mode and typography preservation
-- Introduction, alphabet, OCR hint, dictionary-language, and Toolbox context
+- Flat/column Stage 1 mode; dashboard runs always normalize typography
+- Introduction, alphabet, OCR hint, and Toolbox context
 - Representative parse-rule pages or an existing parse-rules file
 - Stage-specific agentic verification, iteration budget, evaluator/rewriter
   models, minimum confidence, deterministic patches, and concrete-retry gate

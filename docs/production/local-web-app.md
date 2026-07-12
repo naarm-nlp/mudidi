@@ -37,6 +37,17 @@ The **New Run** screen exposes the production settings most users need:
 5. Choose a bundled multimodal model or enter a custom model identifier.
 6. Select the quality and reasoning settings, then review and start the run.
 
+The **Dictionary Profile** is optional. If you know the headword language,
+translation/definition languages, their scripts, the page arrangement, and the
+information types present in an entry, providing those five answers can improve
+extraction accuracy. The profile is guidance rather than source text: MUDIDI
+still verifies it against the scanned page. Leave the entire section blank when
+you do not know the answers.
+
+Dashboard runs always normalize Stage 1 typography. Typography preservation is
+not exposed in the web interface; use YAML or the CLI when that specialized
+behavior is required.
+
 Use **Require a new or empty directory** for a fresh run. Select **Resume
 compatible existing artifacts** only when you deliberately want the pipeline's
 manifest-based resume behavior; the website never silently deletes output.

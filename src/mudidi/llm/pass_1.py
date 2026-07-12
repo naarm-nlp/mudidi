@@ -17,6 +17,7 @@ from mudidi.llm.client import complete_with_usage
 from mudidi.llm.prompt_store import get_prompt_store
 from mudidi.paths import LEGACY_PARSE_RULES_FILENAME, PARSE_RULES_FILENAME
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
+from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.utils.image import image_data_url, mime_type_for_path
 from mudidi.utils.parse_rules_pages import format_sample_pages_block
@@ -56,10 +57,15 @@ def _extract_json_object(text: str) -> dict:
     return json.loads(text[start : end + 1])
 
 
-def _config_hint(config: Optional[DictionaryLanguagesConfig]) -> str:
-    if config is None:
+def _config_hint(
+    languages_config: Optional[DictionaryLanguagesConfig],
+    dictionary_profile: Optional[DictionaryProfile] = None,
+) -> str:
+    if dictionary_profile is not None:
+        return dictionary_profile.pass1_config_hint()
+    if languages_config is None:
         return ""
-    return config.pass1_config_hint()
+    return languages_config.pass1_config_hint()
 
 
 def discover_field_cheatsheet(
@@ -71,13 +77,14 @@ def discover_field_cheatsheet(
     reasoning_effort: str = "high",
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
+    dictionary_profile: Optional[DictionaryProfile] = None,
     dictionary_name: str = "",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
     user_text = get_prompt_store().format(
         "stage_2_pass_2",
         transcription=transcription.strip(),
-        config_hint=_config_hint(languages_config),
+        config_hint=_config_hint(languages_config, dictionary_profile),
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
     for intro_img in intro_images:
@@ -123,6 +130,7 @@ def discover_field_cheatsheet_multi(
     reasoning_effort: str = "high",
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
+    dictionary_profile: Optional[DictionaryProfile] = None,
     dictionary_name: str = "",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules from several sample pages in one call."""
@@ -134,7 +142,7 @@ def discover_field_cheatsheet_multi(
     )
     user_text = get_prompt_store().format(
         "stage_2_pass_2_multi",
-        config_hint=_config_hint(languages_config),
+        config_hint=_config_hint(languages_config, dictionary_profile),
         sample_pages_block=sample_pages_block,
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
@@ -248,6 +256,7 @@ def load_or_discover_parse_rules(
             reasoning_effort=discover_kwargs.get("reasoning_effort", "high"),
             temperature=discover_kwargs.get("temperature", 0.1),
             languages_config=discover_kwargs.get("languages_config"),
+            dictionary_profile=discover_kwargs.get("dictionary_profile"),
             dictionary_name=discover_kwargs.get("dictionary_name", ""),
         )
     else:

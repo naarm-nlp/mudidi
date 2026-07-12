@@ -755,6 +755,7 @@ def _build_strategy(
     intro_text: str,
     intro_image_paths: List[str],
     dictionary_languages=None,
+    dictionary_profile=None,
     stage2_experiment_dir: Optional[Path] = None,
     parse_rules_samples: Optional[List[tuple[str, str, str]]] = None,
 ):
@@ -774,6 +775,7 @@ def _build_strategy(
             stage2_guides=getattr(args, "stage2_guides_text", ""),
             stage1_mode=getattr(args, "stage1_mode", "column"),
             dictionary_languages=dictionary_languages,
+            dictionary_profile=dictionary_profile,
             entry_dir=str(getattr(args, "entry_dir", "") or "") or None,
             stage2_experiment_dir=(
                 str(stage2_experiment_dir) if stage2_experiment_dir else None
@@ -2061,17 +2063,19 @@ def _run_single_entry(args, parser) -> int:
             )
 
     dictionary_languages = None
+    dictionary_profile = getattr(args, "dictionary_profile", None)
     entry_path = _entry_dir_for_run(args, output_dir, input_dir if input_path.is_dir() else input_path.parent)
     if entry_path:
         args.entry_dir = str(entry_path)
     if args.strategy == "two_stage":
         is_benchmark = bool(getattr(args, "benchmark", False) or args.samples_dir)
-        dictionary_languages = load_pass1_dictionary_languages(
-            dictionary_languages_path=args.dictionary_languages,
-            entry_dir=entry_path,
-            metadata_csv_path=_DEFAULT_METADATA_CSV,
-            benchmark=is_benchmark,
-        )
+        if dictionary_profile is None:
+            dictionary_languages = load_pass1_dictionary_languages(
+                dictionary_languages_path=args.dictionary_languages,
+                entry_dir=entry_path,
+                metadata_csv_path=_DEFAULT_METADATA_CSV,
+                benchmark=is_benchmark,
+            )
         if dictionary_languages is not None:
             print(
                 f"Pass 1 language hint: {dictionary_languages.layout} | "
@@ -2086,6 +2090,7 @@ def _run_single_entry(args, parser) -> int:
         intro_text,
         intro_image_paths,
         dictionary_languages,
+        dictionary_profile,
         stage2_experiment_dir=cheatsheet_root if runs_stage2_any(args.stage) else None,
     )
     if (

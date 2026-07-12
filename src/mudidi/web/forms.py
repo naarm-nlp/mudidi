@@ -19,6 +19,12 @@ from mudidi.config.yaml_config import (
     RuntimeConfig,
     VlmConfig,
 )
+from mudidi.schemas.dictionary_profile import (
+    DictionaryProfile,
+    InformationType,
+    PageLayout,
+    ProfileLanguage,
+)
 
 
 class PipelineChoice(StrEnum):
@@ -62,13 +68,17 @@ class NewRunForm(BaseModel):
     introduction_pages: str | None = None
     alphabet: Path | None = None
     ocr_text: Path | None = None
-    dictionary_languages: Path | None = None
+    profile_headword_language: str | None = None
+    profile_headword_script: str | None = None
+    profile_target_languages: list[str] = Field(default_factory=list)
+    profile_target_scripts: list[str] = Field(default_factory=list)
+    profile_page_layout: PageLayout | None = None
+    profile_information_types: list[InformationType] = Field(default_factory=list)
     toolbox_pdf: Path | None = None
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_mode: Literal["flat", "column"] = "flat"
     strategy: Literal["two_stage", "vlm_ocr", "mathpix_ocr"] = "two_stage"
-    stage1_typography: bool = False
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
     parse_rules_pages: list[str] = Field(default_factory=list)
@@ -158,11 +168,7 @@ class NewRunForm(BaseModel):
                 ocr_text=self.ocr_text.expanduser().resolve()
                 if self.ocr_text
                 else None,
-                dictionary_languages=(
-                    self.dictionary_languages.expanduser().resolve()
-                    if self.dictionary_languages
-                    else None
-                ),
+                dictionary_profile=self._dictionary_profile(),
                 toolbox_pdf=(
                     self.toolbox_pdf.expanduser().resolve()
                     if self.toolbox_pdf
@@ -174,7 +180,7 @@ class NewRunForm(BaseModel):
                 stage=stage,
                 strategy=self.strategy,
                 stage1_mode=self.stage1_mode,
-                stage1_typography=self.stage1_typography,
+                stage1_typography=False,
                 parse_rules_pages=self.parse_rules_pages,
                 parse_rules_file=(
                     self.parse_rules_file.expanduser().resolve()
@@ -280,6 +286,62 @@ class NewRunForm(BaseModel):
         return (
             self.verify_stage1 and stage1_selected,
             self.verify_stage2 and stage2_selected,
+        )
+
+    def _dictionary_profile(self) -> DictionaryProfile | None:
+        """Build a profile only when the user answers the optional questionnaire."""
+
+        has_any_answer = any(
+            (
+                _clean_optional(self.profile_headword_language),
+                _clean_optional(self.profile_headword_script),
+                self.profile_target_languages,
+                self.profile_target_scripts,
+                self.profile_page_layout,
+                self.profile_information_types,
+            )
+        )
+        if not has_any_answer:
+            return None
+        if not all(
+            (
+                _clean_optional(self.profile_headword_language),
+                _clean_optional(self.profile_headword_script),
+                self.profile_target_languages,
+                self.profile_target_scripts,
+                self.profile_page_layout,
+                self.profile_information_types,
+            )
+        ):
+            raise ValueError(
+                "Complete all five Dictionary Profile questions, or leave all of them blank"
+            )
+        if len(self.profile_target_languages) != len(self.profile_target_scripts):
+            raise ValueError(
+                "Each Dictionary Profile target language must have a matching script"
+            )
+        headword_language = _clean_optional(self.profile_headword_language)
+        headword_script = _clean_optional(self.profile_headword_script)
+        page_layout = self.profile_page_layout
+        assert headword_language is not None
+        assert headword_script is not None
+        assert page_layout is not None
+        targets = [
+            ProfileLanguage(language=language, script=script)
+            for language, script in zip(
+                self.profile_target_languages,
+                self.profile_target_scripts,
+                strict=True,
+            )
+        ]
+        return DictionaryProfile(
+            headword=ProfileLanguage(
+                language=headword_language,
+                script=headword_script,
+            ),
+            targets=targets,
+            page_layout=page_layout,
+            information_types=self.profile_information_types,
         )
 
 

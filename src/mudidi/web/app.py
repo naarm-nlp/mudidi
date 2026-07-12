@@ -175,6 +175,18 @@ def create_app(
         ]
         if parse_rule_pages:
             payload["parse_rules_pages"] = parse_rule_pages
+        for field_name in (
+            "profile_target_languages",
+            "profile_target_scripts",
+            "profile_information_types",
+        ):
+            values = [
+                str(value).strip()
+                for value in submitted.getlist(field_name)
+                if str(value).strip()
+            ]
+            if values:
+                payload[field_name] = values
         run_id = f"run-{uuid4().hex[:12]}"
         uploaded = [
             value

@@ -17,7 +17,7 @@ Paths are resolved relative to the YAML file. API credentials belong in `.env`.
 
 ## Important validation rules
 
-- `inference` requires `input.pages` and cannot use `stage1_source: gold`.
+- `inference` requires `input.pages`, cannot use `stage1_source: gold`, and uses the optional `input.dictionary_profile` instead of the benchmark-only `dictionary_languages` file.
 - `benchmark_run` requires one of `dataset_dir`, `samples_dir`, or `pages`.
 - `vlm_ocr` and `mathpix_ocr` are Stage 1-only strategies.
 - Evaluation uses either `predicted` + `gold` or `dataset_dir` + `pred_root`.
@@ -43,6 +43,15 @@ input:  # InputConfig; required
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
+  dictionary_profile:  # DictionaryProfile | null; default: null
+    headword:  # ProfileLanguage; required
+      language: "value"  # string; required
+      script: "value"  # string; required
+    targets:  # list[ProfileLanguage]; required
+      - language: "value"  # string; required
+        script: "value"  # string; required
+    page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -140,6 +149,15 @@ input:  # InputConfig; required
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
+  dictionary_profile:  # DictionaryProfile | null; default: null
+    headword:  # ProfileLanguage; required
+      language: "value"  # string; required
+      script: "value"  # string; required
+    targets:  # list[ProfileLanguage]; required
+      - language: "value"  # string; required
+        script: "value"  # string; required
+    page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -241,6 +259,15 @@ base:  # BenchmarkRunConfig; required
     alphabet: null  # path | null; default: null
     ocr_text: null  # path | null; default: null
     dictionary_languages: null  # path | null; default: null
+    dictionary_profile:  # DictionaryProfile | null; default: null
+      headword:  # ProfileLanguage; required
+        language: "value"  # string; required
+        script: "value"  # string; required
+      targets:  # list[ProfileLanguage]; required
+        - language: "value"  # string; required
+          script: "value"  # string; required
+      page_layout: "inline_entries"  # one of "inline_entries", "aligned_language_columns", "independent_entry_columns", "mixed_or_variable", "unknown"; required
+      information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
     toolbox_pdf: null  # path | null; default: null
     languages: null  # list[string] | null; default: null
   output:  # OutputConfig; required

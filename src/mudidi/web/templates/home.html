@@ -107,17 +107,61 @@
                 <label>Separate introduction path<input name="introduction" placeholder="/path/to/introduction"></label>
                 <label>Alphabet guide<input name="alphabet" placeholder="/path/to/alphabet.txt"></label>
                 <label>OCR hint<input name="ocr_text" placeholder="/path/to/ocr-hint.txt"></label>
-                <label>Dictionary languages<input name="dictionary_languages" placeholder="/path/to/languages.txt"></label>
                 <label>Toolbox reference PDF<input name="toolbox_pdf" placeholder="/path/to/toolbox.pdf"></label>
                 <label>Existing parse-rules file<input name="parse_rules_file" placeholder="/path/to/parse-rules.json"></label>
                 <label>Representative parse-rule pages<input name="parse_rules_pages" placeholder="1, 5, 12"></label>
               </div>
             </details>
+            <details class="profile-panel">
+              <summary>Dictionary Profile (optional)</summary>
+              <p>Answering these questions can improve extraction accuracy. Leave the whole section blank if you are unsure.</p>
+              <div class="form-grid">
+                <label>1. What language are the dictionary headwords written in?
+                  <input name="profile_headword_language" placeholder="e.g. Chukchi">
+                </label>
+                <label>3. Which script does the headword language use?
+                  <input name="profile_headword_script" placeholder="e.g. Cyrillic">
+                </label>
+              </div>
+              <fieldset>
+                <legend>2–3. Which languages are used for translations, glosses, or definitions, and which script does each use?</legend>
+                <div id="profile-target-rows">
+                  <div class="editor-row">
+                    <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
+                    <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Cyrillic">
+                    <button type="button" data-remove aria-label="Remove language">Remove</button>
+                  </div>
+                </div>
+                <button type="button" data-add="profile-target">Add another language</button>
+              </fieldset>
+              <label>4. How is information arranged on the page?
+                <select name="profile_page_layout">
+                  <option value="">Select an arrangement</option>
+                  <option value="inline_entries">Entries run inline or vertically</option>
+                  <option value="aligned_language_columns">Languages use aligned columns</option>
+                  <option value="independent_entry_columns">Page columns contain independent entries</option>
+                  <option value="mixed_or_variable">Mixed or variable layout</option>
+                  <option value="unknown">Other or uncertain</option>
+                </select>
+              </label>
+              <fieldset>
+                <legend>5. Which information types appear in an entry?</legend>
+                {% for value, label in [
+                  ('translation', 'Translation'), ('definition', 'Definition'),
+                  ('gloss', 'Gloss'), ('part_of_speech', 'Part of speech'),
+                  ('pronunciation', 'Pronunciation'), ('example', 'Example'),
+                  ('usage_note', 'Usage note'), ('etymology', 'Etymology'),
+                  ('cross_reference', 'Cross-reference'), ('variant', 'Variant'),
+                  ('grammar', 'Grammar'), ('other', 'Other')
+                ] %}
+                  <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"> {{ label }}</span></label>
+                {% endfor %}
+              </fieldset>
+            </details>
             <details>
               <summary>Stage and model overrides</summary>
               <div class="form-grid">
                 <label>Stage 1 mode<select name="stage1_mode"><option value="flat">Flat</option><option value="column">Column</option></select></label>
-                <label>Typography<select name="stage1_typography"><option value="false">Normalize</option><option value="true">Preserve typography</option></select></label>
                 <label>Stage 1 model<input name="stage1_model" list="model-catalog" placeholder="Use default"></label>
                 <label>Pass 1 model<input name="stage2_pass1_model" list="model-catalog" placeholder="Use default"></label>
                 <label>Pass 2 model<input name="stage2_pass2_model" list="model-catalog" placeholder="Use default"></label>
@@ -202,6 +246,14 @@
         <span><strong>Explore safely:</strong> run the interface with a deterministic offline worker.</span>
         <button type="submit">Start offline demo</button>
       </form>
+      <template id="profile-target-template">
+        <div class="editor-row">
+          <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. English">
+          <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Latin">
+          <button type="button" data-remove aria-label="Remove language">Remove</button>
+        </div>
+      </template>
     </main>
+    <script src="{{ url_for('static', path='/app.js') }}" defer></script>
   </body>
 </html>

@@ -26,9 +26,8 @@ options:
 usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--dict-pages DICT_PAGES] [--intro INTRO]
                   [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
-                  [--ocr-text OCR_TEXT]
-                  [--dictionary-languages DICTIONARY_LANGUAGES]
-                  [--toolbox-pdf TOOLBOX_PDF] [--output-dir OUTPUT_DIR]
+                  [--ocr-text OCR_TEXT] [--toolbox-pdf TOOLBOX_PDF]
+                  [--output-dir OUTPUT_DIR]
                   [--stage {1,2,all,2-pass-1,2-pass-2}] [--model MODEL]
                   [--stage-1-model STAGE_1_MODEL]
                   [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
@@ -54,7 +53,6 @@ options:
   --intro-pages INTRO_PAGES
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
-  --dictionary-languages DICTIONARY_LANGUAGES
   --toolbox-pdf TOOLBOX_PDF
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
@@ -155,6 +153,7 @@ options:
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
   --dictionary-languages DICTIONARY_LANGUAGES
+                        Legacy benchmark language metadata file.
   --toolbox-pdf TOOLBOX_PDF
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}

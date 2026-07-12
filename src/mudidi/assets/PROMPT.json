@@ -69,7 +69,7 @@
       {
         "name": "config_hint",
         "tag": null,
-        "description": "Optional language-role hint (layout, source, targets) from dictionary_languages config."
+        "description": "Optional language-role and page-layout context from DictionaryProfile or legacy benchmark metadata."
       }
     ]
   },
@@ -80,7 +80,7 @@
       {
         "name": "config_hint",
         "tag": null,
-        "description": "Optional language-role hint (layout, source, targets) from dictionary_languages config."
+        "description": "Optional language-role and page-layout context from DictionaryProfile or legacy benchmark metadata."
       },
       {
         "name": "sample_pages_block",

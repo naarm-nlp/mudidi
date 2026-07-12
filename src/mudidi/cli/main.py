@@ -78,7 +78,9 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_sparse_run_arguments(parser: argparse.ArgumentParser) -> None:
+def _add_sparse_run_arguments(
+    parser: argparse.ArgumentParser, *, legacy_dictionary_languages: bool = False
+) -> None:
     """Register common YAML overrides without implicit defaults."""
     parser.add_argument("--config", type=Path, default=argparse.SUPPRESS)
     parser.add_argument("--pages", default=argparse.SUPPRESS)
@@ -87,11 +89,13 @@ def _add_sparse_run_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--intro-pages", dest="intro_pages", default=argparse.SUPPRESS)
     parser.add_argument("--alphabet", default=argparse.SUPPRESS)
     parser.add_argument("--ocr-text", dest="ocr_text", default=argparse.SUPPRESS)
-    parser.add_argument(
-        "--dictionary-languages",
-        dest="dictionary_languages",
-        default=argparse.SUPPRESS,
-    )
+    if legacy_dictionary_languages:
+        parser.add_argument(
+            "--dictionary-languages",
+            dest="dictionary_languages",
+            default=argparse.SUPPRESS,
+            help="Legacy benchmark language metadata file.",
+        )
     parser.add_argument("--toolbox-pdf", dest="toolbox_pdf", default=argparse.SUPPRESS)
     parser.add_argument("--output-dir", dest="output_dir", default=argparse.SUPPRESS)
     parser.add_argument(
@@ -144,7 +148,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark = subparsers.add_parser("benchmark", help="Benchmark workflows.")
     benchmark_sub = benchmark.add_subparsers(dest="benchmark_command", required=True)
     benchmark_run = benchmark_sub.add_parser("run", help="Run benchmark extraction.")
-    _add_sparse_run_arguments(benchmark_run)
+    _add_sparse_run_arguments(benchmark_run, legacy_dictionary_languages=True)
     benchmark_run.add_argument("--dataset-dir", default=argparse.SUPPRESS)
     benchmark_run.add_argument("--samples-dir", default=argparse.SUPPRESS)
     benchmark_run.add_argument("--languages", nargs="+", default=argparse.SUPPRESS)

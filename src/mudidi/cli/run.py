@@ -610,6 +610,7 @@ def execution_namespace_from_config(
         intro_pages=input_config.introduction_pages,
         alphabet=str(input_config.alphabet) if input_config.alphabet else None,
         ocr_text=str(input_config.ocr_text) if input_config.ocr_text else None,
+        dictionary_profile=input_config.dictionary_profile,
         dictionary_languages=(
             str(input_config.dictionary_languages)
             if input_config.dictionary_languages

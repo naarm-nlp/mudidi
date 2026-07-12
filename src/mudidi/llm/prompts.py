@@ -6,6 +6,11 @@ Templates live in ``assets/PROMPT.json``; this module assembles dynamic user tur
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mudidi.schemas.dictionary_profile import DictionaryProfile
+
 from mudidi.config.run_config import PromptMode
 from mudidi.llm.prompt_mode import prompt_id_for_mode
 from mudidi.llm.prompt_store import get_prompt_store
@@ -51,6 +56,7 @@ def stage_1_user(
     alphabet_text: str = "",
     ocr_hint: str = "",
     guides: str = "",
+    dictionary_profile: "DictionaryProfile | None" = None,
 ) -> str:
     """
     Build the user-turn prompt for Stage 1 transcription.
@@ -66,9 +72,9 @@ def stage_1_user(
         parts.append(store.format("stage_1_user_alphabet", alphabet_text=alphabet_text))
     if ocr_hint:
         parts.append(store.format("stage_1_user_ocr_reference", ocr_hint=ocr_hint))
+    if dictionary_profile is not None:
+        parts.append(dictionary_profile.stage1_context_hint())
     parts.append(store.get("stage_1_user_closing"))
     if guides:
         parts.append(f"USER DEFINED GUIDELINES\n{guides}")
     return "\n\n".join(parts)
-
-

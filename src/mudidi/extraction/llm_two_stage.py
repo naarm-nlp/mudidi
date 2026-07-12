@@ -61,6 +61,7 @@ from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.schemas.field_map import FieldMapPrompt
 from mudidi.utils.stage1_input import read_stage1_transcript_text
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
+from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.entry import (
     DictionaryEntry,
     DictionaryPage,
@@ -457,6 +458,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage2_guides: str = "",
         stage1_mode: str = "column",
         dictionary_languages: Optional[DictionaryLanguagesConfig] = None,
+        dictionary_profile: Optional[DictionaryProfile] = None,
         entry_dir: Optional[str] = None,
         stage2_experiment_dir: Optional[str] = None,
         overwrite: bool = False,
@@ -497,6 +499,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.stage2_guides = stage2_guides
         self.stage1_mode = stage1_mode
         self.dictionary_languages = dictionary_languages
+        self.dictionary_profile = dictionary_profile
         self.entry_dir = Path(entry_dir) if entry_dir else None
         self.stage2_experiment_dir = (
             Path(stage2_experiment_dir) if stage2_experiment_dir else None
@@ -765,6 +768,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             alphabet_text=alphabet_text,
             ocr_hint=ocr_hint,
             guides=self.stage1_guides,
+            dictionary_profile=self.dictionary_profile,
         )
 
         content: list = [{"type": "text", "text": user_text}]
@@ -912,6 +916,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         reasoning_effort=self.stage2_reasoning_effort,
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
+                        dictionary_profile=self.dictionary_profile,
                         dictionary_name=dictionary_name,
                     )
                     multi_samples = None
@@ -925,6 +930,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         reasoning_effort=self.stage2_reasoning_effort,
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
+                        dictionary_profile=self.dictionary_profile,
                         dictionary_name=dictionary_name,
                     )
                     multi_samples = [
