@@ -47,5 +47,9 @@ nav:
       - Python API: reference/python-api.md
   - Development:
       - Architecture: development/architecture.md
+      - Web app overview: design/web-app/overview.md
+      - Web app UX: design/web-app/ux.md
+      - Web app architecture: design/web-app/architecture.md
+      - Parse-rule review: design/web-app/parse-rule-review.md
       - Public docs deployment: development/pages.md
       - CLI migration: development/cli-migration.md
