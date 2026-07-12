@@ -196,6 +196,24 @@ def build_parser() -> argparse.ArgumentParser:
     validate = config_sub.add_parser("validate", help="Validate a YAML config.")
     validate.add_argument("config", type=Path)
     validate.set_defaults(_handler=_validate_config)
+
+    web = subparsers.add_parser("web", help="Run the local production website.")
+    web.add_argument(
+        "--host",
+        choices=["127.0.0.1", "localhost"],
+        default="127.0.0.1",
+        help="Loopback interface to bind (default: 127.0.0.1).",
+    )
+    web.add_argument("--port", type=int, default=8000)
+    web.add_argument("--data-dir", type=Path)
+    web.add_argument(
+        "--no-browser",
+        action="store_false",
+        dest="open_browser",
+        default=True,
+        help="Do not open the website in the default browser.",
+    )
+    web.set_defaults(_handler=_run_web)
     return parser
 
 
@@ -240,6 +258,24 @@ def _validate_config(args: argparse.Namespace, _parser: argparse.ArgumentParser)
     validate_config_paths(config)
     print(f"Valid MUDIDI config: {config.kind} (version {config.version})")
     return 0
+
+
+def _run_web(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Launch the optional single-process loopback web application."""
+
+    try:
+        from mudidi.web.server import run_server
+    except ImportError:
+        parser.error("web dependencies are missing; run: uv sync --extra web")
+    try:
+        return run_server(
+            host=args.host,
+            port=args.port,
+            data_dir=args.data_dir,
+            open_browser=args.open_browser,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MUDIDI Local</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="MUDIDI home">
+        <span class="brand-mark">M</span>
+        <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a class="active" href="/"><span>＋</span> New run</a>
+        <a href="#active-run"><span>●</span> Active run</a>
+        <a href="#history"><span>◷</span> Run history</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#providers">API providers</a>
+        <a href="https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/">Documentation</a>
+        <span class="local-badge">● Running locally</span>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><span class="eyebrow">Production inference</span><h1>New run</h1></div>
+        <div class="provider-status"><span></span> API key setup required</div>
+      </header>
+
+      <section class="workspace">
+        <ol class="steps" aria-label="Run configuration steps">
+          <li class="current"><b>1</b> Input</li>
+          <li><b>2</b> Pipeline</li>
+          <li><b>3</b> Model</li>
+          <li><b>4</b> Quality</li>
+          <li><b>5</b> Review</li>
+        </ol>
+
+        <div class="content-grid">
+          <section class="panel run-form">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
+              <span class="private">Files stay on this computer</span>
+            </div>
+            <div class="dropzone">
+              <span class="file-icon">⇧</span>
+              <h3>Drop a PDF or page images here</h3>
+              <p>PDF, PNG, JPEG or TIFF · processed locally before LLM calls</p>
+              <button type="button">Choose files</button>
+            </div>
+            <label for="output">Output directory</label>
+            <div class="input-row"><input id="output" value="~/Documents/MUDIDI-runs" disabled><button type="button" disabled>Browse</button></div>
+            <details>
+              <summary>Additional context</summary>
+              <p>Introduction pages, alphabet guides, OCR hints, and Toolbox references will appear here.</p>
+            </details>
+            <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="button" disabled>Continue to Pipeline →</button></div>
+          </section>
+
+          <aside class="panel summary">
+            <span class="eyebrow">Run summary</span>
+            <h2>Default pipeline</h2>
+            <dl>
+              <div><dt>Pipeline</dt><dd>Stage 1 + Stage 2</dd></div>
+              <div><dt>Quality</dt><dd>Verified</dd></div>
+              <div><dt>Parse Rules</dt><dd>Review required</dd></div>
+            </dl>
+            <div class="checkpoint">
+              <strong>Human checkpoint</strong>
+              <p>Stage 2 pauses after discovering parse rules. You review and approve them before extraction continues.</p>
+            </div>
+            <p class="hint">No YAML is required. Advanced options remain available in later steps.</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
