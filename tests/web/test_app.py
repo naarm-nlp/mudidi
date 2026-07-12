@@ -70,7 +70,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dictionary-profile-3" in response.text
+    assert "/static/app.js?v=provider-models-4" in response.text
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
