@@ -187,3 +187,28 @@ def test_expert_backend_rejects_non_stage1_pipeline(tmp_path: Path) -> None:
             strategy="vlm_ocr",
             vlm_model="mineru2.5-pro",
         ).to_inference_config()
+
+
+def test_new_output_policy_rejects_nonempty_directory(tmp_path: Path) -> None:
+    output = tmp_path / "existing-output"
+    output.mkdir()
+    (output / "previous.txt").write_text("do not overwrite", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="already contains files"):
+        _form(tmp_path, output_directory=output, output_policy="new").to_inference_config()
+
+
+def test_resume_output_policy_preserves_existing_artifacts(tmp_path: Path) -> None:
+    output = tmp_path / "existing-output"
+    output.mkdir()
+    previous = output / "previous.txt"
+    previous.write_text("resume me", encoding="utf-8")
+
+    config = _form(
+        tmp_path,
+        output_directory=output,
+        output_policy="resume",
+    ).to_inference_config()
+
+    assert config.output.directory == output.resolve()
+    assert previous.read_text(encoding="utf-8") == "resume me"
