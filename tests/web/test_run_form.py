@@ -195,7 +195,9 @@ def test_new_output_policy_rejects_nonempty_directory(tmp_path: Path) -> None:
     (output / "previous.txt").write_text("do not overwrite", encoding="utf-8")
 
     with pytest.raises(ValueError, match="already contains files"):
-        _form(tmp_path, output_directory=output, output_policy="new").to_inference_config()
+        _form(
+            tmp_path, output_directory=output, output_policy="new"
+        ).to_inference_config()
 
 
 def test_resume_output_policy_preserves_existing_artifacts(tmp_path: Path) -> None:

@@ -56,6 +56,7 @@ class NewRunForm(BaseModel):
 
     pages: Path
     output_directory: Path
+    output_policy: Literal["new", "resume"] = "new"
     dictionary_pages: str | None = None
     introduction: Path | None = None
     introduction_pages: str | None = None
@@ -131,6 +132,13 @@ class NewRunForm(BaseModel):
 
         if self.pages.suffix.lower() == ".pdf" and not self.dictionary_pages:
             raise ValueError("dictionary_pages is required for PDF input")
+        output = self.output_directory.expanduser().resolve()
+        if output.exists() and not output.is_dir():
+            raise ValueError("output path exists and is not a directory")
+        if self.output_policy == "new" and output.is_dir() and any(output.iterdir()):
+            raise ValueError(
+                "output directory already contains files; choose resume or another path"
+            )
 
         stage = _PIPELINE_STAGE[self.pipeline]
         verify_stage1, verify_stage2 = self._verification_stages()
@@ -161,7 +169,7 @@ class NewRunForm(BaseModel):
                     else None
                 ),
             ),
-            output=OutputConfig(directory=self.output_directory.expanduser().resolve()),
+            output=OutputConfig(directory=output),
             pipeline=PipelineConfig(
                 stage=stage,
                 strategy=self.strategy,
