@@ -8,7 +8,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -16,6 +16,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from mudidi.config.yaml_config import validate_config_paths
 from mudidi.web.credentials import CredentialVault
+from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
 from mudidi.web.models import ModelCatalog, Provider
@@ -66,6 +67,7 @@ def create_app(
         parse_rule_reviews=app.state.parse_rule_reviews,
     )
     app.state.offline_inference = offline_inference
+    app.state.artifacts = ArtifactService(controller=app.state.job_controller)
     app.state.job_controller.reconcile_startup()
     app.add_middleware(
         TrustedHostMiddleware,
@@ -265,6 +267,74 @@ def create_app(
         """Render the complete structured parse-rule review form."""
 
         return _render_parse_rule_editor(request, app, run_id)
+
+    @app.get("/runs/{run_id}/outputs", response_class=HTMLResponse)
+    async def run_outputs(request: Request, run_id: str) -> HTMLResponse:
+        """List regular files beneath the run's validated output root."""
+
+        try:
+            artifacts = app.state.artifacts.list_artifacts(run_id)
+        except (KeyError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run outputs not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="outputs.html",
+            context={"run_id": run_id, "artifacts": artifacts},
+        )
+
+    @app.get("/runs/{run_id}/pages", response_class=HTMLResponse)
+    async def run_pages(request: Request, run_id: str) -> HTMLResponse:
+        """Render bounded Stage 1 and Stage 2 text grouped by source page."""
+
+        try:
+            pages = app.state.artifacts.list_pages(run_id)
+            page_views = [
+                {
+                    "page_id": page.page_id,
+                    "stage1": (
+                        app.state.artifacts.preview_text(run_id, page.stage1.relative_path)
+                        if page.stage1
+                        else None
+                    ),
+                    "stage2": (
+                        app.state.artifacts.preview_text(run_id, page.stage2.relative_path)
+                        if page.stage2
+                        else None
+                    ),
+                }
+                for page in pages
+            ]
+        except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run pages not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="pages.html",
+            context={"run_id": run_id, "pages": page_views},
+        )
+
+    @app.get("/runs/{run_id}/usage", response_class=HTMLResponse)
+    async def run_usage(request: Request, run_id: str) -> HTMLResponse:
+        """Render token and cost totals from generated usage artifacts."""
+
+        try:
+            usage = app.state.artifacts.usage_summary(run_id)
+        except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run usage not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="usage.html",
+            context={"run_id": run_id, "usage": usage},
+        )
+
+    @app.get("/runs/{run_id}/artifacts/{artifact_path:path}")
+    async def download_artifact(run_id: str, artifact_path: str) -> FileResponse:
+        """Download one safe regular file beneath the configured output root."""
+
+        try:
+            path = app.state.artifacts.resolve(run_id, artifact_path)
+        except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="artifact not found") from exc
+        return FileResponse(path, filename=path.name)
 
     @app.post("/runs/{run_id}/parse-rules/draft", response_class=HTMLResponse)
     async def save_parse_rule_draft(
