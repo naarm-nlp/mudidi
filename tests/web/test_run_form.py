@@ -151,7 +151,7 @@ def test_stage2_workflow_always_reports_review_checkpoint(tmp_path: Path) -> Non
     form = _form(tmp_path, pipeline=PipelineChoice.STRUCTURE)
 
     assert form.requires_parse_rule_review is True
-    assert form.to_summary()["parse_rules"] == "Human approval required"
+    assert form.to_summary()["mdf_parsing_guide"] == "Human approval required"
 
 
 def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:

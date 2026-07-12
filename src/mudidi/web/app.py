@@ -52,6 +52,24 @@ _CSP = (
 )
 
 
+class _RequestBodyTooLarge(Exception):
+    """Internal control flow for streamed request-size enforcement."""
+
+
+def _exception_group_contains(
+    group: BaseExceptionGroup,
+    expected: type[BaseException],
+) -> bool:
+    return any(
+        isinstance(item, expected)
+        or (
+            isinstance(item, BaseExceptionGroup)
+            and _exception_group_contains(item, expected)
+        )
+        for item in group.exceptions
+    )
+
+
 def create_app(
     *,
     data_dir: Path | None = None,
@@ -98,6 +116,9 @@ def create_app(
     app.state.artifacts = ArtifactService(controller=app.state.job_controller)
     app.state.inputs = InputMaterializer(data_dir=resolved_data_dir)
     app.state.job_controller.reconcile_startup()
+    app.state.inputs.reconcile(
+        {run.run_id for run in app.state.run_store.list_runs()}
+    )
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["127.0.0.1", "localhost", "testserver"],
@@ -117,6 +138,19 @@ def create_app(
             if declared_length > _MAX_REQUEST_BYTES:
                 response = PlainTextResponse("Request body too large", status_code=413)
                 return _add_security_headers(response)
+        received_bytes = 0
+        original_receive = request._receive
+
+        async def limited_receive() -> object:
+            nonlocal received_bytes
+            message = await original_receive()
+            if message.get("type") == "http.request":
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > _MAX_REQUEST_BYTES:
+                    raise _RequestBodyTooLarge
+            return message
+
+        request._receive = limited_receive  # type: ignore[method-assign]
         if request.method in _MUTATING_METHODS:
             origin = request.headers.get("origin")
             fetch_site = request.headers.get("sec-fetch-site")
@@ -132,7 +166,14 @@ def create_app(
                     "Cross-origin request rejected", status_code=403
                 )
                 return _add_security_headers(response)
-        response = await call_next(request)  # type: ignore[operator]
+        try:
+            response = await call_next(request)  # type: ignore[operator]
+        except _RequestBodyTooLarge:
+            response = PlainTextResponse("Request body too large", status_code=413)
+        except BaseExceptionGroup as exc:
+            if not _exception_group_contains(exc, _RequestBodyTooLarge):
+                raise
+            response = PlainTextResponse("Request body too large", status_code=413)
         return _add_security_headers(response)
 
     app.mount(
@@ -234,6 +275,16 @@ def create_app(
             ]
 
         try:
+            forbidden_paths = {
+                "introduction",
+                "alphabet",
+                "toolbox_pdf",
+                "parse_rules_file",
+                "stage1_guides",
+                "stage2_guides",
+            }
+            if forbidden_paths.intersection(submitted.keys()):
+                raise ValueError("dashboard input paths must be selected in the browser")
             if str(submitted.get("pages", "")).strip():
                 raise ValueError("select dictionary files in the browser")
             if page_files and page_directory:
@@ -263,9 +314,15 @@ def create_app(
                     run_id, alphabet_files[0]
                 )
 
+            pipeline_value = str(payload.get("pipeline", "complete"))
+            runs_stage1 = pipeline_value in {"complete", "transcription"}
+            runs_stage2 = pipeline_value in {"complete", "structure"}
+
             guide_files = uploaded("existing_mdf_guide_file")
             if len(guide_files) > 1:
                 raise ValueError("select exactly one existing MDF parsing guide")
+            if guide_files and not runs_stage2:
+                raise ValueError("an MDF parsing guide requires an MDF parsing pipeline")
             if guide_files:
                 payload["parse_rules_file"] = (
                     await app.state.inputs.materialize_mdf_guide(
@@ -276,20 +333,25 @@ def create_app(
             stage1_instructions = str(
                 payload.get("stage1_additional_instructions", "")
             ).strip()
-            if stage1_instructions:
+            if stage1_instructions and runs_stage1:
                 payload["stage1_guides"] = app.state.inputs.materialize_instruction(
                     run_id, "stage1", stage1_instructions
                 )
             stage2_instructions = str(
                 payload.get("stage2_additional_instructions", "")
             ).strip()
-            if stage2_instructions:
+            if stage2_instructions and runs_stage2:
                 payload["stage2_guides"] = app.state.inputs.materialize_instruction(
                     run_id, "stage2", stage2_instructions
                 )
 
             manual_source = str(payload.get("mdf_manual_source", "none"))
             manual_files = uploaded("custom_mdf_manual")
+            if not runs_stage2:
+                if manual_files:
+                    raise ValueError("an MDF manual requires an MDF parsing pipeline")
+                manual_source = "none"
+                payload["mdf_manual_source"] = "none"
             if manual_source == "bundled":
                 if manual_files:
                     raise ValueError("bundled MDF manual cannot include a custom upload")
@@ -499,6 +561,7 @@ def create_app(
                 "runs": [_run_view(app.state.run_store, run) for run in runs],
                 "filters": {"q": q, "status": status, "provider": provider},
                 "statuses": tuple(RunStatus),
+                "status_label": _status_label,
                 "providers": tuple(
                     provider for provider in Provider if provider is not Provider.CUSTOM
                 ),
@@ -919,15 +982,40 @@ def _error_count(exc: ValidationError | ValueError) -> int:
 
 
 def _config_summary(config: InferenceConfig) -> dict[str, str]:
+    verified_stages = [
+        label
+        for enabled, label in (
+            (config.agentic.stage1, "Stage 1"),
+            (config.agentic.stage2, "Stage 2"),
+        )
+        if enabled
+    ]
+    manual = config.input.toolbox_pdf
     return {
         "input": str(config.input.pages),
         "output": str(config.output.directory),
         "pipeline": str(config.pipeline.stage),
         "model": config.models.default,
-        "quality": (
-            "verified" if config.agentic.stage1 or config.agentic.stage2 else "standard"
+        "agentic": " + ".join(verified_stages) if verified_stages else "Off",
+        "additional_instructions": ", ".join(
+            label
+            for path, label in (
+                (config.pipeline.stage1_guides, "Stage 1"),
+                (config.pipeline.stage2_guides, "Stage 2"),
+            )
+            if path is not None
+        )
+        or "None",
+        "mdf_manual": (
+            "Not used"
+            if manual is None
+            else (
+                "Bundled 65-page manual"
+                if manual.name == "MUDIDI-MDF-Manual.pdf"
+                else "Custom upload"
+            )
         ),
-        "parse_rules": (
+        "mdf_parsing_guide": (
             "Not used" if config.pipeline.stage == "1" else "Human approval required"
         ),
     }
@@ -989,7 +1077,10 @@ def _all_models(app: FastAPI) -> tuple[object, ...]:
 
 
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
-    events = store.list_events(run.run_id)
+    events = [
+        {**event, "display_type": _event_label(str(event.get("type", "")))}
+        for event in store.list_events(run.run_id)
+    ]
     completed_pages = sum(event.get("type") == "page.completed" for event in events)
     started = next(
         (event for event in events if event.get("type") == "stage.started"), {}
@@ -1002,7 +1093,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     return {
         "run_id": run.run_id,
         "status": run.status.value,
-        "status_label": run.status.value.replace("_", " ").title(),
+        "status_label": _status_label(run.status),
         "provider": run.provider or "Not selected",
         "completed_pages": completed_pages,
         "total_pages": total_pages,
@@ -1029,6 +1120,30 @@ def _sse_event(event: dict[str, object]) -> str:
     )
 
 
+def _status_label(status: RunStatus) -> str:
+    """Translate internal compatibility states into dashboard terminology."""
+
+    if status is RunStatus.DISCOVERING_PARSE_RULES:
+        return "Inferring MDF Parsing Guide"
+    if status is RunStatus.AWAITING_PARSE_RULES_REVIEW:
+        return "Awaiting MDF Parsing Guide Review"
+    return status.value.replace("_", " ").title()
+
+
+def _event_label(event_type: str) -> str:
+    labels = {
+        "parse_rules.generated": "MDF parsing guide inferred",
+        "stage.started": "Stage started",
+        "page.completed": "Page completed",
+        "run.completed": "Run completed",
+        "run.failed": "Run failed",
+    }
+    return labels.get(
+        event_type,
+        event_type.replace("_", " ").replace(".", " · ").title(),
+    )
+
+
 def _render_parse_rule_editor(
     request: Request,
     app: FastAPI,
@@ -1042,7 +1157,7 @@ def _render_parse_rule_editor(
         payload = app.state.parse_rule_reviews.load_editable_payload(run_id)
     except KeyError as exc:
         raise HTTPException(
-            status_code=404, detail="parse-rule review not found"
+            status_code=404, detail="MDF parsing guide review not found"
         ) from exc
     markers = payload.get("markers") if isinstance(payload.get("markers"), list) else []
     rules = payload.get("rules") if isinstance(payload.get("rules"), list) else []

@@ -1,4 +1,4 @@
-# Parse-Rule Review Checkpoint
+# MDF Parsing Guide Review Checkpoint
 
 This checkpoint is a safety and reproducibility invariant for local web runs
 that include Stage 2.
@@ -72,11 +72,12 @@ schema, and immutable snapshot immediately before consuming the already-loaded
 rules. Crash injection covers each filesystem/database boundary; startup
 reconciles orphaned snapshots and incomplete enqueue records.
 
-## Existing rule files
+## Existing MDF parsing guide files
 
-When the user selects an existing parse-rules file, copy it into the run's
-generated/review area, validate it, and enter the same review state. Do not run
-Pass 2 directly from an external mutable path.
+When the user selects an existing MDF parsing guide JSON file, copy it into the
+run's generated/review area, validate it, and enter the same review state. Do
+not run Pass 2 directly from an external mutable path. Internal compatibility
+filenames and state values continue to use `parse-rules`/`parse_rules`.
 
 ## Failure and recovery
 

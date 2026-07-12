@@ -251,7 +251,7 @@ class NewRunForm(BaseModel):
                 "bundled": "Bundled 65-page manual",
                 "upload": "Custom upload",
             }[self.mdf_manual_source],
-            "parse_rules": (
+            "mdf_parsing_guide": (
                 "Human approval required"
                 if self.requires_parse_rule_review
                 else "Not used"

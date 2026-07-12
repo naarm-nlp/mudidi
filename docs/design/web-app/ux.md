@@ -1,184 +1,139 @@
 # Local Web Application UX Specification
 
-This document specifies user-visible screens. Labels may be refined during
-implementation, but the workflow and safety behavior are requirements.
+This document is the source of truth for user-visible dashboard behavior.
+Internal compatibility names such as `parse_rules`, `/parse-rules`, and
+`parse-rules.json` remain unchanged.
 
 ## Application shell
 
 The desktop layout uses a fixed left navigation, compact header, central work
-area, and optional right summary rail. The generated baseline wireframe is
-stored at `assets/new-run-wireframe.png`.
+area, and optional right summary rail. The baseline wireframe is
+`assets/new-run-wireframe.png`.
 
 ![MUDIDI New Run desktop wireframe](assets/new-run-wireframe.png)
 
-The New Run wizard retains entered values when moving backward. Validation
-errors appear next to the relevant field and in a concise page summary.
-
 ## Input
 
-Fields:
+The browser selects a source PDF, page images, or a page-image folder. Additional
+file/folder controls cover an introduction, alphabet/orthography guide, existing
+MDF parsing guide, and custom MDF manual. Files are copied into run-owned local
+storage. The output directory remains typed because browser file APIs do not
+provide an arbitrary absolute path to a localhost server.
 
-- PDF or page-image directory
-- dictionary page range for PDF input
-- optional introduction page range for PDF input
-- output directory
-- collapsible additional context inputs
+PDF page fields accept positive Arabic numbers, commas, and ascending ranges,
+for example `1-12,15`. Roman numerals are rejected. A source PDF uses numeric
+introduction pages from that PDF; a page-image input may use a separate
+introduction file or folder.
 
-The browser cannot expose arbitrary filesystem access. The implementation must
-support local file upload and explicit local paths; native file dialogs are a
-later desktop-wrapper concern. Large uploads remain on the same computer but
-may be copied into app-managed storage.
+The optional **Dictionary Profile** collects:
+
+- headword language and script;
+- target languages and scripts;
+- a free-form page-layout description;
+- common and custom entry information types.
+
+The whole profile may be left blank.
 
 ## Pipeline
 
-Three primary cards:
+Three radio choices are displayed with keyboard/touch-accessible information
+help:
 
 | Choice | Internal stage | Meaning |
 |---|---|---|
-| Complete digitization | `all` | Stage 1, parse rules, approval, Stage 2 |
-| Transcription only | `1` | Stage 1 text only |
-| Structure existing transcription | `2` | Existing Stage 1 text to MDF |
+| Complete digitization | `all` | Transcribe, infer/review MDF parsing guide, parse into MDF |
+| Transcription only | `1` | Flat faithful transcription only |
+| Parse transcription into MDF (Multi-Dictionary Formatter) | `2` | Existing Stage 1 text to reviewed MDF |
 
-Advanced choices may expose discovery-only (`2-pass-1`), which finishes at the
-review checkpoint. The UI never offers direct `2-pass-2`; Pass 2 starts only
-from an approved review or an authorized resume.
+Discovery-only and direct Pass 2 are not dashboard choices. Stage 2 always
+includes inference or import of an MDF parsing guide and mandatory review.
 
-Stage 1 options are conditionally visible: flat/column mode, introduction,
-alphabet, OCR hint, and guide file. Dashboard runs always disable typography
-preservation.
-
-An optional **Dictionary Profile** pairs each language with its script, accepts
-a free-form page-arrangement description, and lists common entry information
-types. Selecting **Other** reveals a free-form field for one or more additional
-types. The UI explains that these answers can improve accuracy, while leaving
-the whole profile blank remains valid.
-
-When Stage 2 is selected, users choose either:
-
-- discover parse rules from representative pages, or
-- load an existing parse-rules file for review.
-
-Representative pages are selected as removable page chips with thumbnail and
-Stage 1-text previews where available. The UI recommends two or three pages
-covering ordinary entries, multiple senses, subentries, and abbreviations.
+Dashboard runs always use the two-stage LLM strategy, flat Stage 1 output, and
+typography preservation off. OCR hints, Stage 1 column mode, and expert
+OCR/VLM/Mathpix controls remain CLI/YAML features.
 
 ## Model
 
-The form selects one provider, then shows model pickers only for stages used by
-the selected pipeline. Transcription-only shows Stage 1 and temperature;
-complete runs show Stage 1, Pass 1, Pass 2, and temperature. There is no
-separate stage/model override panel.
+Only active-stage model controls are visible. Complete runs show Stage 1, Stage
+2 Pass 1, and Stage 2 Pass 2. Transcription shows Stage 1. MDF parsing shows the
+two Stage 2 models.
 
-Each picker groups:
+Provider-specific choices combine the bundled catalog, optional live discovery,
+and custom LiteLLM identifiers. OpenRouter requires manual model entry and
+offers an optional **OpenRouter Provider** routing slug.
 
-- Recommended and tested
-- Available to this API key
-- Custom model identifier
+## Agentic verification
 
-Selecting **Other model** reveals a free-text LiteLLM identifier field. The
-provider choice **Other / advanced provider** is reserved for local, cloud, or
-self-hosted routes without a first-class dashboard provider.
+Agentic verification is a Yes/No choice and defaults to No. Selecting Yes opens
+**Custom verification** directly below it. Applicable Stage 1 and Stage 2 boxes
+are initially checked and may be unchecked. The backend intersects these values
+with active stages and ignores forged inactive values.
 
-OpenRouter replaces each active model dropdown with manual model entry (for
-example, `qwen/qwen3-235b-a22b`) and shows an additional optional **OpenRouter
-Provider** input. Automatic routing remains the default; an exact provider slug
-pins routing.
+Custom controls cover iterations, minimum confidence, evaluator/rewriter models
+and reasoning, deterministic patches, and concrete retry evidence. The UI states
+that verification adds model calls and cost.
 
-Provider API-key state is shown without revealing stored values. Failed model
-discovery must not block custom entry or the bundled fallback catalog.
+## Additional instructions
 
-Stage 1 requires known image capability. Unknown custom models remain selectable
-with a warning that image and structured-output support cannot be verified.
+Stage 1 and Stage 2 additional instructions are multiline text areas with
+accessible help. The server materializes non-empty text as bounded UTF-8 files
+inside the run input bundle and uses the existing guide-file execution contract.
 
-## Quality
+## MDF parsing guide and MDF manual
 
-Presets:
+**MDF parsing guide** is the dictionary-specific artifact inferred by Stage 2
+Pass 1 or imported from user JSON. **MDF manual** is optional general reference
+material.
 
-- Standard: no agentic verification.
-- Verified: verify both selected stages with two correction iterations.
-- Custom: stage toggles, iteration budget, evaluator/rewriter models and
-  reasoning, minimum confidence, deterministic patch toggle, and
-  concrete-evidence gate.
+The MDF manual choices are:
 
-The page states that verification can add LLM calls and cost. Catastrophic
-recovery and patch count are informational behavior, not controls.
+1. No manual.
+2. Bundled 65-page manual, with token-cost warning and download link.
+3. Custom or shortened PDF upload.
+
+The UI recommends a shortened PDF containing only relevant marker pages when
+the marker set is already known.
+
+Representative MDF parsing guide pages include help explaining that Stage 2
+samples them to infer dictionary-specific MDF markers and entry structure.
 
 ## Review
 
-The pre-run screen summarizes input, pipeline, context, models, quality,
-estimated page count, output, and parse-rule approval requirement. It runs path,
-model, credential, and cross-field validation.
-
-If an output run exists, present explicit choices: resume, choose another
-directory, or delete and start over. Destructive deletion requires confirmation
-and must never be inferred from a generic overwrite checkbox.
+The pre-run view summarizes input, output, pipeline, models, Agentic state,
+additional context, MDF manual use, and MDF parsing guide review requirement.
+All inputs are validated before a durable run is created.
 
 ## Active Run
 
-Tabs:
-
 ```text
-Overview | Parse Rules | Pages | Live Logs | Outputs | Usage
+Overview | MDF parsing guide | Pages | Live Logs | Outputs | Usage
 ```
 
-Overview shows stage progress, current page, elapsed time, models, recent events,
-token usage, cost, and cancel/open-output actions.
+Overview shows progress, current state, recent events, and relevant actions.
+Pages and page evidence show source, transcription, verification, and MDF output.
 
-Pages shows per-page Stage 1, verification, and Stage 2 state. A page detail view
-shows the source image, transcription, verifier attempts and applied patches,
-and MDF result when available.
+## MDF parsing guide review
 
-Live Logs defaults to human-readable events. Raw logs are an expert disclosure.
-Usage groups calls, tokens, cache usage, corrections, and estimated cost by
-model and stage.
+The review screen progresses through waiting, inferring, review required, and
+approved states. It edits `DictionaryMarkerCheatsheet` fields: dictionary name,
+markers/descriptions, guide rules, and abbreviations.
 
-## Parse Rules
+Saving is not approval. Approval validates the guide, writes an immutable
+snapshot, binds it to the run and review version, records its SHA-256, and only
+then authorizes MDF page parsing. Closing the browser or server never implies
+approval. An uploaded guide follows this same path.
 
-The tab is present from run creation whenever Stage 2 is selected. It has four
-states:
+## Run History and presets
 
-1. Waiting for prerequisite Stage 1/sample pages.
-2. Discovering.
-3. Review required.
-4. Approved and used by Stage 2.
-
-The review editor maps directly to `DictionaryMarkerCheatsheet`:
-
-- dictionary name
-- editable marker/description table
-- reorderable structure-rule list
-- abbreviation key/value table
-- representative-page evidence viewer
-
-Actions:
-
-- Reset generated version
-- Change sample pages and regenerate, with LLM-cost warning
-- Save draft
-- Validate
-- Approve and continue
-
-Validation uses the Pydantic schema plus UI checks for empty or duplicate marker
-names. Approval saves an immutable approved snapshot and starts Pass 2. Closing
-the browser or server never implies approval.
-
-## Run History
-
-The history table filters by query, status, pipeline, provider, and date. Rows
-show name/input, pipeline, status, progress, model, cost, and last update.
-
-Actions are context sensitive: view, resume, review parse rules, duplicate
-settings, open output, cancel, or delete the history record. Deleting history
-does not delete outputs without a second explicit action.
-
-Runs in `awaiting_parse_rules_review` are prominent and open directly to the
-Parse Rules tab. The state survives application restart.
+History exposes user-friendly MDF parsing guide status labels while preserving
+internal stored status values. Presets copy managed inputs into preset-owned
+storage. Preparing a preset clones those files into the new run so neither
+depends on the other's lifecycle.
 
 ## Accessibility and responsive behavior
 
-- Semantic labels, visible focus, keyboard-operable disclosures and dialogs
-- Status conveyed by text and icon, never color alone
-- Form errors associated with fields
-- Desktop-first layout; tablet collapses the summary rail
-- Mobile is supported for monitoring and approval, but large-file setup may
-  direct the user to desktop
+- semantic fieldsets, legends, and labels;
+- visible focus and keyboard/touch-operable help;
+- status conveyed through text rather than color alone;
+- errors associated with fields without echoing sensitive values;
+- responsive monitoring/review, with desktop recommended for large setup.

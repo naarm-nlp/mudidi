@@ -66,8 +66,11 @@ def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) 
 
     response = client.post(
         "/runs/demo",
-        content=b"x" * (26 * 1024 * 1024),
-        headers={"content-length": "1", "content-type": "application/octet-stream"},
+        content=b"page_count=1&padding=" + b"x" * (26 * 1024 * 1024),
+        headers={
+            "content-length": "1",
+            "content-type": "application/x-www-form-urlencoded",
+        },
     )
 
     assert response.status_code == 413

@@ -30,7 +30,7 @@ Redis, PostgreSQL, or Node.js at runtime.
 - The server binds to `127.0.0.1` by default. Non-loopback exposure is outside
   the first release unless authentication and additional network protections
   are explicitly added.
-- Every web Stage 2 path requires a durable parse-rule approval checkpoint.
+- Every web Stage 2 path requires a durable MDF parsing guide approval checkpoint.
   Pass 2 accepts only a server-minted `ApprovedParseRules` capability bound to
   the run, review version, immutable managed snapshot, and SHA-256 digest.
 - Catastrophic Stage 1 recovery is always available; there is no UI switch.
@@ -40,9 +40,9 @@ Redis, PostgreSQL, or Node.js at runtime.
 
 1. A researcher digitizing one scanned dictionary without learning the CLI.
 2. A maintainer who needs stage-specific models, agentic verification, context
-   files, and parse-rule control.
-3. An expert using a custom LiteLLM model identifier or advanced OCR/VLM
-   backend.
+   files, and MDF parsing guide control.
+3. An expert using a custom LiteLLM model identifier while keeping advanced
+   OCR/VLM workflows in YAML or the CLI.
 
 ## Navigation
 
@@ -53,15 +53,13 @@ MUDIDI
 ├── Run History
 ├── Saved Presets
 ├── API Providers
-├── Advanced Backends
-├── Settings
 └── Documentation
 ```
 
 ## New-run workflow
 
 ```text
-Input → Pipeline → Model → Quality → Review → Start
+Input → Pipeline → Model → Agentic → Review → Start
 ```
 
 After start, the run follows:
@@ -69,7 +67,7 @@ After start, the run follows:
 ```text
 Stage 1
   → Stage 2 Pass 1
-  → Awaiting parse-rule review
+  → Awaiting MDF parsing guide review
   → explicit approval
   → Stage 2 Pass 2
   → Complete
@@ -90,7 +88,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Output directory
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
-- Standard or verified quality preset
+- Agentic verification Yes/No, default No
 - Optional Dictionary Profile with paired language/script questions, a
   free-form layout description, and
   entry-information context
@@ -98,19 +96,22 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 ### Advanced
 
 - Stage-specific models and reasoning
-- Flat/column Stage 1 mode; dashboard runs always normalize typography
-- Introduction, alphabet, OCR hint, and Toolbox context
-- Representative parse-rule pages or an existing parse-rules file
+- Flat Stage 1 output with typography preservation off
+- Introduction and alphabet uploads plus direct additional instructions
+- Representative MDF parsing guide pages or an existing MDF parsing guide file
+- Optional bundled or custom MDF manual
 - Stage-specific agentic verification, iteration budget, evaluator/rewriter
   models, minimum confidence, deterministic patches, and concrete-retry gate
 - Batch size, page limit, and prompt caching
 
-### Expert
+### Deliberately omitted from the dashboard
 
-- Stage 2 discovery-only runs that finish at the review checkpoint; Pass 2 is
-  available only through approval or an authorized resume
-- Temperature, guides, and media reference mode
-- MinerU, PaddleOCR-VL, GLM-OCR, and Mathpix settings
+- discovery-only and direct Pass 2 commands;
+- OCR hints and Stage 1 column mode;
+- MinerU, PaddleOCR-VL, GLM-OCR, and Mathpix settings.
+
+These remain supported through YAML and the CLI. Temperature, reasoning,
+runtime controls, and custom models remain available in the dashboard.
 
 Benchmark inputs, gold-source controls, sweep fields, evaluation thresholds,
 experiment layout names, configuration `kind`/`version`, and internal output
@@ -144,6 +145,6 @@ automatic OpenRouter routing.
 - Authentication and authorization
 - Concurrent inference workers
 - Benchmark sweeps and evaluation dashboards
-- Collaborative parse-rule review
+- Collaborative MDF parsing guide review
 - A native desktop wrapper
 - Cloud storage or a hosted database

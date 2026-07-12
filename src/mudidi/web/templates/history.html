@@ -1,5 +1,59 @@
 <!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Run history · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head>
-  <body class="standalone"><main class="providers-page"><a class="back-link" href="/">← New run</a><header class="page-heading"><span class="eyebrow">Local metadata</span><h1>Run history</h1><p>Runs and events persist locally; API credentials do not.</p></header><form class="panel history-filters" method="get" action="/history"><label>Search<input name="q" value="{{ filters.q }}" placeholder="Run ID"></label><label>Status<select name="status"><option value="">All statuses</option>{% for item in statuses %}<option value="{{ item.value }}" {{ 'selected' if filters.status == item.value else '' }}>{{ item.value.replace('_', ' ') | title }}</option>{% endfor %}</select></label><label>Provider<select name="provider"><option value="">All providers</option>{% for item in providers %}<option value="{{ item.value }}" {{ 'selected' if filters.provider == item.value else '' }}>{{ item.value | title }}</option>{% endfor %}</select></label><button class="primary" type="submit">Filter</button></form><section class="panel history-list">{% if runs %}{% for run in runs %}<article class="run-row"><a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a><span>{{ run.status_label }}</span><small>{{ run.completed_pages }} of {{ run.total_pages }} pages · {{ run.provider }}</small>{% if run.review_available and run.review_status == 'awaiting_review' %}<a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review rules</a>{% elif run.resume_available %}<a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>{% else %}<a class="back-link" href="/runs/{{ run.run_id }}">View</a>{% endif %}</article>{% endfor %}{% else %}<div class="empty-state"><h2>No matching runs</h2><p>Change the filters or configure a new production run.</p></div>{% endif %}</section></main></body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Run history · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="standalone">
+    <main class="providers-page">
+      <a class="back-link" href="/">← New run</a>
+      <header class="page-heading">
+        <span class="eyebrow">Local metadata</span>
+        <h1>Run history</h1>
+        <p>Runs and events persist locally; API credentials do not.</p>
+      </header>
+      <form class="panel history-filters" method="get" action="/history">
+        <label>Search<input name="q" value="{{ filters.q }}" placeholder="Run ID"></label>
+        <label>Status
+          <select name="status">
+            <option value="">All statuses</option>
+            {% for item in statuses %}
+            <option value="{{ item.value }}" {{ 'selected' if filters.status == item.value else '' }}>{{ status_label(item) }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Provider
+          <select name="provider">
+            <option value="">All providers</option>
+            {% for item in providers %}
+            <option value="{{ item.value }}" {{ 'selected' if filters.provider == item.value else '' }}>{{ item.value | title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="primary" type="submit">Filter</button>
+      </form>
+      <section class="panel history-list">
+        {% if runs %}
+          {% for run in runs %}
+          <article class="run-row">
+            <a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a>
+            <span>{{ run.status_label }}</span>
+            <small>{{ run.completed_pages }} of {{ run.total_pages }} pages · {{ run.provider }}</small>
+            {% if run.review_available and run.review_status == 'awaiting_review' %}
+            <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review MDF parsing guide</a>
+            {% elif run.resume_available %}
+            <a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>
+            {% else %}
+            <a class="back-link" href="/runs/{{ run.run_id }}">View</a>
+            {% endif %}
+          </article>
+          {% endfor %}
+        {% else %}
+        <div class="empty-state"><h2>No matching runs</h2><p>Change the filters or configure a new production run.</p></div>
+        {% endif %}
+      </section>
+    </main>
+  </body>
 </html>

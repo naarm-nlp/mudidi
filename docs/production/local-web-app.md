@@ -1,150 +1,174 @@
 # Local web application
 
-MUDIDI includes a localhost website for running production inference without
-writing YAML or assembling CLI flags. It executes the pipeline on your own
-computer; only model requests leave the machine for the provider selected by
-the run.
+MUDIDI includes a localhost dashboard for production inference without YAML or
+CLI flags. The pipeline and files stay on the computer running MUDIDI; only
+model requests are sent to the selected provider.
 
 ## Install and launch
 
-Install MUDIDI with the web dependencies:
-
 ```bash
 uv sync --extra web
-```
-
-Add the API key for your selected provider to `.env`, or enter a temporary key
-on the website's **Providers & Keys** screen. Then launch the app:
-
-```bash
 uv run mudidi web
 ```
 
-MUDIDI opens `http://127.0.0.1:8765` in your browser. The server only accepts
-`127.0.0.1` or `localhost`; it is not designed for LAN or public deployment.
-Use `--no-browser` to prevent automatic browser opening, and use `--port` if
-port 8765 is already occupied.
+Add the API key for your provider to `.env`, or enter a temporary key on the
+**API providers** screen. MUDIDI opens `http://127.0.0.1:8765`. It binds to
+loopback and is not intended for public or LAN deployment. Use `--no-browser`
+or `--port` when needed.
 
 ## Create a run
 
-The **New Run** screen exposes the production settings most users need:
+The **New Run** screen asks you to:
 
-1. Enter a local PDF/page directory, or upload a PDF or page images into
-   run-owned local storage.
-2. Choose an output directory.
-3. Select Stage 1 only, Stage 2, or the complete pipeline.
-4. Select Anthropic, OpenAI, Gemini, OpenRouter, or **Other / advanced provider**.
-5. Choose a provider-specific model for each active pipeline stage, or select
-   **Other model** and enter a LiteLLM-compatible identifier.
-6. Select the quality and reasoning settings, then review and start the run.
+1. Choose a source PDF, page images, or a folder of page images.
+2. Enter an output directory on the same computer running MUDIDI.
+3. Select one pipeline:
+   - **Complete digitization**
+   - **Transcription only**
+   - **Parse transcription into MDF (Multi-Dictionary Formatter)**
+4. Choose a provider and one model for each active stage.
+5. Optionally enable **Agentic verification**.
+6. Review the resolved configuration and start.
 
-The **Dictionary Profile** is optional. If you know the headword language,
-translation/definition languages, their scripts, the page arrangement, and the
-information types present in an entry, providing those details can improve
-extraction accuracy. The profile is guidance rather than source text: MUDIDI
-still verifies it against the scanned page. Leave the entire section blank when
-you do not know the answers.
+Browser-selected inputs are copied into an input bundle owned by the run. This
+allows review, restart, and resume without depending on the original browser
+selection. The output directory remains a text field because a standard browser
+cannot disclose an arbitrary absolute folder path to a localhost server.
 
-Dashboard runs always normalize Stage 1 typography. Typography preservation is
-not exposed in the web interface; use YAML or the CLI when that specialized
-behavior is required.
+Dashboard transcription always uses flat Stage 1 output and does not preserve
+typography. OCR hints, column mode, and expert OCR/VLM backends remain available
+through YAML and the CLI but are intentionally absent from the dashboard.
 
-Use **Require a new or empty directory** for a fresh run. Select **Resume
-compatible existing artifacts** only when you deliberately want the pipeline's
-manifest-based resume behavior; the website never silently deletes output.
+## Dictionary Profile
 
-The browser form is converted into the same strict typed configuration used by
-the CLI. Advanced configuration remains available through the YAML/CLI
-workflow; the website does not store or generate a user-facing YAML file. Its
-progressive disclosures also expose stage-specific models, agentic verification,
-context and guide files, runtime controls, and the MinerU, PaddleOCR-VL,
-GLM-OCR, and Mathpix expert backends.
+The **Dictionary Profile** is optional and can improve extraction accuracy. It
+asks for:
 
-The provider screen contains a dated offline model catalog. With a provider key
-available, **Refresh available models** queries that provider's official model
-list and keeps the non-secret result in process memory. Provider discovery
-failure never blocks the bundled catalog or custom LiteLLM identifiers.
+- headword language and script;
+- translation, gloss, or definition languages and their scripts;
+- a free-form description of the page arrangement;
+- the information types found in entries.
 
-The bundled catalog was checked against official provider documentation on
-2026-07-12. It includes GPT-5.6 Sol/Terra/Luna; Claude Fable 5, Opus 4.8,
-Sonnet 5, and Haiku 4.5; and Gemini 3.1 Pro Preview, Gemini 3.5 Flash, and
-Gemini 3.1 Flash-Lite. Model controls follow the selected pipeline: for
-example, transcription-only runs show only Stage 1 model and temperature.
+Leave the whole section blank when you are unsure. The profile is guidance, not
+source text, and MUDIDI still checks the scanned page.
 
-OpenRouter models are entered manually for each active stage rather than chosen
-from the bundled catalog; for example, `qwen/qwen3-235b-a22b`. MUDIDI adds the
-LiteLLM `openrouter/` prefix. The **OpenRouter Provider** field is optional:
-leaving it blank uses automatic routing, while a provider slug such as
-`anthropic`, `google-vertex`, or `deepinfra/turbo` pins that preference.
+## Additional context
 
-Selecting **None / lowest supported** reasoning resolves to `low` in the web
-configuration. The LLM client sends that control only to model families known
-to support it; unsupported custom models receive no reasoning parameter.
+The dashboard can attach:
 
-## Parse-rule approval checkpoint
+- PDF dictionary and introduction page numbers using Arabic numbers, commas,
+  and ranges such as `1-12,15`;
+- a separate introduction file or folder for image-based page input;
+- an alphabet or orthography file;
+- Stage 1 and Stage 2 additional instructions entered directly as text;
+- representative MDF parsing guide pages;
+- an existing MDF parsing guide JSON file.
 
-For Stage 2 and complete runs, MUDIDI deliberately pauses after discovering
-parse rules. Open **Parse Rules**, review every marker and rule, make any edits,
-and choose **Approve & continue**.
+Roman numeral page specifications are not accepted. When the dictionary source
+is one PDF, use its numeric introduction-page field; a separate introduction
+upload is for image-directory input.
 
-Pass 2 cannot start without that explicit approval. The approved rules are
-stored as an immutable, run-bound snapshot, and Pass 2 verifies the snapshot
-before using it. Saving a draft does not authorize extraction.
+Additional instructions are stored as bounded UTF-8 files in the run input
+bundle and passed through the same prompt-guide mechanism used by YAML/CLI.
+
+## MDF parsing guide and MDF manual
+
+These names refer to different things:
+
+- **MDF parsing guide** is inferred by the LLM for this particular dictionary.
+  It describes the MDF markers and structural rules that Stage 2 should use.
+- **MDF manual** is an optional general reference PDF describing MDF markers.
+
+For the MDF manual, choose one of:
+
+- no manual;
+- the bundled official 65-page manual;
+- a custom or shortened PDF.
+
+The full manual covers all MDF markers and can increase input tokens and cost.
+If you already know which markers your dictionary needs, extract only the
+relevant manual pages and upload the shorter PDF. The dashboard also provides a
+download link so you can inspect the bundled manual before deciding.
+
+Whichever manual is selected is copied into the run-owned input bundle. It is
+optional and does not replace the dictionary-specific MDF parsing guide.
+
+## Agentic verification
+
+Agentic verification defaults to **No** because it adds evaluator and correction
+model calls. Selecting **Yes** opens **Custom verification** directly below the
+control. Stage 1 and Stage 2 verification are checked initially; you can disable
+either applicable stage and configure correction iterations, confidence,
+evaluator/rewriter models, reasoning, deterministic patches, and concrete retry
+evidence.
+
+Inactive stages are never verified. For example, transcription-only ignores
+Stage 2 verification even if a forged form submission includes it.
+
+## Models and providers
+
+The provider-specific catalog is combined with optional live model discovery and
+an **Other model** entry. OpenRouter uses a manually entered model such as
+`qwen/qwen3-235b-a22b`; MUDIDI adds the LiteLLM `openrouter/` prefix. The
+optional **OpenRouter Provider** slug pins an endpoint preference, while blank
+uses automatic routing.
+
+Selecting **None / lowest supported** reasoning resolves to `low`; MUDIDI only
+sends reasoning controls to model families known to support them.
+
+## MDF parsing guide review checkpoint
+
+Complete and MDF-parsing runs pause after Stage 2 infers or imports the MDF
+parsing guide. Open **MDF parsing guide**, review its markers and guide rules,
+make any edits, and select **Approve and continue MDF parsing**.
+
+Saving a draft is not approval. Page parsing cannot start without a server-minted
+approval bound to the exact run, review version, immutable snapshot, digest, and
+approval time. An uploaded guide is treated as untrusted and goes through the
+same mandatory review.
 
 ## Monitor and inspect
 
-Each run has these views:
+Run views include:
 
-- **Overview** — durable status, progress events, and cancellation.
-- **Parse Rules** — structured Stage 2 rule review and approval.
-- **Pages** — bounded previews of Stage 1 and Stage 2 page text.
-- **Page evidence** — the safe source image/PDF, transcription, MDF, events,
-  and related downloads for one page.
-- **Live Logs** — bounded worker diagnostics with known API keys redacted.
-- **Outputs** — downloads constrained to the run's validated output directory.
-- **Usage** — token and reported cost totals from generated usage files.
+- **Overview** — durable status, progress, resume, and cancellation.
+- **MDF parsing guide** — structured Stage 2 guide review and approval.
+- **Pages** — bounded Stage 1 and Stage 2 previews.
+- **Live Logs** — bounded diagnostics with known keys redacted.
+- **Outputs** — downloads constrained to the validated output directory.
+- **Usage** — reported token and cost totals.
 
-The browser receives progress through resumable server-sent events. Run history,
-events, and parse-rule review state survive an app restart. A run that was active
-when the app stopped is marked interrupted instead of being silently resumed.
-The user can then resume it explicitly; approved Pass 2 resumes only from the
-authenticated immutable parse-rule snapshot.
-
-**Run History** can filter by run ID, status, and provider. A validated run can
-also be saved as a reusable preset. Presets contain typed non-secret settings
-and revalidate their paths when preparing a new run.
+Runs and events survive restart. A run active when the app stopped becomes
+interrupted and must be resumed explicitly. Presets own independent copies of
+their managed inputs, so deleting or cleaning a source run does not break a
+saved preset.
 
 ## Credentials and local data
 
-Provider keys are resolved from temporary process memory first and `.env` or
-the process environment second. They are sent to the child worker through a
-private standard-input message and are not written to the run database,
-configuration snapshot, command line, or URL.
+Provider keys are resolved from temporary process memory first and `.env` or the
+process environment second. They never enter SQLite, presets, resolved config,
+logs, command lines, or URLs.
 
-By default, web metadata is stored under `~/.local/share/mudidi/`. Select a
-different location with:
+Web metadata and managed inputs default to `~/.local/share/mudidi/`. Override it
+with:
 
 ```bash
 uv run mudidi web --data-dir path/to/private-app-data
 ```
 
-Generated dictionary files remain in the output directory selected for the
-run. The app allows only one inference worker at a time so competing runs do
-not overwrite shared pipeline state or unexpectedly multiply API usage.
+Generated dictionary files remain in the selected output directory. The first
+release permits one inference worker at a time.
 
 ## Troubleshooting
 
-- **API credential required** — add the provider key on **Providers & Keys** or
-  to `.env`, then start the prepared run again.
-- **Another inference worker is active** — wait for, cancel, or finish the
-  current run before starting another.
-- **Awaiting parse-rule review** — review and explicitly approve the generated
-  rules; this pause is intentional.
-- **Interrupted** — the local server exited while the worker was active. Inspect
-  its logs and outputs, then explicitly resume the run.
-- **No output or usage files yet** — those views are valid before extraction has
-  produced their corresponding artifacts.
+- **API credential required** — add the key under **API providers** or `.env`.
+- **Another inference worker is active** — finish or cancel the current worker.
+- **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
+  guide; this pause is intentional.
+- **Interrupted** — inspect the run and explicitly resume it.
+- **Request body too large** — select a smaller input set or split the source
+  before creating the run.
 
-For the complete advanced configuration surface, use the
+For advanced options omitted from the dashboard, use the
 [YAML configuration guide](../getting-started/configuration.md) and
 [CLI reference](../reference/cli.md).

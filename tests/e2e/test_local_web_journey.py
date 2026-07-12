@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import socket
 import threading
 import time
@@ -15,6 +16,10 @@ from playwright.sync_api import Page, expect, sync_playwright
 from mudidi.web.app import create_app
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
+
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 @pytest.fixture
@@ -64,14 +69,13 @@ def test_complete_production_journey_requires_and_uses_review(
     browser_page: Page,
     tmp_path: Path,
 ) -> None:
-    pages = tmp_path / "dictionary-pages"
-    pages.mkdir()
-    (pages / "page_1.png").write_bytes(b"offline image")
     output = tmp_path / "web-output"
     page = browser_page
 
     page.goto(local_site)
-    page.get_by_label("Local PDF or page directory").fill(str(pages))
+    page.locator('input[name="page_files"]').set_input_files(
+        {"name": "page_1.png", "mimeType": "image/png", "buffer": _PNG}
+    )
     page.get_by_label("Output directory").fill(str(output))
     page.locator("select[name=provider]").select_option("anthropic")
     page.get_by_label("Stage 1 model").select_option("anthropic/claude-sonnet-5")
@@ -81,14 +85,14 @@ def test_complete_production_journey_requires_and_uses_review(
 
     expect(page.get_by_role("heading", name="Review your run")).to_be_visible()
     page.get_by_role("button", name="Start run").click()
-    expect(page.get_by_role("link", name="Review Parse Rules →")).to_be_visible(
+    expect(page.get_by_role("link", name="Review MDF parsing guide →")).to_be_visible(
         timeout=10_000
     )
-    page.get_by_role("link", name="Review Parse Rules →").click()
+    page.get_by_role("link", name="Review MDF parsing guide →").click()
 
-    expect(page.get_by_role("heading", name="Review parse rules")).to_be_visible()
+    expect(page.get_by_role("heading", name="Review MDF parsing guide")).to_be_visible()
     page.get_by_label("Dictionary name").fill("Browser-approved dictionary")
-    page.get_by_role("button", name="Approve and continue").click()
+    page.get_by_role("button", name="Approve and continue MDF parsing").click()
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
 
     page.get_by_role("link", name="Pages").click()
@@ -106,3 +110,29 @@ def test_active_run_updates_from_sse_without_manual_refresh(
     page.get_by_role("button", name="Start offline demo").click()
 
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
+
+
+def test_agentic_and_manual_controls_follow_pipeline(
+    local_site: str,
+    browser_page: Page,
+) -> None:
+    page = browser_page
+    page.goto(local_site)
+    page.get_by_text("Input and context", exact=True).click()
+
+    settings = page.locator("[data-agentic-settings]")
+    expect(settings).to_be_hidden()
+    page.get_by_label("Yes", exact=True).check()
+    expect(settings).to_be_visible()
+    expect(page.get_by_label("Verify Stage 1")).to_be_checked()
+    expect(page.get_by_label("Verify Stage 2")).to_be_checked()
+
+    page.locator('input[name="pipeline"][value="transcription"]').check()
+    expect(page.get_by_label("Verify Stage 2")).to_be_disabled()
+    expect(page.locator("[data-mdf-manual]")).to_be_hidden()
+
+    page.locator('input[name="pipeline"][value="structure"]').check()
+    expect(page.get_by_label("Verify Stage 1")).to_be_disabled()
+    expect(page.locator("[data-mdf-manual]")).to_be_visible()
+    page.get_by_label("Upload a custom or shortened MDF manual").check()
+    expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()

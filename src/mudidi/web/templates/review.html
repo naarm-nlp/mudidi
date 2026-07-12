@@ -19,10 +19,10 @@
           {% endfor %}
         </dl>
         <div class="checkpoint">
-          <strong>Parse Rules: {{ summary.parse_rules }}</strong>
-          <p>Complete and Stage 2 runs pause for explicit review before Pass 2.</p>
+          <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
+          <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
         </div>
-        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for Parse Rules review before Pass 2.</span><button class="primary" type="submit">Start run</button></form>
+        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for MDF parsing guide review before parsing pages into MDF.</span><button class="primary" type="submit">Start run</button></form>
         <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets"><label for="preset-name">Save these non-secret settings as a preset</label><div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div></form>
       </section>
     </main>

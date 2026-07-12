@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import shutil
+import time
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -17,7 +19,7 @@ _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 _INTRO_SUFFIXES = _PAGE_SUFFIXES | {".pdf", ".txt", ".md", ".docx"}
 _ALPHABET_SUFFIXES = _PAGE_SUFFIXES | {".gif", ".txt", ".md", ".docx"}
 _MAX_FILES = 5_000
-_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+_MAX_UPLOAD_BYTES = 24 * 1024 * 1024
 _TEXT_CHARS = 20_000
 
 
@@ -143,6 +145,7 @@ class InputMaterializer:
             temporary.write_bytes(content)
             _validate_content(temporary, ".pdf", role="mdf_manual")
             temporary.replace(target)
+            _write_pdf_metadata(target, source="bundled")
         except Exception:
             shutil.rmtree(destination, ignore_errors=True)
             self._remove_empty_bundle(run_id)
@@ -215,6 +218,35 @@ class InputMaterializer:
         _validate_owner_id(preset_id)
         shutil.rmtree(self.presets_root / preset_id, ignore_errors=True)
 
+    def reconcile(
+        self,
+        known_run_ids: set[str],
+        *,
+        grace_seconds: float = 3_600,
+    ) -> set[str]:
+        """Remove stale partial files and old run directories with no DB owner."""
+
+        removed: set[str] = set()
+        if not self.runs_root.exists():
+            return removed
+        cutoff = time.time() - grace_seconds
+        for run_root in self.runs_root.iterdir():
+            if not run_root.is_dir():
+                continue
+            for partial in run_root.rglob("*.part"):
+                if partial.is_file() and not partial.is_symlink():
+                    partial.unlink(missing_ok=True)
+            if run_root.name in known_run_ids:
+                continue
+            try:
+                modified = run_root.stat().st_mtime
+            except OSError:
+                continue
+            if modified <= cutoff:
+                shutil.rmtree(run_root, ignore_errors=True)
+                removed.add(run_root.name)
+        return removed
+
     async def _materialize_files(
         self,
         run_id: str,
@@ -257,6 +289,8 @@ class InputMaterializer:
             shutil.rmtree(destination, ignore_errors=True)
             self._remove_empty_bundle(run_id)
             raise
+        if role == "mdf_manual":
+            _write_pdf_metadata(destination / names[0], source="upload")
         if multiple:
             return destination
         return destination / names[0]
@@ -335,6 +369,15 @@ def _validate_content(path: Path, suffix: str, *, role: str) -> None:
             from PIL import Image
 
             with Image.open(path) as image:
+                expected = {
+                    ".png": "PNG",
+                    ".jpg": "JPEG",
+                    ".jpeg": "JPEG",
+                    ".webp": "WEBP",
+                    ".gif": "GIF",
+                }[suffix]
+                if image.format != expected:
+                    raise ValueError("uploaded image type does not match its filename")
                 image.verify()
         except Exception as exc:
             raise ValueError("uploaded image is unreadable") from exc
@@ -363,6 +406,23 @@ def _validate_content(path: Path, suffix: str, *, role: str) -> None:
             raise ValueError("MDF parsing guide JSON is unreadable") from exc
         return
     raise ValueError(f"unsupported uploaded content: {suffix}")
+
+
+def _write_pdf_metadata(path: Path, *, source: str) -> None:
+    import fitz
+
+    with fitz.open(path) as document:
+        pages = document.page_count
+    payload = {
+        "filename": path.name,
+        "pages": pages,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "source": source,
+    }
+    temporary = path.parent / "metadata.json.part"
+    target = path.parent / "metadata.json"
+    temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(target)
 
 
 def rebase_managed_config(
