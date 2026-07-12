@@ -125,7 +125,6 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     config = _form(
         tmp_path,
         stage1_mode="column",
-        stage1_typography=True,
         stage1_guides=stage1_guides,
         stage2_guides=stage2_guides,
         reasoning="high",
@@ -144,7 +143,7 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     ).to_inference_config()
 
     assert config.pipeline.stage1_mode == "column"
-    assert config.pipeline.stage1_typography is True
+    assert config.pipeline.stage1_typography is False
     assert config.pipeline.stage1_guides == stage1_guides.resolve()
     assert config.pipeline.stage2_guides == stage2_guides.resolve()
     assert config.models.temperature == 0.25
@@ -154,6 +153,42 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.runtime.limit == 12
     assert config.runtime.prompt_cache == "off"
     assert config.runtime.media_reference == "inline"
+
+
+def test_optional_dictionary_profile_maps_five_dashboard_answers(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        profile_headword_language="Na",
+        profile_headword_script="Latin and IPA",
+        profile_target_languages=["English", "Chinese"],
+        profile_target_scripts=["Latin", "Han"],
+        profile_page_layout="aligned_language_columns",
+        profile_information_types=["translation", "pronunciation", "example"],
+    ).to_inference_config()
+
+    assert config.input.dictionary_profile is not None
+    assert config.input.dictionary_profile.headword.language == "Na"
+    assert [item.language for item in config.input.dictionary_profile.targets] == [
+        "English",
+        "Chinese",
+    ]
+    assert config.input.dictionary_profile.information_types == [
+        "translation",
+        "pronunciation",
+        "example",
+    ]
+    assert config.pipeline.stage1_typography is False
+
+
+def test_dictionary_profile_is_optional_and_typography_is_not_a_web_field(
+    tmp_path: Path,
+) -> None:
+    config = _form(tmp_path).to_inference_config()
+    assert config.input.dictionary_profile is None
+    assert config.pipeline.stage1_typography is False
+
+    with pytest.raises(ValidationError, match="stage1_typography"):
+        _form(tmp_path, stage1_typography=True)
 
 
 def test_expert_vlm_backend_controls_map_without_yaml(tmp_path: Path) -> None:

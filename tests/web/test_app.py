@@ -32,6 +32,15 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="vlm_model"' in response.text
     assert 'name="mathpix_max_wait_seconds"' in response.text
     assert 'name="output_policy"' in response.text
+    assert "Dictionary Profile (optional)" in response.text
+    assert "can improve extraction accuracy" in response.text
+    assert 'name="profile_headword_language"' in response.text
+    assert 'name="profile_target_languages"' in response.text
+    assert 'name="profile_headword_script"' in response.text
+    assert 'name="profile_page_layout"' in response.text
+    assert 'name="profile_information_types"' in response.text
+    assert 'name="dictionary_languages"' not in response.text
+    assert 'name="stage1_typography"' not in response.text
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
@@ -82,6 +91,43 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "Review your run" in response.text
     assert "Human approval required" in response.text
     assert "anthropic/claude-sonnet-4-6" in response.text
+
+
+def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "pages": str(pages),
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "quality": "verified",
+            "profile_headword_language": "Chukchi",
+            "profile_headword_script": "Cyrillic",
+            "profile_target_languages": ["Russian", "English"],
+            "profile_target_scripts": ["Cyrillic", "Latin"],
+            "profile_page_layout": "inline_entries",
+            "profile_information_types": ["translation", "example"],
+        },
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.input.dictionary_profile is not None
+    assert config.input.dictionary_profile.headword.language == "Chukchi"
+    assert [target.script for target in config.input.dictionary_profile.targets] == [
+        "Cyrillic",
+        "Latin",
+    ]
+    assert config.pipeline.stage1_typography is False
 
 
 def test_new_run_form_renders_validation_errors_without_echoing_secret(

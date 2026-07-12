@@ -16,6 +16,7 @@ from mudidi.cli.run import (
     run_resolved_command,
 )
 from mudidi.config.yaml_config import BenchmarkRunConfig, InferenceConfig
+from mudidi.schemas.dictionary_profile import DictionaryProfile, ProfileLanguage
 
 
 def test_resolve_minimal_cli_inference_uses_defaults(tmp_path: Path) -> None:
@@ -193,6 +194,30 @@ def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None
     assert namespace.overwrite is True
     assert namespace.stage1_reasoning_effort == "low"
     assert namespace.stage2_reasoning_effort == "low"
+
+
+def test_inference_namespace_carries_dictionary_profile_without_a_file(
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    profile = DictionaryProfile(
+        headword=ProfileLanguage(language="Evenki", script="Cyrillic"),
+        targets=[ProfileLanguage(language="Russian", script="Cyrillic")],
+        page_layout="inline_entries",
+        information_types=["translation", "part_of_speech"],
+    )
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages, "dictionary_profile": profile},
+            "output": {"directory": tmp_path / "output"},
+        }
+    )
+
+    namespace = execution_namespace_from_config(config)
+
+    assert namespace.dictionary_profile == profile
+    assert namespace.dictionary_languages is None
 
 
 def test_minimal_production_config_does_not_require_optional_alphabet(
