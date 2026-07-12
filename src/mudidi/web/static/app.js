@@ -31,7 +31,7 @@ if (otherInformationToggle && otherInformationField) {
   synchronizeOtherInformation();
 }
 
-const pipelineSelect = document.querySelector("[data-pipeline-select]");
+const pipelineChoices = [...document.querySelectorAll('input[name="pipeline"]')];
 const providerSelect = document.querySelector("[data-provider-select]");
 const modelSelects = [...document.querySelectorAll("[data-model-select]")];
 const openRouterProvider = document.querySelector("[data-openrouter-provider]");
@@ -39,7 +39,6 @@ const pipelineStages = {
   complete: new Set(["stage1", "pass1", "pass2"]),
   transcription: new Set(["stage1"]),
   structure: new Set(["pass1", "pass2"]),
-  discover_rules: new Set(["pass1"]),
 };
 const providerDefaults = {
   anthropic: "anthropic/claude-sonnet-5",
@@ -96,8 +95,9 @@ const synchronizeModels = (providerChanged = false) => {
 };
 
 const synchronizePipeline = () => {
-  if (!pipelineSelect) return;
-  const active = pipelineStages[pipelineSelect.value] || new Set();
+  const selected = pipelineChoices.find((choice) => choice.checked);
+  if (!selected) return;
+  const active = pipelineStages[selected.value] || new Set();
   document.querySelectorAll("[data-stage-control]").forEach((control) => {
     const stages = control.dataset.pipelineStages.split(/\s+/);
     const visible = stages.some((stage) => active.has(stage));
@@ -105,6 +105,16 @@ const synchronizePipeline = () => {
     control.querySelectorAll("input, select").forEach((input) => {
       input.disabled = !visible;
     });
+  });
+  [
+    ["verify_stage1", active.has("stage1")],
+    ["verify_stage2", active.has("pass1") || active.has("pass2")],
+  ].forEach(([name, enabled]) => {
+    const input = document.querySelector(`input[name="${name}"]`);
+    if (!input) return;
+    input.disabled = !enabled;
+    if (!enabled) input.checked = false;
+    else if (input.dataset.userTouched !== "true") input.checked = true;
   });
   synchronizeModels();
 };
@@ -115,8 +125,34 @@ modelSelects.forEach((select) => {
 if (providerSelect) {
   providerSelect.addEventListener("change", () => synchronizeModels(true));
 }
-if (pipelineSelect) pipelineSelect.addEventListener("change", synchronizePipeline);
+pipelineChoices.forEach((choice) => choice.addEventListener("change", synchronizePipeline));
+
+document.querySelectorAll('input[name="verify_stage1"], input[name="verify_stage2"]').forEach((input) => {
+  input.addEventListener("change", () => {
+    input.dataset.userTouched = "true";
+  });
+});
+
+const agenticChoices = [...document.querySelectorAll('input[name="agentic"]')];
+const agenticSettings = document.querySelector("[data-agentic-settings]");
+const synchronizeAgentic = () => {
+  if (!agenticSettings) return;
+  const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
+  agenticSettings.hidden = !enabled;
+  if (enabled) agenticSettings.open = true;
+  agenticSettings.querySelectorAll("input, select, textarea").forEach((input) => {
+    const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
+    input.disabled = !enabled || (stageDisabled && input.disabled);
+  });
+  if (enabled) synchronizePipeline();
+};
+agenticChoices.forEach((choice) => choice.addEventListener("change", synchronizeAgentic));
+
+document.querySelectorAll(".info-button").forEach((button) => {
+  button.addEventListener("click", () => button.classList.toggle("is-open"));
+});
 synchronizePipeline();
+synchronizeAgentic();
 
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {

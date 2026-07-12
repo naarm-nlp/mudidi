@@ -36,7 +36,7 @@
           <li class="current"><b>1</b> Input</li>
           <li><b>2</b> Pipeline</li>
           <li><b>3</b> Model</li>
-          <li><b>4</b> Quality</li>
+          <li><b>4</b> Agentic</li>
           <li><b>5</b> Review</li>
         </ol>
 
@@ -59,15 +59,13 @@
             <label>Existing output policy
               <select name="output_policy"><option value="new">Require a new or empty directory</option><option value="resume">Resume compatible existing artifacts</option></select>
             </label>
+            <fieldset class="choice-group pipeline-choices" data-pipeline-select>
+              <legend>Pipeline</legend>
+              <label><input type="radio" name="pipeline" value="complete" checked> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
+              <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
+              <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
+            </fieldset>
             <div class="form-grid">
-              <label>Pipeline
-                <select name="pipeline" data-pipeline-select>
-                  <option value="complete">Complete digitization</option>
-                  <option value="transcription">Transcription only</option>
-                  <option value="structure">Structure existing transcription</option>
-                  <option value="discover_rules">Discover and review parse rules</option>
-                </select>
-              </label>
               <label>Provider
                 <select name="provider" data-provider-select>
                   <option value="anthropic">Anthropic</option>
@@ -100,13 +98,6 @@
               <label data-stage-control data-pipeline-stages="stage1 pass1 pass2">Temperature
                 <input name="temperature" type="number" min="0" step="0.05" value="0.1">
               </label>
-              <label>Quality
-                <select name="quality">
-                  <option value="verified">Verified</option>
-                  <option value="standard">Standard</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </label>
               <label>Reasoning
                 <select name="reasoning">
                   <option value="low">Low</option>
@@ -116,6 +107,28 @@
                 </select>
               </label>
             </div>
+            <fieldset class="choice-group agentic-choice">
+              <legend>Agentic verification</legend>
+              <p>Agentic verification adds evaluator and correction model calls.</p>
+              <label><input type="radio" name="agentic" value="false" checked> No</label>
+              <label><input type="radio" name="agentic" value="true"> Yes</label>
+            </fieldset>
+            <details data-agentic-settings hidden>
+              <summary>Custom verification</summary>
+              <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
+              <div class="form-grid">
+                <label><span><input name="verify_stage1" type="checkbox" value="true" checked> Verify Stage 1</span></label>
+                <label><span><input name="verify_stage2" type="checkbox" value="true" checked> Verify Stage 2</span></label>
+                <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
+                <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
+                <label>Evaluator model<input name="evaluator_model" list="model-catalog" placeholder="Use stage model"></label>
+                <label>Rewriter model<input name="rewriter_model" list="model-catalog" placeholder="Use stage model"></label>
+                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
+              </div>
+            </details>
             <details>
               <summary>Input and context</summary>
               <div class="form-grid">
@@ -123,8 +136,6 @@
                 <label>PDF introduction pages<input name="introduction_pages" placeholder="i-xii or 1-12"></label>
                 <label>Separate introduction path<input name="introduction" placeholder="/path/to/introduction"></label>
                 <label>Alphabet guide<input name="alphabet" placeholder="/path/to/alphabet.txt"></label>
-                <label>OCR hint<input name="ocr_text" placeholder="/path/to/ocr-hint.txt"></label>
-                <label>Stage 1 mode<select name="stage1_mode"><option value="flat">Flat</option><option value="column">Column</option></select></label>
                 <label>Stage 1 guide file<input name="stage1_guides" placeholder="/path/to/stage1-guides.txt"></label>
                 <label>Stage 2 guide file<input name="stage2_guides" placeholder="/path/to/stage2-guides.txt"></label>
                 <label>Toolbox reference PDF<input name="toolbox_pdf" placeholder="/path/to/toolbox.pdf"></label>
@@ -173,22 +184,6 @@
                 </label>
               </fieldset>
             </details>
-            <details>
-              <summary>Custom verification</summary>
-              <p>These controls are used when Quality is Custom. Verification adds model calls and cost.</p>
-              <div class="form-grid">
-                <label><span><input name="verify_stage1" type="checkbox" value="true"> Verify Stage 1</span></label>
-                <label><span><input name="verify_stage2" type="checkbox" value="true"> Verify Stage 2</span></label>
-                <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
-                <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
-                <label>Evaluator model<input name="evaluator_model" list="model-catalog" placeholder="Use stage model"></label>
-                <label>Rewriter model<input name="rewriter_model" list="model-catalog" placeholder="Use stage model"></label>
-                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
-                <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
-              </div>
-            </details>
             <datalist id="model-catalog">
               {% for model in models %}<option value="{{ model.model_id }}">{{ model.display_name }}</option>{% endfor %}
             </datalist>
@@ -201,33 +196,6 @@
                 <label>Media reference<select name="media_reference"><option value="auto">Automatic</option><option value="inline">Inline</option><option value="file-uri">File URI</option></select></label>
               </div>
             </details>
-            <details>
-              <summary>Expert OCR backends</summary>
-              <p>Specialized OCR backends are Stage 1-only and may require their optional runtime dependencies.</p>
-              <div class="form-grid">
-                <label>Strategy<select name="strategy"><option value="two_stage">Language-model pipeline</option><option value="vlm_ocr">Local VLM OCR</option><option value="mathpix_ocr">Mathpix OCR</option></select></label>
-                <label>VLM model<select name="vlm_model"><option value="">Select for Local VLM OCR</option><option value="mineru2.5-pro">MinerU 2.5 Pro</option><option value="paddleocr-vl-1.5">PaddleOCR-VL 1.5</option><option value="glm-ocr">GLM-OCR</option></select></label>
-                <label>Render DPI<input name="vlm_dpi" type="number" min="72" value="200"></label>
-                <label>MinerU batch size<input name="mineru_batch_size" type="number" min="1" value="8"></label>
-                <label>MinerU max new tokens<input name="mineru_max_new_tokens" type="number" min="1" value="1024"></label>
-                <label>MinerU backend<select name="mineru_backend"><option value="transformers">Transformers</option><option value="vllm">vLLM</option></select></label>
-                <label>Paddle recognition backend<select name="paddle_rec_backend"><option value="native">Native</option><option value="vllm-server">vLLM server</option></select></label>
-                <label>Paddle server URL<input name="paddle_server_url" placeholder="http://127.0.0.1:8765"></label>
-                <label>Paddle auto server<select name="paddle_auto_server"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
-                <label>Paddle server port<input name="paddle_server_port" type="number" min="1" max="65535" value="8765"></label>
-                <label>Paddle server Python<input name="paddle_server_python" placeholder="/path/to/python"></label>
-                <label>GLM prompt<input name="glm_prompt" value="Text Recognition:"></label>
-                <label>GLM max new tokens<input name="glm_max_new_tokens" type="number" min="1" value="8192"></label>
-                <label>GLM backend<select name="glm_backend"><option value="transformers">Transformers</option><option value="vllm">vLLM</option></select></label>
-                <label>GLM auto server<select name="glm_auto_server"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
-                <label>GLM server URL<input name="glm_server_url" placeholder="http://127.0.0.1:8081"></label>
-                <label>GLM server port<input name="glm_server_port" type="number" min="1" max="65535" value="8081"></label>
-                <label>GLM server Python<input name="glm_server_python" placeholder="/path/to/python"></label>
-                <label>Mathpix poll interval (seconds)<input name="mathpix_poll_interval_seconds" type="number" min="0.1" step="0.1" value="3"></label>
-                <label>Mathpix maximum wait (seconds)<input name="mathpix_max_wait_seconds" type="number" min="1" value="600"></label>
-                <label>Mathpix request timeout (seconds)<input name="mathpix_request_timeout_seconds" type="number" min="1" value="60"></label>
-              </div>
-            </details>
             <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
           </form>
 
@@ -236,12 +204,12 @@
             <h2>Default pipeline</h2>
             <dl>
               <div><dt>Pipeline</dt><dd>Stage 1 + Stage 2</dd></div>
-              <div><dt>Quality</dt><dd>Verified</dd></div>
-              <div><dt>Parse Rules</dt><dd>Review required</dd></div>
+              <div><dt>Agentic</dt><dd>Off</dd></div>
+              <div><dt>MDF parsing guide</dt><dd>Review required</dd></div>
             </dl>
             <div class="checkpoint">
               <strong>Human checkpoint</strong>
-              <p>Stage 2 pauses after discovering parse rules. You review and approve them before extraction continues.</p>
+              <p>Stage 2 pauses after inferring an MDF parsing guide. You review and approve it before MDF parsing continues.</p>
             </div>
             <p class="hint">No YAML is required. Advanced options remain available in later steps.</p>
           </aside>

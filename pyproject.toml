@@ -55,6 +55,7 @@ packages = ["src/mudidi"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/mudidi/assets/PROMPT.json" = "mudidi/assets/PROMPT.json"
+"src/mudidi/assets/MDFReferenceManual.pdf" = "mudidi/assets/MDFReferenceManual.pdf"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

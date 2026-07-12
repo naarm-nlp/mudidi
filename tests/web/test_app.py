@@ -23,7 +23,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Run history" in response.text
     assert "Input" in response.text
     assert "Pipeline" in response.text
-    assert "Parse Rules" in response.text
+    assert "MDF parsing guide" in response.text
     assert 'name="dictionary_pages"' in response.text
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
@@ -50,9 +50,9 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
     assert 'name="media_reference"' in response.text
-    assert 'name="strategy"' in response.text
-    assert 'name="vlm_model"' in response.text
-    assert 'name="mathpix_max_wait_seconds"' in response.text
+    assert 'name="strategy"' not in response.text
+    assert 'name="vlm_model"' not in response.text
+    assert 'name="mathpix_max_wait_seconds"' not in response.text
     assert 'name="output_policy"' in response.text
     assert "Dictionary Profile (optional)" in response.text
     assert "can improve extraction accuracy" in response.text
@@ -130,7 +130,6 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
-            "quality": "verified",
         },
     )
 
@@ -159,7 +158,6 @@ def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
             "stage1_model": "openrouter/anthropic/claude-sonnet-5",
             "temperature": "0.1",
             "reasoning": "none",
-            "quality": "verified",
         },
     )
 
@@ -186,7 +184,6 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
-            "quality": "verified",
             "profile_headword_language": "Chukchi",
             "profile_headword_script": "Cyrillic",
             "profile_target_languages": ["Russian", "English"],
@@ -227,7 +224,6 @@ def test_new_run_form_renders_validation_errors_without_echoing_secret(
             "provider": "anthropic",
             "model": "sk-do-not-render",
             "reasoning": "low",
-            "quality": "verified",
         },
     )
 
@@ -291,7 +287,6 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
-            "quality": "verified",
         },
         files=[
             ("page_files", ("page_1.png", b"first image", "image/png")),
@@ -326,7 +321,6 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
-            "quality": "standard",
         },
         files={"page_files": ("../escape.png", b"image", "image/png")},
     )

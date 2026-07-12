@@ -12,12 +12,10 @@ from mudidi.config.yaml_config import (
     AgenticConfig,
     InferenceConfig,
     InputConfig,
-    MathpixConfig,
     ModelsConfig,
     OutputConfig,
     PipelineConfig,
     RuntimeConfig,
-    VlmConfig,
 )
 from mudidi.schemas.dictionary_profile import (
     DictionaryProfile,
@@ -33,15 +31,6 @@ class PipelineChoice(StrEnum):
     COMPLETE = "complete"
     TRANSCRIPTION = "transcription"
     STRUCTURE = "structure"
-    DISCOVER_RULES = "discover_rules"
-
-
-class QualityChoice(StrEnum):
-    """User-facing verification presets."""
-
-    STANDARD = "standard"
-    VERIFIED = "verified"
-    CUSTOM = "custom"
 
 
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
@@ -51,7 +40,6 @@ _PIPELINE_STAGE = {
     PipelineChoice.COMPLETE: "all",
     PipelineChoice.TRANSCRIPTION: "1",
     PipelineChoice.STRUCTURE: "2",
-    PipelineChoice.DISCOVER_RULES: "2-pass-1",
 }
 
 
@@ -67,7 +55,6 @@ class NewRunForm(BaseModel):
     introduction: Path | None = None
     introduction_pages: str | None = None
     alphabet: Path | None = None
-    ocr_text: Path | None = None
     profile_headword_language: str | None = None
     profile_headword_script: str | None = None
     profile_target_languages: list[str] = Field(default_factory=list)
@@ -78,8 +65,6 @@ class NewRunForm(BaseModel):
     toolbox_pdf: Path | None = None
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
-    stage1_mode: Literal["flat", "column"] = "flat"
-    strategy: Literal["two_stage", "vlm_ocr", "mathpix_ocr"] = "two_stage"
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
     parse_rules_pages: list[str] = Field(default_factory=list)
@@ -97,7 +82,7 @@ class NewRunForm(BaseModel):
     openrouter_provider: str | None = Field(default=None, max_length=100)
     temperature: float = Field(default=0.1, ge=0.0)
 
-    quality: QualityChoice = QualityChoice.VERIFIED
+    agentic: bool = False
     verify_stage1: bool = False
     verify_stage2: bool = False
     max_iterations: int = Field(default=2, ge=0, le=10)
@@ -113,27 +98,6 @@ class NewRunForm(BaseModel):
     page_limit: int | None = Field(default=None, ge=1)
     prompt_cache: Literal["auto", "off"] = "auto"
     media_reference: Literal["auto", "inline", "file-uri"] = "auto"
-
-    vlm_model: Literal["mineru2.5-pro", "paddleocr-vl-1.5", "glm-ocr"] | None = None
-    vlm_dpi: int = Field(default=200, ge=72)
-    mineru_batch_size: int = Field(default=8, ge=1)
-    mineru_max_new_tokens: int = Field(default=1024, ge=1)
-    mineru_backend: Literal["transformers", "vllm"] = "transformers"
-    paddle_rec_backend: Literal["native", "vllm-server"] = "native"
-    paddle_server_url: str | None = None
-    paddle_auto_server: bool = True
-    paddle_server_port: int = Field(default=8765, ge=1, le=65535)
-    paddle_server_python: Path | None = None
-    glm_prompt: str = "Text Recognition:"
-    glm_max_new_tokens: int = Field(default=8192, ge=1)
-    glm_backend: Literal["transformers", "vllm"] = "transformers"
-    glm_auto_server: bool = True
-    glm_server_url: str | None = None
-    glm_server_port: int = Field(default=8081, ge=1, le=65535)
-    glm_server_python: Path | None = None
-    mathpix_poll_interval_seconds: float = Field(default=3.0, gt=0)
-    mathpix_max_wait_seconds: float = Field(default=600.0, gt=0)
-    mathpix_request_timeout_seconds: float = Field(default=60.0, gt=0)
 
     @computed_field
     @property
@@ -172,9 +136,7 @@ class NewRunForm(BaseModel):
                 alphabet=self.alphabet.expanduser().resolve()
                 if self.alphabet
                 else None,
-                ocr_text=self.ocr_text.expanduser().resolve()
-                if self.ocr_text
-                else None,
+                ocr_text=None,
                 dictionary_profile=self._dictionary_profile(),
                 toolbox_pdf=(
                     self.toolbox_pdf.expanduser().resolve()
@@ -185,8 +147,8 @@ class NewRunForm(BaseModel):
             output=OutputConfig(directory=output),
             pipeline=PipelineConfig(
                 stage=stage,
-                strategy=self.strategy,
-                stage1_mode=self.stage1_mode,
+                strategy="two_stage",
+                stage1_mode="flat",
                 stage1_typography=False,
                 parse_rules_pages=self.parse_rules_pages,
                 parse_rules_file=(
@@ -234,30 +196,6 @@ class NewRunForm(BaseModel):
                 prompt_cache=self.prompt_cache,
                 media_reference=self.media_reference,
             ),
-            vlm=VlmConfig(
-                model=self.vlm_model,
-                dpi=self.vlm_dpi,
-                mineru_batch_size=self.mineru_batch_size,
-                mineru_max_new_tokens=self.mineru_max_new_tokens,
-                mineru_backend=self.mineru_backend,
-                paddle_rec_backend=self.paddle_rec_backend,
-                paddle_server_url=_clean_optional(self.paddle_server_url),
-                paddle_auto_server=self.paddle_auto_server,
-                paddle_server_port=self.paddle_server_port,
-                paddle_server_python=_resolved_optional(self.paddle_server_python),
-                glm_prompt=self.glm_prompt,
-                glm_max_new_tokens=self.glm_max_new_tokens,
-                glm_backend=self.glm_backend,
-                glm_auto_server=self.glm_auto_server,
-                glm_server_url=_clean_optional(self.glm_server_url),
-                glm_server_port=self.glm_server_port,
-                glm_server_python=_resolved_optional(self.glm_server_python),
-            ),
-            mathpix=MathpixConfig(
-                poll_interval_seconds=self.mathpix_poll_interval_seconds,
-                max_wait_seconds=self.mathpix_max_wait_seconds,
-                request_timeout_seconds=self.mathpix_request_timeout_seconds,
-            ),
         )
 
     def to_summary(self) -> dict[str, str]:
@@ -268,7 +206,7 @@ class NewRunForm(BaseModel):
             "output": str(self.output_directory),
             "pipeline": self.pipeline.value,
             "model": self._stage_models()[0],
-            "quality": self.quality.value,
+            "agentic": self._agentic_summary(),
             "parse_rules": (
                 "Human approval required"
                 if self.requires_parse_rule_review
@@ -277,7 +215,7 @@ class NewRunForm(BaseModel):
         }
 
     def _verification_stages(self) -> tuple[bool, bool]:
-        if self.quality is QualityChoice.STANDARD:
+        if not self.agentic:
             return False, False
         stage1_selected = self.pipeline in {
             PipelineChoice.COMPLETE,
@@ -287,12 +225,20 @@ class NewRunForm(BaseModel):
             PipelineChoice.COMPLETE,
             PipelineChoice.STRUCTURE,
         }
-        if self.quality is QualityChoice.VERIFIED:
-            return stage1_selected, stage2_selected
         return (
             self.verify_stage1 and stage1_selected,
             self.verify_stage2 and stage2_selected,
         )
+
+    def _agentic_summary(self) -> str:
+        stage1, stage2 = self._verification_stages()
+        if stage1 and stage2:
+            return "Stage 1 + Stage 2"
+        if stage1:
+            return "Stage 1"
+        if stage2:
+            return "Stage 2"
+        return "Off"
 
     def _stage_models(self) -> tuple[str, str | None, str | None, str | None]:
         """Resolve legacy and provider-aware stage model fields."""
@@ -317,7 +263,6 @@ class NewRunForm(BaseModel):
             PipelineChoice.COMPLETE: ("stage1", "pass1", "pass2"),
             PipelineChoice.TRANSCRIPTION: ("stage1",),
             PipelineChoice.STRUCTURE: ("pass1", "pass2"),
-            PipelineChoice.DISCOVER_RULES: ("pass1",),
         }[self.pipeline]
         if legacy is None:
             missing = [name for name in required if selected[name] is None]
@@ -431,7 +376,3 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
-
-
-def _resolved_optional(value: Path | None) -> Path | None:
-    return value.expanduser().resolve() if value is not None else None

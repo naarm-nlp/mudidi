@@ -61,6 +61,7 @@ models/outputs/
 # PDFs elsewhere in the repo (benchmark PDFs under dataset/ are tracked)
 *.pdf
 !dataset/mudidi/**/*.pdf
+!src/mudidi/assets/MDFReferenceManual.pdf
 # Introduction scans: keep locally only (not in remote or git history)
 dataset/mudidi/dictionaries/*/Introduction/**
 !dataset/mudidi/dictionaries/*/Introduction/README.md

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from mudidi.web.forms import NewRunForm, PipelineChoice, QualityChoice
+from mudidi.web.forms import NewRunForm, PipelineChoice
 
 
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
@@ -21,7 +21,6 @@ def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
         "provider": "anthropic",
         "model": "anthropic/claude-sonnet-4-6",
         "reasoning": "low",
-        "quality": QualityChoice.VERIFIED,
     }
     values.update(overrides)
     return NewRunForm.model_validate(values)
@@ -33,7 +32,6 @@ def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
         (PipelineChoice.COMPLETE, "all"),
         (PipelineChoice.TRANSCRIPTION, "1"),
         (PipelineChoice.STRUCTURE, "2"),
-        (PipelineChoice.DISCOVER_RULES, "2-pass-1"),
     ],
 )
 def test_pipeline_choices_map_to_supported_safe_stages(
@@ -47,25 +45,10 @@ def test_pipeline_choices_map_to_supported_safe_stages(
     assert config.pipeline.stage != "2-pass-2"
 
 
-def test_verified_quality_enables_selected_stage_verification(tmp_path: Path) -> None:
-    config = _form(tmp_path, quality=QualityChoice.VERIFIED).to_inference_config()
-
-    assert config.agentic.stage1 is True
-    assert config.agentic.stage2 is True
-    assert config.agentic.max_iterations == 2
-
-
-def test_standard_quality_disables_agentic_verification(tmp_path: Path) -> None:
-    config = _form(tmp_path, quality=QualityChoice.STANDARD).to_inference_config()
-
-    assert config.agentic.stage1 is False
-    assert config.agentic.stage2 is False
-
-
-def test_custom_quality_maps_direct_controls(tmp_path: Path) -> None:
+def test_agentic_maps_direct_controls(tmp_path: Path) -> None:
     config = _form(
         tmp_path,
-        quality=QualityChoice.CUSTOM,
+        agentic=True,
         verify_stage1=True,
         verify_stage2=False,
         max_iterations=4,
@@ -179,14 +162,13 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
 
     config = _form(
         tmp_path,
-        stage1_mode="column",
         stage1_guides=stage1_guides,
         stage2_guides=stage2_guides,
         reasoning="high",
         evaluator_reasoning="medium",
         rewriter_reasoning="high",
         temperature=0.25,
-        quality="custom",
+        agentic=True,
         verify_stage1=True,
         verify_stage2=True,
         evaluator_model="openai/gpt-5.6",
@@ -197,7 +179,7 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
         media_reference="inline",
     ).to_inference_config()
 
-    assert config.pipeline.stage1_mode == "column"
+    assert config.pipeline.stage1_mode == "flat"
     assert config.pipeline.stage1_typography is False
     assert config.pipeline.stage1_guides == stage1_guides.resolve()
     assert config.pipeline.stage2_guides == stage2_guides.resolve()
@@ -251,39 +233,6 @@ def test_dictionary_profile_is_optional_and_typography_is_not_a_web_field(
 
     with pytest.raises(ValidationError, match="stage1_typography"):
         _form(tmp_path, stage1_typography=True)
-
-
-def test_expert_vlm_backend_controls_map_without_yaml(tmp_path: Path) -> None:
-    config = _form(
-        tmp_path,
-        pipeline="transcription",
-        strategy="vlm_ocr",
-        vlm_model="paddleocr-vl-1.5",
-        vlm_dpi=250,
-        paddle_rec_backend="vllm-server",
-        paddle_server_url="http://127.0.0.1:9000",
-        paddle_auto_server=False,
-        paddle_server_port=9000,
-    ).to_inference_config()
-
-    assert config.pipeline.strategy == "vlm_ocr"
-    assert config.pipeline.stage == "1"
-    assert config.vlm.model == "paddleocr-vl-1.5"
-    assert config.vlm.dpi == 250
-    assert config.vlm.paddle_rec_backend == "vllm-server"
-    assert config.vlm.paddle_server_url == "http://127.0.0.1:9000"
-    assert config.vlm.paddle_auto_server is False
-    assert config.vlm.paddle_server_port == 9000
-
-
-def test_expert_backend_rejects_non_stage1_pipeline(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="vlm_ocr requires pipeline.stage"):
-        _form(
-            tmp_path,
-            pipeline="complete",
-            strategy="vlm_ocr",
-            vlm_model="mineru2.5-pro",
-        ).to_inference_config()
 
 
 def test_new_output_policy_rejects_nonempty_directory(tmp_path: Path) -> None:

@@ -26,7 +26,9 @@ def _preview(client: TestClient, tmp_path: Path) -> str:
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
-            "quality": "verified",
+            "agentic": "true",
+            "verify_stage1": "true",
+            "verify_stage2": "true",
             "parse_rules_pages": "1",
         },
     )
