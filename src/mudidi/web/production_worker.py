@@ -12,7 +12,10 @@ from typing import Any
 
 from mudidi.cli.run import execute_extraction_config
 from mudidi.config.yaml_config import InferenceConfig
-from mudidi.execution.approval import load_approved_parse_rules, mint_approved_parse_rules
+from mudidi.execution.approval import (
+    load_approved_parse_rules,
+    mint_approved_parse_rules,
+)
 from mudidi.execution.events import (
     ParseRulesGenerated,
     RunCompleted,
@@ -32,7 +35,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mudidi-production-worker")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--config", type=Path, required=True)
-    parser.add_argument("--phase", choices=[phase.value for phase in InferencePhase], required=True)
+    parser.add_argument(
+        "--phase", choices=[phase.value for phase in InferencePhase], required=True
+    )
     parser.add_argument("--sequence-start", type=int, default=0)
     parser.add_argument("--log-file", type=Path, required=True)
     parser.add_argument("--approval-manifest", type=Path)
@@ -46,16 +51,25 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     credential_message = sys.stdin.readline().strip()
     secret_value = ""
+    sequence = args.sequence_start
     try:
         if credential_message and credential_message != "{}":
             parsed = json.loads(credential_message)
-            secret_value = str(parsed.get("api_key", "")) if isinstance(parsed, dict) else ""
+            secret_value = (
+                str(parsed.get("api_key", "")) if isinstance(parsed, dict) else ""
+            )
             apply_credential_message(credential_message)
-        config = InferenceConfig.model_validate_json(args.config.read_text(encoding="utf-8"))
+        config = InferenceConfig.model_validate_json(
+            args.config.read_text(encoding="utf-8")
+        )
         phase = InferencePhase(args.phase)
-        approved_rules = _load_approval(args.approval_manifest) if phase is InferencePhase.PASS2 else None
+        approved_rules = (
+            _load_approval(args.approval_manifest)
+            if phase is InferencePhase.PASS2
+            else None
+        )
         stage = _event_stage(phase)
-        sequence = args.sequence_start + 1
+        sequence += 1
         _emit(
             StageStarted(
                 run_id=args.run_id,
@@ -66,18 +80,23 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         args.log_file.parent.mkdir(parents=True, exist_ok=True)
-        executor = _offline_execute if args.offline_executor else execute_extraction_config
+        executor = (
+            _offline_execute if args.offline_executor else execute_extraction_config
+        )
         with args.log_file.open("a", encoding="utf-8") as log_stream:
-            with contextlib.redirect_stdout(log_stream), contextlib.redirect_stderr(log_stream):
+            with (
+                contextlib.redirect_stdout(log_stream),
+                contextlib.redirect_stderr(log_stream),
+            ):
                 result = run_inference_phase(
                     config,
                     phase,
                     execute=executor,
                     approved_rules=approved_rules,
                 )
-        sequence += 1
         if result.return_code != 0:
             raise RuntimeError(f"extraction returned {result.return_code}")
+        sequence += 1
         if result.parse_rules_path is not None:
             if not result.parse_rules_path.is_file():
                 raise FileNotFoundError("Pass 1 did not produce parse-rules.json")
@@ -104,10 +123,11 @@ def main(argv: list[str] | None = None) -> int:
         message = f"{type(exc).__name__}: {exc}"
         if secret_value:
             message = message.replace(secret_value, "[REDACTED]")
+        sequence += 1
         _emit(
             RunFailed(
                 run_id=args.run_id,
-                sequence=max(1, args.sequence_start + 1),
+                sequence=max(1, sequence),
                 stage=_event_stage(InferencePhase(args.phase)),
                 occurred_at=datetime.now(UTC),
                 message=message[:500],

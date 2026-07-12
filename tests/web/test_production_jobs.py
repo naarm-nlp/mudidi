@@ -150,7 +150,9 @@ def test_production_failure_uses_sequence_after_stage_started(
     capsys: object,
 ) -> None:
     config_path = tmp_path / "config.json"
-    config_path.write_text(_config(tmp_path, stage="1").model_dump_json(), encoding="utf-8")
+    config_path.write_text(
+        _config(tmp_path, stage="1").model_dump_json(), encoding="utf-8"
+    )
 
     def fail_phase(*args: object, **kwargs: object) -> object:
         del args, kwargs
