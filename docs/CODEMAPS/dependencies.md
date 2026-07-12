@@ -37,7 +37,7 @@ Selected by model strings in `--model`, `--stage-1-model`, `--stage-2-pass-1-mod
 | Provider | Env Keys | Notes |
 |----------|----------|-------|
 | Google Gemini | `GEMINI_API_KEY` | Default; reasoning_effort → thinking_level |
-| OpenRouter | `OPENROUTER_API_KEY` | Multi-provider routing; provider order via env |
+| OpenRouter | `OPEN_ROUTER_API_KEY` | Multi-provider routing; provider order via env |
 | OpenAI | `OPENAI_API_KEY` | Direct or via OpenRouter |
 | Anthropic | `ANTHROPIC_API_KEY` | Claude models |
 
