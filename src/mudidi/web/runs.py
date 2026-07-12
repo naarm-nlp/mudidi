@@ -161,11 +161,31 @@ class RunStore:
                     occurred_at TEXT NOT NULL,
                     PRIMARY KEY(run_id, sequence)
                 );
+                CREATE TABLE IF NOT EXISTS parse_rule_reviews (
+                    review_id TEXT PRIMARY KEY,
+                    run_id TEXT NOT NULL UNIQUE REFERENCES runs(run_id) ON DELETE CASCADE,
+                    version INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    generated_path TEXT NOT NULL,
+                    draft_path TEXT,
+                    approved_snapshot_path TEXT,
+                    approval_digest TEXT,
+                    validation_error TEXT,
+                    sample_pages_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    approved_at TEXT
+                );
                 """
             )
             connection.execute(
                 "INSERT OR IGNORE INTO schema_migrations(version, applied_at) "
                 "VALUES (1, ?)",
+                (_now().isoformat(),),
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO schema_migrations(version, applied_at) "
+                "VALUES (3, ?)",
                 (_now().isoformat(),),
             )
             connection.execute(
@@ -350,7 +370,12 @@ class RunStore:
     def schema_columns(self, table: str) -> list[str]:
         """Return columns for an allowlisted application table."""
 
-        if table not in {"runs", "run_events", "schema_migrations"}:
+        if table not in {
+            "runs",
+            "run_events",
+            "parse_rule_reviews",
+            "schema_migrations",
+        }:
             raise ValueError("unknown table")
         with self._connect() as connection:
             rows = connection.execute(f"PRAGMA table_info({table})").fetchall()
@@ -403,6 +428,158 @@ class RunStore:
             RunStatus.RUNNING_STAGE2,
         }
         return [run for run in self.list_runs() if run.status in active]
+
+    def create_parse_rule_review(
+        self,
+        *,
+        review_id: str,
+        run_id: str,
+        generated_path: Path,
+        sample_pages: tuple[str, ...],
+        validation_error: str | None,
+    ) -> dict[str, object]:
+        """Persist generated rules and pause discovery in one DB transaction."""
+
+        now = _now().isoformat()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(run_id)
+            if RunStatus(row["status"]) is not RunStatus.DISCOVERING_PARSE_RULES:
+                raise InvalidRunTransition(
+                    "parse-rule review requires discovery to be active"
+                )
+            connection.execute(
+                """
+                INSERT INTO parse_rule_reviews(
+                    review_id, run_id, version, status, generated_path,
+                    validation_error, sample_pages_json, created_at, updated_at
+                ) VALUES (?, ?, 1, 'awaiting_review', ?, ?, ?, ?, ?)
+                """,
+                (
+                    review_id,
+                    run_id,
+                    str(generated_path),
+                    validation_error,
+                    json.dumps(sample_pages),
+                    now,
+                    now,
+                ),
+            )
+            connection.execute(
+                "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
+                "WHERE run_id = ?",
+                (
+                    RunStatus.AWAITING_PARSE_RULES_REVIEW.value,
+                    "parse_rule_review",
+                    now,
+                    run_id,
+                ),
+            )
+            connection.commit()
+        return self.get_parse_rule_review(run_id)
+
+    def get_parse_rule_review(self, run_id: str) -> dict[str, object]:
+        """Load review metadata without reading artifact contents."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM parse_rule_reviews WHERE run_id = ?", (run_id,)
+            ).fetchone()
+        if row is None:
+            raise KeyError(run_id)
+        return dict(row)
+
+    def update_parse_rule_draft(
+        self,
+        run_id: str,
+        *,
+        draft_path: Path,
+    ) -> dict[str, object]:
+        """Record the latest schema-valid draft while remaining in review."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            run = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if run is None:
+                raise KeyError(run_id)
+            if RunStatus(run["status"]) is not RunStatus.AWAITING_PARSE_RULES_REVIEW:
+                raise InvalidRunTransition("draft save requires awaiting review")
+            cursor = connection.execute(
+                """
+                UPDATE parse_rule_reviews
+                SET draft_path = ?, validation_error = NULL, version = version + 1,
+                    updated_at = ?
+                WHERE run_id = ? AND status = 'awaiting_review'
+                """,
+                (str(draft_path), _now().isoformat(), run_id),
+            )
+            if cursor.rowcount != 1:
+                raise InvalidRunTransition("review is not editable")
+            connection.commit()
+        return self.get_parse_rule_review(run_id)
+
+    def commit_parse_rule_approval(
+        self,
+        run_id: str,
+        *,
+        snapshot_path: Path,
+        approval_digest: str,
+    ) -> dict[str, object]:
+        """Record immutable approval and authorize Pass 2 atomically."""
+
+        now = _now().isoformat()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            review = connection.execute(
+                "SELECT * FROM parse_rule_reviews WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            run = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if review is None or run is None:
+                raise KeyError(run_id)
+            if review["status"] == "approved":
+                if review["approval_digest"] != approval_digest:
+                    raise InvalidRunTransition("approved review content cannot change")
+                connection.rollback()
+                return dict(review)
+            if RunStatus(run["status"]) is not RunStatus.AWAITING_PARSE_RULES_REVIEW:
+                raise InvalidRunTransition("approval requires awaiting review")
+            connection.execute(
+                """
+                UPDATE parse_rule_reviews
+                SET status = 'approved', approved_snapshot_path = ?,
+                    approval_digest = ?, approved_at = ?, updated_at = ?
+                WHERE run_id = ?
+                """,
+                (str(snapshot_path), approval_digest, now, now, run_id),
+            )
+            try:
+                connection.execute(
+                    """
+                    UPDATE runs SET status = ?, resume_phase = ?, review_id = ?,
+                        approval_digest = ?, updated_at = ? WHERE run_id = ?
+                    """,
+                    (
+                        RunStatus.RUNNING_STAGE2.value,
+                        "stage2_pass2",
+                        review["review_id"],
+                        approval_digest,
+                        now,
+                        run_id,
+                    ),
+                )
+                connection.commit()
+            except sqlite3.IntegrityError as exc:
+                connection.rollback()
+                raise ActiveRunExistsError("another inference worker is active") from exc
+        return self.get_parse_rule_review(run_id)
 
 
 def _record_from_row(row: sqlite3.Row) -> RunRecord:
