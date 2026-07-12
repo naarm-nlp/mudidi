@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import List
+import re
+from collections.abc import Mapping
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -47,3 +49,36 @@ class DictionaryMarkerCheatsheet(BaseModel):
             for abbr, meaning in sorted(self.abbreviations.items()):
                 lines.append(f"- {abbr} → {meaning}")
         return "\n".join(lines)
+
+
+_MARKER_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+
+
+def validate_marker_cheatsheet(
+    value: DictionaryMarkerCheatsheet | Mapping[str, Any],
+) -> DictionaryMarkerCheatsheet:
+    """Validate and normalize marker semantics shared by review and execution.
+
+    Marker codes are stored without the MDF backslash so equivalent inputs such
+    as ``lx`` and ``\\lx`` cannot evade duplicate detection.
+    """
+
+    parsed = (
+        value
+        if isinstance(value, DictionaryMarkerCheatsheet)
+        else DictionaryMarkerCheatsheet.model_validate(value)
+    )
+    normalized_markers: list[MarkerLine] = []
+    seen: set[str] = set()
+    for marker in parsed.markers:
+        code = marker.marker.strip().lstrip("\\")
+        if not _MARKER_PATTERN.fullmatch(code):
+            raise ValueError(f"invalid marker code: {marker.marker!r}")
+        canonical = code.lower()
+        if canonical in seen:
+            raise ValueError(f"duplicate marker after normalization: {code!r}")
+        seen.add(canonical)
+        normalized_markers.append(
+            MarkerLine(marker=canonical, description=marker.description.strip())
+        )
+    return parsed.model_copy(update={"markers": normalized_markers})
