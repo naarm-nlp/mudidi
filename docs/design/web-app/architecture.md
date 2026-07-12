@@ -4,7 +4,7 @@
 
 ```text
 Browser
-  ↕ HTML/HTMX/SSE
+  ↕ HTML/forms/SSE
 FastAPI application
   ├── Jinja templates and vendored static assets
   ├── Pydantic form/config boundary
@@ -94,7 +94,6 @@ SQLite stores metadata, not large artifacts or secrets. Initial tables:
 - `presets`: named non-secret form values
 - `parse_rule_reviews`: generated/approved paths and hashes, timestamps, review
   status, regeneration count
-- `model_catalog_cache`: provider, non-secret model metadata, fetched/expiry time
 - schema migration/version table
 
 Use short transactions and a repository layer. Tests use isolated temporary
@@ -146,8 +145,8 @@ the run/server lifetime. Logs, exceptions, SSE payloads, SQLite, presets, and
 resolved configs are redacted.
 
 The model catalog combines a bundled tested registry, live provider model-list
-results, and custom LiteLLM identifiers. Provider failures fall back to the
-bundled catalog and never block custom entry.
+results held in process memory, and custom LiteLLM identifiers. Provider
+failures fall back to the bundled catalog and never block custom entry.
 
 ## Security boundaries
 

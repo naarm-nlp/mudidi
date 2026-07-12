@@ -1,7 +1,7 @@
 # Local Web Application Design
 
-Status: proposed design for implementation. This document is the product source
-of truth; the implementation blueprint is in
+Status: first-release implementation completed on `web/local-app-foundation`.
+This document is the product source of truth; the implementation blueprint is in
 `plans/local-web-app-blueprint.md`.
 
 ## Objective
@@ -16,7 +16,8 @@ Redis, PostgreSQL, or Node.js at runtime.
 
 ## Locked product decisions
 
-- Stack: FastAPI, Uvicorn, Jinja2, HTMX, Server-Sent Events, SQLite, and a
+- Stack: FastAPI, Uvicorn, Jinja2, small vendored JavaScript, Server-Sent Events,
+  SQLite, and a
   dedicated inference subprocess.
 - UI configuration is direct form interaction. Users do not need to write or
   import YAML.
