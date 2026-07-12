@@ -40,6 +40,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="profile_page_layout"' in response.text
     assert 'name="profile_information_types"' in response.text
     assert 'name="profile_other_information_types"' in response.text
+    assert 'class="profile-other-information"' in response.text
     assert "1–2. What language are the dictionary headwords written in, and what script do they use?" in response.text
     assert "3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?" in response.text
     assert "5. How is information arranged on the page?" in response.text
@@ -80,6 +81,8 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert ".profile-layout-question" in response.text
     assert "grid-template-columns: minmax(0, 1fr)" in response.text
     assert ".profile-layout-question textarea" in response.text
+    assert ".profile-other-information" in response.text
+    assert ".profile-other-information textarea" in response.text
 
 
 def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
