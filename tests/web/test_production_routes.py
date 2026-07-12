@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import base64
 import re
+import shutil
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -12,15 +14,15 @@ from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.runs import RunStatus
 
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
 
 def _preview(client: TestClient, tmp_path: Path) -> str:
-    pages = tmp_path / "pages"
-    pages.mkdir()
-    (pages / "page_1.png").write_bytes(b"offline image")
     response = client.post(
         "/runs/preview",
         data={
-            "pages": str(pages),
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "provider": "anthropic",
@@ -31,6 +33,7 @@ def _preview(client: TestClient, tmp_path: Path) -> str:
             "verify_stage2": "true",
             "parse_rules_pages": "1",
         },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
     )
     assert response.status_code == 200
     match = re.search(r'action="/runs/([^/]+)/start"', response.text)
@@ -149,9 +152,16 @@ def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -
 
     assert saved.status_code == 303
     preset = app.state.run_store.list_presets()[0]
+    assert preset.config.input.pages is not None
+    assert preset.config.input.pages.resolve().is_relative_to(
+        (tmp_path / "app-data" / "presets" / preset.preset_id / "inputs").resolve()
+    )
     page = client.get("/presets")
     assert page.status_code == 200
     assert "My verified setup" in page.text
+
+    # Presets own their input assets and remain valid after the source run is removed.
+    shutil.rmtree(tmp_path / "app-data" / "runs" / run_id / "inputs")
 
     prepared = client.post(
         f"/presets/{preset.preset_id}/prepare",
@@ -161,6 +171,12 @@ def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -
     assert prepared.status_code == 200
     assert "Review your run" in prepared.text
     assert len(app.state.run_store.list_runs()) == 2
+    cloned = next(run for run in app.state.run_store.list_runs() if run.run_id != run_id)
+    cloned_config = app.state.job_controller.load_inference_config(cloned.run_id)
+    assert cloned_config.input.pages is not None
+    assert cloned_config.input.pages.resolve().is_relative_to(
+        (tmp_path / "app-data" / "runs" / cloned.run_id / "inputs").resolve()
+    )
 
 
 def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> None:
