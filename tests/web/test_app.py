@@ -47,3 +47,50 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert "--color-accent" in response.text
+
+
+def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "pages": str(pages),
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-4-6",
+            "reasoning": "low",
+            "quality": "verified",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Review your run" in response.text
+    assert "Human approval required" in response.text
+    assert "anthropic/claude-sonnet-4-6" in response.text
+
+
+def test_new_run_form_renders_validation_errors_without_echoing_secret(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "pages": str(tmp_path / "missing"),
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "2-pass-2",
+            "provider": "anthropic",
+            "model": "sk-do-not-render",
+            "reasoning": "low",
+            "quality": "verified",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "Check the highlighted configuration" in response.text
+    assert "sk-do-not-render" not in response.text
