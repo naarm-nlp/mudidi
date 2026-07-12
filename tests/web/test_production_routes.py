@@ -102,3 +102,28 @@ def test_prepared_review_snapshot_contains_no_credential(tmp_path: Path) -> None
 
     assert "sk-ant-must-not-persist" not in config_text
     assert "api_key" not in config_text.lower()
+
+
+def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) -> None:
+    vault = CredentialVault(environ={})
+    vault.set_temporary(Provider.ANTHROPIC, "sk-ant-live-log-secret")
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=vault,
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    log_path = app.state.job_controller.log_path(run_id)
+    log_path.write_text(
+        ("old output\n" * 70_000) + "request sk-ant-live-log-secret failed\n",
+        encoding="utf-8",
+    )
+
+    response = client.get(f"/runs/{run_id}/logs")
+
+    assert response.status_code == 200
+    assert "Live Logs" in response.text
+    assert "[REDACTED]" in response.text
+    assert "sk-ant-live-log-secret" not in response.text
+    assert "Older log output was truncated" in response.text
