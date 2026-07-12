@@ -73,6 +73,8 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert "--color-accent" in response.text
+    assert "[hidden]" in response.text
+    assert "display: none !important" in response.text
 
 
 def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
