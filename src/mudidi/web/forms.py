@@ -36,7 +36,7 @@ class PipelineChoice(StrEnum):
 
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
 ReasoningChoice = Literal["none", "low", "medium", "high"]
-MdfManualSource = Literal["none", "bundled", "upload"]
+MdfManualSource = Literal["none", "upload"]
 _PAGE_SPEC_PART = re.compile(r"^[1-9][0-9]*(?:-[1-9][0-9]*)?$")
 
 _PIPELINE_STAGE = {
@@ -147,7 +147,7 @@ class NewRunForm(BaseModel):
             raise ValueError(
                 "output directory already contains files; choose resume or another path"
             )
-        if self.mdf_manual_source in {"bundled", "upload"} and self.toolbox_pdf is None:
+        if self.mdf_manual_source == "upload" and self.toolbox_pdf is None:
             raise ValueError("selected MDF manual is unavailable")
 
         stage = _PIPELINE_STAGE[self.pipeline]
@@ -248,7 +248,6 @@ class NewRunForm(BaseModel):
             "agentic": self._agentic_summary(),
             "mdf_manual": {
                 "none": "Not used",
-                "bundled": "Bundled 65-page manual",
                 "upload": "Custom upload",
             }[self.mdf_manual_source],
             "mdf_parsing_guide": (

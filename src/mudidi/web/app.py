@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import sqlite3
-from importlib.resources import files
 from pathlib import Path
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -16,7 +15,6 @@ from fastapi.responses import (
     HTMLResponse,
     PlainTextResponse,
     RedirectResponse,
-    Response,
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
@@ -40,7 +38,6 @@ from mudidi.web.parse_rules import ParseRuleReviewService
 from mudidi.web.runs import InvalidRunTransition, RunRecord, RunStatus, RunStore
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
-_MDF_MANUAL = files("mudidi.assets").joinpath("MDFReferenceManual.pdf")
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
 _MAX_REQUEST_BYTES = 25 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
@@ -201,18 +198,6 @@ def create_app(
 
         return {"status": "ok", "protocol_version": 1}
 
-    @app.get("/assets/mdf-manual")
-    async def download_mdf_manual() -> Response:
-        """Download the fixed, packaged general MDF reference manual."""
-
-        return Response(
-            content=_MDF_MANUAL.read_bytes(),
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": 'attachment; filename="MUDIDI-MDF-Manual.pdf"'
-            },
-        )
-
     @app.post("/runs/preview", response_class=HTMLResponse)
     async def preview_run(request: Request) -> HTMLResponse:
         """Validate browser form state and render a non-secret run review."""
@@ -352,13 +337,7 @@ def create_app(
                     raise ValueError("an MDF manual requires an MDF parsing pipeline")
                 manual_source = "none"
                 payload["mdf_manual_source"] = "none"
-            if manual_source == "bundled":
-                if manual_files:
-                    raise ValueError("bundled MDF manual cannot include a custom upload")
-                payload["toolbox_pdf"] = app.state.inputs.materialize_bundled_manual(
-                    run_id, _MDF_MANUAL.read_bytes()
-                )
-            elif manual_source == "upload":
+            if manual_source == "upload":
                 if len(manual_files) != 1:
                     raise ValueError("upload exactly one custom MDF manual PDF")
                 payload["toolbox_pdf"] = (

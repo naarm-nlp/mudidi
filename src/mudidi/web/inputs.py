@@ -134,24 +134,6 @@ class InputMaterializer:
             allow_relative=False,
         )
 
-    def materialize_bundled_manual(self, run_id: str, content: bytes) -> Path:
-        """Copy packaged manual bytes into the immutable run input bundle."""
-
-        destination = self._new_role_dir(run_id, "mdf_manual")
-        target = destination / "MUDIDI-MDF-Manual.pdf"
-        temporary = target.with_suffix(".pdf.part")
-        try:
-            self._check_total(run_id, len(content))
-            temporary.write_bytes(content)
-            _validate_content(temporary, ".pdf", role="mdf_manual")
-            temporary.replace(target)
-            _write_pdf_metadata(target, source="bundled")
-        except Exception:
-            shutil.rmtree(destination, ignore_errors=True)
-            self._remove_empty_bundle(run_id)
-            raise
-        return target
-
     def materialize_instruction(self, run_id: str, stage: str, text: str) -> Path:
         """Write bounded user instruction text as a run-owned UTF-8 guide file."""
 

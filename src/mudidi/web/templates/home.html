@@ -144,13 +144,11 @@
                 <label data-stage-control data-pipeline-stages="pass1 pass2">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button><input name="parse_rules_pages" placeholder="1,3-4"></label>
               </div>
               <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
-                <legend>MDF manual (optional)</legend>
-                <label><input type="radio" name="mdf_manual_source" value="none" checked> No MDF manual</label>
-                <label><input type="radio" name="mdf_manual_source" value="bundled"> Use the bundled 65-page MDF manual</label>
-                <p>The full manual contains every MDF marker and can substantially increase token cost. If you already know the relevant markers, extract only those pages and upload the shorter PDF instead.</p>
-                <a class="back-link" href="/assets/mdf-manual">Download and view the bundled MDF manual</a>
-                <label><input type="radio" name="mdf_manual_source" value="upload"> Upload a custom or shortened MDF manual</label>
-                <label data-custom-mdf-manual hidden>Custom MDF manual PDF<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                <legend>MDF manual (optional) <button class="info-button" type="button" aria-label="About the optional MDF manual" data-help="For better relevance and lower token cost, we recommend extracting only the MDF section you need from the official SIL manual. The relevant information starts on page 31 and spans pages 31–95 (65 pages). Upload that shortened PDF here.">i</button></legend>
+                <label><input type="radio" name="mdf_manual_source" value="upload"> Upload my own MDF manual</label>
+                <label data-custom-mdf-manual hidden>MDF manual PDF<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                <a class="back-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer">Open the official SIL MDF documentation</a>
+                <label><input type="radio" name="mdf_manual_source" value="none" checked> Continue without an MDF manual</label>
               </fieldset>
             </details>
             <details class="profile-panel">
