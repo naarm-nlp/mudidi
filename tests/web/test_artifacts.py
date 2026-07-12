@@ -18,6 +18,7 @@ def _prepared_app(tmp_path: Path) -> tuple[object, TestClient, str, Path]:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     pages = tmp_path / "pages"
     pages.mkdir()
+    (pages / "page_1.png").write_bytes(b"safe source image")
     output = tmp_path / "output"
     config = InferenceConfig.model_validate(
         {
@@ -128,3 +129,25 @@ def test_download_route_hides_traversal_as_not_found(tmp_path: Path) -> None:
     response = client.get(f"/runs/{run_id}/artifacts/%2E%2E/secret.txt")
 
     assert response.status_code == 404
+
+
+def test_page_detail_combines_safe_source_and_generated_evidence(tmp_path: Path) -> None:
+    _app, client, run_id, _output = _prepared_app(tmp_path)
+
+    detail = client.get(f"/runs/{run_id}/pages/page_1")
+    source = client.get(f"/runs/{run_id}/pages/page_1/source")
+
+    assert detail.status_code == 200
+    assert "Page page_1" in detail.text
+    assert "hello transcription" in detail.text
+    assert "\\lx hello" in detail.text
+    assert f"/runs/{run_id}/pages/page_1/source" in detail.text
+    assert source.status_code == 200
+    assert source.content == b"safe source image"
+
+
+def test_source_page_route_rejects_unknown_or_unsafe_page(tmp_path: Path) -> None:
+    _app, client, run_id, _output = _prepared_app(tmp_path)
+
+    assert client.get(f"/runs/{run_id}/pages/not-a-page/source").status_code == 404
+    assert client.get(f"/runs/{run_id}/pages/%2E%2E/source").status_code == 404
