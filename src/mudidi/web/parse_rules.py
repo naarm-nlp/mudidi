@@ -94,6 +94,19 @@ class ParseRuleReviewService:
             self.store.update_parse_rule_draft(run_id, draft_path=draft_path)
         )
 
+    def load_editable_payload(self, run_id: str) -> dict[str, Any]:
+        """Load the current draft or generated JSON for structured editing."""
+
+        review = self.get(run_id)
+        source = review.draft_path or review.generated_path
+        try:
+            payload = json.loads(source.read_bytes())
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"parse-rule review content is unreadable: {exc}") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("parse-rule review root must be an object")
+        return payload
+
     def approve(self, run_id: str) -> ApprovedParseRules:
         """Freeze reviewed bytes and atomically authorize Stage 2 Pass 2."""
 

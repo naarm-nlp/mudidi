@@ -19,6 +19,7 @@ from mudidi.web.credentials import CredentialVault
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
 from mudidi.web.models import ModelCatalog, Provider
+from mudidi.web.parse_rules import ParseRuleReviewService
 from mudidi.web.runs import RunRecord, RunStatus, RunStore
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
@@ -55,6 +56,10 @@ def create_app(
     app.state.model_catalog = ModelCatalog.bundled()
     app.state.run_store = RunStore(resolved_data_dir / "mudidi-web.sqlite3")
     app.state.job_controller = JobController(
+        store=app.state.run_store,
+        data_dir=resolved_data_dir,
+    )
+    app.state.parse_rule_reviews = ParseRuleReviewService(
         store=app.state.run_store,
         data_dir=resolved_data_dir,
     )
@@ -209,6 +214,60 @@ def create_app(
             context={"run": _run_view(app.state.run_store, run)},
         )
 
+    @app.get("/runs/{run_id}/parse-rules", response_class=HTMLResponse)
+    async def parse_rule_editor(request: Request, run_id: str) -> HTMLResponse:
+        """Render the complete structured parse-rule review form."""
+
+        return _render_parse_rule_editor(request, app, run_id)
+
+    @app.post("/runs/{run_id}/parse-rules/draft", response_class=HTMLResponse)
+    async def save_parse_rule_draft(
+        request: Request,
+        run_id: str,
+    ) -> HTMLResponse:
+        """Validate and save a structured draft without implying approval."""
+
+        submitted = await request.form()
+        try:
+            payload = _parse_rule_form(submitted)
+            app.state.parse_rule_reviews.save_draft(run_id, payload)
+        except (KeyError, ValueError) as exc:
+            return _render_parse_rule_editor(
+                request,
+                app,
+                run_id,
+                message=str(exc),
+                status_code=422,
+            )
+        return _render_parse_rule_editor(
+            request,
+            app,
+            run_id,
+            message="Draft saved",
+        )
+
+    @app.post("/runs/{run_id}/parse-rules/approve")
+    async def approve_parse_rules(request: Request, run_id: str) -> HTMLResponse:
+        """Explicitly approve the current valid rules and authorize Pass 2."""
+
+        try:
+            submitted = await request.form()
+            if submitted:
+                app.state.parse_rule_reviews.save_draft(
+                    run_id,
+                    _parse_rule_form(submitted),
+                )
+            app.state.parse_rule_reviews.approve(run_id)
+        except (KeyError, ValueError) as exc:
+            return _render_parse_rule_editor(
+                request,
+                app,
+                run_id,
+                message=str(exc),
+                status_code=422,
+            )
+        return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
     @app.post("/runs/{run_id}/cancel")
     async def cancel_run(run_id: str) -> RedirectResponse:
         """Cancel an owned active worker and return to its detail screen."""
@@ -306,6 +365,10 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     completed_pages = sum(event.get("type") == "page.completed" for event in events)
     started = next((event for event in events if event.get("type") == "stage.started"), {})
     total_pages = int(started.get("total_pages") or completed_pages or 0)
+    try:
+        review_row = store.get_parse_rule_review(run.run_id)
+    except KeyError:
+        review_row = None
     return {
         "run_id": run.run_id,
         "status": run.status.value,
@@ -321,6 +384,8 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
             RunStatus.DISCOVERING_PARSE_RULES,
             RunStatus.RUNNING_STAGE2,
         },
+        "review_available": review_row is not None,
+        "review_status": review_row.get("status") if review_row else None,
     }
 
 
@@ -330,3 +395,66 @@ def _sse_event(event: dict[str, object]) -> str:
         f"event: {event['type']}\n"
         f"data: {json.dumps(event, ensure_ascii=False, separators=(',', ':'))}\n\n"
     )
+
+
+def _render_parse_rule_editor(
+    request: Request,
+    app: FastAPI,
+    run_id: str,
+    *,
+    message: str | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    try:
+        review = app.state.parse_rule_reviews.get(run_id)
+        payload = app.state.parse_rule_reviews.load_editable_payload(run_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="parse-rule review not found") from exc
+    markers = payload.get("markers") if isinstance(payload.get("markers"), list) else []
+    rules = payload.get("rules") if isinstance(payload.get("rules"), list) else []
+    abbreviations_raw = payload.get("abbreviations")
+    abbreviations = (
+        list(abbreviations_raw.items()) if isinstance(abbreviations_raw, dict) else []
+    )
+    return _TEMPLATES.TemplateResponse(
+        request=request,
+        name="parse_rules.html",
+        context={
+            "run_id": run_id,
+            "review": review,
+            "dictionary_name": str(payload.get("dictionary_name", "")),
+            "markers": markers or [{"marker": "", "description": ""}],
+            "rules": rules or [""],
+            "abbreviations": abbreviations or [("", "")],
+            "message": message,
+        },
+        status_code=status_code,
+    )
+
+
+def _parse_rule_form(form: object) -> dict[str, object]:
+    get = getattr(form, "get")
+    getlist = getattr(form, "getlist")
+    codes = [str(value) for value in getlist("marker_code")]
+    descriptions = [str(value) for value in getlist("marker_description")]
+    if len(codes) != len(descriptions):
+        raise ValueError("marker codes and descriptions must be paired")
+    abbreviation_keys = [str(value) for value in getlist("abbreviation_key")]
+    abbreviation_values = [str(value) for value in getlist("abbreviation_value")]
+    if len(abbreviation_keys) != len(abbreviation_values):
+        raise ValueError("abbreviation names and meanings must be paired")
+    abbreviations: dict[str, str] = {}
+    for key, value in zip(abbreviation_keys, abbreviation_values, strict=True):
+        if bool(key.strip()) != bool(value.strip()):
+            raise ValueError("each abbreviation requires both a name and meaning")
+        if key.strip():
+            abbreviations[key.strip()] = value.strip()
+    return {
+        "dictionary_name": str(get("dictionary_name", "")),
+        "markers": [
+            {"marker": code, "description": description}
+            for code, description in zip(codes, descriptions, strict=True)
+        ],
+        "rules": [str(value) for value in getlist("rule") if str(value).strip()],
+        "abbreviations": abbreviations,
+    }
