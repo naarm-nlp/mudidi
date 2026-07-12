@@ -231,13 +231,15 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="custom_mdf_manual" type="file"' in response.text
     assert "Upload my own MDF manual" in response.text
     assert "Continue without an MDF manual" in response.text
-    assert "Open the official SIL MDF documentation" in response.text
+    assert "Open or download the official SIL MDF manual" in response.text
     assert (
         'href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf"'
         in response.text
     )
     assert 'target="_blank"' in response.text
     assert 'rel="noopener noreferrer"' in response.text
+    assert 'class="primary link-button mdf-manual-link"' in response.text
+    assert "fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" in response.text
     assert "pages 31–95" in response.text
     assert "65 pages" in response.text
 
@@ -297,4 +299,3 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
     assert config.pipeline.stage2_guides.read_text(encoding="utf-8") == (
         "Use the custom nt marker."
     )
-

@@ -134,5 +134,13 @@ def test_agentic_and_manual_controls_follow_pipeline(
     page.locator('input[name="pipeline"][value="structure"]').check()
     expect(page.get_by_label("Verify Stage 1")).to_be_disabled()
     expect(page.locator("[data-mdf-manual]")).to_be_visible()
+    official_manual = page.get_by_role(
+        "link", name="Open or download the official SIL MDF manual"
+    )
+    expect(official_manual).to_be_visible()
+    expect(official_manual).to_have_attribute(
+        "href",
+        "http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf",
+    )
     page.get_by_label("Upload my own MDF manual").check()
     expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()
