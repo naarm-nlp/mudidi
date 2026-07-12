@@ -40,7 +40,7 @@
         </ol>
 
         <div class="content-grid">
-          <section class="panel run-form">
+          <form class="panel run-form" method="post" action="/runs/preview">
             <div class="panel-heading">
               <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
               <span class="private">Files stay on this computer</span>
@@ -49,16 +49,47 @@
               <span class="file-icon">⇧</span>
               <h3>Drop a PDF or page images here</h3>
               <p>PDF, PNG, JPEG or TIFF · processed locally before LLM calls</p>
-              <button type="button">Choose files</button>
+              <label class="path-label" for="pages">Local PDF or page directory</label>
+              <input id="pages" name="pages" required placeholder="/Users/you/dictionary-pages">
             </div>
             <label for="output">Output directory</label>
-            <div class="input-row"><input id="output" value="~/Documents/MUDIDI-runs" disabled><button type="button" disabled>Browse</button></div>
+            <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
+            <div class="form-grid">
+              <label>Pipeline
+                <select name="pipeline">
+                  <option value="complete">Complete digitization</option>
+                  <option value="transcription">Transcription only</option>
+                  <option value="structure">Structure existing transcription</option>
+                  <option value="discover_rules">Discover and review parse rules</option>
+                </select>
+              </label>
+              <label>Provider
+                <select name="provider">
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="custom">Custom LiteLLM</option>
+                </select>
+              </label>
+              <label>Model
+                <input name="model" value="gemini/gemini-3.1-pro-preview" required>
+              </label>
+              <label>Quality
+                <select name="quality">
+                  <option value="verified">Verified</option>
+                  <option value="standard">Standard</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+            </div>
+            <input type="hidden" name="reasoning" value="low">
             <details>
               <summary>Additional context</summary>
               <p>Introduction pages, alphabet guides, OCR hints, and Toolbox references will appear here.</p>
             </details>
-            <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="button" disabled>Continue to Pipeline →</button></div>
-          </section>
+            <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
+          </form>
 
           <aside class="panel summary">
             <span class="eyebrow">Run summary</span>

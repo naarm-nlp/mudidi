@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configuration error · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="standalone">
+    <main class="review-page">
+      <section class="panel review-card error-card">
+        <span class="eyebrow">Configuration needs attention</span>
+        <h1>Check the highlighted configuration</h1>
+        <p>{{ error_count }} validation issue{% if error_count != 1 %}s{% endif %} prevented this run from being prepared. Submitted values are not echoed on this error page.</p>
+        <a class="primary link-button" href="/">← Return to New run</a>
+      </section>
+    </main>
+  </body>
+</html>

@@ -8,7 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from mudidi.config.yaml_config import validate_config_paths
+from mudidi.web.forms import NewRunForm
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
@@ -62,4 +66,33 @@ def create_app(*, data_dir: Path | None = None) -> FastAPI:
 
         return {"status": "ok", "protocol_version": 1}
 
+    @app.post("/runs/preview", response_class=HTMLResponse)
+    async def preview_run(request: Request) -> HTMLResponse:
+        """Validate browser form state and render a non-secret run review."""
+
+        submitted = await request.form()
+        payload = {key: value for key, value in submitted.items()}
+        try:
+            run_form = NewRunForm.model_validate(payload)
+            config = run_form.to_inference_config()
+            validate_config_paths(config)
+        except (ValidationError, ValueError) as exc:
+            return _TEMPLATES.TemplateResponse(
+                request=request,
+                name="form_error.html",
+                context={"error_count": _error_count(exc)},
+                status_code=422,
+            )
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={"summary": run_form.to_summary()},
+        )
+
     return app
+
+
+def _error_count(exc: ValidationError | ValueError) -> int:
+    if isinstance(exc, ValidationError):
+        return len(exc.errors())
+    return 1
