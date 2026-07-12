@@ -130,6 +130,37 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "anthropic/claude-sonnet-4-6" in response.text
 
 
+def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "pages": str(pages),
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "transcription",
+            "provider": "openrouter",
+            "openrouter_provider": "anthropic",
+            "stage1_model": "openrouter/anthropic/claude-sonnet-5",
+            "temperature": "0.1",
+            "reasoning": "none",
+            "quality": "verified",
+        },
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.models.stage1 == "openrouter/anthropic/claude-sonnet-5"
+    assert config.models.stage1_reasoning == "low"
+    assert config.models.openrouter_provider == "anthropic"
+
+
 def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) -> None:
     pages = tmp_path / "pages"
     pages.mkdir()
@@ -204,7 +235,8 @@ def test_provider_page_lists_bundled_and_custom_models(tmp_path: Path) -> None:
     assert "GPT-5.6 Sol" in response.text
     assert "Claude Opus 4.8" in response.text
     assert "Gemini 3.5 Flash" in response.text
-    assert "Custom LiteLLM model" in response.text
+    assert "Other / advanced provider" in response.text
+    assert "LiteLLM-compatible model identifier" in response.text
 
 
 def test_temporary_provider_key_is_kept_in_injected_vault(tmp_path: Path) -> None:
