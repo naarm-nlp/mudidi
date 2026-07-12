@@ -7,6 +7,7 @@ import base64
 from pathlib import Path
 
 import pytest
+import fitz
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
@@ -18,6 +19,15 @@ from mudidi.web.forms import NewRunForm, PipelineChoice
 _PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 )
+
+
+def _one_page_pdf() -> bytes:
+    document = fitz.open()
+    document.new_page()
+    try:
+        return document.tobytes()
+    finally:
+        document.close()
 
 
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
@@ -251,7 +261,7 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             ("introduction_file", ("intro.md", b"# Introduction", "text/markdown")),
             ("alphabet_file", ("alphabet.txt", b"a b c", "text/plain")),
             ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
-            ("custom_mdf_manual", ("manual.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")),
+            ("custom_mdf_manual", ("manual.pdf", _one_page_pdf(), "application/pdf")),
         ],
     )
 

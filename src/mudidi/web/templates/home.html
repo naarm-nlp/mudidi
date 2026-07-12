@@ -49,10 +49,11 @@
             <div class="dropzone">
               <span class="file-icon">⇧</span>
               <h3>Drop a PDF or page images here</h3>
-              <p>PDF, PNG, JPEG or TIFF · processed locally before LLM calls</p>
-              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff" multiple>
-              <label class="path-label" for="pages">Local PDF or page directory</label>
-              <input id="pages" name="pages" placeholder="/Users/you/dictionary-pages">
+              <p>PDF, PNG, JPEG or WebP · copied into this run's local input bundle</p>
+              <label class="path-label" for="page-files">Choose a PDF or page images</label>
+              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple>
+              <label class="path-label" for="page-directory">Or choose a folder of page images</label>
+              <input id="page-directory" name="page_directory" type="file" accept=".png,.jpg,.jpeg,.webp" webkitdirectory multiple>
             </div>
             <label for="output">Output directory</label>
             <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
@@ -133,15 +134,24 @@
               <summary>Input and context</summary>
               <div class="form-grid">
                 <label>PDF dictionary pages<input name="dictionary_pages" placeholder="1-120,125"></label>
-                <label>PDF introduction pages<input name="introduction_pages" placeholder="i-xii or 1-12"></label>
-                <label>Separate introduction path<input name="introduction" placeholder="/path/to/introduction"></label>
-                <label>Alphabet guide<input name="alphabet" placeholder="/path/to/alphabet.txt"></label>
-                <label>Stage 1 guide file<input name="stage1_guides" placeholder="/path/to/stage1-guides.txt"></label>
-                <label>Stage 2 guide file<input name="stage2_guides" placeholder="/path/to/stage2-guides.txt"></label>
-                <label>Toolbox reference PDF<input name="toolbox_pdf" placeholder="/path/to/toolbox.pdf"></label>
-                <label>Existing parse-rules file<input name="parse_rules_file" placeholder="/path/to/parse-rules.json"></label>
-                <label>Representative parse-rule pages<input name="parse_rules_pages" placeholder="1, 5, 12"></label>
+                <label>PDF introduction pages<input name="introduction_pages" placeholder="1-12,15"></label>
+                <label>Separate introduction file<input name="introduction_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.docx"></label>
+                <label>Or introduction folder<input name="introduction_directory" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.docx" webkitdirectory multiple></label>
+                <label>Alphabet or orthography guide<input name="alphabet_file" type="file" accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.docx"></label>
+                <label data-stage-control data-pipeline-stages="stage1">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2">Existing MDF parsing guide<input name="existing_mdf_guide_file" type="file" accept=".json"><small>Optional. It is still validated and must be reviewed before MDF parsing.</small></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button><input name="parse_rules_pages" placeholder="1,3-4"></label>
               </div>
+              <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                <legend>MDF manual (optional)</legend>
+                <label><input type="radio" name="mdf_manual_source" value="none" checked> No MDF manual</label>
+                <label><input type="radio" name="mdf_manual_source" value="bundled"> Use the bundled 65-page MDF manual</label>
+                <p>The full manual contains every MDF marker and can substantially increase token cost. If you already know the relevant markers, extract only those pages and upload the shorter PDF instead.</p>
+                <a class="back-link" href="/assets/mdf-manual">Download and view the bundled MDF manual</a>
+                <label><input type="radio" name="mdf_manual_source" value="upload"> Upload a custom or shortened MDF manual</label>
+                <label data-custom-mdf-manual hidden>Custom MDF manual PDF<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+              </fieldset>
             </details>
             <details class="profile-panel">
               <summary>Dictionary Profile (optional)</summary>

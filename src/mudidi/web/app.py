@@ -29,7 +29,7 @@ from mudidi.web.credentials import CredentialVault
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
-from mudidi.web.inputs import InputMaterializer
+from mudidi.web.inputs import InputMaterializer, rebase_managed_config
 from mudidi.web.models import (
     ModelCatalog,
     ModelDiscovery,
@@ -177,10 +177,22 @@ def create_app(
         """Validate browser form state and render a non-secret run review."""
 
         submitted = await request.form()
+        upload_fields = {
+            "page_files",
+            "page_directory",
+            "introduction_file",
+            "introduction_directory",
+            "alphabet_file",
+            "existing_mdf_guide_file",
+            "custom_mdf_manual",
+        }
         payload = {
             key: value
             for key, value in submitted.items()
-            if key != "page_files" and isinstance(value, str) and value.strip() != ""
+            if key not in upload_fields
+            and key != "pages"
+            and isinstance(value, str)
+            and value.strip() != ""
         }
         parse_rule_pages = [
             page.strip()
@@ -203,18 +215,98 @@ def create_app(
             if values:
                 payload[field_name] = values
         run_id = f"run-{uuid4().hex[:12]}"
-        uploaded = [
+        page_files = [
             value
             for value in submitted.getlist("page_files")
             if getattr(value, "filename", "")
         ]
+        page_directory = [
+            value
+            for value in submitted.getlist("page_directory")
+            if getattr(value, "filename", "")
+        ]
+
+        def uploaded(field: str) -> list[object]:
+            return [
+                value
+                for value in submitted.getlist(field)
+                if getattr(value, "filename", "")
+            ]
+
         try:
-            if uploaded:
-                if str(payload.get("pages", "")).strip():
-                    raise ValueError(
-                        "choose either uploaded files or a local input path"
+            if str(submitted.get("pages", "")).strip():
+                raise ValueError("select dictionary files in the browser")
+            if page_files and page_directory:
+                raise ValueError("choose page files or a page folder, not both")
+            selected_pages = page_directory or page_files
+            payload["pages"] = await app.state.inputs.materialize_pages(
+                run_id, selected_pages
+            )
+
+            introduction_files = uploaded("introduction_file")
+            introduction_directory = uploaded("introduction_directory")
+            if introduction_files and introduction_directory:
+                raise ValueError("choose an introduction file or folder, not both")
+            selected_introduction = introduction_directory or introduction_files
+            if selected_introduction:
+                payload["introduction"] = (
+                    await app.state.inputs.materialize_introduction(
+                        run_id, selected_introduction
                     )
-                payload["pages"] = await app.state.inputs.materialize(run_id, uploaded)
+                )
+
+            alphabet_files = uploaded("alphabet_file")
+            if len(alphabet_files) > 1:
+                raise ValueError("select exactly one alphabet file")
+            if alphabet_files:
+                payload["alphabet"] = await app.state.inputs.materialize_alphabet(
+                    run_id, alphabet_files[0]
+                )
+
+            guide_files = uploaded("existing_mdf_guide_file")
+            if len(guide_files) > 1:
+                raise ValueError("select exactly one existing MDF parsing guide")
+            if guide_files:
+                payload["parse_rules_file"] = (
+                    await app.state.inputs.materialize_mdf_guide(
+                        run_id, guide_files[0]
+                    )
+                )
+
+            stage1_instructions = str(
+                payload.get("stage1_additional_instructions", "")
+            ).strip()
+            if stage1_instructions:
+                payload["stage1_guides"] = app.state.inputs.materialize_instruction(
+                    run_id, "stage1", stage1_instructions
+                )
+            stage2_instructions = str(
+                payload.get("stage2_additional_instructions", "")
+            ).strip()
+            if stage2_instructions:
+                payload["stage2_guides"] = app.state.inputs.materialize_instruction(
+                    run_id, "stage2", stage2_instructions
+                )
+
+            manual_source = str(payload.get("mdf_manual_source", "none"))
+            manual_files = uploaded("custom_mdf_manual")
+            if manual_source == "bundled":
+                if manual_files:
+                    raise ValueError("bundled MDF manual cannot include a custom upload")
+                payload["toolbox_pdf"] = app.state.inputs.materialize_bundled_manual(
+                    run_id, _MDF_MANUAL.read_bytes()
+                )
+            elif manual_source == "upload":
+                if len(manual_files) != 1:
+                    raise ValueError("upload exactly one custom MDF manual PDF")
+                payload["toolbox_pdf"] = (
+                    await app.state.inputs.materialize_mdf_manual(
+                        run_id, manual_files[0]
+                    )
+                )
+            elif manual_files:
+                raise ValueError("select the custom MDF manual option before uploading")
+
             run_form = NewRunForm.model_validate(payload)
             config = run_form.to_inference_config()
             validate_config_paths(config)
@@ -434,14 +526,22 @@ def create_app(
             raise HTTPException(status_code=404, detail="run not found") from exc
         submitted = await request.form()
         name = str(submitted.get("name", ""))
+        preset_id = f"preset-{uuid4().hex[:12]}"
         try:
+            preset_bundle = app.state.inputs.copy_run_to_preset(run_id, preset_id)
+            preset_config = rebase_managed_config(
+                config,
+                source=app.state.inputs.bundle(run_id),
+                destination=preset_bundle,
+            )
             app.state.run_store.create_preset(
-                f"preset-{uuid4().hex[:12]}",
+                preset_id,
                 name=name,
                 provider=str(run.provider),
-                config=config,
+                config=preset_config,
             )
         except (ValueError, sqlite3.IntegrityError) as exc:
+            app.state.inputs.discard_preset(preset_id)
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse("/presets", status_code=303)
 
@@ -451,22 +551,33 @@ def create_app(
 
         try:
             preset = app.state.run_store.get_preset(preset_id)
-            validate_config_paths(preset.config)
             provider = Provider(preset.provider)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="preset not found") from exc
         except (ValueError, ValidationError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         run_id = f"run-{uuid4().hex[:12]}"
-        app.state.job_controller.prepare_inference(
-            run_id,
-            config=preset.config,
-            provider=provider,
-        )
+        try:
+            run_bundle = app.state.inputs.copy_preset_to_run(preset_id, run_id)
+            preset_bundle = app.state.inputs.presets_root / preset_id / "inputs"
+            config = rebase_managed_config(
+                preset.config,
+                source=preset_bundle,
+                destination=run_bundle,
+            )
+            validate_config_paths(config)
+            app.state.job_controller.prepare_inference(
+                run_id,
+                config=config,
+                provider=provider,
+            )
+        except (ValueError, OSError, ValidationError) as exc:
+            app.state.inputs.discard(run_id)
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": _config_summary(preset.config), "run_id": run_id},
+            context={"summary": _config_summary(config), "run_id": run_id},
         )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)

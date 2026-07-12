@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from enum import StrEnum
 from pathlib import Path
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from mudidi.config.yaml_config import (
     AgenticConfig,
@@ -35,6 +36,8 @@ class PipelineChoice(StrEnum):
 
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
 ReasoningChoice = Literal["none", "low", "medium", "high"]
+MdfManualSource = Literal["none", "bundled", "upload"]
+_PAGE_SPEC_PART = re.compile(r"^[1-9][0-9]*(?:-[1-9][0-9]*)?$")
 
 _PIPELINE_STAGE = {
     PipelineChoice.COMPLETE: "all",
@@ -63,10 +66,17 @@ class NewRunForm(BaseModel):
     profile_information_types: list[InformationType] = Field(default_factory=list)
     profile_other_information_types: str | None = Field(default=None, max_length=1000)
     toolbox_pdf: Path | None = None
+    mdf_manual_source: MdfManualSource = "none"
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
+    stage1_additional_instructions: str | None = Field(
+        default=None, max_length=20_000
+    )
+    stage2_additional_instructions: str | None = Field(
+        default=None, max_length=20_000
+    )
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
 
@@ -99,6 +109,25 @@ class NewRunForm(BaseModel):
     prompt_cache: Literal["auto", "off"] = "auto"
     media_reference: Literal["auto", "inline", "file-uri"] = "auto"
 
+    @field_validator("dictionary_pages", "introduction_pages")
+    @classmethod
+    def validate_page_spec(cls, value: str | None) -> str | None:
+        """Normalize the dashboard's positive Arabic page-range grammar."""
+
+        if value is None or not value.strip():
+            return None
+        return _normalize_page_spec(value)
+
+    @field_validator("parse_rules_pages")
+    @classmethod
+    def validate_parse_rule_pages(cls, value: list[str]) -> list[str]:
+        """Validate representative MDF guide pages with the same grammar."""
+
+        normalized: list[str] = []
+        for item in value:
+            normalized.extend(_normalize_page_spec(item).split(","))
+        return normalized
+
     @computed_field
     @property
     def requires_parse_rule_review(self) -> bool:
@@ -118,8 +147,18 @@ class NewRunForm(BaseModel):
             raise ValueError(
                 "output directory already contains files; choose resume or another path"
             )
+        if self.mdf_manual_source in {"bundled", "upload"} and self.toolbox_pdf is None:
+            raise ValueError("selected MDF manual is unavailable")
 
         stage = _PIPELINE_STAGE[self.pipeline]
+        runs_stage1 = self.pipeline in {
+            PipelineChoice.COMPLETE,
+            PipelineChoice.TRANSCRIPTION,
+        }
+        runs_stage2 = self.pipeline in {
+            PipelineChoice.COMPLETE,
+            PipelineChoice.STRUCTURE,
+        }
         verify_stage1, verify_stage2 = self._verification_stages()
         default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
         effective_reasoning = "low" if self.reasoning == "none" else self.reasoning
@@ -140,7 +179,7 @@ class NewRunForm(BaseModel):
                 dictionary_profile=self._dictionary_profile(),
                 toolbox_pdf=(
                     self.toolbox_pdf.expanduser().resolve()
-                    if self.toolbox_pdf
+                    if self.toolbox_pdf and runs_stage2
                     else None
                 ),
             ),
@@ -150,20 +189,20 @@ class NewRunForm(BaseModel):
                 strategy="two_stage",
                 stage1_mode="flat",
                 stage1_typography=False,
-                parse_rules_pages=self.parse_rules_pages,
+                parse_rules_pages=self.parse_rules_pages if runs_stage2 else [],
                 parse_rules_file=(
                     self.parse_rules_file.expanduser().resolve()
-                    if self.parse_rules_file
+                    if self.parse_rules_file and runs_stage2
                     else None
                 ),
                 stage1_guides=(
                     self.stage1_guides.expanduser().resolve()
-                    if self.stage1_guides
+                    if self.stage1_guides and runs_stage1
                     else None
                 ),
                 stage2_guides=(
                     self.stage2_guides.expanduser().resolve()
-                    if self.stage2_guides
+                    if self.stage2_guides and runs_stage2
                     else None
                 ),
             ),
@@ -207,6 +246,11 @@ class NewRunForm(BaseModel):
             "pipeline": self.pipeline.value,
             "model": self._stage_models()[0],
             "agentic": self._agentic_summary(),
+            "mdf_manual": {
+                "none": "Not used",
+                "bundled": "Bundled 65-page manual",
+                "upload": "Custom upload",
+            }[self.mdf_manual_source],
             "parse_rules": (
                 "Human approval required"
                 if self.requires_parse_rule_review
@@ -376,3 +420,17 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _normalize_page_spec(value: str) -> str:
+    parts = [part.strip() for part in value.split(",")]
+    if not parts or any(not part or not _PAGE_SPEC_PART.fullmatch(part) for part in parts):
+        raise ValueError(
+            "use positive page numbers, commas, and ascending ranges such as 1-12,15"
+        )
+    for part in parts:
+        if "-" in part:
+            start, end = (int(number) for number in part.split("-", maxsplit=1))
+            if start > end:
+                raise ValueError("page ranges must be ascending")
+    return ",".join(parts)

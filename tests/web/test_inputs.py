@@ -21,7 +21,7 @@ def test_materializer_rejects_chunked_content_above_cumulative_limit(
     with pytest.raises(ValueError, match="too large"):
         asyncio.run(materializer.materialize("run-limit", [upload]))
 
-    assert not (tmp_path / "uploads" / "run-limit").exists()
+    assert not (tmp_path / "runs" / "run-limit" / "inputs").exists()
 
 
 def test_materializer_rejects_windows_path_components(tmp_path: Path) -> None:

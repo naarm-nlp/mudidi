@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -10,6 +11,10 @@ from mudidi.web.app import create_app
 from mudidi.web.credentials import CredentialSource, CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.models import LiveModelOption
+
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
@@ -117,20 +122,18 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
 
 
 def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
-    pages = tmp_path / "pages"
-    pages.mkdir()
     client = TestClient(create_app(data_dir=tmp_path / "app-data"))
 
     response = client.post(
         "/runs/preview",
         data={
-            "pages": str(pages),
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
         },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
     )
 
     assert response.status_code == 200
@@ -142,15 +145,12 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
 def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
     tmp_path: Path,
 ) -> None:
-    pages = tmp_path / "pages"
-    pages.mkdir()
     app = create_app(data_dir=tmp_path / "app-data")
     client = TestClient(app)
 
     response = client.post(
         "/runs/preview",
         data={
-            "pages": str(pages),
             "output_directory": str(tmp_path / "output"),
             "pipeline": "transcription",
             "provider": "openrouter",
@@ -159,6 +159,7 @@ def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
             "temperature": "0.1",
             "reasoning": "none",
         },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
     )
 
     assert response.status_code == 200
@@ -170,15 +171,12 @@ def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
 
 
 def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) -> None:
-    pages = tmp_path / "pages"
-    pages.mkdir()
     app = create_app(data_dir=tmp_path / "app-data")
     client = TestClient(app)
 
     response = client.post(
         "/runs/preview",
         data={
-            "pages": str(pages),
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "provider": "anthropic",
@@ -192,6 +190,7 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "profile_information_types": ["translation", "other"],
             "profile_other_information_types": "dialect labels, semantic domains",
         },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
     )
 
     assert response.status_code == 200
@@ -289,8 +288,8 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(
             "reasoning": "low",
         },
         files=[
-            ("page_files", ("page_1.png", b"first image", "image/png")),
-            ("page_files", ("page_2.jpg", b"second image", "image/jpeg")),
+            ("page_files", ("page_1.png", _PNG, "image/png")),
+            ("page_files", ("page_2.png", _PNG, "image/png")),
         ],
     )
 
@@ -300,12 +299,12 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(
     config = app.state.job_controller.load_inference_config(runs[0].run_id)
     assert config.input.pages is not None
     assert (
-        config.input.pages.parent.parent
-        == (tmp_path / "app-data" / "uploads").resolve()
+        config.input.pages.parent
+        == (tmp_path / "app-data" / "runs" / runs[0].run_id / "inputs").resolve()
     )
     assert sorted(path.name for path in config.input.pages.iterdir()) == [
         "page_1.png",
-        "page_2.jpg",
+        "page_2.png",
     ]
 
 

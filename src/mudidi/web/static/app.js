@@ -117,6 +117,7 @@ const synchronizePipeline = () => {
     else if (input.dataset.userTouched !== "true") input.checked = true;
   });
   synchronizeModels();
+  if (typeof synchronizeManual === "function") synchronizeManual();
 };
 
 modelSelects.forEach((select) => {
@@ -151,8 +152,22 @@ agenticChoices.forEach((choice) => choice.addEventListener("change", synchronize
 document.querySelectorAll(".info-button").forEach((button) => {
   button.addEventListener("click", () => button.classList.toggle("is-open"));
 });
+
+const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
+const customManual = document.querySelector("[data-custom-mdf-manual]");
+const synchronizeManual = () => {
+  if (!customManual) return;
+  const selected = manualChoices.find((choice) => choice.checked);
+  const visible = selected && selected.value === "upload" && !selected.disabled;
+  customManual.hidden = !visible;
+  customManual.querySelectorAll("input").forEach((input) => {
+    input.disabled = !visible;
+  });
+};
+manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 synchronizePipeline();
 synchronizeAgentic();
+synchronizeManual();
 
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {
