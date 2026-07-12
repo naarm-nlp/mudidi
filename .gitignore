@@ -16,6 +16,8 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
+playwright-report/
+test-results/
 .mypy_cache/
 .ruff_cache/
 .coverage
