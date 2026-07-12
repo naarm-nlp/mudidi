@@ -14,8 +14,8 @@
       </a>
       <nav aria-label="Primary navigation">
         <a class="active" href="/"><span>＋</span> New run</a>
-        <a href="#active-run"><span>●</span> Active run</a>
-        <a href="#history"><span>◷</span> Run history</a>
+        <a href="/active"><span>●</span> Active run</a>
+        <a href="/history"><span>◷</span> Run history</a>
       </nav>
       <div class="sidebar-footer">
         <a href="/providers">API providers</a>
@@ -110,6 +110,11 @@
           </aside>
         </div>
       </section>
+      <form class="demo-launch" method="post" action="/runs/demo">
+        <input type="hidden" name="page_count" value="3">
+        <span><strong>Explore safely:</strong> run the interface with a deterministic offline worker.</span>
+        <button type="submit">Start offline demo</button>
+      </form>
     </main>
   </body>
 </html>

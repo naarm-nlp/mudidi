@@ -27,6 +27,7 @@ class StageStarted(ExecutionEvent):
     """A pipeline stage has begun."""
 
     type: Literal["stage.started"] = "stage.started"
+    total_pages: int | None = Field(default=None, ge=1)
 
 
 class PageCompleted(ExecutionEvent):

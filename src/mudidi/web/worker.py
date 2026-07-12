@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
             sequence=sequence,
             stage="stage1",
             occurred_at=datetime.now(UTC),
+            total_pages=args.page_count,
         )
     )
     for page in range(1, args.page_count + 1):

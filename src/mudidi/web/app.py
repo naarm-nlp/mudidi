@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 from pathlib import Path
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from mudidi.config.yaml_config import validate_config_paths
-from mudidi.web.forms import NewRunForm
 from mudidi.web.credentials import CredentialVault
+from mudidi.web.forms import NewRunForm
+from mudidi.web.jobs import JobController
 from mudidi.web.models import ModelCatalog, Provider
+from mudidi.web.runs import RunRecord, RunStatus, RunStore
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
@@ -48,6 +53,12 @@ def create_app(
     app.state.data_dir = resolved_data_dir
     app.state.credential_vault = credential_vault or CredentialVault()
     app.state.model_catalog = ModelCatalog.bundled()
+    app.state.run_store = RunStore(resolved_data_dir / "mudidi-web.sqlite3")
+    app.state.job_controller = JobController(
+        store=app.state.run_store,
+        data_dir=resolved_data_dir,
+    )
+    app.state.job_controller.reconcile_startup()
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["127.0.0.1", "localhost", "testserver"],
@@ -134,6 +145,123 @@ def create_app(
             message="Temporary key ready",
         )
 
+    @app.post("/runs/demo")
+    async def start_demo(request: Request) -> RedirectResponse:
+        """Start a deterministic offline run to exercise the complete run UI."""
+
+        submitted = await request.form()
+        try:
+            page_count = int(str(submitted.get("page_count", "3")))
+            delay_seconds = float(str(submitted.get("delay_seconds", "0.08")))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="invalid demo settings") from exc
+        run_id = f"demo-{uuid4().hex[:12]}"
+        app.state.run_store.create_run(run_id, provider="offline")
+        app.state.run_store.transition(run_id, RunStatus.VALIDATED)
+        app.state.run_store.transition(run_id, RunStatus.QUEUED)
+        try:
+            app.state.job_controller.start_fake(
+                run_id,
+                page_count=page_count,
+                delay_seconds=delay_seconds,
+            )
+        except (RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
+    @app.get("/active", response_class=HTMLResponse)
+    async def active_run(request: Request) -> HTMLResponse:
+        """Render the currently active worker, if any."""
+
+        active = app.state.run_store.list_active_runs()
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="active.html",
+            context={"runs": [_run_view(app.state.run_store, run) for run in active]},
+        )
+
+    @app.get("/history", response_class=HTMLResponse)
+    async def run_history(request: Request) -> HTMLResponse:
+        """Render durable newest-first local run history."""
+
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="history.html",
+            context={
+                "runs": [
+                    _run_view(app.state.run_store, run)
+                    for run in app.state.run_store.list_runs()
+                ]
+            },
+        )
+
+    @app.get("/runs/{run_id}", response_class=HTMLResponse)
+    async def run_detail(request: Request, run_id: str) -> HTMLResponse:
+        """Render current state and persisted event progress for one run."""
+
+        try:
+            run = app.state.run_store.get_run(run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="run_detail.html",
+            context={"run": _run_view(app.state.run_store, run)},
+        )
+
+    @app.post("/runs/{run_id}/cancel")
+    async def cancel_run(run_id: str) -> RedirectResponse:
+        """Cancel an owned active worker and return to its detail screen."""
+
+        try:
+            app.state.job_controller.cancel(run_id)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
+    @app.get("/runs/{run_id}/events")
+    async def run_events(request: Request, run_id: str) -> StreamingResponse:
+        """Replay and tail persisted events using resumable server-sent events."""
+
+        try:
+            app.state.run_store.get_run(run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        last_header = request.headers.get("last-event-id", "0")
+        try:
+            last_sequence = max(0, int(last_header))
+        except ValueError:
+            last_sequence = 0
+
+        async def stream() -> object:
+            nonlocal last_sequence
+            while True:
+                events = app.state.run_store.list_events(run_id)
+                new_events = [
+                    event
+                    for event in events
+                    if int(event.get("sequence", 0)) > last_sequence
+                ]
+                for event in new_events:
+                    last_sequence = int(event["sequence"])
+                    yield _sse_event(event)
+                status = app.state.run_store.get_run(run_id).status
+                if status in {
+                    RunStatus.COMPLETED,
+                    RunStatus.FAILED,
+                    RunStatus.CANCELLED,
+                }:
+                    return
+                if await request.is_disconnected():
+                    return
+                await asyncio.sleep(0.1)
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     return app
 
 
@@ -170,4 +298,35 @@ def _render_providers(
             "message": message,
         },
         status_code=status_code,
+    )
+
+
+def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
+    events = store.list_events(run.run_id)
+    completed_pages = sum(event.get("type") == "page.completed" for event in events)
+    started = next((event for event in events if event.get("type") == "stage.started"), {})
+    total_pages = int(started.get("total_pages") or completed_pages or 0)
+    return {
+        "run_id": run.run_id,
+        "status": run.status.value,
+        "status_label": run.status.value.replace("_", " ").title(),
+        "provider": run.provider or "Not selected",
+        "completed_pages": completed_pages,
+        "total_pages": total_pages,
+        "events": events,
+        "created_at": run.created_at,
+        "is_active": run.status
+        in {
+            RunStatus.RUNNING_STAGE1,
+            RunStatus.DISCOVERING_PARSE_RULES,
+            RunStatus.RUNNING_STAGE2,
+        },
+    }
+
+
+def _sse_event(event: dict[str, object]) -> str:
+    return (
+        f"id: {event['sequence']}\n"
+        f"event: {event['type']}\n"
+        f"data: {json.dumps(event, ensure_ascii=False, separators=(',', ':'))}\n\n"
     )

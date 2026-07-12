@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Run history · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head>
+  <body class="standalone"><main class="providers-page"><a class="back-link" href="/">← New run</a><header class="page-heading"><span class="eyebrow">Local metadata</span><h1>Run history</h1><p>Runs and events persist locally; API credentials do not.</p></header><section class="panel history-list">{% if runs %}{% for run in runs %}<a class="run-row" href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong><span>{{ run.status_label }}</span><small>{{ run.completed_pages }} of {{ run.total_pages }} pages · {{ run.provider }}</small></a>{% endfor %}{% else %}<div class="empty-state"><h2>No runs yet</h2><p>Configure a production run or try the offline demo.</p></div>{% endif %}</section></main></body>
+</html>
