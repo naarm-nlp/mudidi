@@ -117,6 +117,11 @@ class ModelsConfig(_StrictModel):
     stage1: str | None = None
     stage2_pass1: str | None = None
     stage2_pass2: str | None = None
+    openrouter_provider: str | None = Field(
+        default=None,
+        max_length=100,
+        pattern=r"^(auto|[a-z0-9][a-z0-9._/-]*)$",
+    )
     stage1_reasoning: ReasoningEffort = "low"
     stage2_reasoning: Literal["low", "medium", "high"] = "low"
     temperature: float = Field(default=0.1, ge=0.0)

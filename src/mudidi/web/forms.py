@@ -24,6 +24,7 @@ from mudidi.schemas.dictionary_profile import (
     InformationType,
     ProfileLanguage,
 )
+from mudidi.web.models import Provider, normalize_custom_model
 
 
 class PipelineChoice(StrEnum):
@@ -85,11 +86,15 @@ class NewRunForm(BaseModel):
     parse_rules_file: Path | None = None
 
     provider: ProviderName
-    model: str = Field(min_length=1)
+    model: str | None = None
     reasoning: ReasoningChoice = "low"
     stage1_model: str | None = None
+    stage1_custom_model: str | None = None
     stage2_pass1_model: str | None = None
+    stage2_pass1_custom_model: str | None = None
     stage2_pass2_model: str | None = None
+    stage2_pass2_custom_model: str | None = None
+    openrouter_provider: str | None = Field(default=None, max_length=100)
     temperature: float = Field(default=0.1, ge=0.0)
 
     quality: QualityChoice = QualityChoice.VERIFIED
@@ -152,6 +157,8 @@ class NewRunForm(BaseModel):
 
         stage = _PIPELINE_STAGE[self.pipeline]
         verify_stage1, verify_stage2 = self._verification_stages()
+        default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
+        effective_reasoning = "low" if self.reasoning == "none" else self.reasoning
         return InferenceConfig(
             input=InputConfig(
                 pages=self.pages.expanduser().resolve(),
@@ -199,14 +206,13 @@ class NewRunForm(BaseModel):
                 ),
             ),
             models=ModelsConfig(
-                default=self.model.strip(),
-                stage1=_clean_optional(self.stage1_model),
-                stage2_pass1=_clean_optional(self.stage2_pass1_model),
-                stage2_pass2=_clean_optional(self.stage2_pass2_model),
-                stage1_reasoning=self.reasoning,
-                stage2_reasoning=(
-                    self.reasoning if self.reasoning != "none" else "low"
-                ),
+                default=default_model,
+                stage1=stage1_model,
+                stage2_pass1=pass1_model,
+                stage2_pass2=pass2_model,
+                openrouter_provider=self._resolved_openrouter_provider(),
+                stage1_reasoning=effective_reasoning,
+                stage2_reasoning=effective_reasoning,
                 temperature=self.temperature,
             ),
             agentic=AgenticConfig(
@@ -215,7 +221,7 @@ class NewRunForm(BaseModel):
                 max_iterations=self.max_iterations,
                 evaluator_model=_clean_optional(self.evaluator_model),
                 rewriter_model=_clean_optional(self.rewriter_model),
-                reasoning=self.reasoning,
+                reasoning=effective_reasoning,
                 evaluator_reasoning=self.evaluator_reasoning,
                 rewriter_reasoning=self.rewriter_reasoning,
                 min_retry_confidence=self.min_retry_confidence,
@@ -261,7 +267,7 @@ class NewRunForm(BaseModel):
             "input": str(self.pages),
             "output": str(self.output_directory),
             "pipeline": self.pipeline.value,
-            "model": self.model,
+            "model": self._stage_models()[0],
             "quality": self.quality.value,
             "parse_rules": (
                 "Human approval required"
@@ -287,6 +293,77 @@ class NewRunForm(BaseModel):
             self.verify_stage1 and stage1_selected,
             self.verify_stage2 and stage2_selected,
         )
+
+    def _stage_models(self) -> tuple[str, str | None, str | None, str | None]:
+        """Resolve legacy and provider-aware stage model fields."""
+
+        legacy = _clean_optional(self.model)
+        selected = {
+            "stage1": self._resolve_model(
+                self.stage1_model, self.stage1_custom_model, "Stage 1"
+            ),
+            "pass1": self._resolve_model(
+                self.stage2_pass1_model,
+                self.stage2_pass1_custom_model,
+                "Stage 2 Pass 1",
+            ),
+            "pass2": self._resolve_model(
+                self.stage2_pass2_model,
+                self.stage2_pass2_custom_model,
+                "Stage 2 Pass 2",
+            ),
+        }
+        required = {
+            PipelineChoice.COMPLETE: ("stage1", "pass1", "pass2"),
+            PipelineChoice.TRANSCRIPTION: ("stage1",),
+            PipelineChoice.STRUCTURE: ("pass1", "pass2"),
+            PipelineChoice.DISCOVER_RULES: ("pass1",),
+        }[self.pipeline]
+        if legacy is None:
+            missing = [name for name in required if selected[name] is None]
+            if missing:
+                raise ValueError(
+                    "Select a model for each active pipeline stage: "
+                    + ", ".join(missing)
+                )
+        default = legacy or next(
+            selected[name] for name in required if selected[name] is not None
+        )
+        return default, selected["stage1"], selected["pass1"], selected["pass2"]
+
+    def _resolve_model(
+        self,
+        selected: str | None,
+        custom: str | None,
+        label: str,
+    ) -> str | None:
+        selected = _clean_optional(selected)
+        custom = _clean_optional(custom)
+        if selected is None and custom is None:
+            return None
+        if selected == "__other__":
+            if custom is None:
+                raise ValueError(f"{label} requires a custom model name")
+            selected = custom
+        elif selected is None:
+            selected = custom
+        assert selected is not None
+        provider = Provider(self.provider)
+        if provider is not Provider.OPENROUTER and "/" in selected:
+            return selected
+        return normalize_custom_model(provider, selected)
+
+    def _resolved_openrouter_provider(self) -> str | None:
+        """Return automatic or pinned OpenRouter endpoint routing."""
+
+        selected = _clean_optional(self.openrouter_provider)
+        if self.provider != Provider.OPENROUTER.value:
+            if selected not in {None, "auto"}:
+                raise ValueError(
+                    "openrouter_provider is only valid with the OpenRouter provider"
+                )
+            return None
+        return selected or "auto"
 
     def _dictionary_profile(self) -> DictionaryProfile | None:
         """Build a profile only when the user answers the optional questionnaire."""

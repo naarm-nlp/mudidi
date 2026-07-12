@@ -18,12 +18,8 @@ def test_direct_openai_gpt5_supports_reasoning() -> None:
 
 
 def test_direct_anthropic_opus_supports_reasoning() -> None:
-    assert _direct_supports_reasoning_effort(
-        "anthropic/claude-opus-4-20250514"
-    )
-    assert not _direct_supports_reasoning_effort(
-        "anthropic/claude-3-5-sonnet-20241022"
-    )
+    assert _direct_supports_reasoning_effort("anthropic/claude-opus-4-20250514")
+    assert not _direct_supports_reasoning_effort("anthropic/claude-3-5-sonnet-20241022")
 
 
 def test_build_params_direct_openai_sets_reasoning_effort() -> None:
@@ -35,9 +31,7 @@ def test_build_params_direct_openai_sets_reasoning_effort() -> None:
         reasoning_effort="low",
     )
     assert params["reasoning_effort"] == "low"
-    assert "extra_body" not in params or "reasoning" not in params.get(
-        "extra_body", {}
-    )
+    assert "extra_body" not in params or "reasoning" not in params.get("extra_body", {})
 
 
 def test_build_params_direct_openai_stage1_none() -> None:
@@ -62,6 +56,22 @@ def test_build_params_openrouter_uses_extra_body_reasoning() -> None:
     )
     assert params["extra_body"]["reasoning"] == {"enabled": False}
     assert "reasoning_effort" not in params
+
+
+def test_openrouter_empty_provider_order_uses_automatic_routing(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("OPENROUTER_PROVIDER_ORDER", "")
+
+    params = _build_params(
+        "openrouter/anthropic/claude-sonnet-5",
+        messages=[{"role": "user", "content": "hi"}],
+        temperature=0.1,
+        max_tokens=1024,
+        reasoning_effort="low",
+    )
+
+    assert "provider" not in params.get("extra_body", {})
 
 
 def test_gpt5_requires_temperature_one() -> None:

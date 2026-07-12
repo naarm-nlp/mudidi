@@ -125,13 +125,18 @@ The model picker combines:
 3. An always-available custom LiteLLM identifier.
 
 Providers are explicit: direct Gemini, direct Anthropic, direct OpenAI,
-OpenRouter, or custom LiteLLM routing. A direct provider is never silently sent
-through OpenRouter.
+OpenRouter, or **Other / advanced provider** routing through a user-supplied
+LiteLLM identifier. A direct provider is never silently sent through OpenRouter.
 
 Known models are annotated for image input, structured output, reasoning, and
 recommended stages. Unknown custom models are accepted with a capability
 warning. Model lists may be cached locally, but API keys may not be cached with
 them.
+
+Each active pipeline stage has its own provider-filtered picker. Inactive stage
+pickers are hidden and disabled. OpenRouter uses manual per-stage model entry
+and additionally accepts an optional **OpenRouter Provider** slug; blank means
+automatic OpenRouter routing.
 
 ## Out of scope for the first release
 

@@ -99,81 +99,90 @@ class ModelCatalog:
             "https://platform.claude.com/docs/en/about-claude/models/overview"
         )
         gemini_source = "https://ai.google.dev/gemini-api/docs/models"
-        return cls(
-            (
-                ModelOption(
-                    "openai/gpt-5.6",
-                    "GPT-5.6 Sol",
-                    Provider.OPENAI,
-                    True,
-                    ("stage1", "stage2", "verification"),
-                    openai_source,
-                ),
-                ModelOption(
-                    "openai/gpt-5.6-terra",
-                    "GPT-5.6 Terra",
-                    Provider.OPENAI,
-                    True,
-                    ("stage1", "stage2"),
-                    openai_source,
-                ),
-                ModelOption(
-                    "openai/gpt-5.6-luna",
-                    "GPT-5.6 Luna",
-                    Provider.OPENAI,
-                    True,
-                    ("stage1",),
-                    openai_source,
-                ),
-                ModelOption(
-                    "anthropic/claude-opus-4-8",
-                    "Claude Opus 4.8",
-                    Provider.ANTHROPIC,
-                    True,
-                    ("stage1", "stage2", "verification"),
-                    anthropic_source,
-                ),
-                ModelOption(
-                    "anthropic/claude-sonnet-5",
-                    "Claude Sonnet 5",
-                    Provider.ANTHROPIC,
-                    True,
-                    ("stage1", "stage2"),
-                    anthropic_source,
-                ),
-                ModelOption(
-                    "anthropic/claude-sonnet-4-6",
-                    "Claude Sonnet 4.6",
-                    Provider.ANTHROPIC,
-                    True,
-                    ("stage1", "stage2"),
-                    anthropic_source,
-                ),
-                ModelOption(
-                    "gemini/gemini-3.5-flash",
-                    "Gemini 3.5 Flash",
-                    Provider.GEMINI,
-                    True,
-                    ("stage1", "stage2"),
-                    gemini_source,
-                ),
-                ModelOption(
-                    "gemini/gemini-3.1-pro-preview",
-                    "Gemini 3.1 Pro",
-                    Provider.GEMINI,
-                    True,
-                    ("stage1", "stage2", "verification"),
-                    gemini_source,
-                ),
-                ModelOption(
-                    "gemini/gemini-3-flash",
-                    "Gemini 3 Flash",
-                    Provider.GEMINI,
-                    True,
-                    ("stage1",),
-                    gemini_source,
-                ),
+        direct = (
+            ModelOption(
+                "openai/gpt-5.6-sol",
+                "GPT-5.6 Sol",
+                Provider.OPENAI,
+                True,
+                ("stage1", "stage2", "verification"),
+                openai_source,
             ),
+            ModelOption(
+                "anthropic/claude-fable-5",
+                "Claude Fable 5",
+                Provider.ANTHROPIC,
+                True,
+                ("stage1", "stage2", "verification"),
+                anthropic_source,
+            ),
+            ModelOption(
+                "openai/gpt-5.6-terra",
+                "GPT-5.6 Terra",
+                Provider.OPENAI,
+                True,
+                ("stage1", "stage2"),
+                openai_source,
+            ),
+            ModelOption(
+                "openai/gpt-5.6-luna",
+                "GPT-5.6 Luna",
+                Provider.OPENAI,
+                True,
+                ("stage1",),
+                openai_source,
+            ),
+            ModelOption(
+                "anthropic/claude-opus-4-8",
+                "Claude Opus 4.8",
+                Provider.ANTHROPIC,
+                True,
+                ("stage1", "stage2", "verification"),
+                anthropic_source,
+            ),
+            ModelOption(
+                "anthropic/claude-sonnet-5",
+                "Claude Sonnet 5",
+                Provider.ANTHROPIC,
+                True,
+                ("stage1", "stage2"),
+                anthropic_source,
+            ),
+            ModelOption(
+                "anthropic/claude-haiku-4-5",
+                "Claude Haiku 4.5",
+                Provider.ANTHROPIC,
+                True,
+                ("stage1",),
+                anthropic_source,
+            ),
+            ModelOption(
+                "gemini/gemini-3.5-flash",
+                "Gemini 3.5 Flash",
+                Provider.GEMINI,
+                True,
+                ("stage1", "stage2"),
+                gemini_source,
+            ),
+            ModelOption(
+                "gemini/gemini-3.1-pro-preview",
+                "Gemini 3.1 Pro",
+                Provider.GEMINI,
+                True,
+                ("stage1", "stage2", "verification"),
+                gemini_source,
+            ),
+            ModelOption(
+                "gemini/gemini-3.1-flash-lite",
+                "Gemini 3.1 Flash-Lite",
+                Provider.GEMINI,
+                True,
+                ("stage1",),
+                gemini_source,
+            ),
+        )
+        return cls(
+            direct,
             as_of="2026-07-12",
         )
 
@@ -186,8 +195,6 @@ class ModelCatalog:
         """Return curated direct models for one provider."""
 
         return tuple(option for option in self.options if option.provider is provider)
-
-
 def normalize_custom_model(provider: Provider, model_id: str) -> str:
     """Normalize custom entry to the LiteLLM provider naming used by MUDIDI."""
 

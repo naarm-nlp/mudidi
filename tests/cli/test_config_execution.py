@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ from pydantic import ValidationError
 
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
+    _openrouter_provider_environment,
     execution_namespace_from_config,
     preview_extraction_config,
     resolve_extraction_config,
@@ -249,6 +251,20 @@ def test_execution_namespace_carries_openrouter_endpoint_provider(tmp_path: Path
     namespace = execution_namespace_from_config(config)
 
     assert namespace.openrouter_provider == "anthropic"
+
+
+def test_openrouter_provider_environment_supports_auto_and_restores(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENROUTER_PROVIDER_ORDER", "parasail")
+
+    with _openrouter_provider_environment("auto"):
+        assert os.environ["OPENROUTER_PROVIDER_ORDER"] == ""
+    assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "parasail"
+
+    with _openrouter_provider_environment("anthropic"):
+        assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "anthropic"
+    assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "parasail"
 
 
 def test_minimal_production_config_does_not_require_optional_alphabet(

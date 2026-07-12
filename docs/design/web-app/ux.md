@@ -64,14 +64,25 @@ covering ordinary entries, multiple senses, subentries, and abbreviations.
 
 ## Model
 
-The default form selects one provider and model for all stages. A switch reveals
-Stage 1, Pass 1, Pass 2, evaluator, and rewriter overrides.
+The form selects one provider, then shows model pickers only for stages used by
+the selected pipeline. Transcription-only shows Stage 1 and temperature;
+complete runs show Stage 1, Pass 1, Pass 2, and temperature. There is no
+separate stage/model override panel.
 
 Each picker groups:
 
 - Recommended and tested
 - Available to this API key
 - Custom model identifier
+
+Selecting **Other model** reveals a free-text LiteLLM identifier field. The
+provider choice **Other / advanced provider** is reserved for local, cloud, or
+self-hosted routes without a first-class dashboard provider.
+
+OpenRouter replaces each active model dropdown with manual model entry (for
+example, `qwen/qwen3-235b-a22b`) and shows an additional optional **OpenRouter
+Provider** input. Automatic routing remains the default; an exact provider slug
+pins routing.
 
 Provider API-key state is shown without revealing stored values. Failed model
 discovery must not block custom entry or the bundled fallback catalog.

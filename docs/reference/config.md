@@ -75,6 +75,7 @@ models:  # ModelsConfig; optional
   stage1: null  # string | null; default: null
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
+  openrouter_provider: null  # string | null; default: null
   stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
   stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
   temperature: 0.1  # number; default: 0.1; >= 0.0
@@ -182,6 +183,7 @@ models:  # ModelsConfig; optional
   stage1: null  # string | null; default: null
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
+  openrouter_provider: null  # string | null; default: null
   stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
   stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
   temperature: 0.1  # number; default: 0.1; >= 0.0
@@ -293,6 +295,7 @@ base:  # BenchmarkRunConfig; required
     stage1: null  # string | null; default: null
     stage2_pass1: null  # string | null; default: null
     stage2_pass2: null  # string | null; default: null
+    openrouter_provider: null  # string | null; default: null
     stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
     stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
     temperature: 0.1  # number; default: 0.1; >= 0.0

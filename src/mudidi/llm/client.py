@@ -391,8 +391,10 @@ def _openrouter_provider_order(model: str) -> List[str]:
     """Resolve provider order from env override or model-family default."""
     model_default = _default_openrouter_provider_order(model)
     raw = os.getenv("OPENROUTER_PROVIDER_ORDER")
-    if raw is not None and raw.strip():
+    if raw is not None:
         order = _parse_csv_env("OPENROUTER_PROVIDER_ORDER", "")
+        if not order:
+            return []
         # .env often pins parasail for Qwen; GPT/Claude are not on Parasail.
         if order == ["parasail"] and model_default != ["parasail"]:
             return model_default

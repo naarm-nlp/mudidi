@@ -33,8 +33,9 @@ The **New Run** screen exposes the production settings most users need:
    run-owned local storage.
 2. Choose an output directory.
 3. Select Stage 1 only, Stage 2, or the complete pipeline.
-4. Select Anthropic, OpenAI, Gemini, OpenRouter, or custom LiteLLM routing.
-5. Choose a bundled multimodal model or enter a custom model identifier.
+4. Select Anthropic, OpenAI, Gemini, OpenRouter, or **Other / advanced provider**.
+5. Choose a provider-specific model for each active pipeline stage, or select
+   **Other model** and enter a LiteLLM-compatible identifier.
 6. Select the quality and reasoning settings, then review and start the run.
 
 The **Dictionary Profile** is optional. If you know the headword language,
@@ -63,6 +64,22 @@ The provider screen contains a dated offline model catalog. With a provider key
 available, **Refresh available models** queries that provider's official model
 list and keeps the non-secret result in process memory. Provider discovery
 failure never blocks the bundled catalog or custom LiteLLM identifiers.
+
+The bundled catalog was checked against official provider documentation on
+2026-07-12. It includes GPT-5.6 Sol/Terra/Luna; Claude Fable 5, Opus 4.8,
+Sonnet 5, and Haiku 4.5; and Gemini 3.1 Pro Preview, Gemini 3.5 Flash, and
+Gemini 3.1 Flash-Lite. Model controls follow the selected pipeline: for
+example, transcription-only runs show only Stage 1 model and temperature.
+
+OpenRouter models are entered manually for each active stage rather than chosen
+from the bundled catalog; for example, `qwen/qwen3-235b-a22b`. MUDIDI adds the
+LiteLLM `openrouter/` prefix. The **OpenRouter Provider** field is optional:
+leaving it blank uses automatic routing, while a provider slug such as
+`anthropic`, `google-vertex`, or `deepinfra/turbo` pins that preference.
+
+Selecting **None / lowest supported** reasoning resolves to `low` in the web
+configuration. The LLM client sends that control only to model families known
+to support it; unsupported custom models receive no reasoning parameter.
 
 ## Parse-rule approval checkpoint
 

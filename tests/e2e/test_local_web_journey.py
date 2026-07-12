@@ -73,10 +73,10 @@ def test_complete_production_journey_requires_and_uses_review(
     page.goto(local_site)
     page.get_by_label("Local PDF or page directory").fill(str(pages))
     page.get_by_label("Output directory").fill(str(output))
-    page.get_by_label("Provider").select_option("anthropic")
-    page.get_by_role("combobox", name="Model", exact=True).fill(
-        "anthropic/claude-sonnet-5"
-    )
+    page.locator("select[name=provider]").select_option("anthropic")
+    page.get_by_label("Stage 1 model").select_option("anthropic/claude-sonnet-5")
+    page.get_by_label("Stage 2 Pass 1 model").select_option("anthropic/claude-sonnet-5")
+    page.get_by_label("Stage 2 Pass 2 model").select_option("anthropic/claude-sonnet-5")
     page.get_by_role("button", name="Review run").click()
 
     expect(page.get_by_role("heading", name="Review your run")).to_be_visible()

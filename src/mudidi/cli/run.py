@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, Sequence, cast
@@ -635,6 +637,7 @@ def execution_namespace_from_config(
         stage_1_model=models.stage1,
         stage_2_pass_1_model=models.stage2_pass1,
         stage_2_pass_2_model=models.stage2_pass2,
+        openrouter_provider=models.openrouter_provider,
         structure_model=None,
         stage1_reasoning_effort=models.stage1_reasoning,
         stage2_reasoning_effort=models.stage2_reasoning,
@@ -849,7 +852,27 @@ def execute_extraction_config(
     _write_resolved_config(config)
     from mudidi.cli import extract as extract_module
 
-    return extract_module.main(resolved_args=namespace)
+    with _openrouter_provider_environment(config.models.openrouter_provider):
+        return extract_module.main(resolved_args=namespace)
+
+
+@contextmanager
+def _openrouter_provider_environment(provider: str | None):
+    """Apply one resolved OpenRouter endpoint choice for the extraction process."""
+
+    if provider is None:
+        yield
+        return
+    name = "OPENROUTER_PROVIDER_ORDER"
+    previous = os.environ.get(name)
+    os.environ[name] = "" if provider == "auto" else provider
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = previous
 
 
 def _parse_sweep_selectors(values: list[str] | None) -> dict[str, set[str]]:
