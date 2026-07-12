@@ -148,6 +148,33 @@
                 <label>Media reference<select name="media_reference"><option value="auto">Automatic</option><option value="inline">Inline</option><option value="file-uri">File URI</option></select></label>
               </div>
             </details>
+            <details>
+              <summary>Expert OCR backends</summary>
+              <p>Specialized OCR backends are Stage 1-only and may require their optional runtime dependencies.</p>
+              <div class="form-grid">
+                <label>Strategy<select name="strategy"><option value="two_stage">Language-model pipeline</option><option value="vlm_ocr">Local VLM OCR</option><option value="mathpix_ocr">Mathpix OCR</option></select></label>
+                <label>VLM model<select name="vlm_model"><option value="">Select for Local VLM OCR</option><option value="mineru2.5-pro">MinerU 2.5 Pro</option><option value="paddleocr-vl-1.5">PaddleOCR-VL 1.5</option><option value="glm-ocr">GLM-OCR</option></select></label>
+                <label>Render DPI<input name="vlm_dpi" type="number" min="72" value="200"></label>
+                <label>MinerU batch size<input name="mineru_batch_size" type="number" min="1" value="8"></label>
+                <label>MinerU max new tokens<input name="mineru_max_new_tokens" type="number" min="1" value="1024"></label>
+                <label>MinerU backend<select name="mineru_backend"><option value="transformers">Transformers</option><option value="vllm">vLLM</option></select></label>
+                <label>Paddle recognition backend<select name="paddle_rec_backend"><option value="native">Native</option><option value="vllm-server">vLLM server</option></select></label>
+                <label>Paddle server URL<input name="paddle_server_url" placeholder="http://127.0.0.1:8765"></label>
+                <label>Paddle auto server<select name="paddle_auto_server"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label>Paddle server port<input name="paddle_server_port" type="number" min="1" max="65535" value="8765"></label>
+                <label>Paddle server Python<input name="paddle_server_python" placeholder="/path/to/python"></label>
+                <label>GLM prompt<input name="glm_prompt" value="Text Recognition:"></label>
+                <label>GLM max new tokens<input name="glm_max_new_tokens" type="number" min="1" value="8192"></label>
+                <label>GLM backend<select name="glm_backend"><option value="transformers">Transformers</option><option value="vllm">vLLM</option></select></label>
+                <label>GLM auto server<select name="glm_auto_server"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label>GLM server URL<input name="glm_server_url" placeholder="http://127.0.0.1:8081"></label>
+                <label>GLM server port<input name="glm_server_port" type="number" min="1" max="65535" value="8081"></label>
+                <label>GLM server Python<input name="glm_server_python" placeholder="/path/to/python"></label>
+                <label>Mathpix poll interval (seconds)<input name="mathpix_poll_interval_seconds" type="number" min="0.1" step="0.1" value="3"></label>
+                <label>Mathpix maximum wait (seconds)<input name="mathpix_max_wait_seconds" type="number" min="1" value="600"></label>
+                <label>Mathpix request timeout (seconds)<input name="mathpix_request_timeout_seconds" type="number" min="1" value="60"></label>
+              </div>
+            </details>
             <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
           </form>
 

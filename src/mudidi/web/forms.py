@@ -12,10 +12,12 @@ from mudidi.config.yaml_config import (
     AgenticConfig,
     InferenceConfig,
     InputConfig,
+    MathpixConfig,
     ModelsConfig,
     OutputConfig,
     PipelineConfig,
     RuntimeConfig,
+    VlmConfig,
 )
 
 
@@ -64,6 +66,7 @@ class NewRunForm(BaseModel):
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_mode: Literal["flat", "column"] = "flat"
+    strategy: Literal["two_stage", "vlm_ocr", "mathpix_ocr"] = "two_stage"
     stage1_typography: bool = False
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
@@ -94,6 +97,27 @@ class NewRunForm(BaseModel):
     page_limit: int | None = Field(default=None, ge=1)
     prompt_cache: Literal["auto", "off"] = "auto"
     media_reference: Literal["auto", "inline", "file-uri"] = "auto"
+
+    vlm_model: Literal["mineru2.5-pro", "paddleocr-vl-1.5", "glm-ocr"] | None = None
+    vlm_dpi: int = Field(default=200, ge=72)
+    mineru_batch_size: int = Field(default=8, ge=1)
+    mineru_max_new_tokens: int = Field(default=1024, ge=1)
+    mineru_backend: Literal["transformers", "vllm"] = "transformers"
+    paddle_rec_backend: Literal["native", "vllm-server"] = "native"
+    paddle_server_url: str | None = None
+    paddle_auto_server: bool = True
+    paddle_server_port: int = Field(default=8765, ge=1, le=65535)
+    paddle_server_python: Path | None = None
+    glm_prompt: str = "Text Recognition:"
+    glm_max_new_tokens: int = Field(default=8192, ge=1)
+    glm_backend: Literal["transformers", "vllm"] = "transformers"
+    glm_auto_server: bool = True
+    glm_server_url: str | None = None
+    glm_server_port: int = Field(default=8081, ge=1, le=65535)
+    glm_server_python: Path | None = None
+    mathpix_poll_interval_seconds: float = Field(default=3.0, gt=0)
+    mathpix_max_wait_seconds: float = Field(default=600.0, gt=0)
+    mathpix_request_timeout_seconds: float = Field(default=60.0, gt=0)
 
     @computed_field
     @property
@@ -140,6 +164,7 @@ class NewRunForm(BaseModel):
             output=OutputConfig(directory=self.output_directory.expanduser().resolve()),
             pipeline=PipelineConfig(
                 stage=stage,
+                strategy=self.strategy,
                 stage1_mode=self.stage1_mode,
                 stage1_typography=self.stage1_typography,
                 parse_rules_pages=self.parse_rules_pages,
@@ -189,6 +214,30 @@ class NewRunForm(BaseModel):
                 prompt_cache=self.prompt_cache,
                 media_reference=self.media_reference,
             ),
+            vlm=VlmConfig(
+                model=self.vlm_model,
+                dpi=self.vlm_dpi,
+                mineru_batch_size=self.mineru_batch_size,
+                mineru_max_new_tokens=self.mineru_max_new_tokens,
+                mineru_backend=self.mineru_backend,
+                paddle_rec_backend=self.paddle_rec_backend,
+                paddle_server_url=_clean_optional(self.paddle_server_url),
+                paddle_auto_server=self.paddle_auto_server,
+                paddle_server_port=self.paddle_server_port,
+                paddle_server_python=_resolved_optional(self.paddle_server_python),
+                glm_prompt=self.glm_prompt,
+                glm_max_new_tokens=self.glm_max_new_tokens,
+                glm_backend=self.glm_backend,
+                glm_auto_server=self.glm_auto_server,
+                glm_server_url=_clean_optional(self.glm_server_url),
+                glm_server_port=self.glm_server_port,
+                glm_server_python=_resolved_optional(self.glm_server_python),
+            ),
+            mathpix=MathpixConfig(
+                poll_interval_seconds=self.mathpix_poll_interval_seconds,
+                max_wait_seconds=self.mathpix_max_wait_seconds,
+                request_timeout_seconds=self.mathpix_request_timeout_seconds,
+            ),
         )
 
     def to_summary(self) -> dict[str, str]:
@@ -231,3 +280,7 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _resolved_optional(value: Path | None) -> Path | None:
+    return value.expanduser().resolve() if value is not None else None
