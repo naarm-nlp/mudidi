@@ -33,7 +33,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'data-model-provider="openai"' in response.text
     assert 'data-model-provider="anthropic"' in response.text
     assert 'data-model-provider="gemini"' in response.text
-    assert 'data-model-provider="openrouter"' in response.text
+    assert "OpenRouter Provider" in response.text
+    assert "qwen/qwen3-235b-a22b" in response.text
     assert 'data-pipeline-stages="stage1"' in response.text
     assert "GPT-5.6 Sol" in response.text
     assert "GPT-5.6 Terra" in response.text
@@ -62,11 +63,20 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="profile_information_types"' in response.text
     assert 'name="profile_other_information_types"' in response.text
     assert 'class="profile-other-information"' in response.text
-    assert "1–2. What language are the dictionary headwords written in, and what script do they use?" in response.text
-    assert "3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?" in response.text
+    assert (
+        "1–2. What language are the dictionary headwords written in, and what script do they use?"
+        in response.text
+    )
+    assert (
+        "3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?"
+        in response.text
+    )
     assert "5. How is information arranged on the page?" in response.text
     assert 'class="profile-layout-question"' in response.text
-    assert "There are two columns; each column contains independent dictionary entries." in response.text
+    assert (
+        "There are two columns; each column contains independent dictionary entries."
+        in response.text
+    )
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text

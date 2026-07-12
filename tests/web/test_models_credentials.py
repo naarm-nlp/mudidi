@@ -29,9 +29,7 @@ def test_catalog_contains_current_official_multimodal_families() -> None:
     assert catalog.get("gemini/gemini-3.1-pro-preview").image_input is True
     assert catalog.get("gemini/gemini-3.5-flash").image_input is True
     assert catalog.get("gemini/gemini-3.1-flash-lite").image_input is True
-    assert catalog.get("openrouter/openai/gpt-5.6-sol").image_input is True
-    assert catalog.get("openrouter/anthropic/claude-opus-4-8").image_input is True
-    assert catalog.get("openrouter/google/gemini-3.1-pro-preview").image_input is True
+    assert catalog.for_provider(Provider.OPENROUTER) == ()
 
 
 @pytest.mark.parametrize("provider", list(Provider))

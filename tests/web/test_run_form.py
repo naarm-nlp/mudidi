@@ -129,6 +129,20 @@ def test_openrouter_endpoint_provider_is_typed_and_optional(tmp_path: Path) -> N
     assert pinned.models.openrouter_provider == "anthropic"
 
 
+def test_openrouter_manual_stage_models_receive_litellm_prefix(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        pipeline="transcription",
+        provider="openrouter",
+        model=None,
+        stage1_model="__other__",
+        stage1_custom_model="qwen/qwen3-235b-a22b",
+    ).to_inference_config()
+
+    assert config.models.default == "openrouter/qwen/qwen3-235b-a22b"
+    assert config.models.stage1 == "openrouter/qwen/qwen3-235b-a22b"
+
+
 def test_none_reasoning_uses_lowest_supported_dashboard_level(tmp_path: Path) -> None:
     config = _form(tmp_path, reasoning="none").to_inference_config()
 
@@ -196,7 +210,9 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.runtime.media_reference == "inline"
 
 
-def test_optional_dictionary_profile_maps_five_dashboard_answers(tmp_path: Path) -> None:
+def test_optional_dictionary_profile_maps_five_dashboard_answers(
+    tmp_path: Path,
+) -> None:
     config = _form(
         tmp_path,
         profile_headword_language="Na",
