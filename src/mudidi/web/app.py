@@ -37,7 +37,7 @@ from mudidi.web.models import (
     Provider,
 )
 from mudidi.web.parse_rules import ParseRuleReviewService
-from mudidi.web.runs import RunRecord, RunStatus, RunStore
+from mudidi.web.runs import InvalidRunTransition, RunRecord, RunStatus, RunStore
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _MDF_MANUAL = files("mudidi.assets").joinpath("MDFReferenceManual.pdf")
@@ -900,6 +900,19 @@ def create_app(
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
+    @app.post("/runs/{run_id}/delete")
+    async def delete_terminal_run(run_id: str) -> RedirectResponse:
+        """Delete terminal local metadata/inputs while preserving user outputs."""
+
+        try:
+            app.state.run_store.delete_terminal(run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        except InvalidRunTransition as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        app.state.inputs.discard_run(run_id)
+        return RedirectResponse("/history", status_code=303)
+
     @app.post("/runs/{run_id}/resume")
     async def resume_run(request: Request, run_id: str) -> HTMLResponse:
         """Resume only the phase justified by the run's durable metadata."""
@@ -1105,6 +1118,8 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
             RunStatus.DISCOVERING_PARSE_RULES,
             RunStatus.RUNNING_STAGE2,
         },
+        "is_terminal": run.status
+        in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},
         "review_available": review_row is not None,
         "review_status": review_row.get("status") if review_row else None,
         "resume_available": run.status

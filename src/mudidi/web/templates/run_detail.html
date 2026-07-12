@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events"><script src="{{ url_for('static', path='/app.js') }}?v=dashboard-1" defer></script>{% endif %}
+    {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events">{% endif %}
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-1" defer></script>
     <title>{{ run.run_id }} · MUDIDI</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
   </head>
@@ -43,6 +44,9 @@
           {% endif %}
           {% if run.resume_available %}
           <form method="post" action="/runs/{{ run.run_id }}/resume"><button class="primary" type="submit">Resume run</button></form>
+          {% endif %}
+          {% if run.is_terminal %}
+          <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete><button class="danger" type="submit">Delete local run record</button></form>
           {% endif %}
         </section>
         <aside class="panel summary">

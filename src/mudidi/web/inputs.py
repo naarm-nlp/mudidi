@@ -212,6 +212,12 @@ class InputMaterializer:
         except OSError:
             pass
 
+    def discard_run(self, run_id: str) -> None:
+        """Remove all app-managed files for an already deleted terminal run."""
+
+        _validate_owner_id(run_id)
+        shutil.rmtree(self.runs_root / run_id, ignore_errors=True)
+
     def discard_preset(self, preset_id: str) -> None:
         """Remove an uncommitted preset-owned input bundle."""
 

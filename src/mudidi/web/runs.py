@@ -244,6 +244,29 @@ class RunStore:
             raise KeyError(run_id)
         return _record_from_row(row)
 
+    def delete_terminal(self, run_id: str) -> None:
+        """Delete metadata only for a run that can no longer execute."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(run_id)
+            status = RunStatus(row["status"])
+            if status not in {
+                RunStatus.COMPLETED,
+                RunStatus.FAILED,
+                RunStatus.CANCELLED,
+            }:
+                connection.rollback()
+                raise InvalidRunTransition(
+                    f"only completed, failed, or cancelled runs can be deleted; got {status.value}"
+                )
+            connection.execute("DELETE FROM runs WHERE run_id = ?", (run_id,))
+            connection.commit()
+
     def transition(self, run_id: str, target: RunStatus) -> RunRecord:
         """Apply a generic legal transition.
 

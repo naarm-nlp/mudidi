@@ -153,6 +153,14 @@ document.querySelectorAll(".info-button").forEach((button) => {
   button.addEventListener("click", () => button.classList.toggle("is-open"));
 });
 
+document.querySelectorAll("[data-confirm-delete]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    if (!window.confirm("Delete this run from local history? Generated output files will be kept.")) {
+      event.preventDefault();
+    }
+  });
+});
+
 const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
 const customManual = document.querySelector("[data-custom-mdf-manual]");
 const synchronizeManual = () => {
