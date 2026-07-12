@@ -26,6 +26,7 @@ from mudidi.web.credentials import CredentialVault
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
+from mudidi.web.inputs import InputMaterializer
 from mudidi.web.models import ModelCatalog, Provider
 from mudidi.web.parse_rules import ParseRuleReviewService
 from mudidi.web.runs import RunRecord, RunStatus, RunStore
@@ -83,6 +84,7 @@ def create_app(
     )
     app.state.offline_inference = offline_inference
     app.state.artifacts = ArtifactService(controller=app.state.job_controller)
+    app.state.inputs = InputMaterializer(data_dir=resolved_data_dir)
     app.state.job_controller.reconcile_startup()
     app.add_middleware(
         TrustedHostMiddleware,
@@ -151,29 +153,49 @@ def create_app(
         """Validate browser form state and render a non-secret run review."""
 
         submitted = await request.form()
-        payload = {key: value for key, value in submitted.items()}
+        payload = {
+            key: value
+            for key, value in submitted.items()
+            if key != "page_files" and isinstance(value, str)
+        }
         parse_rule_pages = [
             str(value) for value in submitted.getlist("parse_rules_pages")
         ]
         if parse_rule_pages:
             payload["parse_rules_pages"] = parse_rule_pages
+        run_id = f"run-{uuid4().hex[:12]}"
+        uploaded = [
+            value
+            for value in submitted.getlist("page_files")
+            if getattr(value, "filename", "")
+        ]
         try:
+            if uploaded:
+                if str(payload.get("pages", "")).strip():
+                    raise ValueError(
+                        "choose either uploaded files or a local input path"
+                    )
+                payload["pages"] = await app.state.inputs.materialize(run_id, uploaded)
             run_form = NewRunForm.model_validate(payload)
             config = run_form.to_inference_config()
             validate_config_paths(config)
         except (ValidationError, ValueError) as exc:
+            app.state.inputs.discard(run_id)
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="form_error.html",
                 context={"error_count": _error_count(exc)},
                 status_code=422,
             )
-        run_id = f"run-{uuid4().hex[:12]}"
-        app.state.job_controller.prepare_inference(
-            run_id,
-            config=config,
-            provider=Provider(run_form.provider),
-        )
+        try:
+            app.state.job_controller.prepare_inference(
+                run_id,
+                config=config,
+                provider=Provider(run_form.provider),
+            )
+        except Exception:
+            app.state.inputs.discard(run_id)
+            raise
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",

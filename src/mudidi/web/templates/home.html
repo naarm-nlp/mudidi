@@ -40,7 +40,7 @@
         </ol>
 
         <div class="content-grid">
-          <form class="panel run-form" method="post" action="/runs/preview">
+          <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
             <div class="panel-heading">
               <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
               <span class="private">Files stay on this computer</span>
@@ -49,8 +49,9 @@
               <span class="file-icon">⇧</span>
               <h3>Drop a PDF or page images here</h3>
               <p>PDF, PNG, JPEG or TIFF · processed locally before LLM calls</p>
+              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff" multiple>
               <label class="path-label" for="pages">Local PDF or page directory</label>
-              <input id="pages" name="pages" required placeholder="/Users/you/dictionary-pages">
+              <input id="pages" name="pages" placeholder="/Users/you/dictionary-pages">
             </div>
             <label for="output">Output directory</label>
             <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>

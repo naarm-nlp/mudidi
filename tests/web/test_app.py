@@ -138,7 +138,9 @@ def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> Non
     assert "value=" not in response.text
 
 
-def test_new_run_accepts_uploaded_page_images_into_managed_input(tmp_path: Path) -> None:
+def test_new_run_accepts_uploaded_page_images_into_managed_input(
+    tmp_path: Path,
+) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     client = TestClient(app)
 
@@ -163,7 +165,10 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(tmp_path: Path)
     assert len(runs) == 1
     config = app.state.job_controller.load_inference_config(runs[0].run_id)
     assert config.input.pages is not None
-    assert config.input.pages.parent.parent == (tmp_path / "app-data" / "uploads").resolve()
+    assert (
+        config.input.pages.parent.parent
+        == (tmp_path / "app-data" / "uploads").resolve()
+    )
     assert sorted(path.name for path in config.input.pages.iterdir()) == [
         "page_1.png",
         "page_2.jpg",
