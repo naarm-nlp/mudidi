@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-from datetime import UTC, datetime
 from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock, Thread
@@ -62,6 +61,12 @@ class JobController:
         """Return the conventional managed config path for one run."""
 
         return self.data_dir / "runs" / run_id / "resolved_config.json"
+
+    def log_path(self, run_id: str) -> Path:
+        """Return the managed worker log path for an existing durable run."""
+
+        self.store.get_run(run_id)
+        return self.data_dir / "runs" / run_id / "worker.log"
 
     def prepare_inference(
         self,
@@ -228,7 +233,7 @@ class JobController:
             "--sequence-start",
             str(sequence_start),
             "--log-file",
-            str(self.data_dir / "runs" / run_id / "worker.log"),
+            str(self.log_path(run_id)),
         ]
         if approval_manifest is not None:
             command.extend(["--approval-manifest", str(approval_manifest)])

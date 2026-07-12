@@ -185,14 +185,21 @@ def _validation_error(raw: bytes) -> str | None:
     try:
         payload = json.loads(raw)
         validate_marker_cheatsheet(payload)
-    except (UnicodeDecodeError, json.JSONDecodeError, ValidationError, ValueError) as exc:
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+    ) as exc:
         return str(exc)[:500]
     return None
 
 
 def _canonical_bytes(payload: dict[str, Any]) -> bytes:
     return (
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8")
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True).encode(
+            "utf-8"
+        )
         + b"\n"
     )
 
@@ -247,8 +254,12 @@ def _review_from_row(row: dict[str, object]) -> ParseRuleReview:
         generated_path=Path(str(row["generated_path"])),
         draft_path=Path(str(draft)) if draft else None,
         approved_snapshot_path=Path(str(approved)) if approved else None,
-        approval_digest=str(row["approval_digest"]) if row.get("approval_digest") else None,
-        validation_error=str(row["validation_error"]) if row.get("validation_error") else None,
+        approval_digest=str(row["approval_digest"])
+        if row.get("approval_digest")
+        else None,
+        validation_error=str(row["validation_error"])
+        if row.get("validation_error")
+        else None,
         sample_pages=tuple(json.loads(str(row["sample_pages_json"]))),
         created_at=datetime.fromisoformat(str(row["created_at"])),
         updated_at=datetime.fromisoformat(str(row["updated_at"])),

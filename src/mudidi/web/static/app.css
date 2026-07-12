@@ -143,6 +143,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .metric-grid article { padding: 18px; border-radius: 9px; background: var(--color-accent-soft); }
 .metric-grid span { display: block; color: var(--color-muted); font-size: 12px; }
 .metric-grid strong { display: block; margin-top: 8px; font-size: 22px; }
+.log-panel { padding: 22px; }
+.log-panel pre { max-height: 70vh; margin: 0; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
 
 @media (max-width: 900px) {
   body { grid-template-columns: 1fr; }

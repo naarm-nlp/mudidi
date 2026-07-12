@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Live Logs · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head>
+  <body class="standalone"><main class="providers-page"><a class="back-link" href="/runs/{{ run_id }}">← Run overview</a><header class="page-heading"><span class="eyebrow">Worker diagnostics</span><h1>Live Logs</h1><p>Only the latest bounded portion of the local worker log is shown. Known provider keys are redacted.</p></header><section class="panel log-panel">{% if truncated %}<p class="validation-warning">Older log output was truncated.</p>{% endif %}{% if content %}<pre>{{ content }}</pre>{% else %}<div class="empty-state"><h2>No log output yet</h2><p>Refresh this page while the run is active.</p></div>{% endif %}</section></main></body>
+</html>

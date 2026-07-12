@@ -114,15 +114,21 @@ class NewRunForm(BaseModel):
                     else None
                 ),
                 introduction_pages=self.introduction_pages,
-                alphabet=self.alphabet.expanduser().resolve() if self.alphabet else None,
-                ocr_text=self.ocr_text.expanduser().resolve() if self.ocr_text else None,
+                alphabet=self.alphabet.expanduser().resolve()
+                if self.alphabet
+                else None,
+                ocr_text=self.ocr_text.expanduser().resolve()
+                if self.ocr_text
+                else None,
                 dictionary_languages=(
                     self.dictionary_languages.expanduser().resolve()
                     if self.dictionary_languages
                     else None
                 ),
                 toolbox_pdf=(
-                    self.toolbox_pdf.expanduser().resolve() if self.toolbox_pdf else None
+                    self.toolbox_pdf.expanduser().resolve()
+                    if self.toolbox_pdf
+                    else None
                 ),
             ),
             output=OutputConfig(directory=self.output_directory.expanduser().resolve()),
@@ -194,7 +200,10 @@ class NewRunForm(BaseModel):
         }
         if self.quality is QualityChoice.VERIFIED:
             return stage1_selected, stage2_selected
-        return self.verify_stage1 and stage1_selected, self.verify_stage2 and stage2_selected
+        return (
+            self.verify_stage1 and stage1_selected,
+            self.verify_stage2 and stage2_selected,
+        )
 
 
 def _clean_optional(value: str | None) -> str | None:

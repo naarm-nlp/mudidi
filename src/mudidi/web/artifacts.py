@@ -76,7 +76,9 @@ class ArtifactService:
             resolved = candidate.resolve(strict=True)
             resolved.relative_to(root)
         except (OSError, ValueError) as exc:
-            raise ArtifactAccessError("artifact does not exist under the output root") from exc
+            raise ArtifactAccessError(
+                "artifact does not exist under the output root"
+            ) from exc
         if not resolved.is_file():
             raise ArtifactAccessError("artifact is not a regular file")
         return resolved
@@ -111,7 +113,11 @@ class ArtifactService:
         grouped: dict[str, dict[str, RunArtifact]] = {}
         for artifact in self.list_artifacts(run_id):
             page_id = next(
-                (part for part in artifact.relative_path.parts if part.startswith("page_")),
+                (
+                    part
+                    for part in artifact.relative_path.parts
+                    if part.startswith("page_")
+                ),
                 None,
             )
             if page_id is None:

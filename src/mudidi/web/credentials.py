@@ -89,7 +89,9 @@ class CredentialVault:
         if temporary is not None:
             return ResolvedCredential(provider, CredentialSource.TEMPORARY, temporary)
         environment_name = _ENVIRONMENT_KEYS.get(provider)
-        environment_value = self._environ.get(environment_name, "") if environment_name else ""
+        environment_value = (
+            self._environ.get(environment_name, "") if environment_name else ""
+        )
         if environment_value.strip():
             return ResolvedCredential(
                 provider,
@@ -105,6 +107,16 @@ class CredentialVault:
         if resolved is None:
             return CredentialStatus(provider, False, CredentialSource.MISSING)
         return CredentialStatus(provider, True, resolved.source)
+
+    def redaction_values(self) -> tuple[str, ...]:
+        """Return currently resolvable secrets for in-process output redaction."""
+
+        values: list[str] = []
+        for provider in _ENVIRONMENT_KEYS:
+            resolved = self.resolve(provider)
+            if resolved is not None:
+                values.append(resolved.get_secret_value())
+        return tuple(dict.fromkeys(value for value in values if value))
 
 
 def credential_environment_name(provider: Provider) -> str | None:

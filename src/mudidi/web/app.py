@@ -33,6 +33,7 @@ from mudidi.web.runs import RunRecord, RunStatus, RunStore
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
 _MAX_REQUEST_BYTES = 25 * 1024 * 1024
+_MAX_LOG_BYTES = 512_000
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
@@ -105,16 +106,21 @@ def create_app(
         if request.method in _MUTATING_METHODS:
             origin = request.headers.get("origin")
             fetch_site = request.headers.get("sec-fetch-site")
-            opaque_origin_is_same_site = origin == "null" and fetch_site == "same-origin"
+            opaque_origin_is_same_site = (
+                origin == "null" and fetch_site == "same-origin"
+            )
             origin_is_invalid = origin is not None and not (
                 opaque_origin_is_same_site
                 or _origin_matches_host(origin, request.headers.get("host", ""))
             )
             if fetch_site == "cross-site" or origin_is_invalid:
-                response = PlainTextResponse("Cross-origin request rejected", status_code=403)
+                response = PlainTextResponse(
+                    "Cross-origin request rejected", status_code=403
+                )
                 return _add_security_headers(response)
         response = await call_next(request)  # type: ignore[operator]
         return _add_security_headers(response)
+
     app.mount(
         "/static",
         StaticFiles(directory=_PACKAGE_DIR / "static"),
@@ -249,7 +255,9 @@ def create_app(
             page_count = int(str(submitted.get("page_count", "3")))
             delay_seconds = float(str(submitted.get("delay_seconds", "0.08")))
         except ValueError as exc:
-            raise HTTPException(status_code=422, detail="invalid demo settings") from exc
+            raise HTTPException(
+                status_code=422, detail="invalid demo settings"
+            ) from exc
         run_id = f"demo-{uuid4().hex[:12]}"
         app.state.run_store.create_run(run_id, provider="offline")
         app.state.run_store.transition(run_id, RunStatus.VALIDATED)
@@ -317,7 +325,9 @@ def create_app(
         try:
             artifacts = app.state.artifacts.list_artifacts(run_id)
         except (KeyError, OSError, ValueError) as exc:
-            raise HTTPException(status_code=404, detail="run outputs not found") from exc
+            raise HTTPException(
+                status_code=404, detail="run outputs not found"
+            ) from exc
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="outputs.html",
@@ -334,12 +344,16 @@ def create_app(
                 {
                     "page_id": page.page_id,
                     "stage1": (
-                        app.state.artifacts.preview_text(run_id, page.stage1.relative_path)
+                        app.state.artifacts.preview_text(
+                            run_id, page.stage1.relative_path
+                        )
                         if page.stage1
                         else None
                     ),
                     "stage2": (
-                        app.state.artifacts.preview_text(run_id, page.stage2.relative_path)
+                        app.state.artifacts.preview_text(
+                            run_id, page.stage2.relative_path
+                        )
                         if page.stage2
                         else None
                     ),
@@ -366,6 +380,24 @@ def create_app(
             request=request,
             name="usage.html",
             context={"run_id": run_id, "usage": usage},
+        )
+
+    @app.get("/runs/{run_id}/logs", response_class=HTMLResponse)
+    async def run_logs(request: Request, run_id: str) -> HTMLResponse:
+        """Render a bounded, redacted view of the app-managed worker log."""
+
+        try:
+            log_path = app.state.job_controller.log_path(run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        content, truncated = _read_log_tail(
+            log_path,
+            redactions=app.state.credential_vault.redaction_values(),
+        )
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="logs.html",
+            context={"run_id": run_id, "content": content, "truncated": truncated},
         )
 
     @app.get("/runs/{run_id}/artifacts/{artifact_path:path}")
@@ -509,6 +541,20 @@ def _error_count(exc: ValidationError | ValueError) -> int:
     return 1
 
 
+def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, bool]:
+    if not path.is_file() or path.is_symlink():
+        return "", False
+    size = path.stat().st_size
+    with path.open("rb") as stream:
+        if size > _MAX_LOG_BYTES:
+            stream.seek(-_MAX_LOG_BYTES, 2)
+        raw = stream.read(_MAX_LOG_BYTES)
+    content = raw.decode("utf-8", errors="replace")
+    for secret in redactions:
+        content = content.replace(secret, "[REDACTED]")
+    return content, size > _MAX_LOG_BYTES
+
+
 def _render_providers(
     request: Request,
     app: FastAPI,
@@ -542,7 +588,9 @@ def _render_providers(
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     events = store.list_events(run.run_id)
     completed_pages = sum(event.get("type") == "page.completed" for event in events)
-    started = next((event for event in events if event.get("type") == "stage.started"), {})
+    started = next(
+        (event for event in events if event.get("type") == "stage.started"), {}
+    )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
     try:
         review_row = store.get_parse_rule_review(run.run_id)
@@ -588,7 +636,9 @@ def _render_parse_rule_editor(
         review = app.state.parse_rule_reviews.get(run_id)
         payload = app.state.parse_rule_reviews.load_editable_payload(run_id)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="parse-rule review not found") from exc
+        raise HTTPException(
+            status_code=404, detail="parse-rule review not found"
+        ) from exc
     markers = payload.get("markers") if isinstance(payload.get("markers"), list) else []
     rules = payload.get("rules") if isinstance(payload.get("rules"), list) else []
     abbreviations_raw = payload.get("abbreviations")

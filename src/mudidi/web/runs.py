@@ -249,7 +249,9 @@ class RunStore:
                 connection.commit()
             except sqlite3.IntegrityError as exc:
                 connection.rollback()
-                raise ActiveRunExistsError("another inference worker is active") from exc
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
         return self.get_run(run_id)
 
     def transition_if_current(
@@ -281,7 +283,9 @@ class RunStore:
                 connection.commit()
             except sqlite3.IntegrityError as exc:
                 connection.rollback()
-                raise ActiveRunExistsError("another inference worker is active") from exc
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
         return True
 
     def authorize_pass2(
@@ -326,7 +330,9 @@ class RunStore:
                 connection.commit()
             except sqlite3.IntegrityError as exc:
                 connection.rollback()
-                raise ActiveRunExistsError("another inference worker is active") from exc
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
         return self.get_run(run_id)
 
     def interrupt(self, run_id: str) -> RunRecord:
@@ -580,7 +586,9 @@ class RunStore:
                 connection.commit()
             except sqlite3.IntegrityError as exc:
                 connection.rollback()
-                raise ActiveRunExistsError("another inference worker is active") from exc
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
         return self.get_parse_rule_review(run_id)
 
 

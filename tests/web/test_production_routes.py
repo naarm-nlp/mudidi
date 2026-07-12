@@ -52,7 +52,10 @@ def test_review_start_pause_approve_and_complete_offline_journey(
     started = client.post(f"/runs/{run_id}/start", follow_redirects=False)
     assert started.status_code == 303
     app.state.job_controller.wait(run_id, timeout=10)
-    assert app.state.run_store.get_run(run_id).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    assert (
+        app.state.run_store.get_run(run_id).status
+        is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    )
 
     review_page = client.get(f"/runs/{run_id}/parse-rules")
     assert review_page.status_code == 200
@@ -98,7 +101,9 @@ def test_prepared_review_snapshot_contains_no_credential(tmp_path: Path) -> None
     client = TestClient(app)
     run_id = _preview(client, tmp_path)
 
-    config_text = app.state.job_controller.config_path(run_id).read_text(encoding="utf-8")
+    config_text = app.state.job_controller.config_path(run_id).read_text(
+        encoding="utf-8"
+    )
 
     assert "sk-ant-must-not-persist" not in config_text
     assert "api_key" not in config_text.lower()
