@@ -110,6 +110,9 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .review-card > p { color: var(--color-muted); }
 .back-link { color: var(--color-accent); font-weight: 700; }
 .link-button { display: inline-block; margin-top: 18px; }
+.mdf-manual-official { margin: 14px 0 16px; }
+.mdf-manual-link { margin: 0; color: #fff; text-decoration: none; }
+.mdf-manual-official small { display: block; margin-top: 7px; color: var(--color-muted); overflow-wrap: anywhere; }
 .error-card { border-top: 4px solid #c6584b; }
 .providers-page { width: min(1040px, 100%); margin: 0 auto; }
 .page-heading { margin: 28px 0; }

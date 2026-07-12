@@ -147,7 +147,10 @@
                 <legend>MDF manual (optional) <button class="info-button" type="button" aria-label="About the optional MDF manual" data-help="For better relevance and lower token cost, we recommend extracting only the MDF section you need from the official SIL manual. The relevant information starts on page 31 and spans pages 31–95 (65 pages). Upload that shortened PDF here.">i</button></legend>
                 <label><input type="radio" name="mdf_manual_source" value="upload"> Upload my own MDF manual</label>
                 <label data-custom-mdf-manual hidden>MDF manual PDF<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
-                <a class="back-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer">Open the official SIL MDF documentation</a>
+                <div class="mdf-manual-official">
+                  <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>
+                  <small>Official PDF: fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small>
+                </div>
                 <label><input type="radio" name="mdf_manual_source" value="none" checked> Continue without an MDF manual</label>
               </fieldset>
             </details>
