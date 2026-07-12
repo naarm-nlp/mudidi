@@ -162,8 +162,9 @@ def test_optional_dictionary_profile_maps_five_dashboard_answers(tmp_path: Path)
         profile_headword_script="Latin and IPA",
         profile_target_languages=["English", "Chinese"],
         profile_target_scripts=["Latin", "Han"],
-        profile_page_layout="aligned_language_columns",
-        profile_information_types=["translation", "pronunciation", "example"],
+        profile_page_layout="There are two columns; each contains separate entries.",
+        profile_information_types=["translation", "pronunciation", "other"],
+        profile_other_information_types="dialect labels, semantic domains",
     ).to_inference_config()
 
     assert config.input.dictionary_profile is not None
@@ -175,8 +176,12 @@ def test_optional_dictionary_profile_maps_five_dashboard_answers(tmp_path: Path)
     assert config.input.dictionary_profile.information_types == [
         "translation",
         "pronunciation",
-        "example",
+        "other",
     ]
+    assert (
+        config.input.dictionary_profile.other_information_types
+        == "dialect labels, semantic domains"
+    )
     assert config.pipeline.stage1_typography is False
 
 

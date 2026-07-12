@@ -39,6 +39,12 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="profile_headword_script"' in response.text
     assert 'name="profile_page_layout"' in response.text
     assert 'name="profile_information_types"' in response.text
+    assert 'name="profile_other_information_types"' in response.text
+    assert "1–2. What language are the dictionary headwords written in, and what script do they use?" in response.text
+    assert "3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?" in response.text
+    assert "5. How is information arranged on the page?" in response.text
+    assert "There are two columns; each column contains independent dictionary entries." in response.text
+    assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
 
@@ -113,8 +119,9 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "profile_headword_script": "Cyrillic",
             "profile_target_languages": ["Russian", "English"],
             "profile_target_scripts": ["Cyrillic", "Latin"],
-            "profile_page_layout": "inline_entries",
-            "profile_information_types": ["translation", "example"],
+            "profile_page_layout": "There are two columns with independent entries.",
+            "profile_information_types": ["translation", "other"],
+            "profile_other_information_types": "dialect labels, semantic domains",
         },
     )
 
@@ -128,6 +135,10 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
         "Latin",
     ]
     assert config.pipeline.stage1_typography is False
+    assert (
+        config.input.dictionary_profile.other_information_types
+        == "dialect labels, semantic domains"
+    )
 
 
 def test_new_run_form_renders_validation_errors_without_echoing_secret(
