@@ -7,6 +7,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from mudidi.web.app import create_app
+from mudidi.web.credentials import CredentialSource, CredentialVault
+from mudidi.web.models import Provider
 
 
 def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
@@ -94,3 +96,43 @@ def test_new_run_form_renders_validation_errors_without_echoing_secret(
     assert response.status_code == 422
     assert "Check the highlighted configuration" in response.text
     assert "sk-do-not-render" not in response.text
+
+
+def test_provider_page_lists_bundled_and_custom_models(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/providers")
+
+    assert response.status_code == 200
+    assert "GPT-5.6 Sol" in response.text
+    assert "Claude Opus 4.8" in response.text
+    assert "Gemini 3.5 Flash" in response.text
+    assert "Custom LiteLLM model" in response.text
+
+
+def test_temporary_provider_key_is_kept_in_injected_vault(tmp_path: Path) -> None:
+    vault = CredentialVault(environ={})
+    client = TestClient(create_app(data_dir=tmp_path, credential_vault=vault))
+
+    response = client.post(
+        "/providers/anthropic/credential",
+        data={"api_key": "sk-ant-browser-secret"},
+    )
+
+    assert response.status_code == 200
+    assert "Temporary key ready" in response.text
+    assert "sk-ant-browser-secret" not in response.text
+    assert vault.status(Provider.ANTHROPIC).source is CredentialSource.TEMPORARY
+
+
+def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post(
+        "/providers/openai/credential",
+        data={"api_key": "   "},
+    )
+
+    assert response.status_code == 422
+    assert "API key cannot be empty" in response.text
+    assert "value=" not in response.text
