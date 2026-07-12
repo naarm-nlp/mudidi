@@ -148,7 +148,7 @@
                 ] %}
                   <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"{% if value == 'other' %} data-profile-other-toggle{% endif %}> {{ label }}</span></label>
                 {% endfor %}
-                <label id="profile-other-information" hidden>Other information types
+                <label id="profile-other-information" class="profile-other-information" hidden>Other information types
                   <textarea name="profile_other_information_types" rows="2" disabled placeholder="Type one or more information types, separated by commas"></textarea>
                 </label>
               </fieldset>
@@ -249,6 +249,6 @@
         </div>
       </template>
     </main>
-    <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dictionary-profile-3" defer></script>
   </body>
 </html>
