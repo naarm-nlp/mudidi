@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,11 @@ from pydantic import ValidationError
 from mudidi.config.yaml_config import PipelineConfig
 from mudidi.web.app import create_app
 from mudidi.web.forms import NewRunForm, PipelineChoice
+
+
+_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
@@ -170,4 +176,132 @@ def test_bundled_mdf_manual_is_downloadable(tmp_path: Path) -> None:
     assert (
         hashlib.sha256(response.content).hexdigest()
         == "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015"
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("dictionary_pages", "i-xii"),
+        ("introduction_pages", "0,2"),
+        ("dictionary_pages", "5-2"),
+        ("introduction_pages", "1,,3"),
+    ],
+)
+def test_dashboard_page_specs_accept_only_positive_arabic_ranges(
+    tmp_path: Path,
+    field: str,
+    value: str,
+) -> None:
+    pdf = tmp_path / "dictionary.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    values = {field: value, "dictionary_pages": "1-10"}
+    values[field] = value
+
+    with pytest.raises(ValidationError, match=field):
+        _form(tmp_path, pages=pdf, **values)
+
+
+def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    assert 'id="pages" name="pages"' not in response.text
+    assert 'name="page_files" type="file"' in response.text
+    assert 'name="page_directory" type="file"' in response.text
+    assert "webkitdirectory" in response.text
+    assert 'name="introduction_file" type="file"' in response.text
+    assert 'name="alphabet_file" type="file"' in response.text
+    assert 'name="existing_mdf_guide_file" type="file"' in response.text
+    assert 'name="stage1_additional_instructions"' in response.text
+    assert 'name="stage2_additional_instructions"' in response.text
+    assert 'name="stage1_guides"' not in response.text
+    assert 'name="stage2_guides"' not in response.text
+    assert "Representative MDF parsing guide pages" in response.text
+    assert 'name="mdf_manual_source" value="none"' in response.text
+    assert 'name="mdf_manual_source" value="bundled"' in response.text
+    assert 'name="mdf_manual_source" value="upload"' in response.text
+    assert 'name="custom_mdf_manual" type="file"' in response.text
+    assert 'href="/assets/mdf-manual"' in response.text
+    assert "65-page" in response.text
+
+
+def test_preview_materializes_all_context_inputs_into_run_bundle(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    guide = b'{"dictionary_name":"Test","markers":[],"rules":[],"abbreviations":{}}'
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_additional_instructions": "Keep uncertain letters marked.",
+            "stage2_additional_instructions": "Use the custom nt marker.",
+            "mdf_manual_source": "upload",
+            "parse_rules_pages": "1,3-4",
+        },
+        files=[
+            ("page_files", ("page_1.png", _PNG, "image/png")),
+            ("introduction_file", ("intro.md", b"# Introduction", "text/markdown")),
+            ("alphabet_file", ("alphabet.txt", b"a b c", "text/plain")),
+            ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
+            ("custom_mdf_manual", ("manual.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")),
+        ],
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    bundle = (tmp_path / "app-data" / "runs" / run.run_id / "inputs").resolve()
+    for path in (
+        config.input.pages,
+        config.input.introduction,
+        config.input.alphabet,
+        config.input.toolbox_pdf,
+        config.pipeline.parse_rules_file,
+        config.pipeline.stage1_guides,
+        config.pipeline.stage2_guides,
+    ):
+        assert path is not None
+        assert path.resolve().is_relative_to(bundle)
+    assert config.pipeline.stage1_guides.read_text(encoding="utf-8") == (
+        "Keep uncertain letters marked."
+    )
+    assert config.pipeline.stage2_guides.read_text(encoding="utf-8") == (
+        "Use the custom nt marker."
+    )
+
+
+def test_bundled_manual_is_copied_into_run_bundle(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "mdf_manual_source": "bundled",
+        },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.input.toolbox_pdf is not None
+    assert config.input.toolbox_pdf.parent == (
+        tmp_path / "app-data" / "runs" / run.run_id / "inputs" / "mdf_manual"
+    ).resolve()
+    assert hashlib.sha256(config.input.toolbox_pdf.read_bytes()).hexdigest() == (
+        "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015"
     )
