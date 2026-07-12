@@ -156,10 +156,13 @@ def create_app(
         payload = {
             key: value
             for key, value in submitted.items()
-            if key != "page_files" and isinstance(value, str)
+            if key != "page_files" and isinstance(value, str) and value.strip() != ""
         }
         parse_rule_pages = [
-            str(value) for value in submitted.getlist("parse_rules_pages")
+            page.strip()
+            for value in submitted.getlist("parse_rules_pages")
+            for page in str(value).split(",")
+            if page.strip()
         ]
         if parse_rule_pages:
             payload["parse_rules_pages"] = parse_rule_pages

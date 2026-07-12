@@ -65,6 +65,8 @@ class NewRunForm(BaseModel):
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_mode: Literal["flat", "column"] = "flat"
     stage1_typography: bool = False
+    stage1_guides: Path | None = None
+    stage2_guides: Path | None = None
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
 
@@ -74,6 +76,7 @@ class NewRunForm(BaseModel):
     stage1_model: str | None = None
     stage2_pass1_model: str | None = None
     stage2_pass2_model: str | None = None
+    temperature: float = Field(default=0.1, ge=0.0)
 
     quality: QualityChoice = QualityChoice.VERIFIED
     verify_stage1: bool = False
@@ -84,10 +87,13 @@ class NewRunForm(BaseModel):
     require_concrete_retry: bool = True
     evaluator_model: str | None = None
     rewriter_model: str | None = None
+    evaluator_reasoning: ReasoningChoice | None = None
+    rewriter_reasoning: ReasoningChoice | None = None
 
     batch_size: int = Field(default=1, ge=1, le=32)
     page_limit: int | None = Field(default=None, ge=1)
     prompt_cache: Literal["auto", "off"] = "auto"
+    media_reference: Literal["auto", "inline", "file-uri"] = "auto"
 
     @computed_field
     @property
@@ -142,6 +148,16 @@ class NewRunForm(BaseModel):
                     if self.parse_rules_file
                     else None
                 ),
+                stage1_guides=(
+                    self.stage1_guides.expanduser().resolve()
+                    if self.stage1_guides
+                    else None
+                ),
+                stage2_guides=(
+                    self.stage2_guides.expanduser().resolve()
+                    if self.stage2_guides
+                    else None
+                ),
             ),
             models=ModelsConfig(
                 default=self.model.strip(),
@@ -152,6 +168,7 @@ class NewRunForm(BaseModel):
                 stage2_reasoning=(
                     self.reasoning if self.reasoning != "none" else "low"
                 ),
+                temperature=self.temperature,
             ),
             agentic=AgenticConfig(
                 stage1=verify_stage1,
@@ -160,6 +177,8 @@ class NewRunForm(BaseModel):
                 evaluator_model=_clean_optional(self.evaluator_model),
                 rewriter_model=_clean_optional(self.rewriter_model),
                 reasoning=self.reasoning,
+                evaluator_reasoning=self.evaluator_reasoning,
+                rewriter_reasoning=self.rewriter_reasoning,
                 min_retry_confidence=self.min_retry_confidence,
                 verifier_patches=self.verifier_patches,
                 require_concrete_retry=self.require_concrete_retry,
@@ -168,6 +187,7 @@ class NewRunForm(BaseModel):
                 batch_size=self.batch_size,
                 limit=self.page_limit,
                 prompt_cache=self.prompt_cache,
+                media_reference=self.media_reference,
             ),
         )
 

@@ -86,11 +86,66 @@
                   <option value="custom">Custom</option>
                 </select>
               </label>
+              <label>Reasoning
+                <select name="reasoning">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
             </div>
-            <input type="hidden" name="reasoning" value="low">
             <details>
-              <summary>Additional context</summary>
-              <p>Introduction pages, alphabet guides, OCR hints, and Toolbox references will appear here.</p>
+              <summary>Input and context</summary>
+              <div class="form-grid">
+                <label>PDF dictionary pages<input name="dictionary_pages" placeholder="1-120,125"></label>
+                <label>PDF introduction pages<input name="introduction_pages" placeholder="i-xii or 1-12"></label>
+                <label>Separate introduction path<input name="introduction" placeholder="/path/to/introduction"></label>
+                <label>Alphabet guide<input name="alphabet" placeholder="/path/to/alphabet.txt"></label>
+                <label>OCR hint<input name="ocr_text" placeholder="/path/to/ocr-hint.txt"></label>
+                <label>Dictionary languages<input name="dictionary_languages" placeholder="/path/to/languages.txt"></label>
+                <label>Toolbox reference PDF<input name="toolbox_pdf" placeholder="/path/to/toolbox.pdf"></label>
+                <label>Existing parse-rules file<input name="parse_rules_file" placeholder="/path/to/parse-rules.json"></label>
+                <label>Representative parse-rule pages<input name="parse_rules_pages" placeholder="1, 5, 12"></label>
+              </div>
+            </details>
+            <details>
+              <summary>Stage and model overrides</summary>
+              <div class="form-grid">
+                <label>Stage 1 mode<select name="stage1_mode"><option value="flat">Flat</option><option value="column">Column</option></select></label>
+                <label>Typography<select name="stage1_typography"><option value="false">Normalize</option><option value="true">Preserve typography</option></select></label>
+                <label>Stage 1 model<input name="stage1_model" list="model-catalog" placeholder="Use default"></label>
+                <label>Pass 1 model<input name="stage2_pass1_model" list="model-catalog" placeholder="Use default"></label>
+                <label>Pass 2 model<input name="stage2_pass2_model" list="model-catalog" placeholder="Use default"></label>
+                <label>Temperature<input name="temperature" type="number" min="0" step="0.05" value="0.1"></label>
+                <label>Stage 1 guide file<input name="stage1_guides" placeholder="/path/to/stage1-guides.txt"></label>
+                <label>Stage 2 guide file<input name="stage2_guides" placeholder="/path/to/stage2-guides.txt"></label>
+              </div>
+            </details>
+            <details>
+              <summary>Custom verification</summary>
+              <p>These controls are used when Quality is Custom. Verification adds model calls and cost.</p>
+              <div class="form-grid">
+                <label><span><input name="verify_stage1" type="checkbox" value="true"> Verify Stage 1</span></label>
+                <label><span><input name="verify_stage2" type="checkbox" value="true"> Verify Stage 2</span></label>
+                <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
+                <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
+                <label>Evaluator model<input name="evaluator_model" list="model-catalog" placeholder="Use stage model"></label>
+                <label>Rewriter model<input name="rewriter_model" list="model-catalog" placeholder="Use stage model"></label>
+                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
+              </div>
+            </details>
+            <details>
+              <summary>Runtime</summary>
+              <div class="form-grid">
+                <label>Batch size<input name="batch_size" type="number" min="1" max="32" value="1"></label>
+                <label>Page limit<input name="page_limit" type="number" min="1" placeholder="All pages"></label>
+                <label>Prompt cache<select name="prompt_cache"><option value="auto">Automatic</option><option value="off">Off</option></select></label>
+                <label>Media reference<select name="media_reference"><option value="auto">Automatic</option><option value="inline">Inline</option><option value="file-uri">File URI</option></select></label>
+              </div>
             </details>
             <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
           </form>
