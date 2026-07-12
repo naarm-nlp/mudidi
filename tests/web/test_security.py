@@ -61,6 +61,18 @@ def test_oversized_declared_request_is_rejected_before_form_parsing(
     assert response.status_code == 413
 
 
+def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.post(
+        "/runs/demo",
+        content=b"x" * (26 * 1024 * 1024),
+        headers={"content-length": "1", "content-type": "application/octet-stream"},
+    )
+
+    assert response.status_code == 413
+
+
 def test_llm_derived_page_text_is_html_escaped(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     pages = tmp_path / "pages"

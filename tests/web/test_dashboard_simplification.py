@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import base64
+import json
 from pathlib import Path
 
 import pytest
@@ -315,3 +316,12 @@ def test_bundled_manual_is_copied_into_run_bundle(tmp_path: Path) -> None:
     assert hashlib.sha256(config.input.toolbox_pdf.read_bytes()).hexdigest() == (
         "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015"
     )
+    metadata = json.loads(
+        (config.input.toolbox_pdf.parent / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert metadata == {
+        "filename": "MUDIDI-MDF-Manual.pdf",
+        "pages": 65,
+        "sha256": "6c654140ab6a9914baf1f6384750b0b10e7408c72bf16df1242f9ff4bb7cd015",
+        "source": "bundled",
+    }
