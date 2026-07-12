@@ -154,3 +154,36 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.runtime.limit == 12
     assert config.runtime.prompt_cache == "off"
     assert config.runtime.media_reference == "inline"
+
+
+def test_expert_vlm_backend_controls_map_without_yaml(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        pipeline="transcription",
+        strategy="vlm_ocr",
+        vlm_model="paddleocr-vl-1.5",
+        vlm_dpi=250,
+        paddle_rec_backend="vllm-server",
+        paddle_server_url="http://127.0.0.1:9000",
+        paddle_auto_server=False,
+        paddle_server_port=9000,
+    ).to_inference_config()
+
+    assert config.pipeline.strategy == "vlm_ocr"
+    assert config.pipeline.stage == "1"
+    assert config.vlm.model == "paddleocr-vl-1.5"
+    assert config.vlm.dpi == 250
+    assert config.vlm.paddle_rec_backend == "vllm-server"
+    assert config.vlm.paddle_server_url == "http://127.0.0.1:9000"
+    assert config.vlm.paddle_auto_server is False
+    assert config.vlm.paddle_server_port == 9000
+
+
+def test_expert_backend_rejects_non_stage1_pipeline(tmp_path: Path) -> None:
+    with pytest.raises(ValidationError, match="vlm_ocr requires pipeline.stage"):
+        _form(
+            tmp_path,
+            pipeline="complete",
+            strategy="vlm_ocr",
+            vlm_model="mineru2.5-pro",
+        ).to_inference_config()
