@@ -80,3 +80,24 @@ def test_unknown_run_returns_404(tmp_path: Path) -> None:
     response = client.get("/runs/not-a-run")
 
     assert response.status_code == 404
+
+
+def test_history_filters_by_query_status_and_provider(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    app.state.run_store.create_run("alpha-dictionary", provider="anthropic")
+    app.state.run_store.transition("alpha-dictionary", RunStatus.VALIDATED)
+    app.state.run_store.create_run("beta-dictionary", provider="openai")
+    app.state.run_store.transition("beta-dictionary", RunStatus.VALIDATED)
+    app.state.run_store.transition("beta-dictionary", RunStatus.CANCELLED)
+    client = TestClient(app)
+
+    response = client.get(
+        "/history",
+        params={"q": "alpha", "status": "validated", "provider": "anthropic"},
+    )
+
+    assert response.status_code == 200
+    assert "alpha-dictionary" in response.text
+    assert "beta-dictionary" not in response.text
+    assert 'name="status"' in response.text
+    assert 'name="provider"' in response.text
