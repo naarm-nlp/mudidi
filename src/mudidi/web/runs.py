@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -153,11 +154,23 @@ class RunStore:
                     'discovering_parse_rules',
                     'running_stage2'
                 );
+                CREATE TABLE IF NOT EXISTS run_events (
+                    run_id TEXT NOT NULL REFERENCES runs(run_id) ON DELETE CASCADE,
+                    sequence INTEGER NOT NULL,
+                    event_json TEXT NOT NULL,
+                    occurred_at TEXT NOT NULL,
+                    PRIMARY KEY(run_id, sequence)
+                );
                 """
             )
             connection.execute(
                 "INSERT OR IGNORE INTO schema_migrations(version, applied_at) "
                 "VALUES (1, ?)",
+                (_now().isoformat(),),
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO schema_migrations(version, applied_at) "
+                "VALUES (2, ?)",
                 (_now().isoformat(),),
             )
 
@@ -216,6 +229,38 @@ class RunStore:
                 connection.rollback()
                 raise ActiveRunExistsError("another inference worker is active") from exc
         return self.get_run(run_id)
+
+    def transition_if_current(
+        self,
+        run_id: str,
+        *,
+        expected: RunStatus,
+        target: RunStatus,
+    ) -> bool:
+        """Atomically transition only if the durable state still matches."""
+
+        if target not in _ALLOWED_TRANSITIONS[expected]:
+            raise InvalidRunTransition(f"cannot transition {expected} to {target}")
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(run_id)
+            if RunStatus(row["status"]) is not expected:
+                connection.rollback()
+                return False
+            try:
+                connection.execute(
+                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                    (target.value, _now().isoformat(), run_id),
+                )
+                connection.commit()
+            except sqlite3.IntegrityError as exc:
+                connection.rollback()
+                raise ActiveRunExistsError("another inference worker is active") from exc
+        return True
 
     def authorize_pass2(
         self,
@@ -305,11 +350,59 @@ class RunStore:
     def schema_columns(self, table: str) -> list[str]:
         """Return columns for an allowlisted application table."""
 
-        if table not in {"runs", "schema_migrations"}:
+        if table not in {"runs", "run_events", "schema_migrations"}:
             raise ValueError("unknown table")
         with self._connect() as connection:
             rows = connection.execute(f"PRAGMA table_info({table})").fetchall()
         return [str(row["name"]) for row in rows]
+
+    def append_event(self, run_id: str, event: dict[str, object]) -> None:
+        """Persist one validated, monotonically sequenced worker event."""
+
+        if event.get("run_id") != run_id:
+            raise ValueError("event run_id does not match its owning run")
+        sequence = event.get("sequence")
+        occurred_at = event.get("occurred_at")
+        if not isinstance(sequence, int) or sequence < 1:
+            raise ValueError("event sequence must be a positive integer")
+        if not isinstance(occurred_at, str):
+            raise ValueError("event occurred_at must be serialized")
+        serialized = json.dumps(event, ensure_ascii=False, separators=(",", ":"))
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO run_events(run_id, sequence, event_json, occurred_at) "
+                "VALUES (?, ?, ?, ?)",
+                (run_id, sequence, serialized, occurred_at),
+            )
+
+    def list_events(self, run_id: str) -> list[dict[str, object]]:
+        """Return persisted events in deterministic replay order."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT event_json FROM run_events WHERE run_id = ? ORDER BY sequence",
+                (run_id,),
+            ).fetchall()
+        return [json.loads(str(row["event_json"])) for row in rows]
+
+    def list_runs(self) -> list[RunRecord]:
+        """Return newest runs first for history and startup reconciliation."""
+
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT * FROM runs ORDER BY created_at DESC, run_id DESC"
+            ).fetchall()
+        return [_record_from_row(row) for row in rows]
+
+    def list_active_runs(self) -> list[RunRecord]:
+        """Return runs whose durable state claims a live worker."""
+
+        active = {
+            RunStatus.RUNNING_STAGE1,
+            RunStatus.DISCOVERING_PARSE_RULES,
+            RunStatus.RUNNING_STAGE2,
+        }
+        return [run for run in self.list_runs() if run.status in active]
 
 
 def _record_from_row(row: sqlite3.Row) -> RunRecord:

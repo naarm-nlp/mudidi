@@ -36,8 +36,21 @@ class PageCompleted(ExecutionEvent):
     page: int = Field(ge=1)
 
 
+class RunCompleted(ExecutionEvent):
+    """The requested run completed successfully."""
+
+    type: Literal["run.completed"] = "run.completed"
+
+
+class RunFailed(ExecutionEvent):
+    """The requested run ended with a safe user-facing error."""
+
+    type: Literal["run.failed"] = "run.failed"
+    message: str = Field(min_length=1, max_length=500)
+
+
 ExecutionEventUnion = Annotated[
-    StageStarted | PageCompleted,
+    StageStarted | PageCompleted | RunCompleted | RunFailed,
     Field(discriminator="type"),
 ]
 _EVENT_ADAPTER = TypeAdapter(ExecutionEventUnion)
