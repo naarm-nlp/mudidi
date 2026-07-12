@@ -339,14 +339,14 @@ class JobController:
             worker = self._workers.get(run_id)
             if worker is None or worker.process.poll() is not None:
                 raise RuntimeError("run has no active owned worker")
+            current = self.store.get_run(run_id)
+            if current.status in {
+                RunStatus.RUNNING_STAGE1,
+                RunStatus.DISCOVERING_PARSE_RULES,
+                RunStatus.RUNNING_STAGE2,
+            }:
+                self.store.transition(run_id, RunStatus.CANCELLED)
             worker.process.terminate()
-        current = self.store.get_run(run_id)
-        if current.status in {
-            RunStatus.RUNNING_STAGE1,
-            RunStatus.DISCOVERING_PARSE_RULES,
-            RunStatus.RUNNING_STAGE2,
-        }:
-            self.store.transition(run_id, RunStatus.CANCELLED)
 
     def reconcile_startup(self) -> list[str]:
         """Mark database-active runs interrupted when this process owns none."""
