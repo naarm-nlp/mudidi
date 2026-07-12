@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import re
 import socket
 import threading
 import time
@@ -142,5 +143,14 @@ def test_agentic_and_manual_controls_follow_pipeline(
         "href",
         "http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf",
     )
+    manual_help = page.get_by_role("button", name="About the optional MDF manual")
+    expect(manual_help).to_have_attribute(
+        "data-help", re.compile("only the pages that describe the MDF markers or tags")
+    )
+    expect(manual_help).to_have_attribute(
+        "data-help", re.compile("run Complete digitization first")
+    )
+    manual_help.click()
+    expect(manual_help).to_have_class(re.compile("is-open"))
     page.get_by_label("Upload my own MDF manual").check()
     expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()
