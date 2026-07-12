@@ -105,3 +105,9 @@ class CredentialVault:
         if resolved is None:
             return CredentialStatus(provider, False, CredentialSource.MISSING)
         return CredentialStatus(provider, True, resolved.source)
+
+
+def credential_environment_name(provider: Provider) -> str | None:
+    """Return the allowlisted LiteLLM environment variable for a provider."""
+
+    return _ENVIRONMENT_KEYS.get(provider)

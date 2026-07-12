@@ -54,7 +54,9 @@ class RunRecord:
 
 _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
     RunStatus.DRAFT: frozenset({RunStatus.VALIDATED, RunStatus.CANCELLED}),
-    RunStatus.VALIDATED: frozenset({RunStatus.QUEUED, RunStatus.CANCELLED}),
+    RunStatus.VALIDATED: frozenset(
+        {RunStatus.QUEUED, RunStatus.CREDENTIALS_REQUIRED, RunStatus.CANCELLED}
+    ),
     RunStatus.QUEUED: frozenset(
         {
             RunStatus.RUNNING_STAGE1,

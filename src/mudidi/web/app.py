@@ -30,6 +30,7 @@ def create_app(
     *,
     data_dir: Path | None = None,
     credential_vault: CredentialVault | None = None,
+    offline_inference: bool = False,
 ) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
@@ -55,14 +56,16 @@ def create_app(
     app.state.credential_vault = credential_vault or CredentialVault()
     app.state.model_catalog = ModelCatalog.bundled()
     app.state.run_store = RunStore(resolved_data_dir / "mudidi-web.sqlite3")
-    app.state.job_controller = JobController(
-        store=app.state.run_store,
-        data_dir=resolved_data_dir,
-    )
     app.state.parse_rule_reviews = ParseRuleReviewService(
         store=app.state.run_store,
         data_dir=resolved_data_dir,
     )
+    app.state.job_controller = JobController(
+        store=app.state.run_store,
+        data_dir=resolved_data_dir,
+        parse_rule_reviews=app.state.parse_rule_reviews,
+    )
+    app.state.offline_inference = offline_inference
     app.state.job_controller.reconcile_startup()
     app.add_middleware(
         TrustedHostMiddleware,
@@ -99,6 +102,11 @@ def create_app(
 
         submitted = await request.form()
         payload = {key: value for key, value in submitted.items()}
+        parse_rule_pages = [
+            str(value) for value in submitted.getlist("parse_rules_pages")
+        ]
+        if parse_rule_pages:
+            payload["parse_rules_pages"] = parse_rule_pages
         try:
             run_form = NewRunForm.model_validate(payload)
             config = run_form.to_inference_config()
@@ -110,11 +118,49 @@ def create_app(
                 context={"error_count": _error_count(exc)},
                 status_code=422,
             )
+        run_id = f"run-{uuid4().hex[:12]}"
+        app.state.job_controller.prepare_inference(
+            run_id,
+            config=config,
+            provider=Provider(run_form.provider),
+        )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": run_form.to_summary()},
+            context={"summary": run_form.to_summary(), "run_id": run_id},
         )
+
+    @app.post("/runs/{run_id}/start")
+    async def start_prepared_run(request: Request, run_id: str) -> HTMLResponse:
+        """Start a validated production run after resolving its provider key."""
+
+        try:
+            run = app.state.run_store.get_run(run_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        try:
+            provider = Provider(str(run.provider))
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="invalid run provider") from exc
+        credential = app.state.credential_vault.resolve(provider)
+        if credential is None and provider is not Provider.CUSTOM:
+            if run.status is RunStatus.VALIDATED:
+                app.state.run_store.transition(run_id, RunStatus.CREDENTIALS_REQUIRED)
+            return _TEMPLATES.TemplateResponse(
+                request=request,
+                name="credential_required.html",
+                context={"run_id": run_id, "provider": provider.value},
+                status_code=409,
+            )
+        try:
+            app.state.job_controller.start_inference(
+                run_id,
+                credential=credential,
+                offline_executor=app.state.offline_inference,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
     @app.get("/providers", response_class=HTMLResponse)
     async def providers(request: Request) -> HTMLResponse:
@@ -251,13 +297,34 @@ def create_app(
         """Explicitly approve the current valid rules and authorize Pass 2."""
 
         try:
+            credential = None
+            managed_config = app.state.job_controller.config_path(run_id)
+            if managed_config.is_file():
+                run = app.state.run_store.get_run(run_id)
+                provider = Provider(str(run.provider))
+                credential = app.state.credential_vault.resolve(provider)
+                if credential is None and provider is not Provider.CUSTOM:
+                    return _render_parse_rule_editor(
+                        request,
+                        app,
+                        run_id,
+                        message="API credential required before Pass 2 can start",
+                        status_code=409,
+                    )
             submitted = await request.form()
             if submitted:
                 app.state.parse_rule_reviews.save_draft(
                     run_id,
                     _parse_rule_form(submitted),
                 )
-            app.state.parse_rule_reviews.approve(run_id)
+            approval = app.state.parse_rule_reviews.approve(run_id)
+            if managed_config.is_file():
+                app.state.job_controller.start_pass2(
+                    run_id,
+                    approval=approval,
+                    credential=credential,
+                    offline_executor=app.state.offline_inference,
+                )
         except (KeyError, ValueError) as exc:
             return _render_parse_rule_editor(
                 request,

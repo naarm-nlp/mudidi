@@ -22,7 +22,7 @@
           <strong>Parse Rules: {{ summary.parse_rules }}</strong>
           <p>Complete and Stage 2 runs pause for explicit review before Pass 2.</p>
         </div>
-        <div class="actions"><span>Starting execution will be enabled with the job controller.</span><button class="primary" disabled>Start run</button></div>
+        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for Parse Rules review before Pass 2.</span><button class="primary" type="submit">Start run</button></form>
       </section>
     </main>
   </body>

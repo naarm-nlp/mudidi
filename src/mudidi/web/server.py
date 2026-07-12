@@ -21,6 +21,7 @@ def run_server(
     """
 
     import uvicorn
+    from dotenv import load_dotenv
 
     from mudidi.web.app import create_app
 
@@ -29,6 +30,7 @@ def run_server(
     if not 1 <= port <= 65535:
         raise ValueError("port must be between 1 and 65535")
 
+    load_dotenv()
     app = create_app(data_dir=data_dir)
     if open_browser:
         url = f"http://{host}:{port}/"

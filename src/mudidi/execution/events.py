@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
@@ -50,8 +51,15 @@ class RunFailed(ExecutionEvent):
     message: str = Field(min_length=1, max_length=500)
 
 
+class ParseRulesGenerated(ExecutionEvent):
+    """Stage 2 Pass 1 produced rules that require human review."""
+
+    type: Literal["parse_rules.generated"] = "parse_rules.generated"
+    artifact_path: Path
+
+
 ExecutionEventUnion = Annotated[
-    StageStarted | PageCompleted | RunCompleted | RunFailed,
+    StageStarted | PageCompleted | RunCompleted | RunFailed | ParseRulesGenerated,
     Field(discriminator="type"),
 ]
 _EVENT_ADAPTER = TypeAdapter(ExecutionEventUnion)
