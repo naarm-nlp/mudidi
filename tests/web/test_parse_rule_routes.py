@@ -41,7 +41,8 @@ def test_parse_rule_editor_renders_complete_schema(tmp_path: Path) -> None:
     response = client.get(f"/runs/{run_id}/parse-rules")
 
     assert response.status_code == 200
-    assert "Review parse rules" in response.text
+    assert "Review MDF parsing guide" in response.text
+    assert "Generated MDF parsing guide needs repair" not in response.text
     assert "Example dictionary" in response.text
     assert 'value="lx"' in response.text
     assert "Begin each entry with a headword." in response.text
