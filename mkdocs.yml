@@ -35,7 +35,9 @@ nav:
       - Quickstart: getting-started/quickstart.md
       - YAML configuration: getting-started/configuration.md
       - uv environments: uv.md
-  - Production Inference: production/index.md
+  - Production Inference:
+      - Overview: production/index.md
+      - Local web application: production/local-web-app.md
   - Benchmarking & Evaluation:
       - Overview: benchmarking/index.md
       - Advanced VLM backends: benchmarking/vlm.md

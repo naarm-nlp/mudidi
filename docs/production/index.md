@@ -6,6 +6,10 @@
 
 Use the minimal CLI for a quick run or a `kind: inference` YAML file for model, agentic, cache, parse-rule, and runtime controls.
 
+If you prefer a graphical workflow, use the [local web application](local-web-app.md).
+It exposes common production settings directly and pauses for explicit parse-rule
+review before Stage 2 extraction.
+
 ## Quick run
 
 Run the complete production pipeline on a directory of page images:

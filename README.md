@@ -19,6 +19,17 @@ uv sync
 cp .env.example .env
 ```
 
+For a browser-based production workflow with no YAML authoring:
+
+```bash
+uv sync --extra web
+uv run mudidi web
+```
+
+The app opens on localhost and includes run monitoring plus a mandatory Stage 2
+parse-rule review checkpoint. See the
+**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**.
+
 ## API setup
 
 Add the key for the provider used by your model to `.env`:

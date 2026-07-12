@@ -5,15 +5,16 @@ Generated from the public argparse tree.
 ## `mudidi`
 
 ```text
-usage: mudidi [-h] {run,benchmark,config} ...
+usage: mudidi [-h] {run,benchmark,config,web} ...
 
 Dictionary OCR and MDF extraction (inference and benchmark modes).
 
 positional arguments:
-  {run,benchmark,config}
+  {run,benchmark,config,web}
     run                 Run production inference.
     benchmark           Benchmark workflows.
     config              Configuration utilities.
+    web                 Run the local production website.
 
 options:
   -h, --help            show this help message and exit
@@ -338,4 +339,19 @@ positional arguments:
 
 options:
   -h, --help  show this help message and exit
+```
+
+## `mudidi web`
+
+```text
+usage: mudidi web [-h] [--host {127.0.0.1,localhost}] [--port PORT]
+                  [--data-dir DATA_DIR] [--no-browser]
+
+options:
+  -h, --help            show this help message and exit
+  --host {127.0.0.1,localhost}
+                        Loopback interface to bind (default: 127.0.0.1).
+  --port PORT
+  --data-dir DATA_DIR
+  --no-browser          Do not open the website in the default browser.
 ```

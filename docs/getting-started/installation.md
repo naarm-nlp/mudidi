@@ -19,3 +19,13 @@ GEMINI_API_KEY=replace-me
 ```
 
 Credentials stay in `.env`; YAML run configurations must not contain secrets.
+
+To use the optional localhost website, install the web dependency group and
+launch it:
+
+```bash
+uv sync --extra web
+uv run mudidi web
+```
+
+Continue with the [local web application guide](../production/local-web-app.md).
