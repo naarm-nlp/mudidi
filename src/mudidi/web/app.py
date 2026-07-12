@@ -5,10 +5,17 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -25,6 +32,13 @@ from mudidi.web.runs import RunRecord, RunStatus, RunStore
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
+_MAX_REQUEST_BYTES = 25 * 1024 * 1024
+_MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
+    "frame-ancestors 'none'; base-uri 'none'"
+)
 
 
 def create_app(
@@ -73,6 +87,31 @@ def create_app(
         TrustedHostMiddleware,
         allowed_hosts=["127.0.0.1", "localhost", "testserver"],
     )
+
+    @app.middleware("http")
+    async def localhost_security(request: Request, call_next: object) -> object:
+        """Enforce localhost mutation and browser hardening boundaries."""
+
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                declared_length = int(content_length)
+            except ValueError:
+                response = PlainTextResponse("Invalid Content-Length", status_code=400)
+                return _add_security_headers(response)
+            if declared_length > _MAX_REQUEST_BYTES:
+                response = PlainTextResponse("Request body too large", status_code=413)
+                return _add_security_headers(response)
+        if request.method in _MUTATING_METHODS:
+            origin = request.headers.get("origin")
+            fetch_site = request.headers.get("sec-fetch-site")
+            if fetch_site == "cross-site" or (
+                origin is not None and not _origin_matches_host(origin, request.headers.get("host", ""))
+            ):
+                response = PlainTextResponse("Cross-origin request rejected", status_code=403)
+                return _add_security_headers(response)
+        response = await call_next(request)  # type: ignore[operator]
+        return _add_security_headers(response)
     app.mount(
         "/static",
         StaticFiles(directory=_PACKAGE_DIR / "static"),
@@ -595,3 +634,18 @@ def _parse_rule_form(form: object) -> dict[str, object]:
         "rules": [str(value) for value in getlist("rule") if str(value).strip()],
         "abbreviations": abbreviations,
     }
+
+
+def _origin_matches_host(origin: str, host: str) -> bool:
+    parsed = urlsplit(origin)
+    return parsed.scheme in {"http", "https"} and parsed.netloc == host
+
+
+def _add_security_headers(response: object) -> object:
+    headers = getattr(response, "headers")
+    headers["Content-Security-Policy"] = _CSP
+    headers["X-Content-Type-Options"] = "nosniff"
+    headers["Referrer-Policy"] = "no-referrer"
+    headers["X-Frame-Options"] = "DENY"
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
