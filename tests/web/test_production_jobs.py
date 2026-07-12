@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.credentials import CredentialVault
@@ -10,6 +11,7 @@ from mudidi.web.jobs import JobController
 from mudidi.web.models import Provider
 from mudidi.web.parse_rules import ParseRuleReviewService, ReviewStatus
 from mudidi.web.runs import RunStatus, RunStore
+from mudidi.web import production_worker
 
 
 def _config(tmp_path: Path, *, stage: str = "all") -> InferenceConfig:
@@ -140,3 +142,39 @@ def test_direct_pass2_cannot_be_prepared_from_browser_config(tmp_path: Path) -> 
         assert "Pass 2" in str(exc)
     else:
         raise AssertionError("direct web Pass 2 preparation must be rejected")
+
+
+def test_production_failure_uses_sequence_after_stage_started(
+    tmp_path: Path,
+    monkeypatch: object,
+    capsys: object,
+) -> None:
+    config_path = tmp_path / "config.json"
+    config_path.write_text(_config(tmp_path, stage="1").model_dump_json(), encoding="utf-8")
+
+    def fail_phase(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise RuntimeError("offline failure")
+
+    monkeypatch.setattr(production_worker, "run_inference_phase", fail_phase)  # type: ignore[attr-defined]
+    monkeypatch.setattr("sys.stdin.readline", lambda: "{}\n")  # type: ignore[attr-defined]
+
+    result = production_worker.main(
+        [
+            "--run-id",
+            "failed-production",
+            "--config",
+            str(config_path),
+            "--phase",
+            "stage1",
+            "--sequence-start",
+            "7",
+            "--log-file",
+            str(tmp_path / "worker.log"),
+        ]
+    )
+
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]  # type: ignore[attr-defined]
+    assert result == 1
+    assert [event["type"] for event in events] == ["stage.started", "run.failed"]
+    assert [event["sequence"] for event in events] == [8, 9]
