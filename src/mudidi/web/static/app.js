@@ -17,3 +17,14 @@ document.addEventListener("click", (event) => {
     if (row) row.remove();
   }
 });
+
+const liveRun = document.querySelector('meta[name="mudidi-events"]');
+if (liveRun && window.EventSource) {
+  const eventSource = new EventSource(liveRun.content);
+  ["parse_rules.generated", "run.completed", "run.failed"].forEach((eventName) => {
+    eventSource.addEventListener(eventName, () => {
+      eventSource.close();
+      window.location.reload();
+    });
+  });
+}

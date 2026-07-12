@@ -105,9 +105,12 @@ def create_app(
         if request.method in _MUTATING_METHODS:
             origin = request.headers.get("origin")
             fetch_site = request.headers.get("sec-fetch-site")
-            if fetch_site == "cross-site" or (
-                origin is not None and not _origin_matches_host(origin, request.headers.get("host", ""))
-            ):
+            opaque_origin_is_same_site = origin == "null" and fetch_site == "same-origin"
+            origin_is_invalid = origin is not None and not (
+                opaque_origin_is_same_site
+                or _origin_matches_host(origin, request.headers.get("host", ""))
+            )
+            if fetch_site == "cross-site" or origin_is_invalid:
                 response = PlainTextResponse("Cross-origin request rejected", status_code=403)
                 return _add_security_headers(response)
         response = await call_next(request)  # type: ignore[operator]
