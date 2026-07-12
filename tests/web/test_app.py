@@ -23,6 +23,10 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Input" in response.text
     assert "Pipeline" in response.text
     assert "Parse Rules" in response.text
+    assert 'name="dictionary_pages"' in response.text
+    assert 'name="stage1_model"' in response.text
+    assert 'name="verify_stage1"' in response.text
+    assert 'name="media_reference"' in response.text
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:

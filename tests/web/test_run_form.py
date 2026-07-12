@@ -114,3 +114,43 @@ def test_stage2_workflow_always_reports_review_checkpoint(tmp_path: Path) -> Non
 
     assert form.requires_parse_rule_review is True
     assert form.to_summary()["parse_rules"] == "Human approval required"
+
+
+def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
+    stage1_guides = tmp_path / "stage1-guides.txt"
+    stage2_guides = tmp_path / "stage2-guides.txt"
+    stage1_guides.write_text("stage 1", encoding="utf-8")
+    stage2_guides.write_text("stage 2", encoding="utf-8")
+
+    config = _form(
+        tmp_path,
+        stage1_mode="column",
+        stage1_typography=True,
+        stage1_guides=stage1_guides,
+        stage2_guides=stage2_guides,
+        reasoning="high",
+        evaluator_reasoning="medium",
+        rewriter_reasoning="high",
+        temperature=0.25,
+        quality="custom",
+        verify_stage1=True,
+        verify_stage2=True,
+        evaluator_model="openai/gpt-5.6",
+        rewriter_model="anthropic/claude-opus-4-8",
+        batch_size=3,
+        page_limit=12,
+        prompt_cache="off",
+        media_reference="inline",
+    ).to_inference_config()
+
+    assert config.pipeline.stage1_mode == "column"
+    assert config.pipeline.stage1_typography is True
+    assert config.pipeline.stage1_guides == stage1_guides.resolve()
+    assert config.pipeline.stage2_guides == stage2_guides.resolve()
+    assert config.models.temperature == 0.25
+    assert config.agentic.evaluator_reasoning == "medium"
+    assert config.agentic.rewriter_reasoning == "high"
+    assert config.runtime.batch_size == 3
+    assert config.runtime.limit == 12
+    assert config.runtime.prompt_cache == "off"
+    assert config.runtime.media_reference == "inline"
