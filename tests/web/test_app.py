@@ -110,6 +110,18 @@ def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
     ) == 3
 
 
+def test_home_explains_each_pipeline_model_role(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    assert 'aria-label="About Stage 1 model"' in response.text
+    assert 'aria-label="About Stage 2 Pass 1 model"' in response.text
+    assert 'aria-label="About Stage 2 Pass 2 model"' in response.text
+    assert "transcribes page images into faithful flat text" in response.text
+    assert "infers the dictionary-specific MDF parsing guide" in response.text
+    assert "applies the approved MDF parsing guide" in response.text
+
+
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
