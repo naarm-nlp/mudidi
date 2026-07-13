@@ -164,7 +164,9 @@ def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
     assert "Offline worker failure requested" in logs.text
 
 
-def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -> None:
+def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
+    tmp_path: Path,
+) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
     run_id = _preview(client, tmp_path)
@@ -184,17 +186,43 @@ def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -
     page = client.get("/presets")
     assert page.status_code == 200
     assert "My verified setup" in page.text
+    assert f'href="/?preset={preset.preset_id}"' in page.text
+    assert "Load preset" in page.text
+
+    home = client.get("/")
+    assert 'name="preset"' in home.text
+    assert "My verified setup" in home.text
+    assert "Load preset" in home.text
+
+    loaded = client.get(f"/?preset={preset.preset_id}")
+    assert loaded.status_code == 200
+    assert f'name="preset_id" value="{preset.preset_id}"' in loaded.text
+    assert 'id="preset-form-state"' in loaded.text
+    assert str(tmp_path / "output") in loaded.text
+    assert "Loaded preset: My verified setup" in loaded.text
 
     # Presets own their input assets and remain valid after the source run is removed.
     shutil.rmtree(tmp_path / "app-data" / "runs" / run_id / "inputs")
 
-    prepared = client.post(
-        f"/presets/{preset.preset_id}/prepare",
-        follow_redirects=False,
+    edited_output = tmp_path / "edited-output"
+    review = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(edited_output),
+            "output_policy": "resume",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "agentic": "false",
+            "parse_rules_pages": "1",
+        },
     )
 
-    assert prepared.status_code == 200
-    assert "Review your run" in prepared.text
+    assert review.status_code == 200
+    assert "Review your run" in review.text
+    assert str(edited_output) in review.text
     assert len(app.state.run_store.list_runs()) == 2
     cloned = next(run for run in app.state.run_store.list_runs() if run.run_id != run_id)
     cloned_config = app.state.job_controller.load_inference_config(cloned.run_id)
