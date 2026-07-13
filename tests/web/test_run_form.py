@@ -236,6 +236,17 @@ def test_agentic_custom_models_use_their_selected_providers(tmp_path: Path) -> N
     assert config.agentic.rewriter_model == "openai/gpt-5.6-terra"
 
 
+def test_dashboard_agentic_reasoning_uses_paid_eval_profile(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        agentic=True,
+        verify_stage1=True,
+    ).to_inference_config()
+
+    assert config.agentic.evaluator_reasoning == "high"
+    assert config.agentic.rewriter_reasoning == "low"
+
+
 def test_optional_dictionary_profile_maps_five_dashboard_answers(
     tmp_path: Path,
 ) -> None:

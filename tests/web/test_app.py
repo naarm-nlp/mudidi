@@ -74,6 +74,17 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'data-agentic-model-group="evaluator"' in response.text
     assert 'data-agentic-model-group="rewriter"' in response.text
     assert 'list="model-catalog"' not in response.text
+    assert (
+        'name="evaluator_reasoning"><option value="">Use default</option>'
+        '<option value="none">None</option><option value="low">Low</option>'
+        '<option value="medium">Medium</option><option value="high" selected>High</option>'
+        in response.text
+    )
+    assert (
+        'name="rewriter_reasoning"><option value="">Use default</option>'
+        '<option value="none">None</option><option value="low" selected>Low</option>'
+        in response.text
+    )
     assert 'name="page_limit"' not in response.text
     assert 'name="media_reference"' not in response.text
     assert 'name="prompt_cache"' not in response.text
