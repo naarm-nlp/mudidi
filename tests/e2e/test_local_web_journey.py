@@ -101,7 +101,7 @@ def test_complete_production_journey_requires_and_uses_review(
     page.get_by_role("button", name="Approve and continue MDF parsing").click()
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
 
-    page.get_by_role("link", name="Pages").click()
+    page.get_by_role("link", name="Output Preview").click()
     expect(page.get_by_text("offline transcription")).to_be_visible()
     expect(page.get_by_text("\\lx offline")).to_be_visible()
 

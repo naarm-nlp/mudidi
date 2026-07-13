@@ -106,14 +106,20 @@ def test_usage_summary_aggregates_page_usage(tmp_path: Path) -> None:
 def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
     _app, client, run_id, _output = _prepared_app(tmp_path)
 
+    overview = client.get(f"/runs/{run_id}")
     outputs = client.get(f"/runs/{run_id}/outputs")
     pages = client.get(f"/runs/{run_id}/pages")
     usage = client.get(f"/runs/{run_id}/usage")
     download = client.get(f"/runs/{run_id}/artifacts/stage-2/page_1/page_1.mdf.txt")
 
+    assert overview.status_code == 200
+    assert "Output Preview" in overview.text
+    assert "File Artifacts" in overview.text
     assert outputs.status_code == 200
+    assert "File Artifacts" in outputs.text
     assert "page_1.mdf.txt" in outputs.text
     assert pages.status_code == 200
+    assert "Output Preview" in pages.text
     assert "hello transcription" in pages.text
     assert "\\lx hello" in pages.text
     assert usage.status_code == 200
@@ -146,6 +152,46 @@ def test_page_detail_combines_safe_source_and_generated_evidence(
     assert f"/runs/{run_id}/pages/page_1/source" in detail.text
     assert source.status_code == 200
     assert source.content == b"safe source image"
+
+
+def test_page_detail_uses_source_pdf_for_pdf_backed_output(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    source_pdf = tmp_path / "dictionary.pdf"
+    source_pdf.write_bytes(b"%PDF-1.4\nsource dictionary")
+    output = tmp_path / "output"
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": source_pdf, "dictionary_pages": "34"},
+            "output": {"directory": output},
+            "pipeline": {"stage": "all"},
+        }
+    )
+    run_id = "pdf-artifact-run"
+    app.state.job_controller.prepare_inference(
+        run_id,
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+    stage1 = output / "stage-1/page_34"
+    stage1.mkdir(parents=True)
+    (stage1 / "page_34_stage1_flat.txt").write_text(
+        "PDF transcription", encoding="utf-8"
+    )
+    stage2 = output / "stage-2/page_34"
+    stage2.mkdir(parents=True)
+    (stage2 / "page_34_mdf.txt").write_text("\\lx PDF", encoding="utf-8")
+    client = TestClient(app)
+
+    detail = client.get(f"/runs/{run_id}/pages/page_34")
+    source = client.get(f"/runs/{run_id}/pages/page_34/source")
+
+    assert detail.status_code == 200
+    assert "PDF transcription" in detail.text
+    assert "Open source PDF" in detail.text
+    assert source.status_code == 200
+    assert source.content == source_pdf.read_bytes()
 
 
 def test_source_page_route_rejects_unknown_or_unsafe_page(tmp_path: Path) -> None:
