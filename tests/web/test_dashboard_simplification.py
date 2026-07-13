@@ -217,13 +217,18 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="page_files" type="file"' in response.text
     assert 'name="page_directory" type="file"' in response.text
     assert "webkitdirectory" in response.text
-    assert 'name="introduction_file" type="file"' in response.text
+    assert 'name="introduction_file"' not in response.text
+    assert 'name="introduction_directory"' not in response.text
     assert 'name="alphabet_file" type="file"' in response.text
     assert 'name="existing_mdf_guide_file" type="file"' in response.text
-    assert (
-        "Optional. Upload a pre-generated MDF parsing guide. "
-        "Skip this if you have not generated one during Stage 2."
-    ) in response.text
+    assert 'aria-label="About PDF dictionary pages"' in response.text
+    assert 'aria-label="About PDF introduction pages"' in response.text
+    assert 'aria-label="About the alphabet or orthography guide"' in response.text
+    assert 'aria-label="About the existing MDF parsing guide"' in response.text
+    assert "Leave blank to process every PDF page" in response.text
+    assert "front matter from the same uploaded PDF" in response.text
+    assert "Optional. Upload a pre-generated MDF parsing guide" in response.text
+    assert "<small>Optional. Upload a pre-generated MDF parsing guide" not in response.text
     assert "It is still validated and must be reviewed" not in response.text
     assert 'name="stage1_additional_instructions"' in response.text
     assert 'name="stage2_additional_instructions"' in response.text
@@ -295,7 +300,6 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
         },
         files=[
             ("page_files", ("page_1.png", _PNG, "image/png")),
-            ("introduction_file", ("intro.md", b"# Introduction", "text/markdown")),
             ("alphabet_file", ("alphabet.txt", b"a b c", "text/plain")),
             ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
             ("custom_mdf_manual", ("manual.pdf", _one_page_pdf(), "application/pdf")),
@@ -308,7 +312,6 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
     bundle = (tmp_path / "app-data" / "runs" / run.run_id / "inputs").resolve()
     for path in (
         config.input.pages,
-        config.input.introduction,
         config.input.alphabet,
         config.input.toolbox_pdf,
         config.pipeline.parse_rules_file,
