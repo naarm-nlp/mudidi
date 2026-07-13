@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from mudidi.web.app import _validation_errors, create_app
-from mudidi.web.credentials import CredentialSource, CredentialVault
+from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.models import LiveModelOption
 
@@ -340,9 +340,8 @@ def test_provider_page_lists_bundled_and_custom_models(tmp_path: Path) -> None:
     assert "LiteLLM-compatible model identifier" in response.text
 
 
-def test_temporary_provider_key_is_kept_in_injected_vault(tmp_path: Path) -> None:
-    vault = CredentialVault(environ={})
-    client = TestClient(create_app(data_dir=tmp_path, credential_vault=vault))
+def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.post(
         "/providers/anthropic/credential",
@@ -350,9 +349,27 @@ def test_temporary_provider_key_is_kept_in_injected_vault(tmp_path: Path) -> Non
     )
 
     assert response.status_code == 200
-    assert "Temporary key ready" in response.text
+    assert "Encrypted key saved" in response.text
     assert "sk-ant-browser-secret" not in response.text
-    assert vault.status(Provider.ANTHROPIC).source is CredentialSource.TEMPORARY
+    assert b"sk-ant-browser-secret" not in (tmp_path / "mudidi-web.sqlite3").read_bytes()
+
+    restarted = TestClient(create_app(data_dir=tmp_path))
+    provider_page = restarted.get("/providers")
+    revealed = restarted.post("/providers/anthropic/credential/reveal")
+
+    assert provider_page.status_code == 200
+    assert "persistent" in provider_page.text
+    assert 'type="password"' in provider_page.text
+    assert "data-reveal-key" in provider_page.text
+    assert "sk-ant-browser-secret" not in provider_page.text
+    assert revealed.status_code == 200
+    assert revealed.headers["cache-control"] == "no-store"
+    assert revealed.json() == {"api_key": "sk-ant-browser-secret"}
+
+    deleted = restarted.post("/providers/anthropic/credential/delete")
+    assert deleted.status_code == 200
+    assert "Saved key removed" in deleted.text
+    assert restarted.post("/providers/anthropic/credential/reveal").status_code == 404
 
 
 def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> None:

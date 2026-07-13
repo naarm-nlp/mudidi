@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
+import sqlite3
 
 import pytest
 
+from mudidi.web import credentials as credential_module
 from mudidi.web.credentials import CredentialSource, CredentialVault
 from mudidi.web.models import (
     ModelDiscovery,
@@ -107,6 +110,44 @@ def test_missing_credential_has_non_secret_status() -> None:
 
     assert status.available is False
     assert status.source is CredentialSource.MISSING
+
+
+def test_persistent_credentials_are_encrypted_and_survive_restart(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "mudidi-web.sqlite3"
+    key_file = tmp_path / ".credential-key"
+    store = credential_module.PersistentCredentialStore(
+        database_path=database,
+        key_path=key_file,
+    )
+    first = CredentialVault(environ={}, persistent_store=store)
+
+    first.set_persistent(Provider.GEMINI, "gemini-private-key")
+
+    assert b"gemini-private-key" not in database.read_bytes()
+    assert b"gemini-private-key" not in key_file.read_bytes()
+    assert key_file.stat().st_mode & 0o077 == 0
+    restarted = CredentialVault(
+        environ={},
+        persistent_store=credential_module.PersistentCredentialStore(
+            database_path=database,
+            key_path=key_file,
+        ),
+    )
+    resolved = restarted.resolve(Provider.GEMINI)
+    assert resolved is not None
+    assert resolved.source is CredentialSource.PERSISTENT
+    assert resolved.get_secret_value() == "gemini-private-key"
+    assert restarted.reveal_persistent(Provider.GEMINI) == "gemini-private-key"
+
+    restarted.clear_persistent(Provider.GEMINI)
+
+    assert restarted.resolve(Provider.GEMINI) is None
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM provider_credentials"
+        ).fetchone() == (0,)
 
 
 @pytest.mark.parametrize(
