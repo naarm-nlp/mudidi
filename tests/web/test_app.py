@@ -171,6 +171,11 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert ".profile-layout-question textarea" in response.text
     assert ".profile-other-information" in response.text
     assert ".profile-other-information textarea" in response.text
+    assert ".preset-loader {" in response.text
+    assert "margin-bottom: 24px" in response.text
+    assert "padding: 20px 24px" in response.text
+    assert ".preset-loader > label" in response.text
+    assert ".preset-loader .primary" in response.text
 
 
 def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
