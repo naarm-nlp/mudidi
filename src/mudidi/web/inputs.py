@@ -49,7 +49,11 @@ class InputMaterializer:
         return await self.materialize_pages(run_id, uploads)
 
     async def materialize_pages(
-        self, run_id: str, uploads: list[UploadFile]
+        self,
+        run_id: str,
+        uploads: list[UploadFile],
+        *,
+        replace: bool = False,
     ) -> Path:
         """Store one source PDF or a flat collection of page images."""
 
@@ -66,6 +70,7 @@ class InputMaterializer:
                 allowed={".pdf"},
                 multiple=False,
                 allow_relative=False,
+                replace=replace,
             )
         return await self._materialize_files(
             run_id,
@@ -74,10 +79,11 @@ class InputMaterializer:
             allowed=_PAGE_SUFFIXES,
             multiple=True,
             allow_relative=True,
+            replace=replace,
         )
 
     async def materialize_mdf_guide(
-        self, run_id: str, upload: UploadFile
+        self, run_id: str, upload: UploadFile, *, replace: bool = False
     ) -> Path:
         """Store one schema-valid existing MDF parsing guide."""
 
@@ -88,10 +94,11 @@ class InputMaterializer:
             allowed={".json"},
             multiple=False,
             allow_relative=False,
+            replace=replace,
         )
 
     async def materialize_mdf_manual(
-        self, run_id: str, upload: UploadFile
+        self, run_id: str, upload: UploadFile, *, replace: bool = False
     ) -> Path:
         """Store one custom MDF manual PDF."""
 
@@ -102,6 +109,7 @@ class InputMaterializer:
             allowed={".pdf"},
             multiple=False,
             allow_relative=False,
+            replace=replace,
         )
 
     def materialize_instruction(
@@ -223,6 +231,7 @@ class InputMaterializer:
         allowed: set[str],
         multiple: bool,
         allow_relative: bool,
+        replace: bool = False,
     ) -> Path:
         if not uploads:
             raise ValueError(f"select a {role.replace('_', ' ')} file")
@@ -241,7 +250,7 @@ class InputMaterializer:
             allowed_text = ", ".join(sorted(allowed))
             raise ValueError(f"{role.replace('_', ' ')} files must use: {allowed_text}")
 
-        destination = self._new_role_dir(run_id, role)
+        destination = self._new_role_dir(run_id, role, replace=replace)
         try:
             for upload, name, suffix in zip(uploads, names, suffixes, strict=True):
                 target = destination / name
@@ -262,10 +271,12 @@ class InputMaterializer:
             return destination
         return destination / names[0]
 
-    def _new_role_dir(self, run_id: str, role: str) -> Path:
+    def _new_role_dir(self, run_id: str, role: str, *, replace: bool = False) -> Path:
         destination = self.bundle(run_id) / role
         if destination.exists():
-            raise ValueError(f"{role.replace('_', ' ')} input already exists")
+            if not replace:
+                raise ValueError(f"{role.replace('_', ' ')} input already exists")
+            shutil.rmtree(destination)
         destination.mkdir(parents=True)
         return destination
 

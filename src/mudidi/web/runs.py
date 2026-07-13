@@ -548,7 +548,7 @@ class RunStore:
         provider: str,
         config: InferenceConfig,
     ) -> PresetRecord:
-        """Persist one validated configuration without credentials."""
+        """Persist one validated configuration, replacing the same saved name."""
 
         cleaned_name = name.strip()
         if not preset_id.strip() or not cleaned_name:
@@ -558,7 +558,12 @@ class RunStore:
         with self._connect() as connection:
             connection.execute(
                 "INSERT INTO presets(preset_id, name, provider, config_json, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(name) DO UPDATE SET "
+                "preset_id = excluded.preset_id, "
+                "provider = excluded.provider, "
+                "config_json = excluded.config_json, "
+                "created_at = excluded.created_at",
                 (
                     preset_id,
                     cleaned_name,
@@ -568,6 +573,18 @@ class RunStore:
                 ),
             )
         return self.get_preset(preset_id)
+
+    def get_preset_by_name(self, name: str) -> PresetRecord | None:
+        """Return a preset by its normalized display name, if it exists."""
+
+        cleaned_name = name.strip()
+        if not cleaned_name:
+            return None
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM presets WHERE name = ?", (cleaned_name,)
+            ).fetchone()
+        return None if row is None else _preset_from_row(row)
 
     def get_preset(self, preset_id: str) -> PresetRecord:
         """Load one typed preset or raise ``KeyError``."""

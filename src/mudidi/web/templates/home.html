@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-10">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-11">
   </head>
   <body>
     <aside class="sidebar">
@@ -57,7 +57,7 @@
           <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
             {% if selected_preset %}
             <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id }}">
-            <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused. Review and edit any setting before continuing. <a href="/">Clear preset to choose different files.</a></p></div>
+            <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused unless you choose replacement files. Review and edit any setting before continuing.</p></div>
             {% endif %}
             <div class="panel-heading">
               <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
@@ -66,11 +66,12 @@
             <div class="dropzone">
               <span class="file-icon">⇧</span>
               <h3>Drop a PDF or page images here</h3>
-              <p>{% if selected_preset %}Saved dictionary pages will be reused from this preset.{% else %}PDF, PNG, JPEG or WebP · copied into this run's local input bundle{% endif %}</p>
+              <p>{% if selected_preset %}Saved dictionary pages will be reused unless you choose replacements.{% else %}PDF, PNG, JPEG or WebP · copied into this run's local input bundle{% endif %}</p>
+              {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
               <label class="path-label" for="page-files">Choose a PDF or page images</label>
-              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple{% if selected_preset %} disabled{% endif %}>
+              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple>
               <label class="path-label" for="page-directory">Or choose a folder of page images</label>
-              <input id="page-directory" name="page_directory" type="file" accept=".png,.jpg,.jpeg,.webp" webkitdirectory multiple{% if selected_preset %} disabled{% endif %}>
+              <input id="page-directory" name="page_directory" type="file" accept=".png,.jpg,.jpeg,.webp" webkitdirectory multiple>
             </div>
             <label for="output">Output directory</label>
             <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
@@ -193,13 +194,13 @@
                 <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
                 <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span><input name="existing_mdf_guide_file" type="file" accept=".json"{% if selected_preset %} disabled{% endif %}></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>{% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}<input name="existing_mdf_guide_file" type="file" accept=".json"></label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button></span><input name="parse_rules_pages" placeholder="1,3-4"></label>
               </div>
               <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
                 <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
                 <label><input type="radio" name="mdf_manual_source" value="upload"> Upload my own MDF manual</label>
-                <label data-custom-mdf-manual hidden>MDF manual PDF<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                <label data-custom-mdf-manual hidden>MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
                 <div class="mdf-manual-official">
                   <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>
                   <small>Official PDF: fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small>
@@ -281,6 +282,6 @@
       </template>
     </main>
     {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-10" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-11" defer></script>
   </body>
 </html>

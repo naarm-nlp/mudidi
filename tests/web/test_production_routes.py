@@ -323,6 +323,18 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert replacement_config.pipeline.parse_rules_file.name == "replacement-guide.json"
     assert replacement_config.input.toolbox_pdf.name == "replacement.pdf"
 
+    overwritten = client.post(
+        f"/runs/{replacement_run.run_id}/presets",
+        data={"name": "My verified setup"},
+        follow_redirects=False,
+    )
+    assert overwritten.status_code == 303
+    saved_presets = app.state.run_store.list_presets()
+    assert len(saved_presets) == 1
+    assert saved_presets[0].preset_id != preset.preset_id
+    assert not (tmp_path / "app-data" / "presets" / preset.preset_id).exists()
+    assert client.get(f"/presets/{preset.preset_id}/files/pages/0").status_code == 404
+
 
 def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> None:
     vault = CredentialVault(environ={})

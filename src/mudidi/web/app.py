@@ -207,6 +207,7 @@ def create_app(
         }
         selected_preset = None
         preset_state = None
+        preset_assets: dict[str, object] = {}
         preset_id = request.query_params.get("preset", "").strip()
         if preset_id:
             try:
@@ -217,6 +218,10 @@ def create_app(
                 selected_preset,
                 known_models={model.model_id for model in _all_models(app)},
             )
+            preset_assets = _preset_asset_links(
+                selected_preset,
+                presets_root=app.state.inputs.presets_root,
+            )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="home.html",
@@ -226,6 +231,7 @@ def create_app(
                 "presets": presets,
                 "selected_preset": selected_preset,
                 "preset_state": preset_state,
+                "preset_assets": preset_assets,
                 "credential_statuses": credential_statuses,
                 "credential_ready_count": sum(
                     status.available for status in credential_statuses.values()
@@ -339,14 +345,11 @@ def create_app(
             if page_files and page_directory:
                 raise ValueError("choose page files or a page folder, not both")
             selected_pages = page_directory or page_files
-            if selected_pages and preset_config is not None:
-                raise ValueError(
-                    "a loaded preset already supplies dictionary pages; "
-                    "clear the preset before selecting different pages"
-                )
             if selected_pages:
                 payload["pages"] = await app.state.inputs.materialize_pages(
-                    run_id, selected_pages
+                    run_id,
+                    selected_pages,
+                    replace=preset_config is not None,
                 )
             elif preset_config is not None:
                 payload["pages"] = preset_config.input.pages
@@ -378,7 +381,9 @@ def create_app(
             if guide_files:
                 payload["parse_rules_file"] = (
                     await app.state.inputs.materialize_mdf_guide(
-                        run_id, guide_files[0]
+                        run_id,
+                        guide_files[0],
+                        replace=preset_config is not None,
                     )
                 )
             elif preset_config is not None and runs_stage2:
@@ -420,7 +425,9 @@ def create_app(
                 if len(manual_files) == 1:
                     payload["toolbox_pdf"] = (
                         await app.state.inputs.materialize_mdf_manual(
-                            run_id, manual_files[0]
+                            run_id,
+                            manual_files[0],
+                            replace=preset_config is not None,
                         )
                     )
                 elif preset_config is not None and preset_config.input.toolbox_pdf:
@@ -620,6 +627,23 @@ def create_app(
             context={"presets": app.state.run_store.list_presets()},
         )
 
+    @app.get("/presets/{preset_id}/files/{asset_key:path}")
+    async def preset_file(preset_id: str, asset_key: str) -> FileResponse:
+        """Serve one allowlisted file owned by a local preset."""
+
+        try:
+            preset = app.state.run_store.get_preset(preset_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="preset not found") from exc
+        assets = _preset_asset_paths(
+            preset,
+            presets_root=app.state.inputs.presets_root,
+        )
+        path = assets.get(asset_key)
+        if path is None:
+            raise HTTPException(status_code=404, detail="preset file not found")
+        return FileResponse(path, headers={"Cache-Control": "private, no-store"})
+
     @app.post("/runs/{run_id}/presets")
     async def save_run_preset(request: Request, run_id: str) -> RedirectResponse:
         """Save the prepared run's typed configuration as a reusable preset."""
@@ -631,6 +655,7 @@ def create_app(
             raise HTTPException(status_code=404, detail="run not found") from exc
         submitted = await request.form()
         name = str(submitted.get("name", ""))
+        existing = app.state.run_store.get_preset_by_name(name)
         preset_id = f"preset-{uuid4().hex[:12]}"
         try:
             preset_bundle = app.state.inputs.copy_run_to_preset(run_id, preset_id)
@@ -645,6 +670,8 @@ def create_app(
                 provider=str(run.provider),
                 config=preset_config,
             )
+            if existing is not None and existing.preset_id != preset_id:
+                app.state.inputs.discard_preset(existing.preset_id)
         except (ValueError, sqlite3.IntegrityError) as exc:
             app.state.inputs.discard_preset(preset_id)
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -1232,6 +1259,101 @@ def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, boo
     for secret in redactions:
         content = content.replace(secret, "[REDACTED]")
     return content, size > _MAX_LOG_BYTES
+
+
+def _preset_asset_paths(
+    preset: PresetRecord,
+    *,
+    presets_root: Path,
+) -> dict[str, Path]:
+    """Return preset-configured files that remain inside its managed bundle."""
+
+    root = (presets_root / preset.preset_id / "inputs").resolve()
+
+    def owned_path(value: Path) -> Path | None:
+        if value.is_symlink():
+            return None
+        resolved = value.expanduser().resolve()
+        if not resolved.is_relative_to(root):
+            return None
+        relative = resolved.relative_to(root)
+        current = root
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                return None
+        return resolved
+
+    def owned_file(value: Path | None) -> Path | None:
+        if value is None:
+            return None
+        resolved = owned_path(value)
+        if resolved is None or not resolved.is_file():
+            return None
+        return resolved
+
+    assets: dict[str, Path] = {}
+    pages = preset.config.input.pages
+    page_directory = owned_path(pages) if pages is not None else None
+    if page_directory is not None and page_directory.is_dir():
+        page_files = sorted(
+            (
+                path
+                for path in page_directory.rglob("*")
+                if path.is_file() and not path.is_symlink()
+            ),
+            key=lambda path: path.relative_to(page_directory).as_posix(),
+        )
+    else:
+        page_files = [pages] if pages is not None else []
+    for index, page in enumerate(page_files):
+        owned = owned_file(page)
+        if owned is not None:
+            assets[f"pages/{index}"] = owned
+
+    guide = owned_file(preset.config.pipeline.parse_rules_file)
+    if guide is not None:
+        assets["mdf-guide"] = guide
+    manual = owned_file(preset.config.input.toolbox_pdf)
+    if manual is not None:
+        assets["mdf-manual"] = manual
+    return assets
+
+
+def _preset_asset_links(
+    preset: PresetRecord,
+    *,
+    presets_root: Path,
+) -> dict[str, object]:
+    """Build template-safe labels and local URLs for saved preset inputs."""
+
+    paths = _preset_asset_paths(preset, presets_root=presets_root)
+    return {
+        "pages": [
+            {
+                "name": path.name,
+                "url": f"/presets/{preset.preset_id}/files/{key}",
+            }
+            for key, path in paths.items()
+            if key.startswith("pages/")
+        ],
+        "mdf_guide": (
+            {
+                "name": paths["mdf-guide"].name,
+                "url": f"/presets/{preset.preset_id}/files/mdf-guide",
+            }
+            if "mdf-guide" in paths
+            else None
+        ),
+        "mdf_manual": (
+            {
+                "name": paths["mdf-manual"].name,
+                "url": f"/presets/{preset.preset_id}/files/mdf-manual",
+            }
+            if "mdf-manual" in paths
+            else None
+        ),
+    }
 
 
 def _all_models(app: FastAPI) -> tuple[object, ...]:
