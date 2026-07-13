@@ -2,6 +2,7 @@
 
 const runForm = document.querySelector("form.run-form");
 const runFormStorageKey = "mudidi:new-run-form:v1";
+const presetStateElement = document.querySelector("#preset-form-state");
 
 const persistRunForm = () => {
   if (!runForm) return;
@@ -26,7 +27,9 @@ const restoreRunForm = () => {
   if (!runForm) return;
   let state;
   try {
-    state = JSON.parse(window.sessionStorage.getItem(runFormStorageKey) || "null");
+    state = presetStateElement
+      ? JSON.parse(presetStateElement.textContent || "null")
+      : JSON.parse(window.sessionStorage.getItem(runFormStorageKey) || "null");
   } catch (_error) {
     return;
   }
@@ -52,6 +55,9 @@ const restoreRunForm = () => {
       if (field.type === "file" || field.type === "password") return;
       if (field.type === "checkbox" || field.type === "radio") {
         field.checked = values.includes(field.value);
+        if (presetStateElement && ["verify_stage1", "verify_stage2"].includes(name)) {
+          field.dataset.userTouched = "true";
+        }
       } else if (values[index] !== undefined) {
         field.value = values[index];
       }
@@ -231,6 +237,9 @@ const synchronizeManual = () => {
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 restoreRunForm();
+if (presetStateElement && otherInformationToggle) {
+  otherInformationToggle.dispatchEvent(new Event("change"));
+}
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();

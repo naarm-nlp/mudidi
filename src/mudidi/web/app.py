@@ -35,7 +35,13 @@ from mudidi.web.models import (
     Provider,
 )
 from mudidi.web.parse_rules import ParseRuleReviewService
-from mudidi.web.runs import InvalidRunTransition, RunRecord, RunStatus, RunStore
+from mudidi.web.runs import (
+    InvalidRunTransition,
+    PresetRecord,
+    RunRecord,
+    RunStatus,
+    RunStore,
+)
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
@@ -183,12 +189,28 @@ def create_app(
     async def home(request: Request) -> HTMLResponse:
         """Render the local production-inference workspace."""
 
+        presets = app.state.run_store.list_presets()
+        selected_preset = None
+        preset_state = None
+        preset_id = request.query_params.get("preset", "").strip()
+        if preset_id:
+            try:
+                selected_preset = app.state.run_store.get_preset(preset_id)
+            except KeyError as exc:
+                raise HTTPException(status_code=404, detail="preset not found") from exc
+            preset_state = _preset_form_state(
+                selected_preset,
+                known_models={model.model_id for model in _all_models(app)},
+            )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="home.html",
             context={
                 "active_page": "new-run",
                 "models": _all_models(app),
+                "presets": presets,
+                "selected_preset": selected_preset,
+                "preset_state": preset_state,
             },
         )
 
@@ -229,6 +251,7 @@ def create_app(
         if payload.get("output_policy") == "new":
             # Migrate browser-tab state saved before the output-policy redesign.
             payload["output_policy"] = "resume"
+        preset_id = str(payload.pop("preset_id", "")).strip()
         parse_rule_pages = [
             page.strip()
             for value in submitted.getlist("parse_rules_pages")
@@ -269,6 +292,19 @@ def create_app(
             ]
 
         try:
+            preset_config = None
+            if preset_id:
+                try:
+                    preset = app.state.run_store.get_preset(preset_id)
+                except KeyError as exc:
+                    raise ValueError("the selected preset no longer exists") from exc
+                preset_bundle = app.state.inputs.presets_root / preset_id / "inputs"
+                run_bundle = app.state.inputs.copy_preset_to_run(preset_id, run_id)
+                preset_config = rebase_managed_config(
+                    preset.config,
+                    source=preset_bundle,
+                    destination=run_bundle,
+                )
             forbidden_paths = {
                 "introduction",
                 "alphabet",
@@ -284,9 +320,21 @@ def create_app(
             if page_files and page_directory:
                 raise ValueError("choose page files or a page folder, not both")
             selected_pages = page_directory or page_files
-            payload["pages"] = await app.state.inputs.materialize_pages(
-                run_id, selected_pages
-            )
+            if selected_pages and preset_config is not None:
+                raise ValueError(
+                    "a loaded preset already supplies dictionary pages; "
+                    "clear the preset before selecting different pages"
+                )
+            if selected_pages:
+                payload["pages"] = await app.state.inputs.materialize_pages(
+                    run_id, selected_pages
+                )
+            elif preset_config is not None:
+                payload["pages"] = preset_config.input.pages
+            else:
+                payload["pages"] = await app.state.inputs.materialize_pages(
+                    run_id, []
+                )
 
             pipeline_value = str(payload.get("pipeline", "complete"))
             runs_stage1 = pipeline_value in {"complete", "transcription"}
@@ -295,8 +343,13 @@ def create_app(
             character_inventory = str(payload.pop("character_inventory", "")).strip()
             if character_inventory and runs_stage1:
                 payload["alphabet"] = app.state.inputs.materialize_instruction(
-                    run_id, "character_inventory", character_inventory
+                    run_id,
+                    "character_inventory",
+                    character_inventory,
+                    replace=preset_config is not None,
                 )
+            elif preset_config is not None and runs_stage1:
+                payload["alphabet"] = preset_config.input.alphabet
 
             guide_files = uploaded("existing_mdf_guide_file")
             if len(guide_files) > 1:
@@ -309,21 +362,33 @@ def create_app(
                         run_id, guide_files[0]
                     )
                 )
+            elif preset_config is not None and runs_stage2:
+                payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
 
             stage1_instructions = str(
                 payload.get("stage1_additional_instructions", "")
             ).strip()
             if stage1_instructions and runs_stage1:
                 payload["stage1_guides"] = app.state.inputs.materialize_instruction(
-                    run_id, "stage1", stage1_instructions
+                    run_id,
+                    "stage1",
+                    stage1_instructions,
+                    replace=preset_config is not None,
                 )
+            elif preset_config is not None and runs_stage1:
+                payload["stage1_guides"] = preset_config.pipeline.stage1_guides
             stage2_instructions = str(
                 payload.get("stage2_additional_instructions", "")
             ).strip()
             if stage2_instructions and runs_stage2:
                 payload["stage2_guides"] = app.state.inputs.materialize_instruction(
-                    run_id, "stage2", stage2_instructions
+                    run_id,
+                    "stage2",
+                    stage2_instructions,
+                    replace=preset_config is not None,
                 )
+            elif preset_config is not None and runs_stage2:
+                payload["stage2_guides"] = preset_config.pipeline.stage2_guides
 
             manual_source = str(payload.get("mdf_manual_source", "none"))
             manual_files = uploaded("custom_mdf_manual")
@@ -333,13 +398,16 @@ def create_app(
                 manual_source = "none"
                 payload["mdf_manual_source"] = "none"
             if manual_source == "upload":
-                if len(manual_files) != 1:
-                    raise ValueError("upload exactly one custom MDF manual PDF")
-                payload["toolbox_pdf"] = (
-                    await app.state.inputs.materialize_mdf_manual(
-                        run_id, manual_files[0]
+                if len(manual_files) == 1:
+                    payload["toolbox_pdf"] = (
+                        await app.state.inputs.materialize_mdf_manual(
+                            run_id, manual_files[0]
+                        )
                     )
-                )
+                elif preset_config is not None and preset_config.input.toolbox_pdf:
+                    payload["toolbox_pdf"] = preset_config.input.toolbox_pdf
+                else:
+                    raise ValueError("upload exactly one custom MDF manual PDF")
             elif manual_files:
                 raise ValueError("select the custom MDF manual option before uploading")
 
@@ -991,6 +1059,115 @@ def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]
             "message": "The submitted configuration could not be validated",
         }
     ]
+
+
+def _preset_form_state(
+    preset: PresetRecord,
+    *,
+    known_models: set[str],
+) -> dict[str, list[str]]:
+    """Translate a typed preset into browser-form values without secrets."""
+
+    config = preset.config
+    state: dict[str, list[str]] = {
+        "output_directory": [str(config.output.directory)],
+        "output_policy": ["overwrite" if config.runtime.overwrite else "resume"],
+        "pipeline": [
+            {"all": "complete", "1": "transcription", "2": "structure"}[
+                config.pipeline.stage
+            ]
+        ],
+        "provider": [preset.provider],
+        "temperature": [str(config.models.temperature)],
+        "batch_size": [str(config.runtime.batch_size)],
+        "reasoning": [config.models.stage1_reasoning],
+        "agentic": [
+            "true" if config.agentic.stage1 or config.agentic.stage2 else "false"
+        ],
+        "verify_stage1": ["true"] if config.agentic.stage1 else [],
+        "verify_stage2": ["true"] if config.agentic.stage2 else [],
+        "max_iterations": [str(config.agentic.max_iterations)],
+        "min_retry_confidence": [str(config.agentic.min_retry_confidence)],
+        "verifier_patches": [str(config.agentic.verifier_patches).lower()],
+        "require_concrete_retry": [
+            str(config.agentic.require_concrete_retry).lower()
+        ],
+        "mdf_manual_source": [
+            "upload" if config.input.toolbox_pdf is not None else "none"
+        ],
+    }
+
+    def put(name: str, value: object | None) -> None:
+        if value is not None and str(value) != "":
+            state[name] = [str(value)]
+
+    def put_model(field: str, custom_field: str, model: str | None) -> None:
+        if model is None:
+            return
+        if model in known_models:
+            put(field, model)
+        else:
+            put(field, "__other__")
+            put(custom_field, model)
+
+    put("dictionary_pages", config.input.dictionary_pages)
+    put("introduction_pages", config.input.introduction_pages)
+    put("openrouter_provider", config.models.openrouter_provider)
+    put_model(
+        "stage1_model",
+        "stage1_custom_model",
+        config.models.stage1 or config.models.default,
+    )
+    put_model(
+        "stage2_pass1_model",
+        "stage2_pass1_custom_model",
+        config.models.stage2_pass1 or config.models.default,
+    )
+    put_model(
+        "stage2_pass2_model",
+        "stage2_pass2_custom_model",
+        config.models.stage2_pass2 or config.models.default,
+    )
+    put("evaluator_model", config.agentic.evaluator_model)
+    put("rewriter_model", config.agentic.rewriter_model)
+    put("evaluator_reasoning", config.agentic.evaluator_reasoning)
+    put("rewriter_reasoning", config.agentic.rewriter_reasoning)
+    if config.pipeline.parse_rules_pages:
+        put("parse_rules_pages", ",".join(config.pipeline.parse_rules_pages))
+    put("character_inventory", _read_preset_text(config.input.alphabet))
+    put(
+        "stage1_additional_instructions",
+        _read_preset_text(config.pipeline.stage1_guides),
+    )
+    put(
+        "stage2_additional_instructions",
+        _read_preset_text(config.pipeline.stage2_guides),
+    )
+
+    profile = config.input.dictionary_profile
+    if profile is not None:
+        put("profile_headword_language", profile.headword.language)
+        put("profile_headword_script", profile.headword.script)
+        state["profile_target_languages"] = [item.language for item in profile.targets]
+        state["profile_target_scripts"] = [item.script for item in profile.targets]
+        put("profile_page_layout", profile.page_layout)
+        state["profile_information_types"] = [
+            item.value if hasattr(item, "value") else str(item)
+            for item in profile.information_types
+        ]
+        put("profile_other_information_types", profile.other_information_types)
+    return state
+
+
+def _read_preset_text(path: Path | None) -> str | None:
+    """Read a bounded UTF-8 text field from a validated preset bundle."""
+
+    if path is None or not path.is_file() or path.is_symlink():
+        return None
+    try:
+        return path.read_text(encoding="utf-8")[:20_000]
+    except (OSError, UnicodeDecodeError):
+        return None
 
 
 def _config_summary(config: InferenceConfig) -> dict[str, str]:

@@ -104,7 +104,14 @@ class InputMaterializer:
             allow_relative=False,
         )
 
-    def materialize_instruction(self, run_id: str, stage: str, text: str) -> Path:
+    def materialize_instruction(
+        self,
+        run_id: str,
+        stage: str,
+        text: str,
+        *,
+        replace: bool = False,
+    ) -> Path:
         """Write bounded user instruction text as a run-owned UTF-8 guide file."""
 
         cleaned = text.strip()
@@ -117,7 +124,9 @@ class InputMaterializer:
         destination.mkdir(parents=True, exist_ok=True)
         target = destination / f"{stage}.txt"
         if target.exists():
-            raise ValueError(f"{stage} additional instructions already exist")
+            if not replace:
+                raise ValueError(f"{stage} additional instructions already exist")
+            target.unlink()
         self._check_total(run_id, len(content))
         temporary = target.with_suffix(".txt.part")
         try:

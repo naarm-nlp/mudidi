@@ -244,3 +244,36 @@ def test_agentic_and_manual_controls_follow_pipeline(
     ) == "1"
     page.get_by_label("Upload my own MDF manual").check()
     expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()
+
+
+def test_saved_preset_loads_back_into_editable_form(
+    local_site: str,
+    browser_page: Page,
+    tmp_path: Path,
+) -> None:
+    page = browser_page
+    output = tmp_path / "preset-output"
+
+    page.goto(local_site)
+    page.locator('input[name="page_files"]').set_input_files(
+        {"name": "page_1.png", "mimeType": "image/png", "buffer": _PNG}
+    )
+    page.get_by_label("Output directory").fill(str(output))
+    page.locator("select[name=provider]").select_option("anthropic")
+    for name in ("stage1_model", "stage2_pass1_model", "stage2_pass2_model"):
+        page.locator(f'select[name="{name}"]').select_option(
+            "anthropic/claude-sonnet-5"
+        )
+    page.get_by_role("button", name="Review run").click()
+    page.get_by_label("Save these non-secret settings as a preset").fill(
+        "Editable dictionary setup"
+    )
+    page.get_by_role("button", name="Save preset").click()
+
+    page.get_by_role("link", name="Load preset").click()
+
+    expect(page.get_by_text("Loaded preset: Editable dictionary setup")).to_be_visible()
+    expect(page.get_by_label("Output directory")).to_have_value(str(output))
+    expect(page.locator('select[name="provider"]')).to_have_value("anthropic")
+    page.get_by_role("button", name="Review run").click()
+    expect(page.get_by_role("heading", name="Review your run")).to_be_visible()
