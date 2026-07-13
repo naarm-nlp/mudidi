@@ -95,9 +95,7 @@ def run_inference_phase(
             return InferencePhaseResult(return_code=result)
     parse_rules_path = None
     if configurations[-1].pipeline.stage == "2-pass-1":
-        parse_rules_path = (
-            config.output.directory / "stage-2" / MDF_PARSING_GUIDE_FILENAME
-        )
+        parse_rules_path = config.output.directory / MDF_PARSING_GUIDE_FILENAME
     return InferencePhaseResult(return_code=0, parse_rules_path=parse_rules_path)
 
 

@@ -776,10 +776,18 @@ def create_app(
             log_path,
             redactions=app.state.credential_vault.redaction_values(),
         )
+        failure_message = _failure_message(
+            app.state.run_store.list_events(run_id)
+        )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="logs.html",
-            context={"run_id": run_id, "content": content, "truncated": truncated},
+            context={
+                "run_id": run_id,
+                "content": content,
+                "truncated": truncated,
+                "failure_message": failure_message,
+            },
         )
 
     @app.get("/runs/{run_id}/artifacts/{artifact_path:path}")
@@ -1090,6 +1098,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "completed_pages": completed_pages,
         "total_pages": total_pages,
         "events": events,
+        "failure_message": _failure_message(events),
         "created_at": run.created_at,
         "is_active": run.status
         in {
@@ -1104,6 +1113,15 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "resume_available": run.status
         in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED},
     }
+
+
+def _failure_message(events: list[dict[str, object]]) -> str | None:
+    """Return the latest persisted worker failure without exposing credentials."""
+
+    for event in reversed(events):
+        if event.get("type") == "run.failed" and event.get("message"):
+            return str(event["message"])
+    return None
 
 
 def _sse_event(event: dict[str, object]) -> str:

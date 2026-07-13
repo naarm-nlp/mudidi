@@ -186,7 +186,7 @@ def _offline_execute(
         path = config.output.directory / "stage-1/page_1/page_1_stage1_flat.txt"
         content = "offline transcription\n"
     elif stage == "2-pass-1":
-        path = config.output.directory / "stage-2" / MDF_PARSING_GUIDE_FILENAME
+        path = config.output.directory / MDF_PARSING_GUIDE_FILENAME
         content = json.dumps(
             {
                 "markers": [

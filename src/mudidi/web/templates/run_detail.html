@@ -30,12 +30,19 @@
             <a class="link-button" href="/runs/{{ run.run_id }}/parse-rules">Review MDF parsing guide →</a>
           </div>
           {% endif %}
+          {% if run.failure_message %}
+          <div class="failure-details" role="alert">
+            <strong>Failure details</strong>
+            <p>{{ run.failure_message }}</p>
+          </div>
+          {% endif %}
           <div class="event-list">
             {% for event in run.events %}
             <article>
               <code>#{{ event.sequence }}</code>
               <strong>{{ event.display_type }}</strong>
               {% if event.page %}<span>Page {{ event.page }}</span>{% endif %}
+              {% if event.message %}<span>{{ event.message }}</span>{% endif %}
             </article>
             {% endfor %}
           </div>
@@ -54,7 +61,7 @@
           <h2>Overview</h2>
           <nav class="detail-tabs">
             <a class="active" href="#">Overview</a>
-            {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<a href="#">MDF parsing guide</a>{% endif %}
+            {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
             <a href="/runs/{{ run.run_id }}/pages">Pages</a>
             <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
             <a href="/runs/{{ run.run_id }}/outputs">Outputs</a>

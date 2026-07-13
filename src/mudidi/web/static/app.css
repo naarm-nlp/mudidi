@@ -154,8 +154,11 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .event-list code, .event-list span { color: var(--color-muted); }
 .danger { padding: 9px 14px; border: 1px solid #c6584b; border-radius: 7px; color: #a33b31; background: #fff; }
 .detail-tabs { margin-top: 10px; }
-.detail-tabs a { color: var(--color-muted); }
+.detail-tabs a, .detail-tabs span { color: var(--color-muted); }
 .detail-tabs a.active { color: #fff; }
+.detail-tabs span[aria-disabled="true"] { cursor: not-allowed; opacity: .55; }
+.failure-details { margin: 18px 0; padding: 14px 16px; border: 1px solid #df8c81; border-radius: 9px; color: #7e2d24; background: #fff0ee; }
+.failure-details p { margin: 7px 0 0; overflow-wrap: anywhere; }
 .validation-warning { margin-bottom: 18px; padding: 15px; border-left: 4px solid #d58a2c; border-radius: 7px; color: #704a17; background: #fff4df; }
 .validation-warning p { margin: 7px 0 0; white-space: pre-wrap; font-size: 12px; }
 .rules-editor { padding: 28px; }
