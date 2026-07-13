@@ -4,20 +4,39 @@ MUDIDI includes a localhost dashboard for production inference without YAML or
 CLI flags. The pipeline and files stay on the computer running MUDIDI; only
 model requests are sent to the selected provider.
 
-## Install and launch
+## Docker setup and launch
 
-### Docker (recommended on Windows)
+### Docker (recommended)
 
-Install Docker Desktop, clone this repository, and run from the repository
+Docker provides the same reproducible MUDIDI environment on macOS, Windows, and
+Linux. Install Docker Desktop on macOS or Windows, or Docker Engine with the
+Compose plugin on Linux. Start Docker, clone this repository, and run from its
 directory:
 
 ```bash
 docker compose up --build
 ```
 
-Open `http://localhost:8000`. The Compose port is published only on
+The first build downloads and installs the image dependencies. When the log
+says the application has started, open `http://localhost:8000`. The Compose
+port is published only on
 `127.0.0.1`; do not change it to a public interface because this is a local,
-single-user application. Stop the foreground process with `Ctrl+C`, or run:
+single-user application.
+
+For later starts, no rebuild is required:
+
+```bash
+docker compose up
+```
+
+To run in the background and follow its logs:
+
+```bash
+docker compose up -d
+docker compose logs -f
+```
+
+Stop a foreground run with `Ctrl+C`. Stop and remove the container with:
 
 ```bash
 docker compose down
@@ -28,7 +47,11 @@ encrypted credentials and encryption key, presets, managed uploads, worker
 artifacts, and generated outputs. Keep that directory private and back it up as
 one unit. Rebuilding or replacing the container does not delete it.
 
-### Native Python environment
+If Docker reports that it cannot connect to the Docker daemon, start Docker
+Desktop (macOS or Windows) or the Docker service (Linux), wait until the engine
+is ready, and repeat the Compose command.
+
+## Native dashboard alternative
 
 ```bash
 uv sync --frozen --extra web

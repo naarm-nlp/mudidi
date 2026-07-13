@@ -10,15 +10,17 @@ dictionary pages → Stage 1 OCR → Stage 2 parse rules → MDF records
 
 ## Installation
 
-MUDIDI supports Linux, macOS, and Windows through WSL2. It requires Python
-3.11+ and [uv](https://docs.astral.sh/uv/).
+MUDIDI supports Linux, macOS, and Windows. Docker is recommended for the web
+dashboard. Native installation with [uv](https://docs.astral.sh/uv/) is
+recommended for CLI and YAML workflows; it requires Python 3.11+, with native
+Windows usage supported through WSL2.
 
-### Docker (recommended on Windows)
+### Web dashboard with Docker (recommended)
 
-[Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
-lets Windows users run the local dashboard without installing Python, uv, or
-`pdftk` themselves. Docker Desktop normally uses WSL2 internally, but MUDIDI's
-Linux environment and dependencies are prepared automatically.
+Docker runs MUDIDI in the same reproducible Linux environment on macOS,
+Windows, and Linux without requiring a separate Python, uv, or `pdftk`
+installation. Install [Docker Desktop](https://docs.docker.com/desktop/) on
+macOS or Windows, or Docker Engine with the Compose plugin on Linux.
 
 Clone the repository, open a terminal in it, and run:
 
@@ -37,8 +39,11 @@ computers on the network cannot connect to it. Do not change this binding to a
 public interface: the local dashboard is not designed as a multi-user or
 internet-facing service.
 
-The following native installation is useful for development and CLI/YAML
-workflows.
+See the
+**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
+for startup, shutdown, logs, persistence, and troubleshooting.
+
+### CLI and YAML workflows with uv (recommended)
 
 ### Install uv on macOS or Linux
 
@@ -86,25 +91,6 @@ uv sync --frozen
 Install `pdftk` only when processing a multi-page source PDF. On Ubuntu or
 WSL2, run `sudo apt install -y pdftk-java`; on macOS with Homebrew, run
 `brew install pdftk-java`.
-
-For a browser-based production workflow with no YAML authoring:
-
-```bash
-uv sync --frozen --extra web
-uv run mudidi web
-```
-
-The app opens on localhost and includes run monitoring plus a mandatory Stage 2
-parse-rule review checkpoint. See the
-**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**.
-
-Dashboard metadata, presets, managed inputs, run history, and encrypted API-key
-ciphertext are stored under `~/.local/share/mudidi/` by default. Choose another
-private location with:
-
-```bash
-uv run mudidi web --data-dir /path/to/private-app-data
-```
 
 ## API setup
 
@@ -181,6 +167,11 @@ For repeatable and advanced runs, use a validated YAML configuration:
 uv run mudidi config validate examples/configs/production/directory-inference.yaml
 uv run mudidi run --config examples/configs/production/directory-inference.yaml
 ```
+
+For every available option, see the
+**[CLI flag reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/cli/)**
+and the
+**[complete YAML field reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/config/)**.
 
 ## Documentation
 
