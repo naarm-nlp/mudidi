@@ -38,6 +38,9 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         assert f'name="credential_{provider}"' in response.text
         assert f'id="credential-{provider}"' in response.text
     assert response.text.count('type="password"') >= 4
+    assert response.text.count('class="eye-icon eye-show"') == 4
+    assert response.text.count('class="eye-icon eye-hide"') == 4
+    assert "◉" not in response.text
     assert 'name="stage1_reasoning"' in response.text
     assert 'name="stage2_pass1_reasoning"' in response.text
     assert 'name="stage2_pass2_reasoning"' in response.text
@@ -401,6 +404,9 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
     assert "persistent" in provider_page.text
     assert 'type="password"' in provider_page.text
     assert "data-reveal-key" in provider_page.text
+    assert 'class="eye-icon eye-show"' in provider_page.text
+    assert 'class="eye-icon eye-hide"' in provider_page.text
+    assert "◉" not in provider_page.text
     assert "sk-ant-browser-secret" not in provider_page.text
     assert revealed.status_code == 200
     assert revealed.headers["cache-control"] == "no-store"
