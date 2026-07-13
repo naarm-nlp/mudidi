@@ -126,7 +126,9 @@ markers/descriptions, guide rules, and abbreviations.
 Saving is not approval. Approval validates the guide, writes an immutable
 snapshot, binds it to the run and review version, records its SHA-256, and only
 then authorizes MDF page parsing. Closing the browser or server never implies
-approval. An uploaded guide follows this same path.
+approval. This checkpoint applies to LLM-inferred guides. A valid guide that the
+user explicitly uploads is copied into managed storage and used directly after
+format validation, without showing this review screen.
 
 ## Run History and presets
 

@@ -58,10 +58,10 @@ def phase_configs(
             raise ValueError("uploaded MDF guides require an MDF parsing pipeline")
     else:
         stages = {
-        InferencePhase.STAGE1: ("1",),
-        InferencePhase.STAGE1_THEN_PASS1: ("1", "2-pass-1"),
-        InferencePhase.PASS1: ("2-pass-1",),
-        InferencePhase.PASS2: ("2-pass-2",),
+            InferencePhase.STAGE1: ("1",),
+            InferencePhase.STAGE1_THEN_PASS1: ("1", "2-pass-1"),
+            InferencePhase.PASS1: ("2-pass-1",),
+            InferencePhase.PASS2: ("2-pass-2",),
         }[phase]
     return tuple(
         config.model_copy(

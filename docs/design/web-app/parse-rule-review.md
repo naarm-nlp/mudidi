@@ -75,9 +75,11 @@ reconciles orphaned snapshots and incomplete enqueue records.
 ## Existing MDF parsing guide files
 
 When the user selects an existing MDF parsing guide JSON file, copy it into the
-run's generated/review area, validate it, and enter the same review state. Do
-not run Pass 2 directly from an external mutable path. Internal compatibility
-filenames and state values continue to use `parse-rules`/`parse_rules`.
+run-owned input bundle and validate it at upload. Stage 2 consumes that managed
+copy directly and validates it again when loading; it does not run Pass 1
+discovery or enter the human-review state. The human checkpoint remains
+mandatory only for LLM-inferred guides. Internal compatibility filenames and
+state values continue to use `parse-rules`/`parse_rules`.
 
 ## Failure and recovery
 

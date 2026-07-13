@@ -58,16 +58,12 @@ def test_user_guide_run_skips_pass1_and_review(
     )
     config = config.model_copy(
         update={
-            "pipeline": config.pipeline.model_copy(
-                update={"parse_rules_file": guide}
-            )
+            "pipeline": config.pipeline.model_copy(update={"parse_rules_file": guide})
         }
     )
     executed: list[tuple[str, object]] = []
 
-    def execute(
-        phase: InferenceConfig, *, approved_parse_rules: object = None
-    ) -> int:
+    def execute(phase: InferenceConfig, *, approved_parse_rules: object = None) -> int:
         executed.append((phase.pipeline.stage, approved_parse_rules))
         return 0
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+
 # Dedicated worker processes use fixed argument vectors and never invoke a shell.
 import subprocess  # nosec B404
 import sys
@@ -112,17 +113,17 @@ class JobController:
         target = (
             RunStatus.RUNNING_STAGE1
             if phase in {InferencePhase.STAGE1, InferencePhase.STAGE1_THEN_PASS1}
-            or (
-                phase is InferencePhase.USER_GUIDE
-                and config.pipeline.stage == "all"
-            )
+            or (phase is InferencePhase.USER_GUIDE and config.pipeline.stage == "all")
             else (
                 RunStatus.RUNNING_STAGE2
                 if phase is InferencePhase.USER_GUIDE
                 else RunStatus.DISCOVERING_PARSE_RULES
             )
         )
-        self.store.transition(run_id, target)
+        if target is RunStatus.RUNNING_STAGE2:
+            self.store.start_uploaded_guide_stage2(run_id)
+        else:
+            self.store.transition(run_id, target)
         command = self._production_command(
             run_id,
             phase=phase,

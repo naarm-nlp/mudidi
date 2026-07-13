@@ -220,7 +220,10 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="introduction_file" type="file"' in response.text
     assert 'name="alphabet_file" type="file"' in response.text
     assert 'name="existing_mdf_guide_file" type="file"' in response.text
-    assert "Valid uploaded guides are used directly without a human checkpoint" in response.text
+    assert (
+        "Valid uploaded guides are used directly without a human checkpoint"
+        in response.text
+    )
     assert "It is still validated and must be reviewed" not in response.text
     assert 'name="stage1_additional_instructions"' in response.text
     assert 'name="stage2_additional_instructions"' in response.text
@@ -244,7 +247,9 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" in response.text
     assert "pages 31–95" in response.text
     assert "65 pages" in response.text
-    assert "only the pages that describe the MDF markers or tags relevant" in response.text
+    assert (
+        "only the pages that describe the MDF markers or tags relevant" in response.text
+    )
     assert "run Complete digitization first without an MDF manual" in response.text
     assert "human checkpoint" in response.text
     assert "MDF parsing guide inferred by the LLM" in response.text

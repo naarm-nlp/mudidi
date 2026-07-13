@@ -127,14 +127,20 @@ sends reasoning controls to model families known to support them.
 
 ## MDF parsing guide review checkpoint
 
-Complete and MDF-parsing runs pause after Stage 2 infers or imports the MDF
-parsing guide. Open **MDF parsing guide**, review its markers and guide rules,
-make any edits, and select **Approve and continue MDF parsing**.
+Complete and MDF-parsing runs pause when Stage 2 **infers** an MDF parsing guide.
+Open **MDF parsing guide**, review its markers and guide rules, make any edits,
+and select **Approve and continue MDF parsing**.
 
 Saving a draft is not approval. Page parsing cannot start without a server-minted
 approval bound to the exact run, review version, immutable snapshot, digest, and
-approval time. An uploaded guide is treated as untrusted and goes through the
-same mandatory review.
+approval time.
+
+A user-uploaded existing MDF parsing guide follows a different path: MUDIDI
+copies it into the run-owned input bundle, validates its JSON and marker format,
+and uses it directly without Pass 1 discovery or a human checkpoint. The guide
+is validated again when Stage 2 loads it. Uploading a guide therefore means the
+user is supplying the intended parsing rules, while malformed files still fail
+safely before MDF parsing.
 
 ## Monitor and inspect
 

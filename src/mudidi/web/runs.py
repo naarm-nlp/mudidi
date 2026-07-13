@@ -73,7 +73,6 @@ _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
     RunStatus.QUEUED: frozenset(
         {
             RunStatus.RUNNING_STAGE1,
-            RunStatus.RUNNING_STAGE2,
             RunStatus.DISCOVERING_PARSE_RULES,
             RunStatus.AWAITING_PARSE_RULES_REVIEW,
             RunStatus.CREDENTIALS_REQUIRED,
@@ -438,6 +437,33 @@ class RunStore:
                 row["review_id"] and row["approval_digest"]
             ):
                 raise InvalidRunTransition("Pass 2 resume requires durable approval")
+            try:
+                connection.execute(
+                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                    (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
+                )
+                connection.commit()
+            except sqlite3.IntegrityError as exc:
+                connection.rollback()
+                raise ActiveRunExistsError(
+                    "another inference worker is active"
+                ) from exc
+        return self.get_run(run_id)
+
+    def start_uploaded_guide_stage2(self, run_id: str) -> RunRecord:
+        """Start direct Stage 2 through the explicit user-guide boundary."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is None:
+                raise KeyError(run_id)
+            if RunStatus(row["status"]) is not RunStatus.QUEUED:
+                raise InvalidRunTransition(
+                    "uploaded-guide Stage 2 requires a queued run"
+                )
             try:
                 connection.execute(
                     "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",

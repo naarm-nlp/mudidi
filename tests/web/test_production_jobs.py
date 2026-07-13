@@ -122,9 +122,7 @@ def test_uploaded_guide_complete_run_executes_without_review(tmp_path: Path) -> 
     )
     config = config.model_copy(
         update={
-            "pipeline": config.pipeline.model_copy(
-                update={"parse_rules_file": guide}
-            )
+            "pipeline": config.pipeline.model_copy(update={"parse_rules_file": guide})
         }
     )
     controller.prepare_inference(
@@ -149,6 +147,41 @@ def test_uploaded_guide_complete_run_executes_without_review(tmp_path: Path) -> 
         pass
     else:
         raise AssertionError("user-uploaded guides must not create a review checkpoint")
+
+
+def test_interrupted_uploaded_guide_stage2_resumes_without_approval(
+    tmp_path: Path,
+) -> None:
+    store, _reviews, controller = _controller(tmp_path)
+    config = _config(tmp_path, stage="2")
+    guide = tmp_path / "uploaded-guide.json"
+    guide.write_text(
+        '{"markers":[{"marker":"lx","description":"Headword"}]}',
+        encoding="utf-8",
+    )
+    config = config.model_copy(
+        update={
+            "pipeline": config.pipeline.model_copy(update={"parse_rules_file": guide})
+        }
+    )
+    controller.prepare_inference(
+        "resume-uploaded-guide",
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+    store.transition("resume-uploaded-guide", RunStatus.QUEUED)
+    store.start_uploaded_guide_stage2("resume-uploaded-guide")
+    store.interrupt("resume-uploaded-guide")
+
+    controller.resume_inference(
+        "resume-uploaded-guide",
+        credential=_credential(),
+        offline_executor=True,
+    )
+    controller.wait("resume-uploaded-guide", timeout=10)
+
+    assert store.get_run("resume-uploaded-guide").status is RunStatus.COMPLETED
+    assert (tmp_path / "output/stage-2/page_1/page_1_mdf.txt").is_file()
 
 
 def test_prepared_config_and_worker_command_never_contain_temporary_key(

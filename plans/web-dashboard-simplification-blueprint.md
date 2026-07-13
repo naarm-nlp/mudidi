@@ -712,6 +712,20 @@ Reference Manual, or no manual. Its help text recommends extracting the relevant
 pages from pages 31–95 before uploading them. This resolution supersedes the
 earlier bundled-asset steps and acceptance criteria in this blueprint.
 
+### Plan mutation — user-supplied MDF parsing guides (2026-07-13)
+
+The original blueprint sent user-uploaded guides through the same human review
+as LLM-inferred guides. The repository owner clarified that selecting an
+existing guide is already an explicit user decision and should not require a
+second approval checkpoint.
+
+Resolution: uploaded guides remain untrusted at the file boundary, are copied
+into run-owned storage, and must pass the authoritative JSON/marker validator.
+After validation they bypass Pass 1 discovery and execute Stage 2 directly from
+the managed copy; the loader validates them again. LLM-inferred guides still
+require the immutable, run-bound human approval capability. This mutation
+supersedes Step 3 task 6 and the uploaded-guide review assertions in Step 5.
+
 ## Anti-pattern checklist
 
 Reject an implementation that:

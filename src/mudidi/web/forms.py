@@ -71,12 +71,8 @@ class NewRunForm(BaseModel):
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
-    stage1_additional_instructions: str | None = Field(
-        default=None, max_length=20_000
-    )
-    stage2_additional_instructions: str | None = Field(
-        default=None, max_length=20_000
-    )
+    stage1_additional_instructions: str | None = Field(default=None, max_length=20_000)
+    stage2_additional_instructions: str | None = Field(default=None, max_length=20_000)
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
 
@@ -430,7 +426,9 @@ def _clean_optional(value: str | None) -> str | None:
 
 def _normalize_page_spec(value: str) -> str:
     parts = [part.strip() for part in value.split(",")]
-    if not parts or any(not part or not _PAGE_SPEC_PART.fullmatch(part) for part in parts):
+    if not parts or any(
+        not part or not _PAGE_SPEC_PART.fullmatch(part) for part in parts
+    ):
         raise ValueError(
             "use positive page numbers, commas, and ascending ranges such as 1-12,15"
         )
