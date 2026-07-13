@@ -16,7 +16,6 @@ from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.config.yaml_config import InferenceConfig
 
 _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
-_INTRO_SUFFIXES = _PAGE_SUFFIXES | {".pdf", ".txt", ".md", ".docx"}
 _ALPHABET_SUFFIXES = _PAGE_SUFFIXES | {".gif", ".txt", ".md", ".docx"}
 _MAX_FILES = 5_000
 _MAX_UPLOAD_BYTES = 24 * 1024 * 1024
@@ -76,20 +75,6 @@ class InputMaterializer:
             allowed=_PAGE_SUFFIXES,
             multiple=True,
             allow_relative=True,
-        )
-
-    async def materialize_introduction(
-        self, run_id: str, uploads: list[UploadFile]
-    ) -> Path:
-        """Store one introduction file or a flat introduction directory."""
-
-        return await self._materialize_files(
-            run_id,
-            "introduction",
-            uploads,
-            allowed=_INTRO_SUFFIXES,
-            multiple=len(uploads) > 1,
-            allow_relative=len(uploads) > 1,
         )
 
     async def materialize_alphabet(

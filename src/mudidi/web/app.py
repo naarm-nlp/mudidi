@@ -285,18 +285,6 @@ def create_app(
                 run_id, selected_pages
             )
 
-            introduction_files = uploaded("introduction_file")
-            introduction_directory = uploaded("introduction_directory")
-            if introduction_files and introduction_directory:
-                raise ValueError("choose an introduction file or folder, not both")
-            selected_introduction = introduction_directory or introduction_files
-            if selected_introduction:
-                payload["introduction"] = (
-                    await app.state.inputs.materialize_introduction(
-                        run_id, selected_introduction
-                    )
-                )
-
             alphabet_files = uploaded("alphabet_file")
             if len(alphabet_files) > 1:
                 raise ValueError("select exactly one alphabet file")
