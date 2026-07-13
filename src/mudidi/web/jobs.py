@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import ValidationError
 
-from mudidi.config.yaml_config import InferenceConfig
+from mudidi.config.yaml_config import InferenceConfig, redacted_config_dict
 from mudidi.execution.approval import ApprovedParseRules
 from mudidi.execution.events import (
     ParseRulesGenerated,
@@ -84,7 +84,10 @@ class JobController:
         path = self.config_path(run_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".tmp")
-        temporary.write_text(config.model_dump_json(indent=2), encoding="utf-8")
+        temporary.write_text(
+            json.dumps(redacted_config_dict(config), indent=2),
+            encoding="utf-8",
+        )
         temporary.replace(path)
         self.store.create_run(run_id, provider=provider.value)
         self.store.transition(run_id, RunStatus.VALIDATED)

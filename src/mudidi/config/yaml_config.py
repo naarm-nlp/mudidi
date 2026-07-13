@@ -476,9 +476,14 @@ def merge_explicit_overrides(
 
 
 def redacted_config_dict(config: MudidiConfig) -> dict[str, Any]:
-    """Return a JSON-compatible resolved configuration without credentials."""
+    """Return a resolved snapshot without credentials or inactive backends."""
 
     data = config.model_dump(mode="json", exclude={"source_config"})
+    if isinstance(config, _ExtractionConfig):
+        if config.pipeline.strategy != "vlm_ocr":
+            data.pop("vlm", None)
+        if config.pipeline.strategy != "mathpix_ocr":
+            data.pop("mathpix", None)
     if config.source_config is not None:
         data["source_config"] = str(config.source_config)
     return data
