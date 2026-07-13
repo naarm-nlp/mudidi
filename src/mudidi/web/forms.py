@@ -101,7 +101,6 @@ class NewRunForm(BaseModel):
     rewriter_reasoning: ReasoningChoice | None = None
 
     batch_size: int = Field(default=1, ge=1, le=32)
-    prompt_cache: Literal["auto", "off"] = "auto"
 
     @field_validator("dictionary_pages", "introduction_pages")
     @classmethod
@@ -229,7 +228,7 @@ class NewRunForm(BaseModel):
             runtime=RuntimeConfig(
                 batch_size=self.batch_size,
                 limit=None,
-                prompt_cache=self.prompt_cache,
+                prompt_cache="auto",
                 media_reference="auto",
             ),
         )

@@ -65,6 +65,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     )
     assert 'aria-label="About temperature"' in response.text
     assert 'aria-label="About reasoning"' in response.text
+    assert "requests sent in parallel to your model provider" in response.text
+    assert "Check the rate limits for your provider and selected model" in response.text
     assert 'name="strategy"' not in response.text
     assert 'name="vlm_model"' not in response.text
     assert 'name="mathpix_max_wait_seconds"' not in response.text

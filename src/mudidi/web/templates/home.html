@@ -96,10 +96,11 @@
                   <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
                 </label>
               {% endfor %}
-              <label data-stage-control data-pipeline-stages="stage1 pass1 pass2">Temperature
+              <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
                 <input name="temperature" type="number" min="0" step="0.05" value="0.1">
               </label>
-              <label>Reasoning
+              <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1"></label>
+              <label><span class="field-heading">Reasoning <button class="info-button" type="button" aria-label="About reasoning" data-help="Controls the model's reasoning effort. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
                 <select name="reasoning">
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -138,10 +139,10 @@
                 <label>Separate introduction file<input name="introduction_file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.docx"></label>
                 <label>Or introduction folder<input name="introduction_directory" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.docx" webkitdirectory multiple></label>
                 <label>Alphabet or orthography guide<input name="alphabet_file" type="file" accept=".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.docx"></label>
-                <label data-stage-control data-pipeline-stages="stage1">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
+                <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2">Existing MDF parsing guide<input name="existing_mdf_guide_file" type="file" accept=".json"><small>Optional. Upload a pre-generated MDF parsing guide. Skip this if you have not generated one during Stage 2.</small></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button><input name="parse_rules_pages" placeholder="1,3-4"></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button></span><input name="parse_rules_pages" placeholder="1,3-4"></label>
               </div>
               <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
                 <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
@@ -198,13 +199,6 @@
             <datalist id="model-catalog">
               {% for model in models %}<option value="{{ model.model_id }}">{{ model.display_name }}</option>{% endfor %}
             </datalist>
-            <details>
-              <summary>Runtime</summary>
-              <div class="form-grid">
-                <label>Batch size<input name="batch_size" type="number" min="1" max="32" value="1"></label>
-                <label>Prompt cache<select name="prompt_cache"><option value="auto">Automatic</option><option value="off">Off</option></select></label>
-              </div>
-            </details>
             <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
           </form>
 
