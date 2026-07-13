@@ -20,23 +20,21 @@ from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet, MarkerLi
 
 
 def test_load_parse_rules_file(tmp_path: Path) -> None:
-    path = tmp_path / "parse-rules.json"
+    path = tmp_path / "mdf_parsing_guide.json"
     path.write_text(
         DictionaryMarkerCheatsheet(
-            dictionary_name="Test",
             markers=[MarkerLine(marker="lx", description="headword")],
         ).model_dump_json(indent=2),
         encoding="utf-8",
     )
     loaded = load_parse_rules_file(path)
-    assert loaded.dictionary_name == "Test"
     assert loaded.markers[0].marker == "lx"
 
 
 @patch("mudidi.llm.pass_1.complete_with_usage")
 def test_discover_field_cheatsheet_multi_uses_multi_prompt(mock_complete) -> None:
     mock_complete.return_value = (
-        '{"dictionary_name": "Test", "markers": [{"marker": "lx", "description": "hw"}], '
+        '{"markers": [{"marker": "lx", "description": "hw"}], '
         '"rules": [], "abbreviations": {}}',
         {"model": "gemini/gemini-3-flash-preview", "total_tokens": 100, "cost_usd": 0.01},
     )
@@ -62,11 +60,12 @@ def test_discover_field_cheatsheet_multi_uses_multi_prompt(mock_complete) -> Non
             model="gemini/gemini-3-flash-preview",
         )
 
-    assert sheet.dictionary_name == "Test"
+    assert "dictionary_name" not in sheet.model_dump()
     assert usage["cost_usd"] == 0.01
     user_content = mock_complete.call_args.kwargs["messages"][1]["content"]
     text_part = user_content[0]["text"]
     assert "Several sample dictionary pages" in text_part
+    assert "dictionary_name" not in text_part
     assert '<sample_transcription page="page_1">' in text_part
     assert '<sample_transcription page="page_2">' in text_part
     assert len(user_content) == 3  # text + two sample images
@@ -75,7 +74,7 @@ def test_discover_field_cheatsheet_multi_uses_multi_prompt(mock_complete) -> Non
 @patch("mudidi.llm.pass_1.complete_with_usage")
 def test_discover_field_cheatsheet_multi_includes_config_hint_when_set(mock_complete) -> None:
     mock_complete.return_value = (
-        '{"dictionary_name": "Test", "markers": [{"marker": "lx", "description": "hw"}], '
+        '{"markers": [{"marker": "lx", "description": "hw"}], '
         '"rules": [], "abbreviations": {}}',
         {"model": "gemini/gemini-3-flash-preview", "total_tokens": 100, "cost_usd": 0.01},
     )
@@ -117,14 +116,13 @@ def test_discover_field_cheatsheet_multi_includes_config_hint_when_set(mock_comp
 
 
 def test_load_or_discover_parse_rules_cached_skips_usage(tmp_path: Path) -> None:
-    cache_path = tmp_path / "parse-rules.json"
+    cache_path = tmp_path / "mdf_parsing_guide.json"
     cache_path.write_text(
         DictionaryMarkerCheatsheet(
-            dictionary_name="Test",
             markers=[MarkerLine(marker="lx", description="headword")],
         ).model_dump_json(indent=2),
         encoding="utf-8",
     )
     sheet, usage = load_or_discover_parse_rules(cache_path)
-    assert sheet.dictionary_name == "Test"
+    assert sheet.markers[0].marker == "lx"
     assert usage is None
