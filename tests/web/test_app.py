@@ -65,6 +65,15 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Other / advanced provider" in response.text
     assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
+    assert 'name="evaluator_provider"' in response.text
+    assert 'name="evaluator_model"' in response.text
+    assert 'name="evaluator_custom_model"' in response.text
+    assert 'name="rewriter_provider"' in response.text
+    assert 'name="rewriter_model"' in response.text
+    assert 'name="rewriter_custom_model"' in response.text
+    assert 'data-agentic-model-group="evaluator"' in response.text
+    assert 'data-agentic-model-group="rewriter"' in response.text
+    assert 'list="model-catalog"' not in response.text
     assert 'name="page_limit"' not in response.text
     assert 'name="media_reference"' not in response.text
     assert 'name="prompt_cache"' not in response.text

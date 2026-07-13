@@ -274,6 +274,29 @@ def test_agentic_and_manual_controls_follow_pipeline(
     expect(page.get_by_label("Verify Stage 1")).to_be_checked()
     expect(page.get_by_label("Verify Stage 2")).to_be_checked()
 
+    evaluator_provider = page.locator('select[name="evaluator_provider"]')
+    evaluator_model = page.locator('select[name="evaluator_model"]')
+    evaluator_custom = page.locator('input[name="evaluator_custom_model"]')
+    evaluator_provider.select_option("openai")
+    expect(
+        evaluator_model.locator('option[data-model-provider="openai"]').first
+    ).to_be_enabled()
+    expect(
+        evaluator_model.locator('option[data-model-provider="gemini"]').first
+    ).to_be_disabled()
+    evaluator_model.select_option("__other__")
+    expect(evaluator_custom).to_be_visible()
+    expect(evaluator_custom).to_have_attribute(
+        "placeholder", "Enter a model name supported by OpenAI"
+    )
+
+    page.locator('select[name="provider"]').select_option("gemini")
+    stage1_model = page.locator('select[name="stage1_model"]')
+    stage1_model.select_option("__other__")
+    expect(page.locator('input[name="stage1_custom_model"]')).to_have_attribute(
+        "placeholder", "Enter a model name supported by Google Gemini"
+    )
+
     page.locator('input[name="pipeline"][value="transcription"]').check()
     expect(page.get_by_label("Verify Stage 2")).to_be_disabled()
     expect(page.locator("[data-mdf-manual]")).to_be_hidden()

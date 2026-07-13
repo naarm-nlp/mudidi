@@ -219,6 +219,23 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.runtime.media_reference == "auto"
 
 
+def test_agentic_custom_models_use_their_selected_providers(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        agentic=True,
+        verify_stage1=True,
+        evaluator_provider="gemini",
+        evaluator_model="__other__",
+        evaluator_custom_model="gemini-3.1-pro-preview",
+        rewriter_provider="openai",
+        rewriter_model="__other__",
+        rewriter_custom_model="gpt-5.6-terra",
+    ).to_inference_config()
+
+    assert config.agentic.evaluator_model == "gemini/gemini-3.1-pro-preview"
+    assert config.agentic.rewriter_model == "openai/gpt-5.6-terra"
+
+
 def test_optional_dictionary_profile_maps_five_dashboard_answers(
     tmp_path: Path,
 ) -> None:
