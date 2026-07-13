@@ -154,6 +154,28 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "anthropic/claude-sonnet-4-6" in response.text
 
 
+def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "temperature": "-1",
+        },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
+    )
+
+    assert response.status_code == 422
+    assert "Temperature" in response.text
+    assert "greater than or equal to 0" in response.text
+    assert "Submitted values are not echoed" not in response.text
+
+
 def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
     tmp_path: Path,
 ) -> None:

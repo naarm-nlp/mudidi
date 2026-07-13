@@ -112,6 +112,36 @@ def test_active_run_updates_from_sse_without_manual_refresh(
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
 
 
+def test_invalid_preview_restores_safe_form_values(
+    local_site: str,
+    browser_page: Page,
+    tmp_path: Path,
+) -> None:
+    page = browser_page
+    output = str(tmp_path / "remembered-output")
+    page.goto(local_site)
+    page.get_by_label("Output directory").fill(output)
+    page.locator('input[name="page_files"]').set_input_files(
+        {"name": "page_1.png", "mimeType": "image/png", "buffer": _PNG}
+    )
+    page.evaluate(
+        """
+        () => {
+          const temperature = document.querySelector('input[name="temperature"]');
+          temperature.value = "-1";
+          temperature.dispatchEvent(new Event("input", { bubbles: true }));
+          document.querySelector("form.run-form").submit();
+        }
+        """
+    )
+
+    expect(page.get_by_text("Temperature", exact=True)).to_be_visible()
+    page.get_by_role("link", name="Return to New run").click()
+    expect(page.get_by_label("Output directory")).to_have_value(output)
+    expect(page.locator('input[name="temperature"]')).to_have_value("-1")
+    expect(page.locator('input[name="page_files"]')).to_have_value("")
+
+
 def test_agentic_and_manual_controls_follow_pipeline(
     local_site: str,
     browser_page: Page,
