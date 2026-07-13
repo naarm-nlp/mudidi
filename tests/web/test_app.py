@@ -6,8 +6,9 @@ import base64
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
-from mudidi.web.app import create_app
+from mudidi.web.app import _validation_errors, create_app
 from mudidi.web.credentials import CredentialSource, CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.models import LiveModelOption
@@ -71,6 +72,10 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="vlm_model"' not in response.text
     assert 'name="mathpix_max_wait_seconds"' not in response.text
     assert 'name="output_policy"' in response.text
+    assert "Require a new or empty directory" not in response.text
+    assert '<option value="resume" selected>' in response.text
+    assert "Resume compatible existing artifacts" in response.text
+    assert '<option value="overwrite">Overwrite existing artifacts</option>' in response.text
     assert "Dictionary Profile (optional)" in response.text
     assert "can improve extraction accuracy" in response.text
     assert 'name="profile_headword_language"' in response.text
@@ -309,6 +314,17 @@ def test_new_run_form_renders_validation_errors_without_echoing_secret(
     assert response.status_code == 422
     assert "Check the highlighted configuration" in response.text
     assert "sk-do-not-render" not in response.text
+
+
+def test_empty_pydantic_error_still_has_a_user_facing_validation_issue() -> None:
+    error = ValidationError.from_exception_data("configuration", [])
+
+    assert _validation_errors(error) == [
+        {
+            "field": "Configuration",
+            "message": "The submitted configuration could not be validated",
+        }
+    ]
 
 
 def test_provider_page_lists_bundled_and_custom_models(tmp_path: Path) -> None:

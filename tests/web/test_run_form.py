@@ -249,15 +249,18 @@ def test_dictionary_profile_is_optional_and_typography_is_not_a_web_field(
         _form(tmp_path, stage1_typography=True)
 
 
-def test_new_output_policy_rejects_nonempty_directory(tmp_path: Path) -> None:
+def test_overwrite_output_policy_marks_existing_artifacts_for_replacement(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "existing-output"
     output.mkdir()
     (output / "previous.txt").write_text("do not overwrite", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="already contains files"):
-        _form(
-            tmp_path, output_directory=output, output_policy="new"
-        ).to_inference_config()
+    config = _form(
+        tmp_path, output_directory=output, output_policy="overwrite"
+    ).to_inference_config()
+
+    assert config.runtime.overwrite is True
 
 
 def test_resume_output_policy_preserves_existing_artifacts(tmp_path: Path) -> None:
@@ -273,4 +276,17 @@ def test_resume_output_policy_preserves_existing_artifacts(tmp_path: Path) -> No
     ).to_inference_config()
 
     assert config.output.directory == output.resolve()
+    assert config.runtime.overwrite is False
+    assert previous.read_text(encoding="utf-8") == "resume me"
+
+
+def test_resume_is_the_safe_default_for_existing_output(tmp_path: Path) -> None:
+    output = tmp_path / "existing-output"
+    output.mkdir()
+    previous = output / "previous.txt"
+    previous.write_text("resume me", encoding="utf-8")
+
+    config = _form(tmp_path, output_directory=output).to_inference_config()
+
+    assert config.runtime.overwrite is False
     assert previous.read_text(encoding="utf-8") == "resume me"
