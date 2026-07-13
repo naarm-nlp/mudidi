@@ -139,6 +139,43 @@ def test_presets_round_trip_non_secret_typed_configuration(
     assert store.list_presets() == [loaded]
 
 
+def test_saving_an_existing_preset_name_replaces_the_old_preset(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    original = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "original"},
+        }
+    )
+    replacement = original.model_copy(
+        update={"output": original.output.model_copy(update={"directory": tmp_path / "new"})}
+    )
+    store.create_preset(
+        "preset-old",
+        name="My dictionary",
+        provider="gemini",
+        config=original,
+    )
+
+    saved = store.create_preset(
+        "preset-new",
+        name="My dictionary",
+        provider="openai",
+        config=replacement,
+    )
+
+    assert saved.preset_id == "preset-new"
+    assert saved.provider == "openai"
+    assert saved.config.output.directory == (tmp_path / "new")
+    assert store.list_presets() == [saved]
+    with pytest.raises(KeyError):
+        store.get_preset("preset-old")
+
+
 def test_approved_pass2_interruption_resumes_directly_to_pass2(store: RunStore) -> None:
     store.create_run("run-pass2")
     store.transition("run-pass2", RunStatus.VALIDATED)

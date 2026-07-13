@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import re
 import shutil
 from pathlib import Path
@@ -39,6 +40,17 @@ def _preview(client: TestClient, tmp_path: Path) -> str:
     match = re.search(r'action="/runs/([^/]+)/start"', response.text)
     assert match is not None
     return match.group(1)
+
+
+def _pdf_bytes() -> bytes:
+    import fitz
+
+    document = fitz.open()
+    document.new_page()
+    try:
+        return document.tobytes()
+    finally:
+        document.close()
 
 
 def test_review_start_pause_approve_and_complete_offline_journey(
@@ -170,6 +182,31 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
     run_id = _preview(client, tmp_path)
+    run_bundle = app.state.inputs.bundle(run_id)
+    guide = run_bundle / "mdf_guide" / "saved-guide.json"
+    guide.parent.mkdir()
+    guide.write_text(
+        json.dumps(
+            {"markers": [{"marker": "lx", "description": "Headword"}]}
+        ),
+        encoding="utf-8",
+    )
+    manual = run_bundle / "mdf_manual" / "saved-manual.pdf"
+    manual.parent.mkdir()
+    manual.write_bytes(_pdf_bytes())
+    run_config = app.state.job_controller.load_inference_config(run_id)
+    run_config = run_config.model_copy(
+        update={
+            "input": run_config.input.model_copy(update={"toolbox_pdf": manual}),
+            "pipeline": run_config.pipeline.model_copy(
+                update={"parse_rules_file": guide}
+            ),
+        }
+    )
+    app.state.job_controller.config_path(run_id).write_text(
+        run_config.model_dump_json(indent=2),
+        encoding="utf-8",
+    )
 
     saved = client.post(
         f"/runs/{run_id}/presets",
@@ -200,6 +237,22 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert 'id="preset-form-state"' in loaded.text
     assert str(tmp_path / "output") in loaded.text
     assert "Loaded preset: My verified setup" in loaded.text
+    assert 'id="page-files"' in loaded.text
+    assert re.search(r'id="page-files"[^>]*disabled', loaded.text) is None
+    assert re.search(r'name="existing_mdf_guide_file"[^>]*disabled', loaded.text) is None
+    assert "page_1.png" in loaded.text
+    assert "saved-guide.json" in loaded.text
+    assert "saved-manual.pdf" in loaded.text
+    assert f'/presets/{preset.preset_id}/files/pages/0' in loaded.text
+    assert f'/presets/{preset.preset_id}/files/mdf-guide' in loaded.text
+    assert f'/presets/{preset.preset_id}/files/mdf-manual' in loaded.text
+
+    saved_page = client.get(f"/presets/{preset.preset_id}/files/pages/0")
+    saved_guide = client.get(f"/presets/{preset.preset_id}/files/mdf-guide")
+    saved_manual = client.get(f"/presets/{preset.preset_id}/files/mdf-manual")
+    assert saved_page.content == _PNG
+    assert saved_guide.json()["markers"][0]["marker"] == "lx"
+    assert saved_manual.content.startswith(b"%PDF-")
 
     # Presets own their input assets and remain valid after the source run is removed.
     shutil.rmtree(tmp_path / "app-data" / "runs" / run_id / "inputs")
@@ -230,6 +283,45 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert cloned_config.input.pages.resolve().is_relative_to(
         (tmp_path / "app-data" / "runs" / cloned.run_id / "inputs").resolve()
     )
+
+    replacement = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "replacement-output"),
+            "output_policy": "resume",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "agentic": "false",
+            "mdf_manual_source": "upload",
+        },
+        files=[
+            ("page_files", ("replacement.png", _PNG, "image/png")),
+            (
+                "existing_mdf_guide_file",
+                (
+                    "replacement-guide.json",
+                    json.dumps(
+                        {"markers": [{"marker": "ge", "description": "Gloss"}]}
+                    ),
+                    "application/json",
+                ),
+            ),
+            ("custom_mdf_manual", ("replacement.pdf", _pdf_bytes(), "application/pdf")),
+        ],
+    )
+
+    assert replacement.status_code == 200
+    replacement_run = app.state.run_store.list_runs()[0]
+    replacement_config = app.state.job_controller.load_inference_config(
+        replacement_run.run_id
+    )
+    assert replacement_config.input.pages.name == "pages"
+    assert (replacement_config.input.pages / "replacement.png").is_file()
+    assert replacement_config.pipeline.parse_rules_file.name == "replacement-guide.json"
+    assert replacement_config.input.toolbox_pdf.name == "replacement.pdf"
 
 
 def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> None:
