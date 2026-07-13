@@ -1,8 +1,10 @@
-"""Process-memory API credential handling for the localhost application."""
+"""Encrypted API credential handling for the localhost application."""
 
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
@@ -24,6 +26,7 @@ class CredentialSource(StrEnum):
     """Non-secret description of where a provider key will be resolved."""
 
     TEMPORARY = "temporary"
+    PERSISTENT = "persistent"
     ENVIRONMENT = "environment"
     MISSING = "missing"
 
@@ -52,10 +55,16 @@ class ResolvedCredential:
 
 
 class CredentialVault:
-    """Thread-safe temporary credential store with environment fallback."""
+    """Thread-safe credential resolver with encrypted persistent storage."""
 
-    def __init__(self, *, environ: Mapping[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        environ: Mapping[str, str] | None = None,
+        persistent_store: PersistentCredentialStore | None = None,
+    ) -> None:
         self._environ = environ if environ is not None else os.environ
+        self._persistent_store = persistent_store
         self._temporary: dict[Provider, SecretStr] = {}
         self._lock = RLock()
 
@@ -75,6 +84,30 @@ class CredentialVault:
         with self._lock:
             self._temporary[provider] = SecretStr(cleaned)
 
+    def set_persistent(self, provider: Provider, value: str) -> None:
+        """Encrypt and save a provider key in the local dashboard database."""
+
+        cleaned = _validated_credential(provider, value)
+        if self._persistent_store is None:
+            raise ValueError("persistent credential storage is unavailable")
+        self._persistent_store.save(provider, cleaned)
+
+    def reveal_persistent(self, provider: Provider) -> str:
+        """Decrypt one explicitly saved key for a user-requested preview."""
+
+        if self._persistent_store is None:
+            raise KeyError(provider.value)
+        value = self._persistent_store.load(provider)
+        if value is None:
+            raise KeyError(provider.value)
+        return value
+
+    def clear_persistent(self, provider: Provider) -> None:
+        """Delete one encrypted provider key."""
+
+        if self._persistent_store is not None:
+            self._persistent_store.delete(provider)
+
     def clear_temporary(self, provider: Provider) -> None:
         """Forget a temporary key, leaving any environment fallback intact."""
 
@@ -88,6 +121,14 @@ class CredentialVault:
             temporary = self._temporary.get(provider)
         if temporary is not None:
             return ResolvedCredential(provider, CredentialSource.TEMPORARY, temporary)
+        if self._persistent_store is not None:
+            persistent = self._persistent_store.load(provider)
+            if persistent is not None:
+                return ResolvedCredential(
+                    provider,
+                    CredentialSource.PERSISTENT,
+                    SecretStr(persistent),
+                )
         environment_name = _ENVIRONMENT_KEYS.get(provider)
         environment_value = (
             self._environ.get(environment_name, "") if environment_name else ""
@@ -123,3 +164,103 @@ def credential_environment_name(provider: Provider) -> str | None:
     """Return the allowlisted LiteLLM environment variable for a provider."""
 
     return _ENVIRONMENT_KEYS.get(provider)
+
+
+class PersistentCredentialStore:
+    """Fernet-encrypted provider credentials stored in the web SQLite database."""
+
+    def __init__(self, *, database_path: Path, key_path: Path) -> None:
+        from cryptography.fernet import Fernet
+
+        self.database_path = database_path.expanduser().resolve()
+        self.key_path = key_path.expanduser().resolve()
+        self.database_path.parent.mkdir(parents=True, exist_ok=True)
+        self._fernet = Fernet(_load_or_create_fernet_key(self.key_path))
+        with self._connect() as connection:
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS provider_credentials (
+                    provider TEXT PRIMARY KEY,
+                    encrypted_value BLOB NOT NULL
+                )
+                """
+            )
+        try:
+            self.database_path.chmod(0o600)
+        except OSError:
+            pass
+
+    def _connect(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(self.database_path, timeout=5)
+        connection.execute("PRAGMA busy_timeout = 5000")
+        return connection
+
+    def save(self, provider: Provider, value: str) -> None:
+        """Upsert authenticated ciphertext for one supported provider."""
+
+        cleaned = _validated_credential(provider, value)
+        encrypted = self._fernet.encrypt(cleaned.encode("utf-8"))
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO provider_credentials(provider, encrypted_value) "
+                "VALUES (?, ?) ON CONFLICT(provider) DO UPDATE SET "
+                "encrypted_value = excluded.encrypted_value",
+                (provider.value, encrypted),
+            )
+
+    def load(self, provider: Provider) -> str | None:
+        """Decrypt one credential or return ``None`` when it is not saved."""
+
+        from cryptography.fernet import InvalidToken
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT encrypted_value FROM provider_credentials WHERE provider = ?",
+                (provider.value,),
+            ).fetchone()
+        if row is None:
+            return None
+        try:
+            return self._fernet.decrypt(bytes(row[0])).decode("utf-8")
+        except (InvalidToken, UnicodeDecodeError) as exc:
+            raise ValueError("saved credential cannot be decrypted") from exc
+
+    def delete(self, provider: Provider) -> None:
+        """Delete one provider ciphertext without affecting other settings."""
+
+        with self._connect() as connection:
+            connection.execute(
+                "DELETE FROM provider_credentials WHERE provider = ?",
+                (provider.value,),
+            )
+
+
+def _validated_credential(provider: Provider, value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError("API key must not be empty")
+    if provider is Provider.CUSTOM:
+        raise ValueError("custom routing does not define a standard API key")
+    return cleaned
+
+
+def _load_or_create_fernet_key(path: Path) -> bytes:
+    """Load or atomically create a user-readable-only encryption key."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        pass
+    else:
+        from cryptography.fernet import Fernet
+
+        try:
+            os.write(descriptor, Fernet.generate_key())
+        finally:
+            os.close(descriptor)
+    try:
+        path.chmod(0o600)
+        return path.read_bytes().strip()
+    except OSError as exc:
+        raise ValueError("credential encryption key is unavailable") from exc

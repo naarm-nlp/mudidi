@@ -13,6 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     RedirectResponse,
     StreamingResponse,
@@ -23,7 +24,7 @@ from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
-from mudidi.web.credentials import CredentialVault
+from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import NewRunForm
 from mudidi.web.jobs import JobController
@@ -101,7 +102,13 @@ def create_app(
         openapi_url=None,
     )
     app.state.data_dir = resolved_data_dir
-    app.state.credential_vault = credential_vault or CredentialVault()
+    app.state.credential_vault = credential_vault or CredentialVault(
+        environ={},
+        persistent_store=PersistentCredentialStore(
+            database_path=resolved_data_dir / "mudidi-web.sqlite3",
+            key_path=resolved_data_dir / ".credential-key",
+        ),
+    )
     app.state.model_catalog = ModelCatalog.bundled()
     app.state.model_discovery = model_discovery or ModelDiscovery()
     app.state.live_models = {}
@@ -480,7 +487,7 @@ def create_app(
         request: Request,
         provider_name: str,
     ) -> HTMLResponse:
-        """Store one temporary provider credential in process memory."""
+        """Encrypt and persist one provider credential locally."""
 
         try:
             provider = Provider(provider_name)
@@ -489,7 +496,7 @@ def create_app(
         submitted = await request.form()
         api_key = str(submitted.get("api_key", ""))
         try:
-            app.state.credential_vault.set_temporary(provider, api_key)
+            app.state.credential_vault.set_persistent(provider, api_key)
         except ValueError:
             return _render_providers(
                 request,
@@ -500,8 +507,39 @@ def create_app(
         return _render_providers(
             request,
             app,
-            message="Temporary key ready",
+            message="Encrypted key saved",
         )
+
+    @app.post("/providers/{provider_name}/credential/reveal")
+    async def reveal_provider_credential(provider_name: str) -> JSONResponse:
+        """Reveal a saved key only after an explicit same-origin action."""
+
+        try:
+            provider = Provider(provider_name)
+            api_key = app.state.credential_vault.reveal_persistent(provider)
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="saved key not found") from exc
+        return JSONResponse(
+            {"api_key": api_key},
+            headers={"Cache-Control": "no-store"},
+        )
+
+    @app.post(
+        "/providers/{provider_name}/credential/delete",
+        response_class=HTMLResponse,
+    )
+    async def delete_provider_credential(
+        request: Request,
+        provider_name: str,
+    ) -> HTMLResponse:
+        """Delete one encrypted provider credential."""
+
+        try:
+            provider = Provider(provider_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="unknown provider") from exc
+        app.state.credential_vault.clear_persistent(provider)
+        return _render_providers(request, app, message="Saved key removed")
 
     @app.post("/providers/{provider_name}/models/refresh", response_class=HTMLResponse)
     async def refresh_provider_models(

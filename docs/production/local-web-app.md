@@ -11,10 +11,9 @@ uv sync --extra web
 uv run mudidi web
 ```
 
-Add the API key for your provider to `.env`, or enter a temporary key on the
-**API providers** screen. MUDIDI opens `http://127.0.0.1:8765`. It binds to
-loopback and is not intended for public or LAN deployment. Use `--no-browser`
-or `--port` when needed.
+Save the API key for your model provider on the **API providers** screen.
+MUDIDI opens `http://127.0.0.1:8765`. It binds to loopback and is not intended
+for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ## Create a run
 
@@ -58,15 +57,13 @@ The dashboard can attach:
 
 - PDF dictionary and introduction page numbers using Arabic numbers, commas,
   and ranges such as `1-12,15`;
-- a separate introduction file or folder for image-based page input;
-- an alphabet or orthography file;
+- a character inventory entered directly as text;
 - Stage 1 and Stage 2 additional instructions entered directly as text;
 - representative MDF parsing guide pages;
 - an existing MDF parsing guide JSON file.
 
 Roman numeral page specifications are not accepted. When the dictionary source
-is one PDF, use its numeric introduction-page field; a separate introduction
-upload is for image-directory input.
+is one PDF, use its numeric introduction-page field.
 
 Additional instructions are stored as bounded UTF-8 files in the run input
 bundle and passed through the same prompt-guide mechanism used by YAML/CLI.
@@ -148,9 +145,9 @@ Run views include:
 
 - **Overview** — durable status, progress, resume, and cancellation.
 - **MDF parsing guide** — structured Stage 2 guide review and approval.
-- **Pages** — bounded Stage 1 and Stage 2 previews.
+- **Output Preview** — bounded Stage 1 and Stage 2 previews.
 - **Live Logs** — bounded diagnostics with known keys redacted.
-- **Outputs** — downloads constrained to the validated output directory.
+- **File Artifacts** — downloads constrained to the validated output directory.
 - **Usage** — reported token and cost totals.
 
 Runs and events survive restart. A run active when the app stopped becomes
@@ -160,12 +157,34 @@ saved preset.
 
 ## Credentials and local data
 
-Provider keys are resolved from temporary process memory first and `.env` or the
-process environment second. They never enter SQLite, presets, resolved config,
-logs, command lines, or URLs.
+The **API providers** screen accepts Gemini, OpenAI, Anthropic, and OpenRouter
+keys. The inputs are masked by default and the eye button explicitly reveals a
+saved value. Provider keys are encrypted before their ciphertext is written to
+SQLite. They never enter presets, resolved configuration, logs, command lines,
+or URLs.
 
-Web metadata and managed inputs default to `~/.local/share/mudidi/`. Override it
-with:
+MUDIDI stores the encryption key separately at `.credential-key` in the same
+private data directory. This protects a copied database from exposing plaintext
+credentials, but anyone who can read both files as your local user can decrypt
+them. Keep the complete directory private. The dashboard does not fall back to
+`.env`; `.env` remains the credential mechanism for CLI and YAML workflows.
+
+When MUDIDI uses LiteLLM directly, there is no separate LiteLLM API key. The
+model identifier selects a provider and LiteLLM uses that provider's key—for
+example, an OpenAI model uses the saved OpenAI key. A LiteLLM virtual or master
+key is relevant only when connecting to a separately hosted LiteLLM Proxy.
+
+Web data defaults to:
+
+```text
+~/.local/share/mudidi/
+├── mudidi-web.sqlite3   # run history, presets, encrypted key ciphertext
+├── .credential-key     # local encryption key; keep private
+├── presets/             # preset-owned managed inputs
+└── runs/                # run-owned inputs and worker artifacts
+```
+
+Override the complete data directory with:
 
 ```bash
 uv run mudidi web --data-dir path/to/private-app-data
@@ -176,7 +195,7 @@ release permits one inference worker at a time.
 
 ## Troubleshooting
 
-- **API credential required** — add the key under **API providers** or `.env`.
+- **API credential required** — save the matching key under **API providers**.
 - **Another inference worker is active** — finish or cancel the current worker.
 - **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
   guide; this pause is intentional.

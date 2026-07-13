@@ -16,7 +16,6 @@ MUDIDI supports Linux, macOS, and Windows through WSL2. It requires Python 3.11+
 git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git
 cd MUDIDI
 uv sync
-cp .env.example .env
 ```
 
 For a browser-based production workflow with no YAML authoring:
@@ -30,11 +29,35 @@ The app opens on localhost and includes run monitoring plus a mandatory Stage 2
 parse-rule review checkpoint. See the
 **[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**.
 
+Dashboard metadata, presets, managed inputs, run history, and encrypted API-key
+ciphertext are stored under `~/.local/share/mudidi/` by default. Choose another
+private location with:
+
+```bash
+uv run mudidi web --data-dir /path/to/private-app-data
+```
+
 ## API setup
 
-Add the key for the provider used by your model to `.env`:
+For the web dashboard, open **API providers** and save any of the four supported
+keys: Gemini, OpenAI, Anthropic, or OpenRouter. Inputs are masked and can be
+revealed explicitly with the eye button. Keys persist across restarts as
+encrypted ciphertext in `mudidi-web.sqlite3`; the encryption key is stored
+separately as `.credential-key` in the dashboard data directory. Keep the whole
+data directory private and backed up together.
 
-```dotenv
+LiteLLM does not require its own API key when MUDIDI uses it directly. It uses
+the key belonging to the provider selected by the model identifier. A LiteLLM
+virtual key is needed only when connecting to a separately hosted LiteLLM Proxy.
+
+CLI and YAML workflows continue to read provider keys from `.env` or the
+process environment. Copy the example file and add the key used by your model:
+
+```bash
+cp .env.example .env
+```
+
+```text
 GEMINI_API_KEY=replace-me
 # OPENAI_API_KEY=replace-me
 # ANTHROPIC_API_KEY=replace-me

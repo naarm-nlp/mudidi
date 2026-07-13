@@ -15,7 +15,7 @@ import uvicorn
 from playwright.sync_api import Page, expect, sync_playwright
 
 from mudidi.web.app import create_app
-from mudidi.web.credentials import CredentialVault
+from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.models import Provider
 
 _PNG = base64.b64decode(
@@ -27,10 +27,17 @@ _PNG = base64.b64decode(
 def local_site(tmp_path: Path) -> Iterator[str]:
     """Serve one offline app on an ephemeral loopback port."""
 
-    vault = CredentialVault(environ={})
-    vault.set_temporary(Provider.ANTHROPIC, "sk-ant-browser-e2e")
+    data_dir = tmp_path / "app-data"
+    vault = CredentialVault(
+        environ={},
+        persistent_store=PersistentCredentialStore(
+            database_path=data_dir / "mudidi-web.sqlite3",
+            key_path=data_dir / ".credential-key",
+        ),
+    )
+    vault.set_persistent(Provider.ANTHROPIC, "sk-ant-browser-e2e")
     app = create_app(
-        data_dir=tmp_path / "app-data",
+        data_dir=data_dir,
         credential_vault=vault,
         offline_inference=True,
     )
@@ -130,6 +137,34 @@ def test_new_run_defaults_to_gemini_flash(
         expect(page.locator(f'select[name="{field}"]')).to_have_value(
             "gemini/gemini-3.5-flash"
         )
+
+
+def test_provider_key_is_masked_and_revealed_only_on_request(
+    local_site: str,
+    browser_page: Page,
+) -> None:
+    page = browser_page
+    expected_value = "browser-e2e-dummy-value"
+    page.goto(f"{local_site}/providers")
+
+    field = page.locator("#key-openai")
+    field.fill(expected_value)
+    field.locator("xpath=ancestor::form").get_by_role(
+        "button", name="Save key"
+    ).click()
+
+    expect(page.get_by_text("Encrypted key saved", exact=True)).to_be_visible()
+    field = page.locator("#key-openai")
+    expect(field).to_have_attribute("type", "password")
+    expect(field).to_have_value("")
+
+    reveal = page.get_by_role("button", name="Show Openai API key")
+    reveal.click()
+    expect(field).to_have_attribute("type", "text")
+    expect(field).to_have_value(expected_value)
+
+    page.get_by_role("button", name="Hide Openai API key").click()
+    expect(field).to_have_attribute("type", "password")
 
 
 def test_info_tooltip_only_appears_while_hovering_the_icon(

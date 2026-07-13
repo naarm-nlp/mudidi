@@ -249,6 +249,32 @@ if (runForm) {
   runForm.addEventListener("submit", persistRunForm);
 }
 
+document.querySelectorAll("[data-reveal-key]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const provider = button.dataset.provider;
+    const input = document.querySelector(`#key-${provider}`);
+    if (!input) return;
+    if (input.type === "text") {
+      input.type = "password";
+      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-label", `Show ${provider} API key`);
+      return;
+    }
+    if (!input.value) {
+      const response = await window.fetch(`/providers/${provider}/credential/reveal`, {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      input.value = payload.api_key || "";
+    }
+    input.type = "text";
+    button.setAttribute("aria-pressed", "true");
+    button.setAttribute("aria-label", `Hide ${provider} API key`);
+  });
+});
+
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {
   const eventSource = new EventSource(liveRun.content);
