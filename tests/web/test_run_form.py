@@ -154,6 +154,23 @@ def test_stage2_workflow_always_reports_review_checkpoint(tmp_path: Path) -> Non
     assert form.to_summary()["mdf_parsing_guide"] == "Human approval required"
 
 
+def test_user_supplied_mdf_guide_skips_review_checkpoint(tmp_path: Path) -> None:
+    guide = tmp_path / "field-cheatsheet.json"
+    guide.write_text(
+        '{"markers":[{"marker":"lx","description":"Headword"}]}',
+        encoding="utf-8",
+    )
+
+    form = _form(
+        tmp_path,
+        pipeline=PipelineChoice.STRUCTURE,
+        parse_rules_file=guide,
+    )
+
+    assert form.requires_parse_rule_review is False
+    assert form.to_summary()["mdf_parsing_guide"] == "Uploaded guide used directly"
+
+
 def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     stage1_guides = tmp_path / "stage1-guides.txt"
     stage2_guides = tmp_path / "stage2-guides.txt"

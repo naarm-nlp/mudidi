@@ -47,6 +47,27 @@ def test_complete_web_run_is_decomposed_before_human_review(
     assert all(phase.pipeline.stage != "2-pass-2" for phase in phases)
 
 
+def test_user_guide_run_skips_pass1_and_review(config: InferenceConfig) -> None:
+    executed: list[tuple[str, object]] = []
+
+    def execute(
+        phase: InferenceConfig, *, approved_parse_rules: object = None
+    ) -> int:
+        executed.append((phase.pipeline.stage, approved_parse_rules))
+        return 0
+
+    result = run_inference_phase(
+        config,
+        InferencePhase.USER_GUIDE,
+        execute=execute,
+        approved_rules=None,
+    )
+
+    assert result.return_code == 0
+    assert result.parse_rules_path is None
+    assert executed == [("1", None), ("2", None)]
+
+
 def test_stage2_pass2_requires_loaded_approved_rules(config: InferenceConfig) -> None:
     with pytest.raises(ValueError, match="approved"):
         run_inference_phase(
