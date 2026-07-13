@@ -89,8 +89,5 @@ def test_docker_workflow_builds_and_health_checks_relevant_changes() -> None:
     _assert_actions_are_pinned(workflow)
 
 
-def test_dependabot_updates_github_actions_weekly() -> None:
-    config = _read(ROOT / ".github" / "dependabot.yml")
-
-    assert 'package-ecosystem: "github-actions"' in config
-    assert 'interval: "weekly"' in config
+def test_dependabot_is_not_enabled() -> None:
+    assert not (ROOT / ".github" / "dependabot.yml").exists()
