@@ -17,6 +17,14 @@ def test_web_command_defaults_to_loopback() -> None:
     assert args.host == "127.0.0.1"
     assert args.port == 8000
     assert args.open_browser is False
+    assert args.container is False
+
+
+def test_web_command_supports_explicit_container_mode() -> None:
+    args = build_parser().parse_args(["web", "--container", "--no-browser"])
+
+    assert args.container is True
+    assert args.open_browser is False
 
 
 def test_web_command_rejects_public_bind() -> None:
@@ -80,3 +88,26 @@ def test_server_uses_exactly_one_uvicorn_worker(
 
     assert result == 0
     assert calls == [{"host": "127.0.0.1", "port": 8123, "workers": 1}]
+
+
+def test_container_mode_binds_inside_container_without_opening_browser(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_run(_app: object, **kwargs: object) -> None:
+        calls.append(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_run)
+
+    result = run_server(
+        host="127.0.0.1",
+        port=8000,
+        data_dir=tmp_path,
+        open_browser=False,
+        container_mode=True,
+    )
+
+    assert result == 0
+    assert calls == [{"host": "0.0.0.0", "port": 8000, "workers": 1}]
