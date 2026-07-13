@@ -73,7 +73,9 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         "Agentic verification"
     )
     assert 'aria-label="About temperature"' in response.text
-    assert 'aria-label="About reasoning"' in response.text
+    assert 'aria-label="About Stage 1 model reasoning"' in response.text
+    assert 'aria-label="About Stage 2 Pass 1 model reasoning"' in response.text
+    assert 'aria-label="About Stage 2 Pass 2 model reasoning"' in response.text
     assert "requests sent in parallel to your model provider" in response.text
     assert "Check the rate limits for your provider and selected model" in response.text
     assert 'name="strategy"' not in response.text
@@ -110,7 +112,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-3" in response.text
+    assert "/static/app.js?v=dashboard-4" in response.text
 
 
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:

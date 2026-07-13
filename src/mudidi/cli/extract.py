@@ -693,7 +693,18 @@ def _build_stage2_manifest(
         "model": args.stage_models.stage_2_pass_2,
         "stage_2_pass_1_model": args.stage_models.stage_2_pass_1,
         "stage_2_pass_2_model": args.stage_models.stage_2_pass_2,
-        "reasoning_effort": args.stage2_reasoning_effort,
+        "reasoning_effort": (
+            getattr(args, "stage2_pass2_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
+        "stage_2_pass_1_reasoning_effort": (
+            getattr(args, "stage2_pass1_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
+        "stage_2_pass_2_reasoning_effort": (
+            getattr(args, "stage2_pass2_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
         "temperature": args.temperature,
         "batch_size": getattr(args, "batch_size", 1),
         "stage2_output_format": "mdf",
@@ -773,6 +784,12 @@ def _build_strategy(
             intro_image_paths=intro_image_paths,
             stage1_reasoning_effort=getattr(args, "stage1_reasoning_effort", "low"),
             stage2_reasoning_effort=getattr(args, "stage2_reasoning_effort", "low"),
+            stage2_pass1_reasoning_effort=getattr(
+                args, "stage2_pass1_reasoning_effort", None
+            ),
+            stage2_pass2_reasoning_effort=getattr(
+                args, "stage2_pass2_reasoning_effort", None
+            ),
             temperature=getattr(args, "temperature", 0.1),
             stage1_guides=getattr(args, "stage1_guides_text", ""),
             stage2_guides=getattr(args, "stage2_guides_text", ""),

@@ -197,6 +197,15 @@ def create_app(
         """Render the local production-inference workspace."""
 
         presets = app.state.run_store.list_presets()
+        credential_statuses = {
+            provider.value: app.state.credential_vault.status(provider)
+            for provider in (
+                Provider.GEMINI,
+                Provider.OPENAI,
+                Provider.ANTHROPIC,
+                Provider.OPENROUTER,
+            )
+        }
         selected_preset = None
         preset_state = None
         preset_id = request.query_params.get("preset", "").strip()
@@ -218,6 +227,10 @@ def create_app(
                 "presets": presets,
                 "selected_preset": selected_preset,
                 "preset_state": preset_state,
+                "credential_statuses": credential_statuses,
+                "credential_ready_count": sum(
+                    status.available for status in credential_statuses.values()
+                ),
             },
         )
 
@@ -246,11 +259,21 @@ def create_app(
             "media_reference",
             "prompt_cache",
         }
+        dashboard_credential_fields = {
+            f"credential_{provider.value}": provider
+            for provider in (
+                Provider.GEMINI,
+                Provider.OPENAI,
+                Provider.ANTHROPIC,
+                Provider.OPENROUTER,
+            )
+        }
         payload = {
             key: value
             for key, value in submitted.items()
             if key not in upload_fields
             and key not in retired_dashboard_fields
+            and key not in dashboard_credential_fields
             and key != "pages"
             and isinstance(value, str)
             and value.strip() != ""
@@ -299,6 +322,10 @@ def create_app(
             ]
 
         try:
+            for field_name, provider in dashboard_credential_fields.items():
+                value = str(submitted.get(field_name, "")).strip()
+                if value:
+                    app.state.credential_vault.set_persistent(provider, value)
             preset_config = None
             if preset_id:
                 try:
@@ -1118,7 +1145,13 @@ def _preset_form_state(
         "provider": [preset.provider],
         "temperature": [str(config.models.temperature)],
         "batch_size": [str(config.runtime.batch_size)],
-        "reasoning": [config.models.stage1_reasoning],
+        "stage1_reasoning": [config.models.stage1_reasoning],
+        "stage2_pass1_reasoning": [
+            config.models.stage2_pass1_reasoning or config.models.stage2_reasoning
+        ],
+        "stage2_pass2_reasoning": [
+            config.models.stage2_pass2_reasoning or config.models.stage2_reasoning
+        ],
         "agentic": [
             "true" if config.agentic.stage1 or config.agentic.stage2 else "false"
         ],

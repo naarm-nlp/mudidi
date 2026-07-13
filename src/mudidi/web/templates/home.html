@@ -28,7 +28,7 @@
     <main>
       <header class="topbar">
         <div><span class="eyebrow">Production inference</span><h1>New run</h1></div>
-        <div class="provider-status"><span></span> API key setup required</div>
+        <div class="provider-status"><span></span> {% if credential_ready_count %}{{ credential_ready_count }} provider key{{ '' if credential_ready_count == 1 else 's' }} saved{% else %}API key setup required{% endif %}</div>
       </header>
 
       <section class="workspace">
@@ -83,6 +83,22 @@
               <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
               <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
             </fieldset>
+            <fieldset class="choice-group credential-entry">
+              <legend>API credentials</legend>
+              <p>Enter each provider key once. Keys are encrypted in the local dashboard database when you review the run, and are never included in run configuration files.</p>
+              <div class="form-grid">
+                {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
+                  {% set status = credential_statuses[provider] %}
+                  <label for="credential-{{ provider }}">{{ label }} API key
+                    <span class="input-row">
+                      <input id="credential-{{ provider }}" name="credential_{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
+                      <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">◉</button>
+                    </span>
+                  </label>
+                {% endfor %}
+              </div>
+              <small>Leave a field blank to keep its saved value. Manage or delete saved keys on the <a href="/providers">API providers</a> page.</small>
+            </fieldset>
             <div class="form-grid">
               <label>Provider
                 <select name="provider" data-provider-select>
@@ -100,10 +116,10 @@
               <datalist id="openrouter-provider-catalog">
                 <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
               </datalist>
-              {% for field, custom_field, label, stages, help_text in [
-                ('stage1_model', 'stage1_custom_model', 'Stage 1 model', 'stage1', 'Stage 1 transcribes page images into faithful flat text.'),
-                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
-                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
+              {% for field, custom_field, reasoning_field, label, stages, help_text in [
+                ('stage1_model', 'stage1_custom_model', 'stage1_reasoning', 'Stage 1 model', 'stage1', 'Stage 1 transcribes page images into faithful flat text.'),
+                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
+                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
               ] %}
                 <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} <button class="info-button" type="button" aria-label="About {{ label }}" data-help="{{ help_text }}">i</button></span>
                   <select name="{{ field }}" data-model-select>
@@ -112,19 +128,19 @@
                   </select>
                   <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
                 </label>
+                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} reasoning <button class="info-button" type="button" aria-label="About {{ label }} reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
+                  <select name="{{ reasoning_field }}">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="none">None / lowest supported</option>
+                  </select>
+                </label>
               {% endfor %}
               <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
                 <input name="temperature" type="number" min="0" step="0.05" value="0.1">
               </label>
               <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1"></label>
-              <label><span class="field-heading">Reasoning <button class="info-button" type="button" aria-label="About reasoning" data-help="Controls the model's reasoning effort. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
-                <select name="reasoning">
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="none">None / lowest supported</option>
-                </select>
-              </label>
             </div>
             <fieldset class="choice-group agentic-choice">
               <legend>Agentic verification</legend>
@@ -247,6 +263,6 @@
       </template>
     </main>
     {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-3" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-4" defer></script>
   </body>
 </html>

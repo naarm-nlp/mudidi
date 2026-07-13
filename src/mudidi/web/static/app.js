@@ -252,7 +252,8 @@ if (runForm) {
 document.querySelectorAll("[data-reveal-key]").forEach((button) => {
   button.addEventListener("click", async () => {
     const provider = button.dataset.provider;
-    const input = document.querySelector(`#key-${provider}`);
+    const target = button.dataset.credentialTarget || `key-${provider}`;
+    const input = document.querySelector(`#${target}`);
     if (!input) return;
     if (input.type === "text") {
       input.type = "password";

@@ -78,13 +78,16 @@ class NewRunForm(BaseModel):
 
     provider: ProviderName
     model: str | None = None
-    reasoning: ReasoningChoice = "low"
+    reasoning: ReasoningChoice | None = None
     stage1_model: str | None = None
     stage1_custom_model: str | None = None
+    stage1_reasoning: ReasoningChoice | None = None
     stage2_pass1_model: str | None = None
     stage2_pass1_custom_model: str | None = None
+    stage2_pass1_reasoning: ReasoningChoice | None = None
     stage2_pass2_model: str | None = None
     stage2_pass2_custom_model: str | None = None
+    stage2_pass2_reasoning: ReasoningChoice | None = None
     openrouter_provider: str | None = Field(default=None, max_length=100)
     temperature: float = Field(default=0.1, ge=0.0)
 
@@ -153,7 +156,16 @@ class NewRunForm(BaseModel):
         }
         verify_stage1, verify_stage2 = self._verification_stages()
         default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
-        effective_reasoning = "low" if self.reasoning == "none" else self.reasoning
+        legacy_reasoning = self.reasoning or "low"
+        stage1_reasoning = _effective_reasoning(
+            self.stage1_reasoning or legacy_reasoning
+        )
+        pass1_reasoning = _effective_reasoning(
+            self.stage2_pass1_reasoning or legacy_reasoning
+        )
+        pass2_reasoning = _effective_reasoning(
+            self.stage2_pass2_reasoning or legacy_reasoning
+        )
         return InferenceConfig(
             input=InputConfig(
                 pages=self.pages.expanduser().resolve(),
@@ -204,8 +216,10 @@ class NewRunForm(BaseModel):
                 stage2_pass1=pass1_model,
                 stage2_pass2=pass2_model,
                 openrouter_provider=self._resolved_openrouter_provider(),
-                stage1_reasoning=effective_reasoning,
-                stage2_reasoning=effective_reasoning,
+                stage1_reasoning=stage1_reasoning,
+                stage2_reasoning=pass2_reasoning,
+                stage2_pass1_reasoning=pass1_reasoning,
+                stage2_pass2_reasoning=pass2_reasoning,
                 temperature=self.temperature,
             ),
             agentic=AgenticConfig(
@@ -214,7 +228,7 @@ class NewRunForm(BaseModel):
                 max_iterations=self.max_iterations,
                 evaluator_model=_clean_optional(self.evaluator_model),
                 rewriter_model=_clean_optional(self.rewriter_model),
-                reasoning=effective_reasoning,
+                reasoning=stage1_reasoning if runs_stage1 else pass2_reasoning,
                 evaluator_reasoning=self.evaluator_reasoning,
                 rewriter_reasoning=self.rewriter_reasoning,
                 min_retry_confidence=self.min_retry_confidence,
@@ -416,6 +430,12 @@ def _clean_optional(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _effective_reasoning(value: ReasoningChoice) -> Literal["low", "medium", "high"]:
+    """Map the dashboard's portable ``none`` choice to the lowest level."""
+
+    return "low" if value == "none" else value
 
 
 def _normalize_page_spec(value: str) -> str:

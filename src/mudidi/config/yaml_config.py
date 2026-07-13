@@ -124,6 +124,8 @@ class ModelsConfig(_StrictModel):
     )
     stage1_reasoning: ReasoningEffort = "low"
     stage2_reasoning: Literal["low", "medium", "high"] = "low"
+    stage2_pass1_reasoning: Literal["low", "medium", "high"] | None = None
+    stage2_pass2_reasoning: Literal["low", "medium", "high"] | None = None
     temperature: float = Field(default=0.1, ge=0.0)
 
 

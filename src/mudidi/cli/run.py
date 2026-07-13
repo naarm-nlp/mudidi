@@ -641,6 +641,12 @@ def execution_namespace_from_config(
         structure_model=None,
         stage1_reasoning_effort=models.stage1_reasoning,
         stage2_reasoning_effort=models.stage2_reasoning,
+        stage2_pass1_reasoning_effort=(
+            models.stage2_pass1_reasoning or models.stage2_reasoning
+        ),
+        stage2_pass2_reasoning_effort=(
+            models.stage2_pass2_reasoning or models.stage2_reasoning
+        ),
         temperature=models.temperature,
         stage1_agentic=agentic.stage1,
         stage2_agentic=agentic.stage2,
