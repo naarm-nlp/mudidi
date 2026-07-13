@@ -56,6 +56,15 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="verify_stage1"' in response.text
     assert 'name="page_limit"' not in response.text
     assert 'name="media_reference"' not in response.text
+    assert 'name="prompt_cache"' not in response.text
+    assert response.text.index('name="temperature"') < response.text.index(
+        'name="batch_size"'
+    )
+    assert response.text.index('name="batch_size"') < response.text.index(
+        "Agentic verification"
+    )
+    assert 'aria-label="About temperature"' in response.text
+    assert 'aria-label="About reasoning"' in response.text
     assert 'name="strategy"' not in response.text
     assert 'name="vlm_model"' not in response.text
     assert 'name="mathpix_max_wait_seconds"' not in response.text

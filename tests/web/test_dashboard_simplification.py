@@ -230,6 +230,19 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="stage1_guides"' not in response.text
     assert 'name="stage2_guides"' not in response.text
     assert "Representative MDF parsing guide pages" in response.text
+    assert response.text.count('class="field-heading"') >= 5
+    assert (
+        '<span class="field-heading">Stage 1 additional instructions '
+        in response.text
+    )
+    assert (
+        '<span class="field-heading">Stage 2 additional instructions '
+        in response.text
+    )
+    assert (
+        '<span class="field-heading">Representative MDF parsing guide pages '
+        in response.text
+    )
     assert 'name="mdf_manual_source" value="none"' in response.text
     assert 'name="mdf_manual_source" value="upload"' in response.text
     assert 'name="mdf_manual_source" value="bundled"' not in response.text
