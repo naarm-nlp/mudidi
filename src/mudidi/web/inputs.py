@@ -16,7 +16,6 @@ from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.config.yaml_config import InferenceConfig
 
 _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
-_ALPHABET_SUFFIXES = _PAGE_SUFFIXES | {".gif", ".txt", ".md", ".docx"}
 _MAX_FILES = 5_000
 _MAX_UPLOAD_BYTES = 24 * 1024 * 1024
 _TEXT_CHARS = 20_000
@@ -75,20 +74,6 @@ class InputMaterializer:
             allowed=_PAGE_SUFFIXES,
             multiple=True,
             allow_relative=True,
-        )
-
-    async def materialize_alphabet(
-        self, run_id: str, upload: UploadFile
-    ) -> Path:
-        """Store one alphabet/orthography reference file."""
-
-        return await self._materialize_files(
-            run_id,
-            "alphabet",
-            [upload],
-            allowed=_ALPHABET_SUFFIXES,
-            multiple=False,
-            allow_relative=False,
         )
 
     async def materialize_mdf_guide(

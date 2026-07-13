@@ -230,7 +230,7 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'aria-label="About the Character Inventory"' in response.text
     assert "character inventory for each language or script" in response.text
     assert "constrain Stage 1 transcription to valid characters" in response.text
-    assert "plain .txt file" in response.text
+    assert "Paste a character inventory" in response.text
     assert "Chukchi-Cyrillic: а б в г ӄ" in response.text
     assert 'aria-label="About the existing MDF parsing guide"' in response.text
     assert "Leave blank to process every PDF page" in response.text

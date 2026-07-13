@@ -285,17 +285,15 @@ def create_app(
                 run_id, selected_pages
             )
 
-            alphabet_files = uploaded("alphabet_file")
-            if len(alphabet_files) > 1:
-                raise ValueError("select exactly one alphabet file")
-            if alphabet_files:
-                payload["alphabet"] = await app.state.inputs.materialize_alphabet(
-                    run_id, alphabet_files[0]
-                )
-
             pipeline_value = str(payload.get("pipeline", "complete"))
             runs_stage1 = pipeline_value in {"complete", "transcription"}
             runs_stage2 = pipeline_value in {"complete", "structure"}
+
+            character_inventory = str(payload.pop("character_inventory", "")).strip()
+            if character_inventory and runs_stage1:
+                payload["alphabet"] = app.state.inputs.materialize_instruction(
+                    run_id, "character_inventory", character_inventory
+                )
 
             guide_files = uploaded("existing_mdf_guide_file")
             if len(guide_files) > 1:
