@@ -112,7 +112,15 @@ class JobController:
         target = (
             RunStatus.RUNNING_STAGE1
             if phase in {InferencePhase.STAGE1, InferencePhase.STAGE1_THEN_PASS1}
-            else RunStatus.DISCOVERING_PARSE_RULES
+            or (
+                phase is InferencePhase.USER_GUIDE
+                and config.pipeline.stage == "all"
+            )
+            else (
+                RunStatus.RUNNING_STAGE2
+                if phase is InferencePhase.USER_GUIDE
+                else RunStatus.DISCOVERING_PARSE_RULES
+            )
         )
         self.store.transition(run_id, target)
         command = self._production_command(
@@ -180,6 +188,15 @@ class JobController:
             self.store.resume(run_id, credentials_available=True)
             return
         if run.resume_phase == "stage2_pass2":
+            config = self.load_inference_config(run_id)
+            if config.pipeline.parse_rules_file is not None:
+                self.store.transition(run_id, RunStatus.QUEUED)
+                self.start_inference(
+                    run_id,
+                    credential=credential,
+                    offline_executor=offline_executor,
+                )
+                return
             if self.parse_rule_reviews is None:
                 raise RuntimeError("Pass 2 resume requires parse-rule review service")
             approval = self.parse_rule_reviews.approved_capability(run_id)
@@ -438,6 +455,10 @@ class JobController:
 
 
 def _initial_phase(config: InferenceConfig) -> InferencePhase:
+    if config.pipeline.parse_rules_file is not None:
+        if config.pipeline.stage == "1":
+            raise ValueError("uploaded MDF guides require an MDF parsing pipeline")
+        return InferencePhase.USER_GUIDE
     if config.pipeline.stage == "1":
         return InferencePhase.STAGE1
     if config.pipeline.stage == "all":

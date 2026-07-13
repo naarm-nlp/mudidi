@@ -16,6 +16,7 @@ from mudidi.execution.approval import (
     load_approved_parse_rules,
     mint_approved_parse_rules,
 )
+from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.execution.events import (
     ParseRulesGenerated,
     RunCompleted,
@@ -198,6 +199,13 @@ def _offline_execute(
     elif stage == "2-pass-2":
         if approved_parse_rules is None:
             raise ValueError("offline Pass 2 still requires approved rules")
+        path = config.output.directory / "stage-2/page_1/page_1_mdf.txt"
+        content = "\\lx offline\n\\ge result\n"
+    elif stage == "2":
+        guide = config.pipeline.parse_rules_file
+        if guide is None:
+            raise ValueError("offline direct Stage 2 requires an uploaded MDF guide")
+        validate_marker_cheatsheet(json.loads(guide.read_text(encoding="utf-8")))
         path = config.output.directory / "stage-2/page_1/page_1_mdf.txt"
         content = "\\lx offline\n\\ge result\n"
     else:

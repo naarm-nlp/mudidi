@@ -47,7 +47,22 @@ def test_complete_web_run_is_decomposed_before_human_review(
     assert all(phase.pipeline.stage != "2-pass-2" for phase in phases)
 
 
-def test_user_guide_run_skips_pass1_and_review(config: InferenceConfig) -> None:
+def test_user_guide_run_skips_pass1_and_review(
+    config: InferenceConfig,
+    tmp_path: Path,
+) -> None:
+    guide = tmp_path / "uploaded-guide.json"
+    guide.write_text(
+        '{"markers":[{"marker":"lx","description":"Headword"}]}',
+        encoding="utf-8",
+    )
+    config = config.model_copy(
+        update={
+            "pipeline": config.pipeline.model_copy(
+                update={"parse_rules_file": guide}
+            )
+        }
+    )
     executed: list[tuple[str, object]] = []
 
     def execute(

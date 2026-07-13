@@ -133,7 +133,10 @@ class NewRunForm(BaseModel):
     def requires_parse_rule_review(self) -> bool:
         """Return whether this workflow stops at the human checkpoint."""
 
-        return self.pipeline is not PipelineChoice.TRANSCRIPTION
+        return (
+            self.pipeline is not PipelineChoice.TRANSCRIPTION
+            and self.parse_rules_file is None
+        )
 
     def to_inference_config(self) -> InferenceConfig:
         """Build the existing authoritative typed production configuration."""
@@ -253,7 +256,11 @@ class NewRunForm(BaseModel):
             "mdf_parsing_guide": (
                 "Human approval required"
                 if self.requires_parse_rule_review
-                else "Not used"
+                else (
+                    "Uploaded guide used directly"
+                    if self.parse_rules_file is not None
+                    else "Not used"
+                )
             ),
         }
 

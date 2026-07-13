@@ -73,6 +73,7 @@ _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
     RunStatus.QUEUED: frozenset(
         {
             RunStatus.RUNNING_STAGE1,
+            RunStatus.RUNNING_STAGE2,
             RunStatus.DISCOVERING_PARSE_RULES,
             RunStatus.AWAITING_PARSE_RULES_REVIEW,
             RunStatus.CREDENTIALS_REQUIRED,

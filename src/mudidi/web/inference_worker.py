@@ -27,6 +27,7 @@ class InferencePhase(StrEnum):
     STAGE1_THEN_PASS1 = "stage1_then_pass1"
     PASS1 = "pass1"
     PASS2 = "pass2"
+    USER_GUIDE = "user_guide"
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,12 +47,22 @@ def phase_configs(
 ) -> tuple[InferenceConfig, ...]:
     """Return safe typed configs for one web-owned execution phase."""
 
-    stages = {
+    if phase is InferencePhase.USER_GUIDE:
+        if config.pipeline.parse_rules_file is None:
+            raise ValueError("user-guide execution requires an uploaded MDF guide")
+        if config.pipeline.stage == "all":
+            stages = ("1", "2")
+        elif config.pipeline.stage in {"2", "2-pass-1"}:
+            stages = ("2",)
+        else:
+            raise ValueError("uploaded MDF guides require an MDF parsing pipeline")
+    else:
+        stages = {
         InferencePhase.STAGE1: ("1",),
         InferencePhase.STAGE1_THEN_PASS1: ("1", "2-pass-1"),
         InferencePhase.PASS1: ("2-pass-1",),
         InferencePhase.PASS2: ("2-pass-2",),
-    }[phase]
+        }[phase]
     return tuple(
         config.model_copy(
             update={"pipeline": config.pipeline.model_copy(update={"stage": stage})}
