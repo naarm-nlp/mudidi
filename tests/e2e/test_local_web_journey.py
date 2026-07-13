@@ -202,9 +202,19 @@ def test_info_tooltip_only_appears_while_hovering_the_icon(
 
     box = heading.bounding_box()
     assert box is not None
-    page.mouse.click(box["x"] + 3, box["y"] + box["height"] / 2)
-    page.mouse.move(0, 0)
+    page.mouse.move(box["x"] + 3, box["y"] + box["height"] / 2)
     page.wait_for_timeout(200)
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "0"
+
+    button.dispatch_event("pointerenter")
+    expect(button).to_have_class(re.compile("is-tooltip-hovered"))
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "1"
+    button.dispatch_event("pointerleave")
+    expect(button).not_to_have_class(re.compile("is-tooltip-hovered"))
     assert button.evaluate(
         "element => getComputedStyle(element, '::after').opacity"
     ) == "0"
