@@ -1116,6 +1116,14 @@ def _preset_form_state(
             put(field, "__other__")
             put(custom_field, model)
 
+    def put_agentic_model(role: str, model: str | None) -> None:
+        if model is None:
+            return
+        prefix = model.split("/", 1)[0]
+        provider = prefix if prefix in {item.value for item in Provider} else preset.provider
+        put(f"{role}_provider", provider)
+        put_model(f"{role}_model", f"{role}_custom_model", model)
+
     put("dictionary_pages", config.input.dictionary_pages)
     put("introduction_pages", config.input.introduction_pages)
     put("openrouter_provider", config.models.openrouter_provider)
@@ -1134,8 +1142,8 @@ def _preset_form_state(
         "stage2_pass2_custom_model",
         config.models.stage2_pass2 or config.models.default,
     )
-    put("evaluator_model", config.agentic.evaluator_model)
-    put("rewriter_model", config.agentic.rewriter_model)
+    put_agentic_model("evaluator", config.agentic.evaluator_model)
+    put_agentic_model("rewriter", config.agentic.rewriter_model)
     put("evaluator_reasoning", config.agentic.evaluator_reasoning)
     put("rewriter_reasoning", config.agentic.rewriter_reasoning)
     if config.pipeline.parse_rules_pages:

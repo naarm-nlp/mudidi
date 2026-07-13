@@ -98,8 +98,12 @@ class NewRunForm(BaseModel):
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
     verifier_patches: bool = True
     require_concrete_retry: bool = True
+    evaluator_provider: ProviderName | None = None
     evaluator_model: str | None = None
+    evaluator_custom_model: str | None = None
+    rewriter_provider: ProviderName | None = None
     rewriter_model: str | None = None
+    rewriter_custom_model: str | None = None
     evaluator_reasoning: ReasoningChoice | None = None
     rewriter_reasoning: ReasoningChoice | None = None
 
@@ -226,8 +230,18 @@ class NewRunForm(BaseModel):
                 stage1=verify_stage1,
                 stage2=verify_stage2,
                 max_iterations=self.max_iterations,
-                evaluator_model=_clean_optional(self.evaluator_model),
-                rewriter_model=_clean_optional(self.rewriter_model),
+                evaluator_model=self._resolve_agentic_model(
+                    self.evaluator_provider,
+                    self.evaluator_model,
+                    self.evaluator_custom_model,
+                    "Evaluator",
+                ),
+                rewriter_model=self._resolve_agentic_model(
+                    self.rewriter_provider,
+                    self.rewriter_model,
+                    self.rewriter_custom_model,
+                    "Rewriter",
+                ),
                 reasoning=stage1_reasoning if runs_stage1 else pass2_reasoning,
                 evaluator_reasoning=self.evaluator_reasoning,
                 rewriter_reasoning=self.rewriter_reasoning,
@@ -348,6 +362,29 @@ class NewRunForm(BaseModel):
             selected = custom
         assert selected is not None
         provider = Provider(self.provider)
+        if provider is not Provider.OPENROUTER and "/" in selected:
+            return selected
+        return normalize_custom_model(provider, selected)
+
+    def _resolve_agentic_model(
+        self,
+        provider_name: ProviderName | None,
+        selected: str | None,
+        custom: str | None,
+        label: str,
+    ) -> str | None:
+        selected = _clean_optional(selected)
+        custom = _clean_optional(custom)
+        if selected is None and custom is None:
+            return None
+        if selected == "__other__":
+            if custom is None:
+                raise ValueError(f"{label} requires a custom model name")
+            selected = custom
+        elif selected is None:
+            selected = custom
+        assert selected is not None
+        provider = Provider(provider_name or self.provider)
         if provider is not Provider.OPENROUTER and "/" in selected:
             return selected
         return normalize_custom_model(provider, selected)

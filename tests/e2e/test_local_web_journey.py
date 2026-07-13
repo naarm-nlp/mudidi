@@ -281,9 +281,11 @@ def test_agentic_and_manual_controls_follow_pipeline(
     expect(
         evaluator_model.locator('option[data-model-provider="openai"]').first
     ).to_be_enabled()
-    expect(
-        evaluator_model.locator('option[data-model-provider="gemini"]').first
-    ).to_be_disabled()
+    gemini_option = evaluator_model.locator(
+        'option[data-model-provider="gemini"]'
+    ).first
+    assert gemini_option.get_attribute("disabled") is not None
+    assert gemini_option.get_attribute("hidden") is not None
     evaluator_model.select_option("__other__")
     expect(evaluator_custom).to_be_visible()
     expect(evaluator_custom).to_have_attribute(

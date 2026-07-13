@@ -113,6 +113,16 @@ const providerDefaults = {
   gemini: "gemini/gemini-3.5-flash",
   openrouter: "openrouter/anthropic/claude-sonnet-5",
 };
+const providerLabels = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  gemini: "Google Gemini",
+  openrouter: "OpenRouter",
+  custom: "your selected provider",
+};
+const customModelPlaceholder = (provider) => provider === "openrouter"
+  ? "e.g. qwen/qwen3-235b-a22b"
+  : `Enter a model name supported by ${providerLabels[provider] || "your selected provider"}`;
 
 const synchronizeCustomModel = (select) => {
   const custom = select.parentElement.querySelector("[data-custom-model]");
@@ -146,9 +156,7 @@ const synchronizeModels = (providerChanged = false) => {
     select.disabled = !active || manualEntry;
     const custom = select.parentElement.querySelector("[data-custom-model]");
     if (custom) {
-      custom.placeholder = provider === "openrouter"
-        ? "e.g. qwen/qwen3-235b-a22b"
-        : "Enter a LiteLLM-compatible model name";
+      custom.placeholder = customModelPlaceholder(provider);
     }
     synchronizeCustomModel(select);
   });
@@ -160,6 +168,43 @@ const synchronizeModels = (providerChanged = false) => {
     });
   }
 };
+
+const agenticModelGroups = [...document.querySelectorAll("[data-agentic-model-group]")];
+const synchronizeAgenticModelGroup = (group, providerChanged = false) => {
+  const provider = group.querySelector("[data-agentic-provider]")?.value;
+  const select = group.querySelector("[data-agentic-model]");
+  const custom = group.querySelector("[data-agentic-custom-model]");
+  if (!provider || !select || !custom) return;
+
+  [...select.options].forEach((option) => {
+    const enabled = !option.value
+      || option.value === "__other__"
+      || option.dataset.modelProvider === provider;
+    option.hidden = !enabled;
+    option.disabled = !enabled;
+  });
+  const selected = select.selectedOptions[0];
+  if (providerChanged || !selected || selected.disabled) select.value = "";
+
+  const manualEntry = provider === "openrouter" || provider === "custom";
+  if (manualEntry) select.value = "";
+  select.hidden = manualEntry;
+  const agenticEnabled = !group.closest("[data-agentic-settings]")?.hidden;
+  select.disabled = !agenticEnabled || manualEntry;
+  const customSelected = manualEntry || select.value === "__other__";
+  custom.hidden = !customSelected;
+  custom.disabled = !agenticEnabled || !customSelected;
+  custom.placeholder = customModelPlaceholder(provider);
+};
+
+agenticModelGroups.forEach((group) => {
+  group.querySelector("[data-agentic-provider]")?.addEventListener("change", () => {
+    synchronizeAgenticModelGroup(group, true);
+  });
+  group.querySelector("[data-agentic-model]")?.addEventListener("change", () => {
+    synchronizeAgenticModelGroup(group);
+  });
+});
 
 const synchronizePipeline = () => {
   const selected = pipelineChoices.find((choice) => choice.checked);
@@ -212,7 +257,10 @@ const synchronizeAgentic = () => {
     const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
     input.disabled = !enabled || (stageDisabled && input.disabled);
   });
-  if (enabled) synchronizePipeline();
+  if (enabled) {
+    synchronizePipeline();
+    agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));
+  }
 };
 agenticChoices.forEach((choice) => choice.addEventListener("change", synchronizeAgentic));
 

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-7">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-8">
   </head>
   <body>
     <aside class="sidebar">
@@ -158,8 +158,27 @@
                 <label><span><input name="verify_stage2" type="checkbox" value="true" checked> Verify Stage 2</span></label>
                 <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
                 <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
-                <label>Evaluator model<input name="evaluator_model" list="model-catalog" placeholder="Use stage model"></label>
-                <label>Rewriter model<input name="rewriter_model" list="model-catalog" placeholder="Use stage model"></label>
+                {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
+                  <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
+                    <label>{{ label }} provider
+                      <select name="{{ role }}_provider" data-agentic-provider>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="gemini" selected>Google Gemini</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="custom">Other / advanced provider</option>
+                      </select>
+                    </label>
+                    <label>{{ label }} model
+                      <select name="{{ role }}_model" data-agentic-model>
+                        <option value="">Use stage model</option>
+                        {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
+                        <option value="__other__" data-model-provider="other">Other model…</option>
+                      </select>
+                      <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name supported by Google Gemini" hidden disabled>
+                    </label>
+                  </div>
+                {% endfor %}
                 <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                 <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                 <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
@@ -229,9 +248,6 @@
                 </label>
               </fieldset>
             </details>
-            <datalist id="model-catalog">
-              {% for model in models %}<option value="{{ model.model_id }}">{{ model.display_name }}</option>{% endfor %}
-            </datalist>
             <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
           </form>
 
@@ -265,6 +281,6 @@
       </template>
     </main>
     {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-7" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-8" defer></script>
   </body>
 </html>
