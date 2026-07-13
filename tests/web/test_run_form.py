@@ -191,9 +191,7 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
         evaluator_model="openai/gpt-5.6",
         rewriter_model="anthropic/claude-opus-4-8",
         batch_size=3,
-        page_limit=12,
         prompt_cache="off",
-        media_reference="inline",
     ).to_inference_config()
 
     assert config.pipeline.stage1_mode == "flat"
@@ -204,9 +202,9 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.agentic.evaluator_reasoning == "medium"
     assert config.agentic.rewriter_reasoning == "high"
     assert config.runtime.batch_size == 3
-    assert config.runtime.limit == 12
+    assert config.runtime.limit is None
     assert config.runtime.prompt_cache == "off"
-    assert config.runtime.media_reference == "inline"
+    assert config.runtime.media_reference == "auto"
 
 
 def test_optional_dictionary_profile_maps_five_dashboard_answers(

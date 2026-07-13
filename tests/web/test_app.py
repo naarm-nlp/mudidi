@@ -54,7 +54,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Other / advanced provider" in response.text
     assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
-    assert 'name="media_reference"' in response.text
+    assert 'name="page_limit"' not in response.text
+    assert 'name="media_reference"' not in response.text
     assert 'name="strategy"' not in response.text
     assert 'name="vlm_model"' not in response.text
     assert 'name="mathpix_max_wait_seconds"' not in response.text
