@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-6">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-7">
   </head>
   <body>
     <aside class="sidebar">
@@ -20,7 +20,6 @@
         <a href="/presets"><span>★</span> Saved presets</a>
       </nav>
       <div class="sidebar-footer">
-        <a href="/providers">API providers</a>
         <a href="https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/">Documentation</a>
         <span class="local-badge">● Running locally</span>
       </div>
@@ -84,21 +83,23 @@
               <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
               <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
             </fieldset>
-            <fieldset class="choice-group credential-entry">
+            <fieldset id="api-credentials" class="choice-group credential-entry">
               <legend>API credentials</legend>
-              <p>Enter each provider key once. Keys are encrypted in the local dashboard database when you review the run, and are never included in run configuration files.</p>
+              <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
               <div class="form-grid">
                 {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
                   {% set status = credential_statuses[provider] %}
                   <label for="credential-{{ provider }}">{{ label }} API key
                     <span class="input-row">
-                      <input id="credential-{{ provider }}" name="credential_{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
+                      <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
                       <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
+                      <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
                     </span>
+                    <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if status.available else 'Not saved' }}</span>
                   </label>
                 {% endfor %}
               </div>
-              <small>Leave a field blank to keep its saved value. Manage or delete saved keys on the <a href="/providers">API providers</a> page.</small>
+              <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
             </fieldset>
             <div class="form-grid">
               <label>Provider
@@ -264,6 +265,6 @@
       </template>
     </main>
     {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-4" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-7" defer></script>
   </body>
 </html>

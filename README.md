@@ -41,8 +41,8 @@ uv run mudidi web --data-dir /path/to/private-app-data
 
 For the web dashboard, enter any of the four supported keys directly under
 **API credentials** on **New Run**: Gemini, OpenAI, Anthropic, or OpenRouter.
-The separate **API providers** page can also manage saved keys. Inputs are
-masked and can be revealed explicitly with the eye button. Keys persist across restarts as
+Click **Save key** beside the credential you entered. Inputs are masked and can
+be revealed explicitly with the eye button. Keys persist across restarts as
 encrypted ciphertext in `mudidi-web.sqlite3`; the encryption key is stored
 separately as `.credential-key` in the dashboard data directory. Keep the whole
 data directory private and backed up together.

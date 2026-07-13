@@ -262,7 +262,7 @@ document.querySelectorAll("[data-reveal-key]").forEach((button) => {
       return;
     }
     if (!input.value) {
-      const response = await window.fetch(`/providers/${provider}/credential/reveal`, {
+      const response = await window.fetch(`/credentials/${provider}/reveal`, {
         method: "POST",
         headers: { "Accept": "application/json" },
       });
@@ -273,6 +273,48 @@ document.querySelectorAll("[data-reveal-key]").forEach((button) => {
     input.type = "text";
     button.setAttribute("aria-pressed", "true");
     button.setAttribute("aria-label", `Hide ${provider} API key`);
+  });
+});
+
+document.querySelectorAll("[data-save-key]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const provider = button.dataset.provider;
+    const target = button.dataset.credentialTarget || `credential-${provider}`;
+    const input = document.querySelector(`#${target}`);
+    const status = document.querySelector(`#credential-status-${provider}`);
+    if (!input || !status) return;
+
+    const apiKey = input.value.trim();
+    if (!apiKey) {
+      status.textContent = "Enter a key first";
+      return;
+    }
+
+    button.disabled = true;
+    status.textContent = "Saving…";
+    try {
+      const response = await window.fetch(`/credentials/${provider}`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ api_key: apiKey }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        status.textContent = payload.detail || "Could not save key";
+        return;
+      }
+      input.value = "";
+      input.type = "password";
+      input.placeholder = "Saved key — leave blank to keep it";
+      status.textContent = "Saved";
+    } catch (_error) {
+      status.textContent = "Could not save key";
+    } finally {
+      button.disabled = false;
+    }
   });
 });
 

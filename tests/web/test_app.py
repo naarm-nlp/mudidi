@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from mudidi.web.app import _validation_errors, create_app
-from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 
 _PNG = base64.b64decode(
@@ -115,7 +114,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-4" in response.text
+    assert "/static/app.js?v=dashboard-7" in response.text
 
 
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
@@ -475,4 +474,3 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
     assert response.status_code == 422
     assert app.state.run_store.list_runs() == []
     assert not (tmp_path / "app-data" / "escape.png").exists()
-

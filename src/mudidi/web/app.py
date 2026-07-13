@@ -32,7 +32,6 @@ from mudidi.web.inputs import InputMaterializer, rebase_managed_config
 from mudidi.web.models import (
     ModelCatalog,
     ModelDiscovery,
-    ModelDiscoveryError,
     Provider,
 )
 from mudidi.web.parse_rules import ParseRuleReviewService
@@ -259,21 +258,11 @@ def create_app(
             "media_reference",
             "prompt_cache",
         }
-        dashboard_credential_fields = {
-            f"credential_{provider.value}": provider
-            for provider in (
-                Provider.GEMINI,
-                Provider.OPENAI,
-                Provider.ANTHROPIC,
-                Provider.OPENROUTER,
-            )
-        }
         payload = {
             key: value
             for key, value in submitted.items()
             if key not in upload_fields
             and key not in retired_dashboard_fields
-            and key not in dashboard_credential_fields
             and key != "pages"
             and isinstance(value, str)
             and value.strip() != ""
@@ -322,10 +311,6 @@ def create_app(
             ]
 
         try:
-            for field_name, provider in dashboard_credential_fields.items():
-                value = str(submitted.get(field_name, "")).strip()
-                if value:
-                    app.state.credential_vault.set_persistent(provider, value)
             preset_config = None
             if preset_id:
                 try:
@@ -503,17 +488,11 @@ def create_app(
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
-    @app.get("/providers", response_class=HTMLResponse)
-    async def providers(request: Request) -> HTMLResponse:
-        """Render provider key availability and the bundled model fallback."""
-
-        return _render_providers(request, app)
-
-    @app.post("/providers/{provider_name}/credential", response_class=HTMLResponse)
+    @app.post("/credentials/{provider_name}")
     async def set_provider_credential(
         request: Request,
         provider_name: str,
-    ) -> HTMLResponse:
+    ) -> JSONResponse:
         """Encrypt and persist one provider credential locally."""
 
         try:
@@ -524,20 +503,14 @@ def create_app(
         api_key = str(submitted.get("api_key", ""))
         try:
             app.state.credential_vault.set_persistent(provider, api_key)
-        except ValueError:
-            return _render_providers(
-                request,
-                app,
-                message="API key cannot be empty",
-                status_code=422,
-            )
-        return _render_providers(
-            request,
-            app,
-            message="Encrypted key saved",
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="API key cannot be empty") from exc
+        return JSONResponse(
+            {"status": "saved", "provider": provider.value},
+            headers={"Cache-Control": "no-store"},
         )
 
-    @app.post("/providers/{provider_name}/credential/reveal")
+    @app.post("/credentials/{provider_name}/reveal")
     async def reveal_provider_credential(provider_name: str) -> JSONResponse:
         """Reveal a saved key only after an explicit same-origin action."""
 
@@ -552,13 +525,11 @@ def create_app(
         )
 
     @app.post(
-        "/providers/{provider_name}/credential/delete",
-        response_class=HTMLResponse,
+        "/credentials/{provider_name}/delete",
     )
     async def delete_provider_credential(
-        request: Request,
         provider_name: str,
-    ) -> HTMLResponse:
+    ) -> JSONResponse:
         """Delete one encrypted provider credential."""
 
         try:
@@ -566,45 +537,9 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=404, detail="unknown provider") from exc
         app.state.credential_vault.clear_persistent(provider)
-        return _render_providers(request, app, message="Saved key removed")
-
-    @app.post("/providers/{provider_name}/models/refresh", response_class=HTMLResponse)
-    async def refresh_provider_models(
-        request: Request,
-        provider_name: str,
-    ) -> HTMLResponse:
-        """Refresh a provider's current non-secret model list in memory."""
-
-        try:
-            provider = Provider(provider_name)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail="unknown provider") from exc
-        credential = app.state.credential_vault.resolve(provider)
-        if credential is None:
-            return _render_providers(
-                request,
-                app,
-                message="Add this provider's API key before refreshing models",
-                status_code=409,
-            )
-        try:
-            models = await asyncio.to_thread(
-                app.state.model_discovery.discover,
-                provider,
-                api_key=credential.get_secret_value(),
-            )
-        except ModelDiscoveryError as exc:
-            return _render_providers(
-                request,
-                app,
-                message=str(exc),
-                status_code=502,
-            )
-        app.state.live_models[provider] = models
-        return _render_providers(
-            request,
-            app,
-            message=f"Loaded {len(models)} current {provider.value} models",
+        return JSONResponse(
+            {"status": "deleted", "provider": provider.value},
+            headers={"Cache-Control": "no-store"},
         )
 
     @app.post("/runs/demo")
@@ -1289,39 +1224,6 @@ def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, boo
     for secret in redactions:
         content = content.replace(secret, "[REDACTED]")
     return content, size > _MAX_LOG_BYTES
-
-
-def _render_providers(
-    request: Request,
-    app: FastAPI,
-    *,
-    message: str | None = None,
-    status_code: int = 200,
-) -> HTMLResponse:
-    direct_providers = (
-        Provider.ANTHROPIC,
-        Provider.OPENAI,
-        Provider.GEMINI,
-        Provider.OPENROUTER,
-    )
-    return _TEMPLATES.TemplateResponse(
-        request=request,
-        name="providers.html",
-        context={
-            "providers": direct_providers,
-            "statuses": {
-                provider.value: app.state.credential_vault.status(provider)
-                for provider in direct_providers
-            },
-            "models": app.state.model_catalog.options,
-            "live_models": tuple(
-                model for models in app.state.live_models.values() for model in models
-            ),
-            "catalog_as_of": app.state.model_catalog.as_of,
-            "message": message,
-        },
-        status_code=status_code,
-    )
 
 
 def _all_models(app: FastAPI) -> tuple[object, ...]:

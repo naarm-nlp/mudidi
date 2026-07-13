@@ -68,6 +68,8 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .input-row { display: flex; gap: 8px; }
 .input-row input { flex: 1; padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 7px; color: var(--color-muted); background: #f8f9fa; }
 .key-reveal { display: inline-grid; width: 48px; padding: 9px; place-items: center; color: var(--color-muted); }
+.input-row .credential-save { border-color: var(--color-accent); color: #fff; background: var(--color-accent); white-space: nowrap; }
+.credential-save-status { display: block; margin-top: 6px; color: var(--color-muted); font-size: .78rem; }
 .eye-icon { grid-area: 1 / 1; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .key-reveal[aria-pressed="false"] .eye-hide,
 .key-reveal[aria-pressed="true"] .eye-show { display: none; }

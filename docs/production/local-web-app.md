@@ -12,8 +12,7 @@ uv run mudidi web
 ```
 
 Save the API key for your model provider under **API credentials** on the
-**New Run** screen. The separate **API providers** screen can also replace,
-reveal, or delete saved keys.
+**New Run** screen by clicking **Save key** beside that provider.
 MUDIDI opens `http://127.0.0.1:8765`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
@@ -161,11 +160,11 @@ saved preset.
 ## Credentials and local data
 
 The **API credentials** section on **New Run** accepts Gemini, OpenAI,
-Anthropic, and OpenRouter keys. The same saved keys can be managed on **API
-providers**. Inputs are masked by default and the eye button explicitly reveals
-a saved value. Provider keys are encrypted before their ciphertext is written
-to SQLite. They never enter presets, resolved configuration, logs, command
-lines, or URLs.
+Anthropic, and OpenRouter keys. Click **Save key** to persist an entered value.
+Inputs are masked by default and the eye button explicitly reveals a saved
+value. Provider keys are encrypted before their ciphertext is written to
+SQLite. They never enter presets, resolved configuration, logs, command lines,
+or URLs.
 
 MUDIDI stores the encryption key separately at `.credential-key` in the same
 private data directory. This protects a copied database from exposing plaintext
@@ -200,7 +199,7 @@ release permits one inference worker at a time.
 ## Troubleshooting
 
 - **API credential required** — save the matching key under **API credentials**
-  on **New Run** or under **API providers**.
+  on **New Run**.
 - **Another inference worker is active** — finish or cancel the current worker.
 - **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
   guide; this pause is intentional.
