@@ -11,7 +11,13 @@
       <section class="panel review-card error-card">
         <span class="eyebrow">Configuration needs attention</span>
         <h1>Check the highlighted configuration</h1>
-        <p>{{ error_count }} validation issue{% if error_count != 1 %}s{% endif %} prevented this run from being prepared. Submitted values are not echoed on this error page.</p>
+        <p>{{ validation_errors|length }} validation issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
+        <ul class="validation-errors">
+          {% for error in validation_errors %}
+            <li><strong>{{ error.field }}</strong><span>{{ error.message }}</span></li>
+          {% endfor %}
+        </ul>
+        <p class="hint">Your non-file settings are saved in this browser tab. For security, browsers cannot restore file selections, so please select those files again.</p>
         <a class="primary link-button" href="/">← Return to New run</a>
       </section>
     </main>

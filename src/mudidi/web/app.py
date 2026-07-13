@@ -212,10 +212,16 @@ def create_app(
             "existing_mdf_guide_file",
             "custom_mdf_manual",
         }
+        retired_dashboard_fields = {
+            "page_limit",
+            "media_reference",
+            "prompt_cache",
+        }
         payload = {
             key: value
             for key, value in submitted.items()
             if key not in upload_fields
+            and key not in retired_dashboard_fields
             and key != "pages"
             and isinstance(value, str)
             and value.strip() != ""
@@ -356,7 +362,7 @@ def create_app(
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="form_error.html",
-                context={"error_count": _error_count(exc)},
+                context={"validation_errors": _validation_errors(exc)},
                 status_code=422,
             )
         try:
@@ -967,10 +973,22 @@ def create_app(
     return app
 
 
-def _error_count(exc: ValidationError | ValueError) -> int:
-    if isinstance(exc, ValidationError):
-        return len(exc.errors())
-    return 1
+def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]]:
+    """Return safe, user-facing validation details without submitted values."""
+
+    if not isinstance(exc, ValidationError):
+        return [{"field": "Configuration", "message": str(exc)}]
+
+    issues: list[dict[str, str]] = []
+    for error in exc.errors():
+        location = [str(part) for part in error.get("loc", ()) if part != "__root__"]
+        raw_field = location[-1] if location else "configuration"
+        field = raw_field.replace("_", " ").strip().title()
+        message = str(error.get("msg", "Invalid value"))
+        if message.lower().startswith("value error, "):
+            message = message[len("value error, ") :]
+        issues.append({"field": field, "message": message})
+    return issues
 
 
 def _config_summary(config: InferenceConfig) -> dict[str, str]:
@@ -1171,7 +1189,6 @@ def _render_parse_rule_editor(
 
 
 def _parse_rule_form(form: object) -> dict[str, object]:
-    get = getattr(form, "get")
     getlist = getattr(form, "getlist")
     codes = [str(value) for value in getlist("marker_code")]
     descriptions = [str(value) for value in getlist("marker_description")]

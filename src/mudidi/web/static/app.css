@@ -116,6 +116,9 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-link { margin: 0; color: #fff; text-decoration: none; }
 .mdf-manual-official small { display: block; margin-top: 7px; color: var(--color-muted); overflow-wrap: anywhere; }
 .error-card { border-top: 4px solid #c6584b; }
+.validation-errors { margin: 18px 0; padding: 0; list-style: none; }
+.validation-errors li { display: grid; grid-template-columns: minmax(120px, .35fr) minmax(0, 1fr); gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-line); }
+.validation-errors span { color: var(--color-muted); }
 .providers-page { width: min(1040px, 100%); margin: 0 auto; }
 .page-heading { margin: 28px 0; }
 .page-heading p { color: var(--color-muted); }

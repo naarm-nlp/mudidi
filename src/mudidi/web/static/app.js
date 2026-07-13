@@ -1,5 +1,61 @@
 "use strict";
 
+const runForm = document.querySelector("form.run-form");
+const runFormStorageKey = "mudidi:new-run-form:v1";
+
+const persistRunForm = () => {
+  if (!runForm) return;
+  const state = {};
+  [...runForm.elements].forEach((field) => {
+    if (!field.name || ["file", "password", "submit", "button"].includes(field.type)) return;
+    if (!state[field.name]) state[field.name] = [];
+    if (field.type === "checkbox" || field.type === "radio") {
+      if (field.checked) state[field.name].push(field.value);
+    } else {
+      state[field.name].push(field.value);
+    }
+  });
+  try {
+    window.sessionStorage.setItem(runFormStorageKey, JSON.stringify(state));
+  } catch (_error) {
+    // Storage may be unavailable in privacy-restricted browser contexts.
+  }
+};
+
+const restoreRunForm = () => {
+  if (!runForm) return;
+  let state;
+  try {
+    state = JSON.parse(window.sessionStorage.getItem(runFormStorageKey) || "null");
+  } catch (_error) {
+    return;
+  }
+  if (!state || typeof state !== "object") return;
+
+  const targetCount = Math.max(
+    state.profile_target_languages?.length || 0,
+    state.profile_target_scripts?.length || 0,
+  );
+  const rows = document.querySelector("#profile-target-rows");
+  const template = document.querySelector("#profile-target-template");
+  while (rows && template && rows.children.length < targetCount) {
+    rows.append(template.content.cloneNode(true));
+  }
+
+  Object.entries(state).forEach(([name, values]) => {
+    if (!Array.isArray(values)) return;
+    const fields = [...runForm.elements].filter((field) => field.name === name);
+    fields.forEach((field, index) => {
+      if (field.type === "file" || field.type === "password") return;
+      if (field.type === "checkbox" || field.type === "radio") {
+        field.checked = values.includes(field.value);
+      } else if (values[index] !== undefined) {
+        field.value = values[index];
+      }
+    });
+  });
+};
+
 document.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -9,12 +65,14 @@ document.addEventListener("click", (event) => {
     const template = document.querySelector(`#${kind}-template`);
     const rows = document.querySelector(`#${kind}-rows`);
     if (template && rows) rows.append(template.content.cloneNode(true));
+    persistRunForm();
     return;
   }
 
   if (button.hasAttribute("data-remove")) {
     const row = button.closest(".editor-row");
     if (row) row.remove();
+    persistRunForm();
   }
 });
 
@@ -173,9 +231,15 @@ const synchronizeManual = () => {
   });
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
+restoreRunForm();
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
+if (runForm) {
+  runForm.addEventListener("input", persistRunForm);
+  runForm.addEventListener("change", persistRunForm);
+  runForm.addEventListener("submit", persistRunForm);
+}
 
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {
