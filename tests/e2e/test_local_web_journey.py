@@ -237,7 +237,10 @@ def test_agentic_and_manual_controls_follow_pipeline(
     expect(manual_help).to_have_attribute(
         "data-help", re.compile("run Complete digitization first")
     )
-    manual_help.click()
-    expect(manual_help).to_have_class(re.compile("is-open"))
+    manual_help.hover()
+    page.wait_for_timeout(200)
+    assert manual_help.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "1"
     page.get_by_label("Upload my own MDF manual").check()
     expect(page.locator("[data-custom-mdf-manual]")).to_be_visible()

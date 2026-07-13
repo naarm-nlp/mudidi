@@ -207,10 +207,6 @@ const synchronizeAgentic = () => {
 };
 agenticChoices.forEach((choice) => choice.addEventListener("change", synchronizeAgentic));
 
-document.querySelectorAll(".info-button").forEach((button) => {
-  button.addEventListener("click", () => button.classList.toggle("is-open"));
-});
-
 document.querySelectorAll("[data-confirm-delete]").forEach((form) => {
   form.addEventListener("submit", (event) => {
     if (!window.confirm("Delete this run from local history? Generated output files will be kept.")) {

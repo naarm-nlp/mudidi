@@ -76,7 +76,7 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .pipeline-choices > label span { flex: 1; }
 .info-button { position: relative; width: 23px; height: 23px; padding: 0; border: 1px solid var(--color-line); border-radius: 50%; color: var(--color-accent); background: #fff; font-size: 12px; font-weight: 800; }
 .info-button::after { content: attr(data-help); position: absolute; z-index: 3; right: 0; top: 30px; width: min(330px, 70vw); padding: 10px 12px; border-radius: 7px; color: #fff; background: #24343c; box-shadow: 0 5px 18px rgba(0, 0, 0, .18); font-weight: 500; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
-.info-button:hover::after, .info-button:focus-visible::after, .info-button.is-open::after { opacity: 1; transform: translateY(0); }
+.info-button:hover::after { opacity: 1; transform: translateY(0); }
 .mdf-manual-help::after { width: min(440px, 80vw); }
 .profile-layout-question,
 .profile-other-information {
