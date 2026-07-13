@@ -82,6 +82,24 @@ def env_choice(name: str, default: str) -> str:
 CASES = load_cases()
 
 
+def test_missing_case_assets_are_skipped(tmp_path: Path) -> None:
+    case = HallucinationCase(
+        case_id="missing-assets",
+        page="page_1",
+        fixture_path=tmp_path / "fixture.txt",
+        gold_path=tmp_path / "missing-gold.txt",
+        image_path=tmp_path / "missing-image.png",
+        expected_path="localized_retry",
+        forbidden_markers=(),
+        fixture_markers=(),
+        must_remove_markers=(),
+        gold_required_tokens=(),
+    )
+
+    with pytest.raises(pytest.skip.Exception, match="Local MUDIDI dataset"):
+        require_case_assets(case)
+
+
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.case_id)
 def test_chukchi_hallucination_fixture_integrity(case: HallucinationCase) -> None:
     assert case.fixture_path.is_file()
