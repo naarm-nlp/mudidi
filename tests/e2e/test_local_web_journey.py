@@ -132,6 +132,44 @@ def test_new_run_defaults_to_gemini_flash(
         )
 
 
+def test_info_tooltip_only_appears_while_hovering_the_icon(
+    local_site: str,
+    browser_page: Page,
+) -> None:
+    page = browser_page
+    page.goto(local_site)
+    button = page.get_by_role("button", name="About temperature")
+    heading = button.locator("xpath=..")
+
+    box = heading.bounding_box()
+    assert box is not None
+    page.mouse.click(box["x"] + 3, box["y"] + box["height"] / 2)
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(200)
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "0"
+
+    button.click()
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(200)
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "0"
+
+    button.hover()
+    page.wait_for_timeout(200)
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "1"
+
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(200)
+    assert button.evaluate(
+        "element => getComputedStyle(element, '::after').opacity"
+    ) == "0"
+
+
 def test_invalid_preview_restores_safe_form_values(
     local_site: str,
     browser_page: Page,
