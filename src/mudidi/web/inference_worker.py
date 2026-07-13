@@ -10,6 +10,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from mudidi.config.yaml_config import InferenceConfig
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 
 _CREDENTIAL_ENVIRONMENTS = {
@@ -94,7 +95,9 @@ def run_inference_phase(
             return InferencePhaseResult(return_code=result)
     parse_rules_path = None
     if configurations[-1].pipeline.stage == "2-pass-1":
-        parse_rules_path = config.output.directory / "stage-2" / "parse-rules.json"
+        parse_rules_path = (
+            config.output.directory / "stage-2" / MDF_PARSING_GUIDE_FILENAME
+        )
     return InferencePhaseResult(return_code=0, parse_rules_path=parse_rules_path)
 
 

@@ -14,7 +14,6 @@ from mudidi.utils.image import file_content_part, is_remote_file_reference
 
 def _field_map() -> DictionaryMarkerCheatsheet:
     return DictionaryMarkerCheatsheet(
-        dictionary_name="Test Dictionary",
         markers=[
             MarkerLine(marker="lx", description="headword"),
             MarkerLine(marker="gn", description="gloss"),
@@ -41,7 +40,7 @@ def test_pass2_places_parse_rules_in_cacheable_static_message(tmp_path: Path) ->
     assert messages[1]["role"] == "user"
     static_content = messages[1]["content"]
     assert static_content[-1]["cache_control"] == {"type": "ephemeral"}
-    assert "MDF markers for Test Dictionary" in static_content[0]["text"]
+    assert "MDF parsing guide (use these markers exactly)" in static_content[0]["text"]
     assert "\\lx   headword" in static_content[0]["text"]
     assert "this is page-specific OCR text" not in static_content[0]["text"]
 
@@ -69,7 +68,7 @@ def test_pass2_prompt_cache_off_uses_single_user_turn(tmp_path: Path) -> None:
     assert messages[1]["role"] == "user"
     user_content = messages[1]["content"]
     assert "cache_control" not in user_content[0]
-    assert "MDF markers for Test Dictionary" in user_content[0]["text"]
+    assert "MDF parsing guide (use these markers exactly)" in user_content[0]["text"]
     assert "this is page-specific OCR text" in user_content[0]["text"]
     assert user_content[1]["type"] == "image_url"
 
@@ -99,7 +98,7 @@ def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
 
     static_text = messages[1]["content"][0]["text"]
     dynamic_text = messages[2]["content"][0]["text"]
-    assert "MDF markers for Test Dictionary" in static_text
+    assert "MDF parsing guide (use these markers exactly)" in static_text
     assert "current transcript" not in static_text
     assert "<current_page>" not in static_text
     assert "current transcript" in dynamic_text

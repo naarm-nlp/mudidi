@@ -22,7 +22,6 @@ def _review_app(tmp_path: Path) -> tuple[object, TestClient, str]:
     app.state.parse_rule_reviews.create_generated(
         run_id,
         {
-            "dictionary_name": "Example dictionary",
             "markers": [
                 {"marker": "lx", "description": "Headword"},
                 {"marker": "ge", "description": "English gloss"},
@@ -43,7 +42,8 @@ def test_parse_rule_editor_renders_complete_schema(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert "Review MDF parsing guide" in response.text
     assert "Generated MDF parsing guide needs repair" not in response.text
-    assert "Example dictionary" in response.text
+    assert "Dictionary name" not in response.text
+    assert 'name="dictionary_name"' not in response.text
     assert 'value="lx"' in response.text
     assert "Begin each entry with a headword." in response.text
     assert 'value="n."' in response.text
@@ -56,7 +56,6 @@ def test_structured_editor_saves_normalized_draft(tmp_path: Path) -> None:
     response = client.post(
         f"/runs/{run_id}/parse-rules/draft",
         data={
-            "dictionary_name": "Edited dictionary",
             "marker_code": ["\\lx", "ge"],
             "marker_description": ["Lexeme", "Gloss"],
             "rule": ["Keep printed order."],
@@ -68,7 +67,7 @@ def test_structured_editor_saves_normalized_draft(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert "Draft saved" in response.text
     payload = app.state.parse_rule_reviews.load_editable_payload(run_id)
-    assert payload["dictionary_name"] == "Edited dictionary"
+    assert "dictionary_name" not in payload
     assert payload["markers"][0]["marker"] == "lx"
 
 
@@ -78,7 +77,6 @@ def test_invalid_structured_draft_remains_in_review(tmp_path: Path) -> None:
     response = client.post(
         f"/runs/{run_id}/parse-rules/draft",
         data={
-            "dictionary_name": "Example",
             "marker_code": ["lx", "\\lx"],
             "marker_description": ["Headword", "Duplicate"],
         },
@@ -114,7 +112,6 @@ def test_approve_validates_and_freezes_current_form_edits(tmp_path: Path) -> Non
     response = client.post(
         f"/runs/{run_id}/parse-rules/approve",
         data={
-            "dictionary_name": "Approved edit",
             "marker_code": ["lx", "ge"],
             "marker_description": ["Edited headword", "Gloss"],
             "rule": ["Use the edited rule."],
@@ -127,5 +124,5 @@ def test_approve_validates_and_freezes_current_form_edits(tmp_path: Path) -> Non
     assert response.status_code == 303
     review = app.state.parse_rule_reviews.get(run_id)
     approved = review.approved_snapshot_path.read_text(encoding="utf-8")  # type: ignore[union-attr]
-    assert "Approved edit" in approved
+    assert "dictionary_name" not in approved
     assert "Use the edited rule." in approved

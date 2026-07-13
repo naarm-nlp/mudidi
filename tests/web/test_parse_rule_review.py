@@ -31,7 +31,6 @@ def _discovering_run(store: RunStore, run_id: str = "run-1") -> None:
 
 def _rules(marker: str = "lx") -> dict[str, object]:
     return {
-        "dictionary_name": "Example dictionary",
         "markers": [
             {"marker": marker, "description": "Headword"},
             {"marker": "ge", "description": "English gloss"},
@@ -50,7 +49,7 @@ def test_generated_rules_enter_durable_review_state(
     review = service.create_generated("run-1", _rules(), sample_pages=["1", "3"])
 
     assert review.status is ReviewStatus.AWAITING_REVIEW
-    assert review.generated_path.name == "parse-rules.generated.json"
+    assert review.generated_path.name == "mdf_parsing_guide.generated.json"
     assert review.generated_path.exists()
     assert review.sample_pages == ("1", "3")
     assert store.get_run("run-1").status is RunStatus.AWAITING_PARSE_RULES_REVIEW
@@ -64,7 +63,7 @@ def test_invalid_generated_rules_still_enter_review_for_repair(
 
     review = service.create_generated(
         "run-1",
-        {"dictionary_name": "Broken", "markers": [{"marker": "", "description": ""}]},
+        {"markers": [{"marker": "", "description": ""}]},
         sample_pages=[],
     )
 

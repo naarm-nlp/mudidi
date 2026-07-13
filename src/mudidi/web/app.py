@@ -1161,7 +1161,6 @@ def _render_parse_rule_editor(
         context={
             "run_id": run_id,
             "review": review,
-            "dictionary_name": str(payload.get("dictionary_name", "")),
             "markers": markers or [{"marker": "", "description": ""}],
             "rules": rules or [""],
             "abbreviations": abbreviations or [("", "")],
@@ -1189,7 +1188,6 @@ def _parse_rule_form(form: object) -> dict[str, object]:
         if key.strip():
             abbreviations[key.strip()] = value.strip()
     return {
-        "dictionary_name": str(get("dictionary_name", "")),
         "markers": [
             {"marker": code, "description": description}
             for code, description in zip(codes, descriptions, strict=True)

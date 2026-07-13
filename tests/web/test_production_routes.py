@@ -64,7 +64,7 @@ def test_review_start_pause_approve_and_complete_offline_journey(
 
     review_page = client.get(f"/runs/{run_id}/parse-rules")
     assert review_page.status_code == 200
-    assert "Offline dictionary" in review_page.text
+    assert "Dictionary name" not in review_page.text
 
     approved = client.post(
         f"/runs/{run_id}/parse-rules/approve",

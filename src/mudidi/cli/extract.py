@@ -28,7 +28,10 @@ from mudidi.evaluation.stage2.mdf_lexical_repair import (
 )
 from mudidi.evaluation.stage2.mdf_evaluator import MdfEvaluator
 from mudidi.evaluation.stage1.flat_evaluator import FlatStage1Evaluator
-from mudidi.paths import PARSE_RULES_FILENAME, PARSE_RULES_USAGE_FILENAME
+from mudidi.paths import (
+    MDF_PARSING_GUIDE_FILENAME,
+    MDF_PARSING_GUIDE_USAGE_FILENAME,
+)
 from mudidi.extraction.sample_entry import (
     configure_benchmark_entry_args,
     report_entry_input_failures,
@@ -702,7 +705,7 @@ def _build_stage2_manifest(
             output_dir
             / "stage-2"
             / args.stage2_experiment_name
-            / PARSE_RULES_FILENAME
+            / MDF_PARSING_GUIDE_FILENAME
         ),
         "parse_rules_source": (
             "gold"
@@ -1291,7 +1294,7 @@ Examples:
         default="all",
         help="Run only stage 1, full stage 2 (Pass 1 + Pass 2), all stages, "
         "Stage 2 Pass 1 only (2-pass-1), or Stage 2 Pass 2 only (2-pass-2; "
-        "requires existing parse-rules.json). Default: all.",
+        "requires existing mdf_parsing_guide.json). Default: all.",
     )
     parser.add_argument(
         "--stage1-mode",
@@ -1349,8 +1352,8 @@ Examples:
         "--parse-rules-file",
         type=Path,
         dest="parse_rules_file",
-        help="Load parse-rules.json from PATH and skip Pass 1 LLM discovery. "
-        "Always reads PATH and refreshes {output_dir}/parse-rules.json.",
+        help="Load mdf_parsing_guide.json from PATH and skip Pass 1 LLM discovery. "
+        "Always reads PATH and refreshes {output_dir}/mdf_parsing_guide.json.",
     )
     parser.add_argument(
         "--dictionary-languages",
@@ -1406,8 +1409,8 @@ Examples:
         "--parse-rules-gold",
         action="store_true",
         dest="parse_rules_gold",
-        help="Skip Pass 1 discovery; load outputs/stage-2-gold/parse-rules.json "
-        "(or legacy field_cheatsheet.json) for the current dictionary entry.",
+        help="Skip Pass 1 discovery; load "
+        "outputs/stage-2-gold/mdf_parsing_guide.json for the current dictionary entry.",
     )
     parser.add_argument(
         "--field-cheatsheet-gold",
@@ -2120,7 +2123,7 @@ def _run_single_entry(args, parser) -> int:
     if args.stage == "2-pass-1":
         print("\nStage 2 Pass 1 only: discovering parse rules …")
         strategy.discover_parse_rules()
-        parse_rules_path = cheatsheet_root / PARSE_RULES_FILENAME
+        parse_rules_path = cheatsheet_root / MDF_PARSING_GUIDE_FILENAME
         print(f"Pass 1 complete → {parse_rules_path}")
         if args.strategy == "two_stage":
             _write_run_config(
@@ -2587,7 +2590,10 @@ def _write_run_usage(
         if not root.is_dir():
             continue
         for usage_file in sorted(root.rglob("*_usage.json")):
-            if usage_file.name in {PARSE_RULES_USAGE_FILENAME, "run_usage.json"}:
+            if usage_file.name in {
+                MDF_PARSING_GUIDE_USAGE_FILENAME,
+                "run_usage.json",
+            }:
                 continue
             if not is_page_usage_file(usage_file):
                 continue
@@ -2610,9 +2616,9 @@ def _write_run_usage(
     parse_roots = parse_rules_roots if parse_rules_roots is not None else [output_dir]
     parse_rules_usage_path = next(
         (
-            root / PARSE_RULES_USAGE_FILENAME
+            root / MDF_PARSING_GUIDE_USAGE_FILENAME
             for root in parse_roots
-            if (root / PARSE_RULES_USAGE_FILENAME).is_file()
+            if (root / MDF_PARSING_GUIDE_USAGE_FILENAME).is_file()
         ),
         None,
     )

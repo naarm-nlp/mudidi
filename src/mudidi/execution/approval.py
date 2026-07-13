@@ -92,22 +92,24 @@ def load_approved_parse_rules(
         raw_bytes = approval.snapshot_path.read_bytes()
     except OSError as exc:
         raise ApprovalMismatchError(
-            f"approved parse-rules snapshot cannot be read: {exc}"
+            f"approved MDF parsing-guide snapshot cannot be read: {exc}"
         ) from exc
     actual_digest = hashlib.sha256(raw_bytes).hexdigest()
     if actual_digest != approval.sha256:
         raise ApprovalMismatchError(
-            "approved parse-rules snapshot digest does not match its approval"
+            "approved MDF parsing-guide snapshot digest does not match its approval"
         )
     try:
         payload = json.loads(raw_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ApprovalMismatchError("approved parse-rules snapshot is not valid JSON") from exc
+        raise ApprovalMismatchError(
+            "approved MDF parsing-guide snapshot is not valid JSON"
+        ) from exc
     try:
         rules = validate_marker_cheatsheet(payload)
     except ValueError as exc:
         raise ApprovalMismatchError(
-            f"approved parse-rules snapshot is not schema-valid: {exc}"
+            f"approved MDF parsing-guide snapshot is not schema-valid: {exc}"
         ) from exc
     return LoadedApprovedParseRules(
         approval=approval,

@@ -16,6 +16,7 @@ from mudidi.execution.approval import (
     load_approved_parse_rules,
     mint_approved_parse_rules,
 )
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.execution.events import (
     ParseRulesGenerated,
@@ -101,7 +102,9 @@ def main(argv: list[str] | None = None) -> int:
         sequence += 1
         if result.parse_rules_path is not None:
             if not result.parse_rules_path.is_file():
-                raise FileNotFoundError("Pass 1 did not produce parse-rules.json")
+                raise FileNotFoundError(
+                    f"Pass 1 did not produce {MDF_PARSING_GUIDE_FILENAME}"
+                )
             _emit(
                 ParseRulesGenerated(
                     run_id=args.run_id,
@@ -183,10 +186,9 @@ def _offline_execute(
         path = config.output.directory / "stage-1/page_1/page_1_stage1_flat.txt"
         content = "offline transcription\n"
     elif stage == "2-pass-1":
-        path = config.output.directory / "stage-2/parse-rules.json"
+        path = config.output.directory / "stage-2" / MDF_PARSING_GUIDE_FILENAME
         content = json.dumps(
             {
-                "dictionary_name": "Offline dictionary",
                 "markers": [
                     {"marker": "lx", "description": "Headword"},
                     {"marker": "ge", "description": "English gloss"},

@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from mudidi.paths import MDF_PARSING_GUIDE_USAGE_FILENAME
 from mudidi.web.jobs import JobController
 
 _TEXT_SUFFIXES = {".txt", ".tsv", ".mdf", ".json", ".jsonl", ".log"}
@@ -194,7 +195,7 @@ class ArtifactService:
         files_scanned = 0
         if root.is_dir():
             for path in sorted(root.rglob("*_usage.json")):
-                if path.is_symlink() or path.name == "parse-rules_usage.json":
+                if path.is_symlink() or path.name == MDF_PARSING_GUIDE_USAGE_FILENAME:
                     continue
                 payload = _read_json_object(path)
                 total_tokens += int(payload.get("total_tokens", 0) or 0)

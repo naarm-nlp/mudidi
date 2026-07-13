@@ -105,7 +105,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         default="all",
         help="Run Stage 1 only, Stage 2 (Pass 1 + Pass 2), both stages (all), "
         "Stage 2 Pass 1 only (2-pass-1), or Stage 2 Pass 2 only "
-        "(2-pass-2; requires existing parse-rules.json). Default: all.",
+        "(2-pass-2; requires existing mdf_parsing_guide.json). Default: all.",
     )
     parser.add_argument(
         "--stage1-source",
@@ -126,8 +126,8 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--parse-rules-file",
         type=str,
         dest="parse_rules_file",
-        help="Load parse-rules.json from PATH; skip Pass 1 LLM discovery. "
-        "Always reads PATH (overrides any cached parse-rules.json in --output-dir).",
+        help="Load mdf_parsing_guide.json from PATH; skip Pass 1 LLM discovery. "
+        "Always reads PATH (overrides any cached mdf_parsing_guide.json in --output-dir).",
     )
     parser.add_argument(
         "--dictionary-languages",

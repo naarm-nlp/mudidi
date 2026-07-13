@@ -1,4 +1,4 @@
-"""Compact Pass-1 marker cheat sheet for Pass 2 direct MDF extraction."""
+"""Compact MDF parsing guide for direct Stage 2 extraction."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import re
 from collections.abc import Mapping
 from typing import Any, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MarkerLine(BaseModel):
@@ -18,21 +18,21 @@ class MarkerLine(BaseModel):
 
 class DictionaryMarkerCheatsheet(BaseModel):
     """
-    Pass 1 output in cheat-sheet mode — markers + rules, no typography map.
+    Pass 1 MDF parsing-guide output — markers and rules, without typography.
 
     Rendered for Pass 2 in the same style as the static Chukchi experiment script.
     """
 
-    dictionary_name: str = ""
+    model_config = ConfigDict(extra="forbid")
+
     markers: List[MarkerLine] = Field(default_factory=list)
     rules: List[str] = Field(default_factory=list)
     abbreviations: dict[str, str] = Field(default_factory=dict)
 
     def format_prompt_block(self) -> str:
-        """Render as Pass 2 field map (static cheat-sheet style)."""
-        title = self.dictionary_name or "this dictionary"
+        """Render the guide as a compact Pass 2 field map."""
         lines = [
-            f"MDF markers for {title} (use these exactly):",
+            "MDF parsing guide (use these markers exactly):",
             "",
         ]
         for m in self.markers:

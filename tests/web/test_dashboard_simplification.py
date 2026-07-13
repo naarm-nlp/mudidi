@@ -265,7 +265,7 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     client = TestClient(app)
-    guide = b'{"dictionary_name":"Test","markers":[],"rules":[],"abbreviations":{}}'
+    guide = b'{"markers":[],"rules":[],"abbreviations":{}}'
 
     response = client.post(
         "/runs/preview",

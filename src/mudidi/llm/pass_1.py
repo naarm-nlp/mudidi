@@ -1,8 +1,8 @@
 """
 Pass 1: discover which MDF markers this dictionary uses.
 
-Output is a compact marker list + structure rules (parse rules). Cached per stage-2
-experiment as ``outputs/stage-2/<experiment>/parse-rules.json``.
+Output is a compact marker list plus structure rules. Cached per Stage 2
+experiment as ``outputs/stage-2/<experiment>/mdf_parsing_guide.json``.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from mudidi.llm.client import complete_with_usage
 from mudidi.llm.prompt_store import get_prompt_store
-from mudidi.paths import LEGACY_PARSE_RULES_FILENAME, PARSE_RULES_FILENAME
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
@@ -26,14 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 def find_parse_rules_path(directory: Path) -> Path:
-    """Return an existing parse-rules file (new name, then legacy benchmark gold name)."""
-    new_path = directory / PARSE_RULES_FILENAME
-    if new_path.is_file():
-        return new_path
-    legacy = directory / LEGACY_PARSE_RULES_FILENAME
-    if legacy.is_file():
-        return legacy
-    return new_path
+    """Return the canonical MDF parsing-guide path."""
+
+    return directory / MDF_PARSING_GUIDE_FILENAME
 
 
 def pass_1_system_prompt() -> str:
@@ -78,7 +73,6 @@ def discover_field_cheatsheet(
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
-    dictionary_name: str = "",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
     user_text = get_prompt_store().format(
@@ -117,8 +111,6 @@ def discover_field_cheatsheet(
     )
     data = _extract_json_object(raw)
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
-    if dictionary_name and not sheet.dictionary_name:
-        sheet = sheet.model_copy(update={"dictionary_name": dictionary_name})
     return sheet, usage
 
 
@@ -131,7 +123,6 @@ def discover_field_cheatsheet_multi(
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
-    dictionary_name: str = "",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules from several sample pages in one call."""
     if len(samples) < 2:
@@ -185,8 +176,6 @@ def discover_field_cheatsheet_multi(
     )
     data = _extract_json_object(raw)
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
-    if dictionary_name and not sheet.dictionary_name:
-        sheet = sheet.model_copy(update={"dictionary_name": dictionary_name})
     return sheet, usage
 
 
@@ -215,7 +204,7 @@ def load_gold_parse_rules(entry_dir: Path) -> DictionaryMarkerCheatsheet:
     if not path.is_file():
         raise FileNotFoundError(
             f"Gold parse rules not found under {entry_dir / 'outputs' / 'stage-2-gold'} "
-            f"(tried {PARSE_RULES_FILENAME} and {LEGACY_PARSE_RULES_FILENAME})"
+            f"(expected {MDF_PARSING_GUIDE_FILENAME})"
         )
     logger.info("Loading gold parse rules: %s", path)
     return DictionaryMarkerCheatsheet.model_validate_json(path.read_text(encoding="utf-8"))
@@ -257,7 +246,6 @@ def load_or_discover_parse_rules(
             temperature=discover_kwargs.get("temperature", 0.1),
             languages_config=discover_kwargs.get("languages_config"),
             dictionary_profile=discover_kwargs.get("dictionary_profile"),
-            dictionary_name=discover_kwargs.get("dictionary_name", ""),
         )
     else:
         sheet, usage = discover_field_cheatsheet(**discover_kwargs)

@@ -24,6 +24,8 @@ def test_canonical_output_filename_is_mdf_parsing_guide() -> None:
 
 def test_dataset_gold_guides_use_canonical_filename_and_schema() -> None:
     dictionaries = Path(__file__).parents[2] / "dataset" / "MUDIDI" / "dictionaries"
+    if not dictionaries.is_dir():
+        pytest.skip("local MUDIDI dataset is not installed")
     guides = sorted(
         dictionaries.glob("*/Stage 2 Gold Cheat Sheet/mdf_parsing_guide.json")
     )

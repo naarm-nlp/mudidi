@@ -58,8 +58,8 @@
     ]
   },
   "stage_2_pass_2": {
-    "description": "Stage 2 Pass 1 user prompt when one sample page is selected (--parse-rules-page). Produces parse-rules.json from introduction images plus one sample page transcription.",
-    "prompt": "Study this dictionary and return a marker cheat sheet JSON object.\n\nInputs:\n1. Introduction pages (images below).\n2. One sample dictionary page (image + flat transcription).\n{config_hint}\n\nReturn JSON with this shape:\n{{\n  \"dictionary_name\": \"short name\",\n  \"markers\": [\n    {{\"marker\": \"lx\", \"description\": \"headword / lexeme (vernacular lemma)\"}},\n    {{\"marker\": \"gn\", \"description\": \"Russian gloss / translation\"}},\n    {{\"marker\": \"un\", \"description\": \"usage note (parenthetical Russian expansion)\"}}\n  ],\n  \"rules\": [\n    \"Separate homograph mains: two \\\\lx blocks with same lemma, each with \\\\hm N.\",\n    \"Numbered senses: one \\\\lx, then \\\\sn 1, \\\\gn …, \\\\sn 2, \\\\gn …\",\n    \"Run-on sub-entries: \\\\se sub-lemma then \\\\gn … inside the same record block.\"\n  ],\n  \"abbreviations\": {{\"мн.\": \"plural\"}}\n}}\n\nInclude ONLY markers that appear on the sample page or are defined in the intro.\nOmit markers not used. Keep descriptions short (one line each). Rules should cover\nentry structure and gloss-line conventions (semicolons, hyphen rejoining).\nReturn JSON only — no markdown fences.\n\n<sample_transcription>\n{transcription}\n</sample_transcription>",
+    "description": "Stage 2 Pass 1 user prompt when one sample page is selected (--parse-rules-page). Produces mdf_parsing_guide.json from introduction images plus one sample page transcription.",
+    "prompt": "Study this dictionary and return a MDF parsing guide JSON object.\n\nInputs:\n1. Introduction pages (images below).\n2. One sample dictionary page (image + flat transcription).\n{config_hint}\n\nReturn JSON with this shape:\n{{\n  \"markers\": [\n    {{\"marker\": \"lx\", \"description\": \"headword / lexeme (vernacular lemma)\"}},\n    {{\"marker\": \"gn\", \"description\": \"Russian gloss / translation\"}},\n    {{\"marker\": \"un\", \"description\": \"usage note (parenthetical Russian expansion)\"}}\n  ],\n  \"rules\": [\n    \"Separate homograph mains: two \\\\lx blocks with same lemma, each with \\\\hm N.\",\n    \"Numbered senses: one \\\\lx, then \\\\sn 1, \\\\gn …, \\\\sn 2, \\\\gn …\",\n    \"Run-on sub-entries: \\\\se sub-lemma then \\\\gn … inside the same record block.\"\n  ],\n  \"abbreviations\": {{\"мн.\": \"plural\"}}\n}}\n\nInclude ONLY markers that appear on the sample page or are defined in the intro.\nOmit markers not used. Keep descriptions short (one line each). Rules should cover\nentry structure and gloss-line conventions (semicolons, hyphen rejoining).\nReturn JSON only — no markdown fences.\n\n<sample_transcription>\n{transcription}\n</sample_transcription>",
     "variables": [
       {
         "name": "transcription",
@@ -74,8 +74,8 @@
     ]
   },
   "stage_2_pass_2_multi": {
-    "description": "Stage 2 Pass 1 user prompt when two or more sample pages are provided. Merges marker and layout conventions from heterogeneous sections into one parse-rules.json.",
-    "prompt": "Study this dictionary and return a marker cheat sheet JSON object.\n\nInputs:\n1. Introduction pages (images below).\n2. Several sample dictionary pages (transcriptions below; matching page images follow in the same order).\n{config_hint}\n\nReturn JSON with this shape:\n{{\n  \"dictionary_name\": \"short name\",\n  \"markers\": [\n    {{\"marker\": \"lx\", \"description\": \"headword / lexeme (vernacular lemma)\"}},\n    {{\"marker\": \"gn\", \"description\": \"Russian gloss / translation\"}}\n  ],\n  \"rules\": [\n    \"Separate homograph mains: two \\\\lx blocks with same lemma, each with \\\\hm N.\",\n    \"If samples differ by section (e.g. main body vs appendix), state which rule applies where.\"\n  ],\n  \"abbreviations\": {{\"мн.\": \"plural\"}}\n}}\n\nInclude markers that appear on ANY sample page or are defined in the intro.\nOmit markers not used. Keep descriptions short (one line each). Rules should cover\nentry structure and gloss-line conventions across all samples. When samples show\ndifferent layouts, add section-specific rules rather than forcing one template.\nReturn JSON only — no markdown fences.\n\n{sample_pages_block}",
+    "description": "Stage 2 Pass 1 user prompt when two or more sample pages are provided. Merges marker and layout conventions from heterogeneous sections into one mdf_parsing_guide.json.",
+    "prompt": "Study this dictionary and return a MDF parsing guide JSON object.\n\nInputs:\n1. Introduction pages (images below).\n2. Several sample dictionary pages (transcriptions below; matching page images follow in the same order).\n{config_hint}\n\nReturn JSON with this shape:\n{{\n  \"markers\": [\n    {{\"marker\": \"lx\", \"description\": \"headword / lexeme (vernacular lemma)\"}},\n    {{\"marker\": \"gn\", \"description\": \"Russian gloss / translation\"}}\n  ],\n  \"rules\": [\n    \"Separate homograph mains: two \\\\lx blocks with same lemma, each with \\\\hm N.\",\n    \"If samples differ by section (e.g. main body vs appendix), state which rule applies where.\"\n  ],\n  \"abbreviations\": {{\"мн.\": \"plural\"}}\n}}\n\nInclude markers that appear on ANY sample page or are defined in the intro.\nOmit markers not used. Keep descriptions short (one line each). Rules should cover\nentry structure and gloss-line conventions across all samples. When samples show\ndifferent layouts, add section-specific rules rather than forcing one template.\nReturn JSON only — no markdown fences.\n\n{sample_pages_block}",
     "variables": [
       {
         "name": "config_hint",
@@ -143,7 +143,7 @@
       {
         "name": "field_block",
         "tag": null,
-        "description": "Formatted parse rules block from Pass 1 (parse-rules.json)."
+        "description": "Formatted MDF parsing guide block from Pass 1 (mdf_parsing_guide.json)."
       },
       {
         "name": "guides_block",
@@ -169,7 +169,7 @@
       {
         "name": "field_block",
         "tag": null,
-        "description": "Formatted parse rules block from Pass 1 (parse-rules.json)."
+        "description": "Formatted MDF parsing guide block from Pass 1 (mdf_parsing_guide.json)."
       },
       {
         "name": "guides_block",

@@ -12,7 +12,6 @@ from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet, MarkerLi
 
 def _approved_rules() -> DictionaryMarkerCheatsheet:
     return DictionaryMarkerCheatsheet(
-        dictionary_name="Approved dictionary",
         markers=[MarkerLine(marker="lx", description="Headword")],
         rules=["Use only approved rules."],
     )

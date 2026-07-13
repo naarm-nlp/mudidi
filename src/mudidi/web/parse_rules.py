@@ -16,6 +16,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from mudidi.execution.approval import ApprovedParseRules, mint_approved_parse_rules
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.web.runs import RunStore
 
@@ -88,7 +89,7 @@ class ParseRuleReviewService:
         validated = validate_marker_cheatsheet(payload)
         raw = _canonical_bytes(validated.model_dump(mode="json"))
         review = self.get(run_id)
-        draft_path = review.generated_path.parent / "parse-rules.draft.json"
+        draft_path = review.generated_path.parent / "mdf_parsing_guide.draft.json"
         _atomic_write(draft_path, raw)
         return _review_from_row(
             self.store.update_parse_rule_draft(run_id, draft_path=draft_path)
@@ -132,8 +133,8 @@ class ParseRuleReviewService:
                 approval_digest=digest,
             )
         )
-        # Compatibility output is replaceable; the immutable snapshot is authority.
-        _atomic_write(review.generated_path.parent / "parse-rules.json", raw)
+        # The readable output is replaceable; the immutable snapshot is authority.
+        _atomic_write(review.generated_path.parent / MDF_PARSING_GUIDE_FILENAME, raw)
         return self._mint_existing(committed)
 
     def approved_capability(self, run_id: str) -> ApprovedParseRules:
@@ -152,7 +153,7 @@ class ParseRuleReviewService:
         sample_pages: list[str],
     ) -> ParseRuleReview:
         run_dir = self._run_directory(run_id)
-        generated_path = run_dir / "parse-rules.generated.json"
+        generated_path = run_dir / "mdf_parsing_guide.generated.json"
         _atomic_write(generated_path, raw)
         validation_error = _validation_error(raw)
         review_id = f"review-{uuid4().hex}"
@@ -168,7 +169,7 @@ class ParseRuleReviewService:
     def _run_directory(self, run_id: str) -> Path:
         if not _RUN_ID_PATTERN.fullmatch(run_id):
             raise ValueError("invalid run ID for managed parse-rule storage")
-        path = self.data_dir / "runs" / run_id / "parse-rules"
+        path = self.data_dir / "runs" / run_id / "mdf-parsing-guide"
         path.mkdir(parents=True, exist_ok=True)
         return path
 

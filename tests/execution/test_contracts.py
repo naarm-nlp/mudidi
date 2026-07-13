@@ -23,7 +23,6 @@ from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 
 def _rules_payload() -> dict[str, object]:
     return {
-        "dictionary_name": "Example",
         "markers": [
             {"marker": "\\lx", "description": "Headword"},
             {"marker": "ge", "description": "English gloss"},
@@ -115,7 +114,7 @@ def test_approved_rules_load_exact_verified_snapshot(tmp_path: Path) -> None:
     loaded = load_approved_parse_rules(approval)
 
     assert loaded.raw_bytes == raw
-    assert loaded.rules.dictionary_name == "Example"
+    assert loaded.rules.markers[0].marker == "lx"
     assert loaded.sha256 == approval.sha256
 
 
@@ -132,7 +131,7 @@ def test_approved_rules_require_content_addressed_managed_filename(
 ) -> None:
     raw = json.dumps(_rules_payload()).encode()
     digest = hashlib.sha256(raw).hexdigest()
-    path = tmp_path / "parse-rules.json"
+    path = tmp_path / "mdf_parsing_guide.json"
     path.write_bytes(raw)
 
     with pytest.raises(ValueError, match="content-addressed"):

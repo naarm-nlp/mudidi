@@ -9,7 +9,7 @@ Stage 1 — Transcription  (low/minimal reasoning, structured output)
   Output : TranscriptionResponse → list of lines → joined into plain text
 
 Stage 2 — Direct MDF  (two-pass within Stage 2)
-  Pass 1 : Discover MDF marker cheat sheet from intro + sample page.
+  Pass 1 : Discover an MDF parsing guide from intro + sample page.
   Pass 2 : Transcribe page into Toolbox MDF text using the field map.
   Output : MDF text on ``DictionaryPage.mdf_text``.
 
@@ -55,7 +55,10 @@ from mudidi.llm.pass_1 import (
     load_or_discover_parse_rules,
     load_parse_rules_file,
 )
-from mudidi.paths import PARSE_RULES_FILENAME, PARSE_RULES_USAGE_FILENAME
+from mudidi.paths import (
+    MDF_PARSING_GUIDE_FILENAME,
+    MDF_PARSING_GUIDE_USAGE_FILENAME,
+)
 from mudidi.llm.pass_2 import extract_direct_mdf
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.schemas.field_map import FieldMapPrompt
@@ -176,13 +179,13 @@ def _print_usage_summary(
 
 
 def _write_parse_rules_usage(experiment_dir: Path, discovery_usage: Dict[str, Any]) -> None:
-    """Persist Pass 1 parse-rules discovery usage at the experiment root."""
+    """Persist MDF parsing-guide discovery usage at the experiment root."""
     payload = {
         "field_discovery": discovery_usage,
         "total_cost_usd": discovery_usage.get("cost_usd"),
         "total_elapsed_seconds": discovery_usage.get("elapsed_seconds"),
     }
-    out = experiment_dir / PARSE_RULES_USAGE_FILENAME
+    out = experiment_dir / MDF_PARSING_GUIDE_USAGE_FILENAME
     out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     cost = discovery_usage.get("cost_usd")
     elapsed = discovery_usage.get("elapsed_seconds")
@@ -433,7 +436,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
 
     Args:
         transcribe_model:   Model used for Stage 1 (transcription).
-        stage2_pass1_model: Model used for Stage 2 Pass 1 (parse-rules discovery).
+        stage2_pass1_model: Model used for Stage 2 Pass 1 guide discovery.
         stage2_pass2_model: Model used for Stage 2 Pass 2 (per-page MDF).
         alphabet_path:      Path to the alphabet file (.txt / .png / .jpg).
                             If an image, it is sent as a vision input to Stage 1.
@@ -831,7 +834,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         return _transcription_to_tsv(result), raw, usage, _sanitize_messages(messages)
 
     def discover_parse_rules(self) -> FieldMapPrompt:
-        """Run Stage 2 Pass 1 only and write ``parse-rules.json``."""
+        """Run Stage 2 Pass 1 only and write ``mdf_parsing_guide.json``."""
         field_map, _ = self._ensure_field_map("", "", run_stage="2-pass-1")
         return field_map
 
@@ -858,7 +861,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     "Stage 2 requires stage2_experiment_dir for field map cache."
                 )
 
-            cache_path = self.stage2_experiment_dir / PARSE_RULES_FILENAME
+            cache_path = self.stage2_experiment_dir / MDF_PARSING_GUIDE_FILENAME
             if self.approved_parse_rules is not None:
                 # Web approval loads and authenticates immutable bytes before
                 # construction. Never resolve a path/cache again for Pass 2.
@@ -870,7 +873,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     )
                 print(
                     "Pass 1: using gold parse rules "
-                    f"(outputs/stage-2-gold/{PARSE_RULES_FILENAME}) …"
+                    f"(outputs/stage-2-gold/{MDF_PARSING_GUIDE_FILENAME}) …"
                 )
                 self._field_map = load_gold_parse_rules(self.entry_dir)
                 if self.overwrite or not cache_path.is_file():
@@ -880,7 +883,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         encoding="utf-8",
                     )
             elif self.parse_rules_file:
-                print(f"Pass 1: loading parse rules file → {self.parse_rules_file}")
+                print(f"Pass 1: loading MDF parsing guide → {self.parse_rules_file}")
                 self._field_map = load_parse_rules_file(self.parse_rules_file)
                 cache_path.parent.mkdir(parents=True, exist_ok=True)
                 cache_path.write_text(
@@ -900,10 +903,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 )
             else:
                 intro_paths = [Path(p) for p in self.intro_image_paths]
-                dictionary_name = self.entry_dir.name if self.entry_dir else ""
                 if not self.parse_rules_samples:
                     raise ValueError(
-                        "Pass 1 parse-rules discovery requires configured sample page(s)."
+                        "Pass 1 MDF parsing-guide discovery requires configured sample page(s)."
                     )
 
                 if len(self.parse_rules_samples) == 1:
@@ -917,7 +919,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
-                        dictionary_name=dictionary_name,
                     )
                     multi_samples = None
                     print(
@@ -931,7 +932,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
-                        dictionary_name=dictionary_name,
                     )
                     multi_samples = [
                         (stem, sample_text, Path(sample_image))

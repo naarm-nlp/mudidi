@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from mudidi.config.run_config import RunConfig
-from mudidi.paths import PARSE_RULES_FILENAME
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.utils.stage1_input import stage1_experiment_dir, stage1_gold_dir
 
 
@@ -38,11 +38,11 @@ def output_layout_from_config(config: RunConfig) -> OutputLayout:
             subdir=config.stage1_output_subdir,
         )
         stage2_root = config.output_dir / "stage-2" / (config.stage2_experiment_name or "default")
-        parse_rules = stage2_root / PARSE_RULES_FILENAME
+        parse_rules = stage2_root / MDF_PARSING_GUIDE_FILENAME
     else:
         stage1_root = config.output_dir / "stage-1"
         stage2_root = config.output_dir / "stage-2"
-        parse_rules = config.output_dir / PARSE_RULES_FILENAME
+        parse_rules = config.output_dir / MDF_PARSING_GUIDE_FILENAME
     return OutputLayout(
         output_dir=config.output_dir,
         stage1_root=stage1_root,
