@@ -13,11 +13,13 @@ def run_server(
     port: int = 8000,
     data_dir: Path | None = None,
     open_browser: bool = True,
+    container_mode: bool = False,
 ) -> int:
     """Run the local application in one Uvicorn process.
 
-    Public network binding and multiple Uvicorn workers are intentionally not
-    exposed in v1.
+    Multiple Uvicorn workers are intentionally not exposed. Container mode is
+    explicit because its all-interface bind must be paired with host-loopback
+    port publishing (as in the shipped Compose configuration).
     """
 
     import uvicorn
@@ -35,5 +37,6 @@ def run_server(
     if open_browser:
         url = f"http://{host}:{port}/"
         threading.Timer(0.8, webbrowser.open, args=(url,)).start()
-    uvicorn.run(app, host=host, port=port, workers=1)
+    bind_host = "0.0.0.0" if container_mode else host
+    uvicorn.run(app, host=bind_host, port=port, workers=1)
     return 0

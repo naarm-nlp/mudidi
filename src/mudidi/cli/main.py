@@ -211,6 +211,14 @@ def build_parser() -> argparse.ArgumentParser:
     web.add_argument("--port", type=int, default=8000)
     web.add_argument("--data-dir", type=Path)
     web.add_argument(
+        "--container",
+        action="store_true",
+        help=(
+            "Bind to the container network interface. Use only inside a container "
+            "whose published port is restricted to host loopback."
+        ),
+    )
+    web.add_argument(
         "--no-browser",
         action="store_false",
         dest="open_browser",
@@ -277,6 +285,7 @@ def _run_web(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             port=args.port,
             data_dir=args.data_dir,
             open_browser=args.open_browser,
+            container_mode=args.container,
         )
     except ValueError as exc:
         parser.error(str(exc))

@@ -10,18 +10,87 @@ dictionary pages → Stage 1 OCR → Stage 2 parse rules → MDF records
 
 ## Installation
 
-MUDIDI supports Linux, macOS, and Windows through WSL2. It requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Install `pdftk` only when processing a multi-page source PDF.
+MUDIDI supports Linux, macOS, and Windows through WSL2. It requires Python
+3.11+ and [uv](https://docs.astral.sh/uv/).
+
+### Docker (recommended on Windows)
+
+[Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
+lets Windows users run the local dashboard without installing Python, uv, or
+`pdftk` themselves. Docker Desktop normally uses WSL2 internally, but MUDIDI's
+Linux environment and dependencies are prepared automatically.
+
+Clone the repository, open a terminal in it, and run:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git
-cd MUDIDI
-uv sync
+docker compose up --build
 ```
+
+Open <http://localhost:8000> in a browser. Stop the app with `Ctrl+C`, or run
+`docker compose down` from another terminal. Dashboard settings, encrypted API
+credentials, presets, uploaded files, and generated outputs persist in the
+local `mudidi-data/` directory. This directory is excluded from Git; keep it
+private and back it up as one unit.
+
+The Compose configuration publishes MUDIDI only on `127.0.0.1`, so other
+computers on the network cannot connect to it. Do not change this binding to a
+public interface: the local dashboard is not designed as a multi-user or
+internet-facing service.
+
+The following native installation is useful for development and CLI/YAML
+workflows.
+
+### Install uv on macOS or Linux
+
+Use the official standalone installer:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Restart the terminal if requested by the installer, then verify the command is
+available:
+
+```bash
+uv --version
+```
+
+### Install uv on Windows through WSL2
+
+MUDIDI does not currently support native Windows PowerShell. First install
+WSL2 with Ubuntu from an Administrator PowerShell terminal:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Restart Windows if requested, open the Ubuntu application, and install uv from
+the WSL terminal:
+
+```bash
+sudo apt update
+sudo apt install -y curl git
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Install MUDIDI
+
+Clone the repository and reproduce its locked Python environment:
+
+```bash
+git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git MUDIDI
+cd MUDIDI
+uv sync --frozen
+```
+
+Install `pdftk` only when processing a multi-page source PDF. On Ubuntu or
+WSL2, run `sudo apt install -y pdftk-java`; on macOS with Homebrew, run
+`brew install pdftk-java`.
 
 For a browser-based production workflow with no YAML authoring:
 
 ```bash
-uv sync --extra web
+uv sync --frozen --extra web
 uv run mudidi web
 ```
 

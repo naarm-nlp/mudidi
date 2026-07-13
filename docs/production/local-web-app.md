@@ -6,14 +6,38 @@ model requests are sent to the selected provider.
 
 ## Install and launch
 
+### Docker (recommended on Windows)
+
+Install Docker Desktop, clone this repository, and run from the repository
+directory:
+
 ```bash
-uv sync --extra web
+docker compose up --build
+```
+
+Open `http://localhost:8000`. The Compose port is published only on
+`127.0.0.1`; do not change it to a public interface because this is a local,
+single-user application. Stop the foreground process with `Ctrl+C`, or run:
+
+```bash
+docker compose down
+```
+
+The `mudidi-data/` directory beside `compose.yaml` persists the database,
+encrypted credentials and encryption key, presets, managed uploads, worker
+artifacts, and generated outputs. Keep that directory private and back it up as
+one unit. Rebuilding or replacing the container does not delete it.
+
+### Native Python environment
+
+```bash
+uv sync --frozen --extra web
 uv run mudidi web
 ```
 
 Save the API key for your model provider under **API credentials** on the
 **New Run** screen by clicking **Save key** beside that provider.
-MUDIDI opens `http://127.0.0.1:8765`. It binds to loopback and is not intended
+MUDIDI opens `http://127.0.0.1:8000`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ## Create a run
