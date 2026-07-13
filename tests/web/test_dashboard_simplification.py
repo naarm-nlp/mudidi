@@ -219,7 +219,9 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "webkitdirectory" in response.text
     assert 'name="introduction_file"' not in response.text
     assert 'name="introduction_directory"' not in response.text
-    assert 'name="alphabet_file" type="file"' in response.text
+    assert 'name="alphabet_file"' not in response.text
+    assert 'name="character_inventory"' in response.text
+    assert "Chukchi-Cyrillic: а б в г ӄ" in response.text
     assert 'name="existing_mdf_guide_file" type="file"' in response.text
     assert 'aria-label="About PDF dictionary pages"' in response.text
     assert 'aria-label="About PDF introduction pages"' in response.text
@@ -301,12 +303,12 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             "reasoning": "low",
             "stage1_additional_instructions": "Keep uncertain letters marked.",
             "stage2_additional_instructions": "Use the custom nt marker.",
+            "character_inventory": "Chukchi-Cyrillic: а б в г ӄ",
             "mdf_manual_source": "upload",
             "parse_rules_pages": "1,3-4",
         },
         files=[
             ("page_files", ("page_1.png", _PNG, "image/png")),
-            ("alphabet_file", ("alphabet.txt", b"a b c", "text/plain")),
             ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
             ("custom_mdf_manual", ("manual.pdf", _one_page_pdf(), "application/pdf")),
         ],
@@ -328,6 +330,9 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
         assert path.resolve().is_relative_to(bundle)
     assert config.pipeline.stage1_guides.read_text(encoding="utf-8") == (
         "Keep uncertain letters marked."
+    )
+    assert config.input.alphabet.read_text(encoding="utf-8") == (
+        "Chukchi-Cyrillic: а б в г ӄ"
     )
     assert config.pipeline.stage2_guides.read_text(encoding="utf-8") == (
         "Use the custom nt marker."
