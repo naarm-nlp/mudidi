@@ -100,6 +100,16 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "/static/app.js?v=dashboard-2" in response.text
 
 
+def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    assert '<option value="gemini" selected>Google Gemini</option>' in response.text
+    assert response.text.count(
+        'value="gemini/gemini-3.5-flash" data-model-provider="gemini" selected'
+    ) == 3
+
+
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 

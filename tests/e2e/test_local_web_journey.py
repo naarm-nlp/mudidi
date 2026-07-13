@@ -112,6 +112,20 @@ def test_active_run_updates_from_sse_without_manual_refresh(
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
 
 
+def test_new_run_defaults_to_gemini_flash(
+    local_site: str,
+    browser_page: Page,
+) -> None:
+    page = browser_page
+    page.goto(local_site)
+
+    expect(page.locator('select[name="provider"]')).to_have_value("gemini")
+    for field in ("stage1_model", "stage2_pass1_model", "stage2_pass2_model"):
+        expect(page.locator(f'select[name="{field}"]')).to_have_value(
+            "gemini/gemini-3.5-flash"
+        )
+
+
 def test_invalid_preview_restores_safe_form_values(
     local_site: str,
     browser_page: Page,
