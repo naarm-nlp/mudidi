@@ -10,6 +10,7 @@ from mudidi.config.yaml_config import (
     InferenceConfig,
     load_yaml_config,
     merge_explicit_overrides,
+    redacted_config_dict,
     validate_config_paths,
 )
 
@@ -38,6 +39,56 @@ pipeline:
     assert config.input.pages == (config_dir / "../inputs/dictionary.pdf").resolve()
     assert config.output.directory == (config_dir / "../outputs/run").resolve()
     assert config.pipeline.stage1_mode == "flat"
+
+
+def test_resolved_two_stage_snapshot_omits_inactive_ocr_backends(
+    tmp_path: Path,
+) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "version": 1,
+            "kind": "inference",
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"strategy": "two_stage"},
+        }
+    )
+
+    snapshot = redacted_config_dict(config)
+
+    assert "vlm" not in snapshot
+    assert "mathpix" not in snapshot
+
+
+@pytest.mark.parametrize(
+    ("strategy", "settings", "included", "excluded"),
+    [
+        ("vlm_ocr", {"vlm": {"model": "glm-ocr"}}, "vlm", "mathpix"),
+        ("mathpix_ocr", {}, "mathpix", "vlm"),
+    ],
+)
+def test_resolved_snapshot_keeps_only_the_active_ocr_backend(
+    tmp_path: Path,
+    strategy: str,
+    settings: dict[str, object],
+    included: str,
+    excluded: str,
+) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "version": 1,
+            "kind": "inference",
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"stage": "1", "strategy": strategy},
+            **settings,
+        }
+    )
+
+    snapshot = redacted_config_dict(config)
+
+    assert included in snapshot
+    assert excluded not in snapshot
 
 
 def test_yaml_config_rejects_unknown_fields(tmp_path: Path) -> None:
