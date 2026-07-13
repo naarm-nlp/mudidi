@@ -53,7 +53,7 @@ class NewRunForm(BaseModel):
 
     pages: Path
     output_directory: Path
-    output_policy: Literal["new", "resume"] = "new"
+    output_policy: Literal["overwrite", "resume"] = "resume"
     dictionary_pages: str | None = None
     introduction: Path | None = None
     introduction_pages: str | None = None
@@ -139,10 +139,6 @@ class NewRunForm(BaseModel):
         output = self.output_directory.expanduser().resolve()
         if output.exists() and not output.is_dir():
             raise ValueError("output path exists and is not a directory")
-        if self.output_policy == "new" and output.is_dir() and any(output.iterdir()):
-            raise ValueError(
-                "output directory already contains files; choose resume or another path"
-            )
         if self.mdf_manual_source == "upload" and self.toolbox_pdf is None:
             raise ValueError("selected MDF manual is unavailable")
 
@@ -227,6 +223,7 @@ class NewRunForm(BaseModel):
             ),
             runtime=RuntimeConfig(
                 batch_size=self.batch_size,
+                overwrite=self.output_policy == "overwrite",
                 limit=None,
                 prompt_cache="auto",
                 media_reference="auto",

@@ -44,6 +44,9 @@ const restoreRunForm = () => {
 
   Object.entries(state).forEach(([name, values]) => {
     if (!Array.isArray(values)) return;
+    if (name === "output_policy") {
+      values = values.map((value) => value === "new" ? "resume" : value);
+    }
     const fields = [...runForm.elements].filter((field) => field.name === name);
     fields.forEach((field, index) => {
       if (field.type === "file" || field.type === "password") return;

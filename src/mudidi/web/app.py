@@ -226,6 +226,9 @@ def create_app(
             and isinstance(value, str)
             and value.strip() != ""
         }
+        if payload.get("output_policy") == "new":
+            # Migrate browser-tab state saved before the output-policy redesign.
+            payload["output_policy"] = "resume"
         parse_rule_pages = [
             page.strip()
             for value in submitted.getlist("parse_rules_pages")
@@ -982,7 +985,12 @@ def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]
         if message.lower().startswith("value error, "):
             message = message[len("value error, ") :]
         issues.append({"field": field, "message": message})
-    return issues
+    return issues or [
+        {
+            "field": "Configuration",
+            "message": "The submitted configuration could not be validated",
+        }
+    ]
 
 
 def _config_summary(config: InferenceConfig) -> dict[str, str]:
