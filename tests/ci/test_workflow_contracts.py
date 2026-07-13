@@ -8,7 +8,9 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
-FULL_SHA_ACTION = re.compile(r"uses:\s+[^\s]+@[0-9a-f]{40}(?:\s+#\s+v\S+)?$")
+FULL_SHA_ACTION = re.compile(
+    r"(?:-\s+)?uses:\s+[^\s]+@[0-9a-f]{40}(?:\s+#\s+v\S+)?$"
+)
 
 
 def _read(path: Path) -> str:
