@@ -71,7 +71,7 @@
                 <select name="provider" data-provider-select>
                   <option value="anthropic">Anthropic</option>
                   <option value="openai">OpenAI</option>
-                  <option value="gemini">Google Gemini</option>
+                  <option value="gemini" selected>Google Gemini</option>
                   <option value="openrouter">OpenRouter</option>
                   <option value="custom">Other / advanced provider</option>
                 </select>
@@ -83,14 +83,14 @@
               <datalist id="openrouter-provider-catalog">
                 <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
               </datalist>
-              {% for field, custom_field, label, stages in [
-                ('stage1_model', 'stage1_custom_model', 'Stage 1 model', 'stage1'),
-                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'Stage 2 Pass 1 model', 'pass1'),
-                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'Stage 2 Pass 2 model', 'pass2')
+              {% for field, custom_field, label, stages, help_text in [
+                ('stage1_model', 'stage1_custom_model', 'Stage 1 model', 'stage1', 'Stage 1 transcribes page images into faithful flat text.'),
+                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
+                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
               ] %}
-                <label data-stage-control data-pipeline-stages="{{ stages }}">{{ label }}
+                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} <button class="info-button" type="button" aria-label="About {{ label }}" data-help="{{ help_text }}">i</button></span>
                   <select name="{{ field }}" data-model-select>
-                    {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
+                    {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
                     <option value="__other__" data-model-provider="other">Other model…</option>
                   </select>
                   <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>

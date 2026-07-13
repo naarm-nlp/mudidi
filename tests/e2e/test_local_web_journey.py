@@ -79,9 +79,15 @@ def test_complete_production_journey_requires_and_uses_review(
     )
     page.get_by_label("Output directory").fill(str(output))
     page.locator("select[name=provider]").select_option("anthropic")
-    page.get_by_label("Stage 1 model").select_option("anthropic/claude-sonnet-5")
-    page.get_by_label("Stage 2 Pass 1 model").select_option("anthropic/claude-sonnet-5")
-    page.get_by_label("Stage 2 Pass 2 model").select_option("anthropic/claude-sonnet-5")
+    page.locator('select[name="stage1_model"]').select_option(
+        "anthropic/claude-sonnet-5"
+    )
+    page.locator('select[name="stage2_pass1_model"]').select_option(
+        "anthropic/claude-sonnet-5"
+    )
+    page.locator('select[name="stage2_pass2_model"]').select_option(
+        "anthropic/claude-sonnet-5"
+    )
     page.get_by_role("button", name="Review run").click()
 
     expect(page.get_by_role("heading", name="Review your run")).to_be_visible()
