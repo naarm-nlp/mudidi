@@ -119,7 +119,7 @@ def test_pass1_reports_managed_output_parse_rules_path(
     def execute(phase: InferenceConfig, *, approved_parse_rules: object = None) -> int:
         del approved_parse_rules
         executed.append(phase.pipeline.stage)
-        path = phase.output.directory / "stage-2" / "mdf_parsing_guide.json"
+        path = phase.output.directory / "mdf_parsing_guide.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("{}", encoding="utf-8")
         return 0
@@ -133,9 +133,7 @@ def test_pass1_reports_managed_output_parse_rules_path(
 
     assert result.return_code == 0
     assert executed == ["2-pass-1"]
-    assert result.parse_rules_path == (
-        tmp_path / "output/stage-2/mdf_parsing_guide.json"
-    )
+    assert result.parse_rules_path == tmp_path / "output/mdf_parsing_guide.json"
 
 
 def test_credential_message_sets_only_selected_environment_variable() -> None:

@@ -139,6 +139,31 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
     assert "Older log output was truncated" in response.text
 
 
+def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    app.state.run_store.transition(run_id, RunStatus.QUEUED)
+    app.state.job_controller.start_fake(
+        run_id,
+        page_count=1,
+        delay_seconds=0,
+        fail=True,
+    )
+    app.state.job_controller.wait(run_id, timeout=10)
+
+    overview = client.get(f"/runs/{run_id}")
+    logs = client.get(f"/runs/{run_id}/logs")
+
+    assert overview.status_code == 200
+    assert "Failure details" in overview.text
+    assert "Offline worker failure requested" in overview.text
+    assert 'aria-disabled="true">MDF parsing guide</span>' in overview.text
+    assert logs.status_code == 200
+    assert "Run failure" in logs.text
+    assert "Offline worker failure requested" in logs.text
+
+
 def test_validated_run_can_be_saved_and_reprepared_from_preset(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
