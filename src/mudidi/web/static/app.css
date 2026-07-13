@@ -49,6 +49,10 @@ h1 { margin-bottom: 0; font-size: 26px; }
 .steps .current b { color: #fff; border-color: var(--color-accent); background: var(--color-accent); }
 .content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 24px; align-items: start; }
 .panel { background: var(--color-panel); border: 1px solid var(--color-line); border-radius: 13px; box-shadow: 0 5px 18px rgba(24, 43, 54, .04); }
+.preset-loader { margin-bottom: 24px; padding: 20px 24px; }
+.preset-loader > label { margin: 0 0 10px; }
+.preset-loader select { min-width: min(360px, 100%); padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 7px; background: #fff; }
+.preset-loader .primary { border-color: var(--color-accent); color: #fff; background: var(--color-accent); }
 .run-form { padding: 28px; }
 .panel-heading { display: flex; justify-content: space-between; gap: 20px; }
 .panel-heading h2 { margin-bottom: 24px; font-size: 22px; }
