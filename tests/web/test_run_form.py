@@ -134,6 +134,19 @@ def test_none_reasoning_uses_lowest_supported_dashboard_level(tmp_path: Path) ->
     assert config.agentic.reasoning == "low"
 
 
+def test_each_pipeline_model_has_independent_reasoning_control(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        stage1_reasoning="none",
+        stage2_pass1_reasoning="medium",
+        stage2_pass2_reasoning="high",
+    ).to_inference_config()
+
+    assert config.models.stage1_reasoning == "low"
+    assert config.models.stage2_pass1_reasoning == "medium"
+    assert config.models.stage2_pass2_reasoning == "high"
+
+
 def test_form_rejects_unknown_provider(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="provider"):
         _form(tmp_path, provider="mystery")

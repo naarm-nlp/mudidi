@@ -193,7 +193,12 @@ def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None
             "input": {"pages": tmp_path / "pages"},
             "output": {"directory": tmp_path / "output"},
             "pipeline": {"stage": "1", "stage1_typography": True},
-            "models": {"default": "provider/default", "stage1": "provider/s1"},
+            "models": {
+                "default": "provider/default",
+                "stage1": "provider/s1",
+                "stage2_pass1_reasoning": "medium",
+                "stage2_pass2_reasoning": "high",
+            },
             "agentic": {"stage1": True, "max_iterations": 3},
             "runtime": {"batch_size": 2, "overwrite": True},
         }
@@ -210,6 +215,8 @@ def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None
     assert namespace.overwrite is True
     assert namespace.stage1_reasoning_effort == "low"
     assert namespace.stage2_reasoning_effort == "low"
+    assert namespace.stage2_pass1_reasoning_effort == "medium"
+    assert namespace.stage2_pass2_reasoning_effort == "high"
 
 
 def test_inference_namespace_carries_dictionary_profile_without_a_file(

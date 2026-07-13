@@ -137,6 +137,32 @@ def test_new_run_defaults_to_gemini_flash(
         expect(page.locator(f'select[name="{field}"]')).to_have_value(
             "gemini/gemini-3.5-flash"
         )
+    expect(page.locator("#credential-gemini")).to_have_attribute("type", "password")
+
+
+def test_reasoning_controls_follow_their_pipeline_models(
+    local_site: str,
+    browser_page: Page,
+) -> None:
+    page = browser_page
+    page.goto(local_site)
+
+    stage1 = page.locator('select[name="stage1_reasoning"]')
+    pass1 = page.locator('select[name="stage2_pass1_reasoning"]')
+    pass2 = page.locator('select[name="stage2_pass2_reasoning"]')
+    expect(stage1).to_be_visible()
+    expect(pass1).to_be_visible()
+    expect(pass2).to_be_visible()
+
+    page.locator('input[name="pipeline"][value="transcription"]').check()
+    expect(stage1).to_be_visible()
+    expect(pass1).to_be_hidden()
+    expect(pass2).to_be_hidden()
+
+    page.locator('input[name="pipeline"][value="structure"]').check()
+    expect(stage1).to_be_hidden()
+    expect(pass1).to_be_visible()
+    expect(pass2).to_be_visible()
 
 
 def test_provider_key_is_masked_and_revealed_only_on_request(

@@ -34,6 +34,14 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
     assert 'name="stage2_pass2_model"' in response.text
+    for provider in ("gemini", "openai", "anthropic", "openrouter"):
+        assert f'name="credential_{provider}"' in response.text
+        assert f'id="credential-{provider}"' in response.text
+    assert response.text.count('type="password"') >= 4
+    assert 'name="stage1_reasoning"' in response.text
+    assert 'name="stage2_pass1_reasoning"' in response.text
+    assert 'name="stage2_pass2_reasoning"' in response.text
+    assert 'name="reasoning"' not in response.text
     assert 'name="stage1_custom_model"' in response.text
     assert 'name="openrouter_provider"' in response.text
     assert 'data-model-provider="openai"' in response.text
@@ -179,6 +187,36 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "Review your run" in response.text
     assert "Human approval required" in response.text
     assert "anthropic/claude-sonnet-4-6" in response.text
+
+
+def test_new_run_saves_selected_dashboard_credential_outside_run_config(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    expected_value = "dashboard-dummy-provider-value"
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "transcription",
+            "provider": "gemini",
+            "stage1_model": "gemini/gemini-3.5-flash",
+            "credential_gemini": expected_value,
+        },
+        files={"page_files": ("page_1.png", _PNG, "image/png")},
+    )
+
+    assert response.status_code == 200
+    resolved = app.state.credential_vault.resolve(Provider.GEMINI)
+    assert resolved is not None
+    assert resolved.get_secret_value() == expected_value
+    run = app.state.run_store.list_runs()[0]
+    config_text = app.state.job_controller.load_inference_config(
+        run.run_id
+    ).model_dump_json()
+    assert expected_value not in config_text
 
 
 def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
