@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+FROM ghcr.io/astral-sh/uv:0.11.28-python3.12-trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/data \

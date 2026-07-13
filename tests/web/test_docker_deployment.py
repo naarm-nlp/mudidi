@@ -23,6 +23,9 @@ def test_compose_publishes_only_to_host_loopback_and_persists_data() -> None:
 def test_image_runs_container_mode_with_persistent_application_data() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
 
+    assert dockerfile.startswith(
+        "FROM ghcr.io/astral-sh/uv:0.11.28-python3.12-trixie-slim\n"
+    )
     assert "uv sync --frozen --no-dev --extra web" in dockerfile
     assert "pdftk-java" in dockerfile
     assert 'HEALTHCHECK' in dockerfile
