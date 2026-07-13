@@ -1,0 +1,56 @@
+name: Continuous integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          python-version: "3.11"
+          version: "0.11.28"
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev --extra web
+      - name: Run complete offline suite with web coverage
+        run: >-
+          uv run --locked pytest
+          --cov=mudidi.web
+          --cov-report=term-missing
+          --cov-fail-under=80
+      - name: Build distributable wheel
+        run: uv build
+      - name: Smoke-test installed wheel
+        run: |
+          uv venv --python 3.11 /tmp/mudidi-wheel-smoke
+          uv pip install --python /tmp/mudidi-wheel-smoke/bin/python dist/*.whl
+          /tmp/mudidi-wheel-smoke/bin/mudidi --help
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+          python-version: "3.11"
+          version: "0.11.28"
+      - name: Install auditable dependency set
+        run: uv sync --locked --extra dev --extra web --extra docs
+      - name: Audit Python dependencies
+        run: uv run --locked pip-audit

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review run · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="standalone">
+    <main class="review-page">
+      <a class="back-link" href="/">← Edit configuration</a>
+      <section class="panel review-card">
+        <span class="eyebrow">Step 5 of 5</span>
+        <h1>Review your run</h1>
+        <p>These values were validated through MUDIDI's production configuration schema.</p>
+        <dl>
+          {% for label, value in summary.items() %}
+          <div><dt>{{ label.replace('_', ' ') | title }}</dt><dd>{{ value }}</dd></div>
+          {% endfor %}
+        </dl>
+        <div class="checkpoint">
+          <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
+          <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
+        </div>
+        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for MDF parsing guide review before parsing pages into MDF.</span><button class="primary" type="submit">Start run</button></form>
+        <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets"><label for="preset-name">Save these non-secret settings as a preset</label><div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div></form>
+      </section>
+    </main>
+  </body>
+</html>

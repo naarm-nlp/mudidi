@@ -16,11 +16,13 @@ __pycache__/
 dist/
 build/
 .pytest_cache/
+test-results/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 site/
+mudidi-data/
 
 # Logs and local run artifacts
 logs/
@@ -35,6 +37,7 @@ CLAUDE.md
 # Hidden dotfiles (keep .gitignore itself)
 .*
 !.gitignore
+!.dockerignore
 !.env.example
 !.github/
 !.github/**

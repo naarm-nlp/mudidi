@@ -5,15 +5,16 @@ Generated from the public argparse tree.
 ## `mudidi`
 
 ```text
-usage: mudidi [-h] {run,benchmark,config} ...
+usage: mudidi [-h] {run,benchmark,config,web} ...
 
 Dictionary OCR and MDF extraction (inference and benchmark modes).
 
 positional arguments:
-  {run,benchmark,config}
+  {run,benchmark,config,web}
     run                 Run production inference.
     benchmark           Benchmark workflows.
     config              Configuration utilities.
+    web                 Run the local production website.
 
 options:
   -h, --help            show this help message and exit
@@ -25,9 +26,8 @@ options:
 usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--dict-pages DICT_PAGES] [--intro INTRO]
                   [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
-                  [--ocr-text OCR_TEXT]
-                  [--dictionary-languages DICTIONARY_LANGUAGES]
-                  [--toolbox-pdf TOOLBOX_PDF] [--output-dir OUTPUT_DIR]
+                  [--ocr-text OCR_TEXT] [--toolbox-pdf TOOLBOX_PDF]
+                  [--output-dir OUTPUT_DIR]
                   [--stage {1,2,all,2-pass-1,2-pass-2}] [--model MODEL]
                   [--stage-1-model STAGE_1_MODEL]
                   [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
@@ -53,7 +53,6 @@ options:
   --intro-pages INTRO_PAGES
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
-  --dictionary-languages DICTIONARY_LANGUAGES
   --toolbox-pdf TOOLBOX_PDF
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
@@ -154,6 +153,7 @@ options:
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
   --dictionary-languages DICTIONARY_LANGUAGES
+                        Legacy benchmark language metadata file.
   --toolbox-pdf TOOLBOX_PDF
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
@@ -338,4 +338,22 @@ positional arguments:
 
 options:
   -h, --help  show this help message and exit
+```
+
+## `mudidi web`
+
+```text
+usage: mudidi web [-h] [--host {127.0.0.1,localhost}] [--port PORT]
+                  [--data-dir DATA_DIR] [--container] [--no-browser]
+
+options:
+  -h, --help            show this help message and exit
+  --host {127.0.0.1,localhost}
+                        Loopback interface to bind (default: 127.0.0.1).
+  --port PORT
+  --data-dir DATA_DIR
+  --container           Bind to the container network interface. Use only
+                        inside a container whose published port is restricted
+                        to host loopback.
+  --no-browser          Do not open the website in the default browser.
 ```

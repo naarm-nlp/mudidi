@@ -1,0 +1,5 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Saved presets · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head>
+  <body class="standalone"><main class="providers-page"><a class="back-link" href="/">← New run</a><header class="page-heading"><span class="eyebrow">Reusable configuration</span><h1>Saved presets</h1><p>Presets contain validated local inputs and model settings, never API credentials.</p></header><section class="panel history-list">{% if presets %}{% for preset in presets %}<article class="preset-row"><div><strong>{{ preset.name }}</strong><small>{{ preset.provider }} · {{ preset.config.models.default }}</small></div><a class="primary link-button" href="/?preset={{ preset.preset_id }}">Load preset</a></article>{% endfor %}{% else %}<div class="empty-state"><h2>No presets yet</h2><p>Save one from a validated run review.</p></div>{% endif %}</section></main></body>
+</html>

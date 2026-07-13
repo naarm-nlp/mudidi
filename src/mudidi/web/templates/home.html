@@ -1,0 +1,287 @@
+{% from "_icons.html" import credential_eye %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MUDIDI Local</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-11">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="MUDIDI home">
+        <span class="brand-mark">M</span>
+        <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a class="active" href="/"><span>＋</span> New run</a>
+        <a href="/active"><span>●</span> Active run</a>
+        <a href="/history"><span>◷</span> Run history</a>
+        <a href="/presets"><span>★</span> Saved presets</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/">Documentation</a>
+        <span class="local-badge">● Running locally</span>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><span class="eyebrow">Production inference</span><h1>New run</h1></div>
+        <div class="provider-status"><span></span> {% if credential_ready_count %}{{ credential_ready_count }} provider key{{ '' if credential_ready_count == 1 else 's' }} saved{% else %}API key setup required{% endif %}</div>
+      </header>
+
+      <section class="workspace">
+        <ol class="steps" aria-label="Run configuration steps">
+          <li class="current"><b>1</b> Input</li>
+          <li><b>2</b> Pipeline</li>
+          <li><b>3</b> Model</li>
+          <li><b>4</b> Agentic</li>
+          <li><b>5</b> Review</li>
+        </ol>
+
+        {% if presets %}
+        <form class="panel preset-loader" method="get" action="/">
+          <label for="preset-picker">Start from a saved preset</label>
+          <div class="input-row">
+            <select id="preset-picker" name="preset" required>
+              <option value="">Choose a preset…</option>
+              {% for preset in presets %}<option value="{{ preset.preset_id }}"{% if selected_preset and selected_preset.preset_id == preset.preset_id %} selected{% endif %}>{{ preset.name }}</option>{% endfor %}
+            </select>
+            <button class="primary" type="submit">Load preset</button>
+          </div>
+        </form>
+        {% endif %}
+
+        <div class="content-grid">
+          <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
+            {% if selected_preset %}
+            <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id }}">
+            <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused unless you choose replacement files. Review and edit any setting before continuing.</p></div>
+            {% endif %}
+            <div class="panel-heading">
+              <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
+              <span class="private">Files stay on this computer</span>
+            </div>
+            <div class="dropzone">
+              <span class="file-icon">⇧</span>
+              <h3>Drop a PDF or page images here</h3>
+              <p>{% if selected_preset %}Saved dictionary pages will be reused unless you choose replacements.{% else %}PDF, PNG, JPEG or WebP · copied into this run's local input bundle{% endif %}</p>
+              {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
+              <label class="path-label" for="page-files">Choose a PDF or page images</label>
+              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple>
+              <label class="path-label" for="page-directory">Or choose a folder of page images</label>
+              <input id="page-directory" name="page_directory" type="file" accept=".png,.jpg,.jpeg,.webp" webkitdirectory multiple>
+            </div>
+            <label for="output">Output directory</label>
+            <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
+            <label>Existing output policy
+              <select name="output_policy"><option value="resume" selected>Resume compatible existing artifacts</option><option value="overwrite">Overwrite existing artifacts</option></select>
+            </label>
+            <fieldset class="choice-group pipeline-choices" data-pipeline-select>
+              <legend>Pipeline</legend>
+              <label><input type="radio" name="pipeline" value="complete" checked> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
+              <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
+              <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
+            </fieldset>
+            <fieldset id="api-credentials" class="choice-group credential-entry">
+              <legend>API credentials</legend>
+              <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
+              <div class="form-grid">
+                {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
+                  {% set status = credential_statuses[provider] %}
+                  <label for="credential-{{ provider }}">{{ label }} API key
+                    <span class="input-row">
+                      <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
+                      <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
+                      <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
+                    </span>
+                    <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if status.available else 'Not saved' }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+              <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
+            </fieldset>
+            <div class="form-grid">
+              <label>Provider
+                <select name="provider" data-provider-select>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="gemini" selected>Google Gemini</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="custom">Other / advanced provider</option>
+                </select>
+              </label>
+              <label data-openrouter-provider hidden>OpenRouter Provider
+                <input name="openrouter_provider" list="openrouter-provider-catalog" placeholder="Automatic routing (recommended)" disabled>
+                <small>Optional endpoint slug such as anthropic, google-vertex, or deepinfra/turbo.</small>
+              </label>
+              <datalist id="openrouter-provider-catalog">
+                <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
+              </datalist>
+              {% for field, custom_field, reasoning_field, label, stages, help_text in [
+                ('stage1_model', 'stage1_custom_model', 'stage1_reasoning', 'Stage 1 model', 'stage1', 'Stage 1 transcribes page images into faithful flat text.'),
+                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
+                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
+              ] %}
+                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} <button class="info-button" type="button" aria-label="About {{ label }}" data-help="{{ help_text }}">i</button></span>
+                  <select name="{{ field }}" data-model-select>
+                    {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
+                    <option value="__other__" data-model-provider="other">Other model…</option>
+                  </select>
+                  <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                </label>
+                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} reasoning <button class="info-button" type="button" aria-label="About {{ label }} reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
+                  <select name="{{ reasoning_field }}">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="none">None / lowest supported</option>
+                  </select>
+                </label>
+              {% endfor %}
+              <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
+                <input name="temperature" type="number" min="0" step="0.05" value="0.1">
+              </label>
+              <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1"></label>
+            </div>
+            <fieldset class="choice-group agentic-choice">
+              <legend>Agentic verification</legend>
+              <p>Agentic verification adds evaluator and correction model calls.</p>
+              <label><input type="radio" name="agentic" value="false" checked> No</label>
+              <label><input type="radio" name="agentic" value="true"> Yes</label>
+            </fieldset>
+            <details data-agentic-settings hidden>
+              <summary>Custom verification</summary>
+              <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
+              <div class="form-grid">
+                <label><span><input name="verify_stage1" type="checkbox" value="true" checked> Verify Stage 1</span></label>
+                <label><span><input name="verify_stage2" type="checkbox" value="true" checked> Verify Stage 2</span></label>
+                <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
+                <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
+                {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
+                  <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
+                    <label>{{ label }} provider
+                      <select name="{{ role }}_provider" data-agentic-provider>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="gemini" selected>Google Gemini</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="custom">Other / advanced provider</option>
+                      </select>
+                    </label>
+                    <label>{{ label }} model
+                      <select name="{{ role }}_model" data-agentic-model>
+                        <option value="">Use stage model</option>
+                        {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
+                        <option value="__other__" data-model-provider="other">Other model…</option>
+                      </select>
+                      <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name supported by Google Gemini" hidden disabled>
+                    </label>
+                  </div>
+                {% endfor %}
+                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
+                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
+              </div>
+            </details>
+            <details>
+              <summary>Input and context</summary>
+              <div class="form-grid">
+                <label><span class="field-heading">PDF dictionary pages <button class="info-button" type="button" aria-label="About PDF dictionary pages" data-help="Enter 1-based page numbers or ranges from the uploaded PDF, separated by commas. Leave blank to process every PDF page. If the PDF contains front matter, specify the dictionary-page range so those pages are not transcribed as entries.">i</button></span><input name="dictionary_pages" placeholder="1-120,125"></label>
+                <label><span class="field-heading">PDF introduction pages <button class="info-button" type="button" aria-label="About PDF introduction pages" data-help="Optional 1-based page numbers or ranges for introduction or front matter from the same uploaded PDF. These pages are supplied to the model as context. They are not automatically removed from the dictionary-page selection, so set both ranges when necessary.">i</button></span><input name="introduction_pages" placeholder="1-12,15"></label>
+                <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
+                <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>{% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}<input name="existing_mdf_guide_file" type="file" accept=".json"></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button></span><input name="parse_rules_pages" placeholder="1,3-4"></label>
+              </div>
+              <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
+                <label><input type="radio" name="mdf_manual_source" value="upload"> Upload my own MDF manual</label>
+                <label data-custom-mdf-manual hidden>MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                <div class="mdf-manual-official">
+                  <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>
+                  <small>Official PDF: fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small>
+                </div>
+                <label><input type="radio" name="mdf_manual_source" value="none" checked> Continue without an MDF manual</label>
+              </fieldset>
+            </details>
+            <details class="profile-panel">
+              <summary>Dictionary Profile (optional)</summary>
+              <p>Answering these questions can improve extraction accuracy. Leave the whole section blank if you are unsure.</p>
+              <fieldset>
+                <legend>1–2. What language are the dictionary headwords written in, and what script do they use?</legend>
+                <div class="editor-row">
+                  <input name="profile_headword_language" aria-label="Headword language" placeholder="e.g. Chukchi">
+                  <input name="profile_headword_script" aria-label="Headword script" placeholder="e.g. Cyrillic">
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?</legend>
+                <div id="profile-target-rows">
+                  <div class="editor-row">
+                    <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
+                    <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Cyrillic">
+                    <button type="button" data-remove aria-label="Remove language">Remove</button>
+                  </div>
+                </div>
+                <button type="button" data-add="profile-target">Add another language</button>
+              </fieldset>
+              <label class="profile-layout-question">5. How is information arranged on the page?
+                <textarea name="profile_page_layout" rows="3" placeholder="For example: There are two columns; each column contains independent dictionary entries."></textarea>
+              </label>
+              <fieldset>
+                <legend>6. Which information types appear in an entry?</legend>
+                {% for value, label in [
+                  ('translation', 'Translation'), ('definition', 'Definition'),
+                  ('gloss', 'Gloss'), ('part_of_speech', 'Part of speech'),
+                  ('pronunciation', 'Pronunciation'), ('example', 'Example'),
+                  ('usage_note', 'Usage note'), ('etymology', 'Etymology'),
+                  ('cross_reference', 'Cross-reference'), ('variant', 'Variant'),
+                  ('grammar', 'Grammar'), ('other', 'Other')
+                ] %}
+                  <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"{% if value == 'other' %} data-profile-other-toggle{% endif %}> {{ label }}</span></label>
+                {% endfor %}
+                <label id="profile-other-information" class="profile-other-information" hidden>Other information types
+                  <textarea name="profile_other_information_types" rows="2" disabled placeholder="Type one or more information types, separated by commas"></textarea>
+                </label>
+              </fieldset>
+            </details>
+            <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
+          </form>
+
+          <aside class="panel summary">
+            <span class="eyebrow">Run summary</span>
+            <h2>Default pipeline</h2>
+            <dl>
+              <div><dt>Pipeline</dt><dd>Stage 1 + Stage 2</dd></div>
+              <div><dt>Agentic</dt><dd>Off</dd></div>
+              <div><dt>MDF parsing guide</dt><dd>Review required</dd></div>
+            </dl>
+            <div class="checkpoint">
+              <strong>Human checkpoint</strong>
+              <p>Stage 2 pauses after inferring an MDF parsing guide. You review and approve it before MDF parsing continues.</p>
+            </div>
+            <p class="hint">No YAML is required. Advanced options remain available in later steps.</p>
+          </aside>
+        </div>
+      </section>
+      <form class="demo-launch" method="post" action="/runs/demo">
+        <input type="hidden" name="page_count" value="3">
+        <span><strong>Explore safely:</strong> run the interface with a deterministic offline worker.</span>
+        <button type="submit">Start offline demo</button>
+      </form>
+      <template id="profile-target-template">
+        <div class="editor-row">
+          <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. English">
+          <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Latin">
+          <button type="button" data-remove aria-label="Remove language">Remove</button>
+        </div>
+      </template>
+    </main>
+    {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-11" defer></script>
+  </body>
+</html>

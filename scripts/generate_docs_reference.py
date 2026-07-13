@@ -415,7 +415,7 @@ def render_config_reference() -> str:
         "",
         "## Important validation rules",
         "",
-        "- `inference` requires `input.pages` and cannot use `stage1_source: gold`.",
+        "- `inference` requires `input.pages`, cannot use `stage1_source: gold`, and uses the optional `input.dictionary_profile` instead of the benchmark-only `dictionary_languages` file.",
         "- `benchmark_run` requires one of `dataset_dir`, `samples_dir`, or `pages`.",
         "- `vlm_ocr` and `mathpix_ocr` are Stage 1-only strategies.",
         "- Evaluation uses either `predicted` + `gold` or `dataset_dir` + `pred_root`.",

@@ -70,6 +70,21 @@ def load_cases() -> list[HallucinationCase]:
     return cases
 
 
+def require_case_assets(case: HallucinationCase) -> None:
+    """Skip dataset-backed checks when the local MUDIDI corpus is unavailable."""
+    missing = [
+        path
+        for path in (case.gold_path, case.image_path)
+        if not path.is_file()
+    ]
+    if missing:
+        missing_paths = ", ".join(str(path) for path in missing)
+        pytest.skip(
+            "Local MUDIDI dataset is not installed; "
+            f"missing required case assets: {missing_paths}"
+        )
+
+
 def env_choice(name: str, default: str) -> str:
     value = os.getenv(name, default)
     if value not in REASONING_LEVELS:
@@ -82,11 +97,28 @@ def env_choice(name: str, default: str) -> str:
 CASES = load_cases()
 
 
+def test_missing_case_assets_are_skipped(tmp_path: Path) -> None:
+    case = HallucinationCase(
+        case_id="missing-assets",
+        page="page_1",
+        fixture_path=tmp_path / "fixture.txt",
+        gold_path=tmp_path / "missing-gold.txt",
+        image_path=tmp_path / "missing-image.png",
+        expected_path="localized_retry",
+        forbidden_markers=(),
+        fixture_markers=(),
+        must_remove_markers=(),
+        gold_required_tokens=(),
+    )
+
+    with pytest.raises(pytest.skip.Exception, match="Local MUDIDI dataset"):
+        require_case_assets(case)
+
+
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.case_id)
 def test_chukchi_hallucination_fixture_integrity(case: HallucinationCase) -> None:
     assert case.fixture_path.is_file()
-    assert case.gold_path.is_file()
-    assert case.image_path.is_file()
+    require_case_assets(case)
 
     bad_text = case.fixture_path.read_text(encoding="utf-8")
     plain_gold = strip_stage1_markup(case.gold_path.read_text(encoding="utf-8"))
@@ -122,6 +154,8 @@ def test_chukchi_agentic_hallucination_recovery(
     case: HallucinationCase,
     tmp_path: Path,
 ) -> None:
+    require_case_assets(case)
+
     model = os.getenv("MUDIDI_AGENTIC_EVAL_MODEL", DEFAULT_AGENTIC_MODEL)
     evaluator_reasoning = env_choice("MUDIDI_AGENTIC_EVAL_REASONING", "high")
     rewriter_reasoning = env_choice("MUDIDI_AGENTIC_REWRITE_REASONING", "low")

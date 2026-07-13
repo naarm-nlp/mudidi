@@ -23,7 +23,7 @@ def test_public_command_tree_parses_production_run() -> None:
     assert args.dry_run is True
 
 
-def test_public_command_tree_parses_common_input_overrides() -> None:
+def test_public_command_tree_parses_common_production_input_overrides() -> None:
     parser = build_parser()
     args = parser.parse_args(
         [
@@ -38,14 +38,42 @@ def test_public_command_tree_parses_common_input_overrides() -> None:
             "1-3",
             "--alphabet",
             "alphabet.txt",
-            "--dictionary-languages",
-            "languages.yaml",
         ]
     )
 
     assert args.intro == "introduction.pdf"
     assert args.intro_pages == "1-3"
     assert args.alphabet == "alphabet.txt"
+
+
+def test_dictionary_languages_flag_is_benchmark_only() -> None:
+    parser = build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(
+            [
+                "run",
+                "--pages",
+                "pages",
+                "--output-dir",
+                "output",
+                "--dictionary-languages",
+                "languages.yaml",
+            ]
+        )
+
+    args = parser.parse_args(
+        [
+            "benchmark",
+            "run",
+            "--pages",
+            "pages",
+            "--output-dir",
+            "output",
+            "--dictionary-languages",
+            "languages.yaml",
+        ]
+    )
     assert args.dictionary_languages == "languages.yaml"
 
 

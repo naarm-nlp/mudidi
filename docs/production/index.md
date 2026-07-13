@@ -4,7 +4,13 @@
 
 `mudidi run` digitizes a dictionary supplied as a page directory or source PDF. Production mode uses Stage 1 predictions as Stage 2's authoritative text and can use neighboring pages from the same run for context.
 
-Use the minimal CLI for a quick run or a `kind: inference` YAML file for model, agentic, cache, parse-rule, and runtime controls.
+Use the minimal CLI for a quick run or a `kind: inference` YAML file for model,
+agentic, cache, MDF parsing guide, and runtime controls. The YAML compatibility
+keys retain the internal `parse_rules` name.
+
+If you prefer a graphical workflow, use the [local web application](local-web-app.md).
+It exposes common production settings directly and pauses for explicit MDF
+parsing guide review before Stage 2 extraction.
 
 ## Quick run
 
@@ -51,9 +57,10 @@ uv run mudidi run --config examples/configs/production/pdf-inference.yaml
 
 Pipeline stage values are `1`, `2`, `all`, `2-pass-1`, and `2-pass-2`.
 
-Stage 2 consists of parse-rule discovery followed by page-level MDF extraction.
-Supply representative `pipeline.parse_rules_pages`, or reuse a reviewed
-`pipeline.parse_rules_file`.
+Stage 2 consists of MDF parsing guide inference followed by page-level MDF
+extraction. Supply representative `pipeline.parse_rules_pages`, or reuse a
+reviewed `pipeline.parse_rules_file`; these internal YAML names are preserved for
+compatibility.
 
 ## Agentic retries
 
@@ -91,7 +98,7 @@ not call the rewriter. There is no per-attempt patch-count limit; every
 unambiguous patch in the verifier decision is attempted.
 
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
-transcript and parse rules. Stage 1 catastrophic whole-page recovery is always
+transcript and reviewed MDF parsing guide. Stage 1 catastrophic whole-page recovery is always
 available when its verifier identifies a wrong-page, hallucinated, or broadly
 corrupted transcript; it does not require a separate option.
 
@@ -100,7 +107,7 @@ corrupted transcript; it does not require a separate option.
 ```text
 output/
 ├── resolved_config.json
-├── parse-rules.json
+├── mdf_parsing_guide.json
 ├── run_usage.json
 ├── stage-1/page_N/
 │   ├── page_N_stage1_flat.txt

@@ -1,0 +1,13 @@
+services:
+  mudidi:
+    build:
+      context: .
+    image: mudidi-local
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - "./mudidi-data:/data"
+    security_opt:
+      - "no-new-privileges:true"
+    restart: unless-stopped

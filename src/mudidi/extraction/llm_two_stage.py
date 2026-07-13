@@ -9,7 +9,7 @@ Stage 1 — Transcription  (low/minimal reasoning, structured output)
   Output : TranscriptionResponse → list of lines → joined into plain text
 
 Stage 2 — Direct MDF  (two-pass within Stage 2)
-  Pass 1 : Discover MDF marker cheat sheet from intro + sample page.
+  Pass 1 : Discover an MDF parsing guide from intro + sample page.
   Pass 2 : Transcribe page into Toolbox MDF text using the field map.
   Output : MDF text on ``DictionaryPage.mdf_text``.
 
@@ -55,12 +55,16 @@ from mudidi.llm.pass_1 import (
     load_or_discover_parse_rules,
     load_parse_rules_file,
 )
-from mudidi.paths import PARSE_RULES_FILENAME, PARSE_RULES_USAGE_FILENAME
+from mudidi.paths import (
+    MDF_PARSING_GUIDE_FILENAME,
+    MDF_PARSING_GUIDE_USAGE_FILENAME,
+)
 from mudidi.llm.pass_2 import extract_direct_mdf
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.schemas.field_map import FieldMapPrompt
 from mudidi.utils.stage1_input import read_stage1_transcript_text
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
+from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.entry import (
     DictionaryEntry,
     DictionaryPage,
@@ -175,13 +179,13 @@ def _print_usage_summary(
 
 
 def _write_parse_rules_usage(experiment_dir: Path, discovery_usage: Dict[str, Any]) -> None:
-    """Persist Pass 1 parse-rules discovery usage at the experiment root."""
+    """Persist MDF parsing-guide discovery usage at the experiment root."""
     payload = {
         "field_discovery": discovery_usage,
         "total_cost_usd": discovery_usage.get("cost_usd"),
         "total_elapsed_seconds": discovery_usage.get("elapsed_seconds"),
     }
-    out = experiment_dir / PARSE_RULES_USAGE_FILENAME
+    out = experiment_dir / MDF_PARSING_GUIDE_USAGE_FILENAME
     out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     cost = discovery_usage.get("cost_usd")
     elapsed = discovery_usage.get("elapsed_seconds")
@@ -432,7 +436,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
 
     Args:
         transcribe_model:   Model used for Stage 1 (transcription).
-        stage2_pass1_model: Model used for Stage 2 Pass 1 (parse-rules discovery).
+        stage2_pass1_model: Model used for Stage 2 Pass 1 guide discovery.
         stage2_pass2_model: Model used for Stage 2 Pass 2 (per-page MDF).
         alphabet_path:      Path to the alphabet file (.txt / .png / .jpg).
                             If an image, it is sent as a vision input to Stage 1.
@@ -452,17 +456,21 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         intro_image_paths: Optional[List[str]] = None,
         stage1_reasoning_effort: str = "low",
         stage2_reasoning_effort: str = "low",
+        stage2_pass1_reasoning_effort: Optional[str] = None,
+        stage2_pass2_reasoning_effort: Optional[str] = None,
         temperature: float = 0.1,
         stage1_guides: str = "",
         stage2_guides: str = "",
         stage1_mode: str = "column",
         dictionary_languages: Optional[DictionaryLanguagesConfig] = None,
+        dictionary_profile: Optional[DictionaryProfile] = None,
         entry_dir: Optional[str] = None,
         stage2_experiment_dir: Optional[str] = None,
         overwrite: bool = False,
         stage2_toolbox_pdf: Optional[str] = None,
         parse_rules_gold: bool = False,
         parse_rules_file: Optional[str] = None,
+        approved_parse_rules: DictionaryMarkerCheatsheet | None = None,
         parse_rules_samples: Optional[List[tuple[str, str, str]]] = None,
         prompt_mode: PromptMode = "benchmark",
         prompt_cache: str = "auto",
@@ -491,11 +499,18 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.intro_image_paths = intro_image_paths or []
         self.stage1_reasoning_effort = stage1_reasoning_effort
         self.stage2_reasoning_effort = stage2_reasoning_effort
+        self.stage2_pass1_reasoning_effort = (
+            stage2_pass1_reasoning_effort or stage2_reasoning_effort
+        )
+        self.stage2_pass2_reasoning_effort = (
+            stage2_pass2_reasoning_effort or stage2_reasoning_effort
+        )
         self.temperature = temperature
         self.stage1_guides = stage1_guides
         self.stage2_guides = stage2_guides
         self.stage1_mode = stage1_mode
         self.dictionary_languages = dictionary_languages
+        self.dictionary_profile = dictionary_profile
         self.entry_dir = Path(entry_dir) if entry_dir else None
         self.stage2_experiment_dir = (
             Path(stage2_experiment_dir) if stage2_experiment_dir else None
@@ -506,6 +521,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         )
         self.parse_rules_gold = parse_rules_gold
         self.parse_rules_file = Path(parse_rules_file) if parse_rules_file else None
+        self.approved_parse_rules = approved_parse_rules
         self.parse_rules_samples = parse_rules_samples or []
         self.prompt_mode: PromptMode = prompt_mode
         self.prompt_cache = prompt_cache
@@ -763,6 +779,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             alphabet_text=alphabet_text,
             ocr_hint=ocr_hint,
             guides=self.stage1_guides,
+            dictionary_profile=self.dictionary_profile,
         )
 
         content: list = [{"type": "text", "text": user_text}]
@@ -825,7 +842,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         return _transcription_to_tsv(result), raw, usage, _sanitize_messages(messages)
 
     def discover_parse_rules(self) -> FieldMapPrompt:
-        """Run Stage 2 Pass 1 only and write ``parse-rules.json``."""
+        """Run Stage 2 Pass 1 only and write ``mdf_parsing_guide.json``."""
         field_map, _ = self._ensure_field_map("", "", run_stage="2-pass-1")
         return field_map
 
@@ -852,15 +869,19 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     "Stage 2 requires stage2_experiment_dir for field map cache."
                 )
 
-            cache_path = self.stage2_experiment_dir / PARSE_RULES_FILENAME
-            if self.parse_rules_gold:
+            cache_path = self.stage2_experiment_dir / MDF_PARSING_GUIDE_FILENAME
+            if self.approved_parse_rules is not None:
+                # Web approval loads and authenticates immutable bytes before
+                # construction. Never resolve a path/cache again for Pass 2.
+                self._field_map = self.approved_parse_rules
+            elif self.parse_rules_gold:
                 if self.entry_dir is None:
                     raise ValueError(
                         "parse_rules_gold requires entry_dir to locate outputs/stage-2-gold/"
                     )
                 print(
                     "Pass 1: using gold parse rules "
-                    f"(outputs/stage-2-gold/{PARSE_RULES_FILENAME}) …"
+                    f"(outputs/stage-2-gold/{MDF_PARSING_GUIDE_FILENAME}) …"
                 )
                 self._field_map = load_gold_parse_rules(self.entry_dir)
                 if self.overwrite or not cache_path.is_file():
@@ -870,7 +891,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         encoding="utf-8",
                     )
             elif self.parse_rules_file:
-                print(f"Pass 1: loading parse rules file → {self.parse_rules_file}")
+                print(f"Pass 1: loading MDF parsing guide → {self.parse_rules_file}")
                 self._field_map = load_parse_rules_file(self.parse_rules_file)
                 cache_path.parent.mkdir(parents=True, exist_ok=True)
                 cache_path.write_text(
@@ -890,10 +911,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 )
             else:
                 intro_paths = [Path(p) for p in self.intro_image_paths]
-                dictionary_name = self.entry_dir.name if self.entry_dir else ""
                 if not self.parse_rules_samples:
                     raise ValueError(
-                        "Pass 1 parse-rules discovery requires configured sample page(s)."
+                        "Pass 1 MDF parsing-guide discovery requires configured sample page(s)."
                     )
 
                 if len(self.parse_rules_samples) == 1:
@@ -903,10 +923,10 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         sample_image=Path(sample_image),
                         intro_images=intro_paths,
                         model=self.stage2_pass1_model,
-                        reasoning_effort=self.stage2_reasoning_effort,
+                        reasoning_effort=self.stage2_pass1_reasoning_effort,
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
-                        dictionary_name=dictionary_name,
+                        dictionary_profile=self.dictionary_profile,
                     )
                     multi_samples = None
                     print(
@@ -916,10 +936,10 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     discover_kwargs = dict(
                         intro_images=intro_paths,
                         model=self.stage2_pass1_model,
-                        reasoning_effort=self.stage2_reasoning_effort,
+                        reasoning_effort=self.stage2_pass1_reasoning_effort,
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
-                        dictionary_name=dictionary_name,
+                        dictionary_profile=self.dictionary_profile,
                     )
                     multi_samples = [
                         (stem, sample_text, Path(sample_image))
@@ -959,7 +979,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             image_path=image_path,
             field_map=field_map,
             model=self.stage2_pass2_model,
-            reasoning_effort=self.stage2_reasoning_effort,
+            reasoning_effort=self.stage2_pass2_reasoning_effort,
             temperature=self.temperature,
             guides=self.stage2_guides,
             toolbox_pdf=self.stage2_toolbox_pdf,

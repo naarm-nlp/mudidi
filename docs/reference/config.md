@@ -17,7 +17,7 @@ Paths are resolved relative to the YAML file. API credentials belong in `.env`.
 
 ## Important validation rules
 
-- `inference` requires `input.pages` and cannot use `stage1_source: gold`.
+- `inference` requires `input.pages`, cannot use `stage1_source: gold`, and uses the optional `input.dictionary_profile` instead of the benchmark-only `dictionary_languages` file.
 - `benchmark_run` requires one of `dataset_dir`, `samples_dir`, or `pages`.
 - `vlm_ocr` and `mathpix_ocr` are Stage 1-only strategies.
 - Evaluation uses either `predicted` + `gold` or `dataset_dir` + `pred_root`.
@@ -43,6 +43,16 @@ input:  # InputConfig; required
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
+  dictionary_profile:  # DictionaryProfile | null; default: null
+    headword:  # ProfileLanguage; required
+      language: "value"  # string; required
+      script: "value"  # string; required
+    targets:  # list[ProfileLanguage]; required
+      - language: "value"  # string; required
+        script: "value"  # string; required
+    page_layout: "value"  # string; required
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    other_information_types: null  # string | null; default: null
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -65,8 +75,11 @@ models:  # ModelsConfig; optional
   stage1: null  # string | null; default: null
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
+  openrouter_provider: null  # string | null; default: null
   stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
   stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
+  stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
+  stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
   temperature: 0.1  # number; default: 0.1; >= 0.0
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
@@ -140,6 +153,16 @@ input:  # InputConfig; required
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
+  dictionary_profile:  # DictionaryProfile | null; default: null
+    headword:  # ProfileLanguage; required
+      language: "value"  # string; required
+      script: "value"  # string; required
+    targets:  # list[ProfileLanguage]; required
+      - language: "value"  # string; required
+        script: "value"  # string; required
+    page_layout: "value"  # string; required
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    other_information_types: null  # string | null; default: null
   toolbox_pdf: null  # path | null; default: null
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
@@ -162,8 +185,11 @@ models:  # ModelsConfig; optional
   stage1: null  # string | null; default: null
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
+  openrouter_provider: null  # string | null; default: null
   stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
   stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
+  stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
+  stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
   temperature: 0.1  # number; default: 0.1; >= 0.0
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
@@ -241,6 +267,16 @@ base:  # BenchmarkRunConfig; required
     alphabet: null  # path | null; default: null
     ocr_text: null  # path | null; default: null
     dictionary_languages: null  # path | null; default: null
+    dictionary_profile:  # DictionaryProfile | null; default: null
+      headword:  # ProfileLanguage; required
+        language: "value"  # string; required
+        script: "value"  # string; required
+      targets:  # list[ProfileLanguage]; required
+        - language: "value"  # string; required
+          script: "value"  # string; required
+      page_layout: "value"  # string; required
+      information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+      other_information_types: null  # string | null; default: null
     toolbox_pdf: null  # path | null; default: null
     languages: null  # list[string] | null; default: null
   output:  # OutputConfig; required
@@ -263,8 +299,11 @@ base:  # BenchmarkRunConfig; required
     stage1: null  # string | null; default: null
     stage2_pass1: null  # string | null; default: null
     stage2_pass2: null  # string | null; default: null
+    openrouter_provider: null  # string | null; default: null
     stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
     stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
+    stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
+    stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
     temperature: 0.1  # number; default: 0.1; >= 0.0
   agentic:  # AgenticConfig; optional
     stage1: false  # boolean; default: false

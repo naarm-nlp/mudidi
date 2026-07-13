@@ -272,7 +272,7 @@ def markers_for_config(config: DictionaryLanguagesConfig) -> dict[str, str]:
     """
     Fallback MDF gloss markers for the legacy structured schema export path.
 
-    The direct MDF two-pass pipeline assigns markers in ``parse-rules.json``
+    The direct MDF two-pass pipeline assigns markers in ``mdf_parsing_guide.json``
     instead; this helper is not used there.
     """
     markers: dict[str, str] = {}

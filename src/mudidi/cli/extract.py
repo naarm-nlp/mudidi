@@ -28,7 +28,10 @@ from mudidi.evaluation.stage2.mdf_lexical_repair import (
 )
 from mudidi.evaluation.stage2.mdf_evaluator import MdfEvaluator
 from mudidi.evaluation.stage1.flat_evaluator import FlatStage1Evaluator
-from mudidi.paths import PARSE_RULES_FILENAME, PARSE_RULES_USAGE_FILENAME
+from mudidi.paths import (
+    MDF_PARSING_GUIDE_FILENAME,
+    MDF_PARSING_GUIDE_USAGE_FILENAME,
+)
 from mudidi.extraction.sample_entry import (
     configure_benchmark_entry_args,
     report_entry_input_failures,
@@ -690,7 +693,18 @@ def _build_stage2_manifest(
         "model": args.stage_models.stage_2_pass_2,
         "stage_2_pass_1_model": args.stage_models.stage_2_pass_1,
         "stage_2_pass_2_model": args.stage_models.stage_2_pass_2,
-        "reasoning_effort": args.stage2_reasoning_effort,
+        "reasoning_effort": (
+            getattr(args, "stage2_pass2_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
+        "stage_2_pass_1_reasoning_effort": (
+            getattr(args, "stage2_pass1_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
+        "stage_2_pass_2_reasoning_effort": (
+            getattr(args, "stage2_pass2_reasoning_effort", None)
+            or args.stage2_reasoning_effort
+        ),
         "temperature": args.temperature,
         "batch_size": getattr(args, "batch_size", 1),
         "stage2_output_format": "mdf",
@@ -702,7 +716,7 @@ def _build_stage2_manifest(
             output_dir
             / "stage-2"
             / args.stage2_experiment_name
-            / PARSE_RULES_FILENAME
+            / MDF_PARSING_GUIDE_FILENAME
         ),
         "parse_rules_source": (
             "gold"
@@ -755,6 +769,7 @@ def _build_strategy(
     intro_text: str,
     intro_image_paths: List[str],
     dictionary_languages=None,
+    dictionary_profile=None,
     stage2_experiment_dir: Optional[Path] = None,
     parse_rules_samples: Optional[List[tuple[str, str, str]]] = None,
 ):
@@ -769,11 +784,18 @@ def _build_strategy(
             intro_image_paths=intro_image_paths,
             stage1_reasoning_effort=getattr(args, "stage1_reasoning_effort", "low"),
             stage2_reasoning_effort=getattr(args, "stage2_reasoning_effort", "low"),
+            stage2_pass1_reasoning_effort=getattr(
+                args, "stage2_pass1_reasoning_effort", None
+            ),
+            stage2_pass2_reasoning_effort=getattr(
+                args, "stage2_pass2_reasoning_effort", None
+            ),
             temperature=getattr(args, "temperature", 0.1),
             stage1_guides=getattr(args, "stage1_guides_text", ""),
             stage2_guides=getattr(args, "stage2_guides_text", ""),
             stage1_mode=getattr(args, "stage1_mode", "column"),
             dictionary_languages=dictionary_languages,
+            dictionary_profile=dictionary_profile,
             entry_dir=str(getattr(args, "entry_dir", "") or "") or None,
             stage2_experiment_dir=(
                 str(stage2_experiment_dir) if stage2_experiment_dir else None
@@ -791,6 +813,7 @@ def _build_strategy(
                 if getattr(args, "parse_rules_file", None)
                 else None
             ),
+            approved_parse_rules=getattr(args, "approved_parse_rules", None),
             parse_rules_samples=parse_rules_samples,
             prompt_mode=getattr(args, "prompt_mode", "benchmark"),
             prompt_cache=getattr(args, "prompt_cache", "auto"),
@@ -1288,7 +1311,7 @@ Examples:
         default="all",
         help="Run only stage 1, full stage 2 (Pass 1 + Pass 2), all stages, "
         "Stage 2 Pass 1 only (2-pass-1), or Stage 2 Pass 2 only (2-pass-2; "
-        "requires existing parse-rules.json). Default: all.",
+        "requires existing mdf_parsing_guide.json). Default: all.",
     )
     parser.add_argument(
         "--stage1-mode",
@@ -1346,8 +1369,8 @@ Examples:
         "--parse-rules-file",
         type=Path,
         dest="parse_rules_file",
-        help="Load parse-rules.json from PATH and skip Pass 1 LLM discovery. "
-        "Always reads PATH and refreshes {output_dir}/parse-rules.json.",
+        help="Load mdf_parsing_guide.json from PATH and skip Pass 1 LLM discovery. "
+        "Always reads PATH and refreshes {output_dir}/mdf_parsing_guide.json.",
     )
     parser.add_argument(
         "--dictionary-languages",
@@ -1403,8 +1426,8 @@ Examples:
         "--parse-rules-gold",
         action="store_true",
         dest="parse_rules_gold",
-        help="Skip Pass 1 discovery; load outputs/stage-2-gold/parse-rules.json "
-        "(or legacy field_cheatsheet.json) for the current dictionary entry.",
+        help="Skip Pass 1 discovery; load "
+        "outputs/stage-2-gold/mdf_parsing_guide.json for the current dictionary entry.",
     )
     parser.add_argument(
         "--field-cheatsheet-gold",
@@ -2060,17 +2083,19 @@ def _run_single_entry(args, parser) -> int:
             )
 
     dictionary_languages = None
+    dictionary_profile = getattr(args, "dictionary_profile", None)
     entry_path = _entry_dir_for_run(args, output_dir, input_dir if input_path.is_dir() else input_path.parent)
     if entry_path:
         args.entry_dir = str(entry_path)
     if args.strategy == "two_stage":
         is_benchmark = bool(getattr(args, "benchmark", False) or args.samples_dir)
-        dictionary_languages = load_pass1_dictionary_languages(
-            dictionary_languages_path=args.dictionary_languages,
-            entry_dir=entry_path,
-            metadata_csv_path=_DEFAULT_METADATA_CSV,
-            benchmark=is_benchmark,
-        )
+        if dictionary_profile is None:
+            dictionary_languages = load_pass1_dictionary_languages(
+                dictionary_languages_path=args.dictionary_languages,
+                entry_dir=entry_path,
+                metadata_csv_path=_DEFAULT_METADATA_CSV,
+                benchmark=is_benchmark,
+            )
         if dictionary_languages is not None:
             print(
                 f"Pass 1 language hint: {dictionary_languages.layout} | "
@@ -2085,6 +2110,7 @@ def _run_single_entry(args, parser) -> int:
         intro_text,
         intro_image_paths,
         dictionary_languages,
+        dictionary_profile,
         stage2_experiment_dir=cheatsheet_root if runs_stage2_any(args.stage) else None,
     )
     if (
@@ -2114,7 +2140,7 @@ def _run_single_entry(args, parser) -> int:
     if args.stage == "2-pass-1":
         print("\nStage 2 Pass 1 only: discovering parse rules …")
         strategy.discover_parse_rules()
-        parse_rules_path = cheatsheet_root / PARSE_RULES_FILENAME
+        parse_rules_path = cheatsheet_root / MDF_PARSING_GUIDE_FILENAME
         print(f"Pass 1 complete → {parse_rules_path}")
         if args.strategy == "two_stage":
             _write_run_config(
@@ -2581,7 +2607,10 @@ def _write_run_usage(
         if not root.is_dir():
             continue
         for usage_file in sorted(root.rglob("*_usage.json")):
-            if usage_file.name in {PARSE_RULES_USAGE_FILENAME, "run_usage.json"}:
+            if usage_file.name in {
+                MDF_PARSING_GUIDE_USAGE_FILENAME,
+                "run_usage.json",
+            }:
                 continue
             if not is_page_usage_file(usage_file):
                 continue
@@ -2604,9 +2633,9 @@ def _write_run_usage(
     parse_roots = parse_rules_roots if parse_rules_roots is not None else [output_dir]
     parse_rules_usage_path = next(
         (
-            root / PARSE_RULES_USAGE_FILENAME
+            root / MDF_PARSING_GUIDE_USAGE_FILENAME
             for root in parse_roots
-            if (root / PARSE_RULES_USAGE_FILENAME).is_file()
+            if (root / MDF_PARSING_GUIDE_USAGE_FILENAME).is_file()
         ),
         None,
     )

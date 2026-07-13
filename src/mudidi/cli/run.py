@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, Sequence, cast
@@ -103,7 +105,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         default="all",
         help="Run Stage 1 only, Stage 2 (Pass 1 + Pass 2), both stages (all), "
         "Stage 2 Pass 1 only (2-pass-1), or Stage 2 Pass 2 only "
-        "(2-pass-2; requires existing parse-rules.json). Default: all.",
+        "(2-pass-2; requires existing mdf_parsing_guide.json). Default: all.",
     )
     parser.add_argument(
         "--stage1-source",
@@ -124,8 +126,8 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--parse-rules-file",
         type=str,
         dest="parse_rules_file",
-        help="Load parse-rules.json from PATH; skip Pass 1 LLM discovery. "
-        "Always reads PATH (overrides any cached parse-rules.json in --output-dir).",
+        help="Load mdf_parsing_guide.json from PATH; skip Pass 1 LLM discovery. "
+        "Always reads PATH (overrides any cached mdf_parsing_guide.json in --output-dir).",
     )
     parser.add_argument(
         "--dictionary-languages",
@@ -610,6 +612,7 @@ def execution_namespace_from_config(
         intro_pages=input_config.introduction_pages,
         alphabet=str(input_config.alphabet) if input_config.alphabet else None,
         ocr_text=str(input_config.ocr_text) if input_config.ocr_text else None,
+        dictionary_profile=input_config.dictionary_profile,
         dictionary_languages=(
             str(input_config.dictionary_languages)
             if input_config.dictionary_languages
@@ -634,9 +637,16 @@ def execution_namespace_from_config(
         stage_1_model=models.stage1,
         stage_2_pass_1_model=models.stage2_pass1,
         stage_2_pass_2_model=models.stage2_pass2,
+        openrouter_provider=models.openrouter_provider,
         structure_model=None,
         stage1_reasoning_effort=models.stage1_reasoning,
         stage2_reasoning_effort=models.stage2_reasoning,
+        stage2_pass1_reasoning_effort=(
+            models.stage2_pass1_reasoning or models.stage2_reasoning
+        ),
+        stage2_pass2_reasoning_effort=(
+            models.stage2_pass2_reasoning or models.stage2_reasoning
+        ),
         temperature=models.temperature,
         stage1_agentic=agentic.stage1,
         stage2_agentic=agentic.stage2,
@@ -832,15 +842,43 @@ def preview_extraction_config(
 
 def execute_extraction_config(
     config: InferenceConfig | BenchmarkRunConfig,
+    *,
+    approved_parse_rules: object | None = None,
 ) -> int:
-    """Execute one previously validated typed extraction configuration."""
+    """Execute one typed extraction configuration.
+
+    ``approved_parse_rules`` is an already authenticated in-memory model used
+    by the web approval path. It is intentionally excluded from resolved
+    configuration serialization.
+    """
 
     configure_prompts(default_prompts_path())
     namespace = execution_namespace_from_config(config)
+    namespace.approved_parse_rules = approved_parse_rules
     _write_resolved_config(config)
     from mudidi.cli import extract as extract_module
 
-    return extract_module.main(resolved_args=namespace)
+    with _openrouter_provider_environment(config.models.openrouter_provider):
+        return extract_module.main(resolved_args=namespace)
+
+
+@contextmanager
+def _openrouter_provider_environment(provider: str | None):
+    """Apply one resolved OpenRouter endpoint choice for the extraction process."""
+
+    if provider is None:
+        yield
+        return
+    name = "OPENROUTER_PROVIDER_ORDER"
+    previous = os.environ.get(name)
+    os.environ[name] = "" if provider == "auto" else provider
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = previous
 
 
 def _parse_sweep_selectors(values: list[str] | None) -> dict[str, set[str]]:

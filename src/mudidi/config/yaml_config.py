@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
 from mudidi.cli.model_args import DEFAULT_MODEL
 from mudidi.config.run_config import RunStage
+from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.utils.pdf_split import parse_page_spec
 
 ConfigKind = Literal[
@@ -69,6 +70,7 @@ class InputConfig(_StrictModel):
     alphabet: Path | None = None
     ocr_text: Path | None = None
     dictionary_languages: Path | None = None
+    dictionary_profile: DictionaryProfile | None = None
     toolbox_pdf: Path | None = None
     languages: list[str] | None = None
 
@@ -115,8 +117,15 @@ class ModelsConfig(_StrictModel):
     stage1: str | None = None
     stage2_pass1: str | None = None
     stage2_pass2: str | None = None
+    openrouter_provider: str | None = Field(
+        default=None,
+        max_length=100,
+        pattern=r"^(auto|[a-z0-9][a-z0-9._/-]*)$",
+    )
     stage1_reasoning: ReasoningEffort = "low"
     stage2_reasoning: Literal["low", "medium", "high"] = "low"
+    stage2_pass1_reasoning: Literal["low", "medium", "high"] | None = None
+    stage2_pass2_reasoning: Literal["low", "medium", "high"] | None = None
     temperature: float = Field(default=0.1, ge=0.0)
 
 
@@ -229,6 +238,11 @@ class InferenceConfig(_ExtractionConfig):
             raise ValueError("input.pages is required for inference")
         if self.pipeline.stage1_source == "gold":
             raise ValueError("inference does not support stage1_source: gold")
+        if self.input.dictionary_languages is not None:
+            raise ValueError(
+                "input.dictionary_languages is benchmark-only; use the optional "
+                "input.dictionary_profile for production inference"
+            )
         return self
 
 
@@ -462,9 +476,14 @@ def merge_explicit_overrides(
 
 
 def redacted_config_dict(config: MudidiConfig) -> dict[str, Any]:
-    """Return a JSON-compatible resolved configuration without credentials."""
+    """Return a resolved snapshot without credentials or inactive backends."""
 
     data = config.model_dump(mode="json", exclude={"source_config"})
+    if isinstance(config, _ExtractionConfig):
+        if config.pipeline.strategy != "vlm_ocr":
+            data.pop("vlm", None)
+        if config.pipeline.strategy != "mathpix_ocr":
+            data.pop("mathpix", None)
     if config.source_config is not None:
         data["source_config"] = str(config.source_config)
     return data

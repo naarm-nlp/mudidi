@@ -4,7 +4,15 @@ kind: inference
 input:
   pages: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/Dictionary pages
   alphabet: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/Alphabet list/alphabet.txt
-  dictionary_languages: ../../../dataset/MUDIDI/dictionaries/Evenki-Russian/dictionary_languages.yaml
+  dictionary_profile:
+    headword:
+      language: Evenki
+      script: Cyrillic
+    targets:
+      - language: Russian
+        script: Cyrillic
+    page_layout: There are two columns; each column contains independent dictionary entries.
+    information_types: [translation, part_of_speech, example]
 
 output:
   directory: ../../../outputs/evenki-russian

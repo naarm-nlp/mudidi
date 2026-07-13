@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
+    _openrouter_provider_environment,
     execution_namespace_from_config,
     preview_extraction_config,
     resolve_extraction_config,
@@ -16,6 +19,7 @@ from mudidi.cli.run import (
     run_resolved_command,
 )
 from mudidi.config.yaml_config import BenchmarkRunConfig, InferenceConfig
+from mudidi.schemas.dictionary_profile import DictionaryProfile, ProfileLanguage
 
 
 def test_resolve_minimal_cli_inference_uses_defaults(tmp_path: Path) -> None:
@@ -157,7 +161,6 @@ output:
         intro=tmp_path / "intro.pdf",
         intro_pages="2-4",
         alphabet=tmp_path / "alphabet.txt",
-        dictionary_languages=tmp_path / "languages.yaml",
         dry_run=True,
     )
 
@@ -166,7 +169,21 @@ output:
     assert config.input.introduction == (tmp_path / "intro.pdf").resolve()
     assert config.input.introduction_pages == "2-4"
     assert config.input.alphabet == (tmp_path / "alphabet.txt").resolve()
-    assert config.input.dictionary_languages == (tmp_path / "languages.yaml").resolve()
+
+
+def test_inference_config_rejects_legacy_dictionary_languages_file(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValidationError, match="dictionary_profile"):
+        InferenceConfig.model_validate(
+            {
+                "input": {
+                    "pages": tmp_path / "pages",
+                    "dictionary_languages": tmp_path / "languages.yaml",
+                },
+                "output": {"directory": tmp_path / "output"},
+            }
+        )
 
 
 def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None:
@@ -176,7 +193,12 @@ def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None
             "input": {"pages": tmp_path / "pages"},
             "output": {"directory": tmp_path / "output"},
             "pipeline": {"stage": "1", "stage1_typography": True},
-            "models": {"default": "provider/default", "stage1": "provider/s1"},
+            "models": {
+                "default": "provider/default",
+                "stage1": "provider/s1",
+                "stage2_pass1_reasoning": "medium",
+                "stage2_pass2_reasoning": "high",
+            },
             "agentic": {"stage1": True, "max_iterations": 3},
             "runtime": {"batch_size": 2, "overwrite": True},
         }
@@ -193,6 +215,63 @@ def test_execution_namespace_maps_advanced_yaml_settings(tmp_path: Path) -> None
     assert namespace.overwrite is True
     assert namespace.stage1_reasoning_effort == "low"
     assert namespace.stage2_reasoning_effort == "low"
+    assert namespace.stage2_pass1_reasoning_effort == "medium"
+    assert namespace.stage2_pass2_reasoning_effort == "high"
+
+
+def test_inference_namespace_carries_dictionary_profile_without_a_file(
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    profile = DictionaryProfile(
+        headword=ProfileLanguage(language="Evenki", script="Cyrillic"),
+        targets=[ProfileLanguage(language="Russian", script="Cyrillic")],
+        page_layout="inline_entries",
+        information_types=["translation", "part_of_speech"],
+    )
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages, "dictionary_profile": profile},
+            "output": {"directory": tmp_path / "output"},
+        }
+    )
+
+    namespace = execution_namespace_from_config(config)
+
+    assert namespace.dictionary_profile == profile
+    assert namespace.dictionary_languages is None
+
+
+def test_execution_namespace_carries_openrouter_endpoint_provider(tmp_path: Path) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "models": {
+                "default": "openrouter/anthropic/claude-sonnet-5",
+                "openrouter_provider": "anthropic",
+            },
+        }
+    )
+
+    namespace = execution_namespace_from_config(config)
+
+    assert namespace.openrouter_provider == "anthropic"
+
+
+def test_openrouter_provider_environment_supports_auto_and_restores(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OPENROUTER_PROVIDER_ORDER", "parasail")
+
+    with _openrouter_provider_environment("auto"):
+        assert os.environ["OPENROUTER_PROVIDER_ORDER"] == ""
+    assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "parasail"
+
+    with _openrouter_provider_environment("anthropic"):
+        assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "anthropic"
+    assert os.environ["OPENROUTER_PROVIDER_ORDER"] == "parasail"
 
 
 def test_minimal_production_config_does_not_require_optional_alphabet(

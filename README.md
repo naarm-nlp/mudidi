@@ -10,20 +10,110 @@ dictionary pages → Stage 1 OCR → Stage 2 parse rules → MDF records
 
 ## Installation
 
-MUDIDI supports Linux, macOS, and Windows through WSL2. It requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Install `pdftk` only when processing a multi-page source PDF.
+MUDIDI supports Linux, macOS, and Windows. Docker is recommended for the web
+dashboard. Native installation with [uv](https://docs.astral.sh/uv/) is
+recommended for CLI and YAML workflows; it requires Python 3.11+, with native
+Windows usage supported through WSL2.
+
+### Web dashboard with Docker (recommended)
+
+Docker runs MUDIDI in the same reproducible Linux environment on macOS,
+Windows, and Linux without requiring a separate Python, uv, or `pdftk`
+installation. Install [Docker Desktop](https://docs.docker.com/desktop/) on
+macOS or Windows, or Docker Engine with the Compose plugin on Linux.
+
+Clone the repository, open a terminal in it, and run:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git
-cd MUDIDI
-uv sync
-cp .env.example .env
+docker compose up --build
 ```
+
+Open <http://localhost:8000> in a browser. Stop the app with `Ctrl+C`, or run
+`docker compose down` from another terminal. Dashboard settings, encrypted API
+credentials, presets, uploaded files, and generated outputs persist in the
+local `mudidi-data/` directory. This directory is excluded from Git; keep it
+private and back it up as one unit.
+
+The Compose configuration publishes MUDIDI only on `127.0.0.1`, so other
+computers on the network cannot connect to it. Do not change this binding to a
+public interface: the local dashboard is not designed as a multi-user or
+internet-facing service.
+
+See the
+**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
+for startup, shutdown, logs, persistence, and troubleshooting.
+
+### CLI and YAML workflows with uv (recommended)
+
+### Install uv on macOS or Linux
+
+Use the official standalone installer:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Restart the terminal if requested by the installer, then verify the command is
+available:
+
+```bash
+uv --version
+```
+
+### Install uv on Windows through WSL2
+
+MUDIDI does not currently support native Windows PowerShell. First install
+WSL2 with Ubuntu from an Administrator PowerShell terminal:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Restart Windows if requested, open the Ubuntu application, and install uv from
+the WSL terminal:
+
+```bash
+sudo apt update
+sudo apt install -y curl git
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Install MUDIDI
+
+Clone the repository and reproduce its locked Python environment:
+
+```bash
+git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git MUDIDI
+cd MUDIDI
+uv sync --frozen
+```
+
+Install `pdftk` only when processing a multi-page source PDF. On Ubuntu or
+WSL2, run `sudo apt install -y pdftk-java`; on macOS with Homebrew, run
+`brew install pdftk-java`.
 
 ## API setup
 
-Add the key for the provider used by your model to `.env`:
+For the web dashboard, enter any of the four supported keys directly under
+**API credentials** on **New Run**: Gemini, OpenAI, Anthropic, or OpenRouter.
+Click **Save key** beside the credential you entered. Inputs are masked and can
+be revealed explicitly with the eye button. Keys persist across restarts as
+encrypted ciphertext in `mudidi-web.sqlite3`; the encryption key is stored
+separately as `.credential-key` in the dashboard data directory. Keep the whole
+data directory private and backed up together.
 
-```dotenv
+LiteLLM does not require its own API key when MUDIDI uses it directly. It uses
+the key belonging to the provider selected by the model identifier. A LiteLLM
+virtual key is needed only when connecting to a separately hosted LiteLLM Proxy.
+
+CLI and YAML workflows continue to read provider keys from `.env` or the
+process environment. Copy the example file and add the key used by your model:
+
+```bash
+cp .env.example .env
+```
+
+```text
 GEMINI_API_KEY=replace-me
 # OPENAI_API_KEY=replace-me
 # ANTHROPIC_API_KEY=replace-me
@@ -66,7 +156,7 @@ Outputs are written under:
 ```text
 outputs/my-dictionary/
 ├── resolved_config.json
-├── parse-rules.json
+├── mdf_parsing_guide.json
 ├── stage-1/page_N/page_N_stage1_flat.txt
 └── stage-2/page_N/page_N.mdf.txt
 ```
@@ -77,6 +167,11 @@ For repeatable and advanced runs, use a validated YAML configuration:
 uv run mudidi config validate examples/configs/production/directory-inference.yaml
 uv run mudidi run --config examples/configs/production/directory-inference.yaml
 ```
+
+For every available option, see the
+**[CLI flag reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/cli/)**
+and the
+**[complete YAML field reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/config/)**.
 
 ## Documentation
 

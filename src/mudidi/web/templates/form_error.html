@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configuration error · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  </head>
+  <body class="standalone">
+    <main class="review-page">
+      <section class="panel review-card error-card">
+        <span class="eyebrow">Configuration needs attention</span>
+        <h1>Check the highlighted configuration</h1>
+        <p>{{ validation_errors|length }} validation issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
+        <ul class="validation-errors">
+          {% for error in validation_errors %}
+            <li><strong>{{ error.field }}</strong><span>{{ error.message }}</span></li>
+          {% endfor %}
+        </ul>
+        <p class="hint">Your non-file settings are saved in this browser tab. For security, browsers cannot restore file selections, so please select those files again.</p>
+        <a class="primary link-button" href="/">← Return to New run</a>
+      </section>
+    </main>
+  </body>
+</html>
