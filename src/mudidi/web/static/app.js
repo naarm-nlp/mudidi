@@ -100,6 +100,15 @@ if (otherInformationToggle && otherInformationField) {
   synchronizeOtherInformation();
 }
 
+document.querySelectorAll(".info-button").forEach((button) => {
+  button.addEventListener("pointerenter", () => {
+    button.classList.add("is-tooltip-hovered");
+  });
+  button.addEventListener("pointerleave", () => {
+    button.classList.remove("is-tooltip-hovered");
+  });
+});
+
 const pipelineChoices = [...document.querySelectorAll('input[name="pipeline"]')];
 const providerSelect = document.querySelector("[data-provider-select]");
 const modelSelects = [...document.querySelectorAll("[data-model-select]")];

@@ -134,7 +134,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-9" in response.text
+    assert "/static/app.js?v=dashboard-10" in response.text
 
 
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
