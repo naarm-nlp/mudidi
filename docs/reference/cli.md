@@ -344,7 +344,7 @@ options:
 
 ```text
 usage: mudidi web [-h] [--host {127.0.0.1,localhost}] [--port PORT]
-                  [--data-dir DATA_DIR] [--no-browser]
+                  [--data-dir DATA_DIR] [--container] [--no-browser]
 
 options:
   -h, --help            show this help message and exit
@@ -352,5 +352,8 @@ options:
                         Loopback interface to bind (default: 127.0.0.1).
   --port PORT
   --data-dir DATA_DIR
+  --container           Bind to the container network interface. Use only
+                        inside a container whose published port is restricted
+                        to host loopback.
   --no-browser          Do not open the website in the default browser.
 ```

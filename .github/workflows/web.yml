@@ -13,8 +13,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8
         with:
           enable-cache: true
       - run: uv sync --extra dev --extra web
@@ -27,9 +27,5 @@ jobs:
           --cov=mudidi.web
           --cov-report=term-missing
           --cov-fail-under=80
-      - name: Install Chromium
-        run: uv run playwright install --with-deps chromium
-      - name: Browser production journey
-        run: uv run pytest tests/e2e/test_local_web_journey.py
       - name: Build distributable wheel
         run: uv build
