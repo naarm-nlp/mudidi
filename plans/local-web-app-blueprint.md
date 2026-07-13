@@ -123,7 +123,7 @@ Rollback: revert this PR; no database or UI artifacts exist yet.
 `argparse.Namespace`. `src/mudidi/cli/run.py` resolves a typed
 `InferenceConfig`, adapts it to that namespace, and invokes extraction. Stage 2
 already supports `2-pass-1` and `2-pass-2`, and
-`TwoStageLLMExtraction.discover_parse_rules()` writes `parse-rules.json`.
+`TwoStageLLMExtraction.discover_parse_rules()` writes `mdf_parsing_guide.json`.
 
 The web app needs callable, typed execution and structured progress. Do not
 rewrite the whole extraction engine. Introduce a narrow service boundary and
@@ -484,19 +484,20 @@ Rollback: Stage 2 web execution remains disabled; never bypass approval.
 
 This is the highest-risk feature. Read
 `docs/design/web-app/parse-rule-review.md` completely. The current Pass 1 output
-schema is `DictionaryMarkerCheatsheet` with dictionary name, marker rows, rules,
-and abbreviations. Existing CLI Pass 2 reads `parse-rules.json`.
+schema contains marker rows, rules, and abbreviations. Existing CLI Pass 2 reads
+`mdf_parsing_guide.json`.
 
 The web flow writes generated and draft variants. Approval creates a
-content-addressed immutable snapshot; canonical `parse-rules.json` is only a
-compatibility copy. A server-minted capability, not a path, authorizes Pass 2.
+content-addressed immutable snapshot; canonical `mdf_parsing_guide.json` is the
+readable copy but not the approval authority. A server-minted capability, not a
+path, authorizes Pass 2.
 
 ### Tasks
 
 1. Make every web complete/Stage 2 path—including supplied, imported, or cached
    rules—transition to `awaiting_parse_rules_review`. Do not expose direct Pass
    2 or allow web routes to choose the CLI automatic policy.
-2. Atomically save `parse-rules.generated.json` and review metadata. Do not
+2. Atomically save `mdf_parsing_guide.generated.json` and review metadata. Do not
    expose partially written files.
 3. Build the Parse Rules tab states and complete schema editor.
 4. Add representative-page evidence: safe image and Stage 1-text views.
@@ -506,8 +507,8 @@ compatibility copy. A server-minted capability, not a path, authorizes Pass 2.
    collisions such as `lx` versus `\\lx`.
 7. Approval follows a crash-consistent protocol: validate draft bytes; write and
    `fsync` `approved/<sha256>.json`; then in one SQLite transaction record the
-   review/version/digest and enqueue Pass 2. Update `parse-rules.json` only as a
-   compatibility copy and reconcile orphaned snapshots at startup.
+   review/version/digest and enqueue Pass 2. Update `mdf_parsing_guide.json` only as a
+   readable canonical copy and reconcile orphaned snapshots at startup.
 8. Mint `ApprovedParseRules` only from that committed database row. The worker
    reads the immutable snapshot once, validates its digest/schema, and passes
    those exact loaded bytes/model to Pass 2 without later cache/path resolution.

@@ -107,7 +107,7 @@ corrupted transcript; it does not require a separate option.
 ```text
 output/
 ├── resolved_config.json
-├── parse-rules.json
+├── mdf_parsing_guide.json
 ├── run_usage.json
 ├── stage-1/page_N/
 │   ├── page_N_stage1_flat.txt

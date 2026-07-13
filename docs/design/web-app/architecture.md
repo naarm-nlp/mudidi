@@ -75,7 +75,8 @@ the key.
 Approval is accepted only from `awaiting_parse_rules_review`. The server
 validates draft bytes, writes and `fsync`s a content-addressed immutable
 snapshot, then records its digest/review version and enqueues Pass 2 in one
-SQLite transaction. `parse-rules.json` is only a compatibility copy. Startup
+SQLite transaction. `mdf_parsing_guide.json` is the readable canonical copy,
+not the approval authority. Startup
 reconciliation removes or records orphaned snapshots and repairs incomplete
 approval/enqueue states.
 
@@ -100,23 +101,22 @@ Use short transactions and a repository layer. Tests use isolated temporary
 databases. Large images, text, MDF, logs, and agentic artifacts stay in the
 existing output tree.
 
-## Parse-rule artifacts
+## MDF parsing-guide artifacts
 
 For Stage 2 discovery:
 
 ```text
-parse-rules.generated.json  original Pass 1 output
-parse-rules.draft.json      optional atomic review draft
-parse-rules.json            compatibility copy, not approval authority
-approved/<sha256>.json      immutable authoritative snapshot consumed by Pass 2
-parse-rules-review.json     hashes, timestamps, samples, status, provenance
+mdf_parsing_guide.generated.json  original Pass 1 output
+mdf_parsing_guide.draft.json      optional atomic review draft
+mdf_parsing_guide.json            readable canonical copy, not approval authority
+approved/<sha256>.json            immutable authoritative snapshot consumed by Pass 2
 ```
 
-Existing CLI behavior expecting `parse-rules.json` is preserved. The web worker
-must run discovery in `2-pass-1` mode and pause. It may invoke `2-pass-2` only
-with the server-minted approval capability. Pass 2 records the approved SHA-256
-digest in its run metadata so later edits cannot obscure which rules produced
-the outputs.
+The canonical CLI and pipeline filename is `mdf_parsing_guide.json`. The web
+worker must run discovery in `2-pass-1` mode and pause. It may invoke
+`2-pass-2` only with the server-minted approval capability. Pass 2 records the
+approved SHA-256 digest in its run metadata so later edits cannot obscure which
+guide produced the outputs.
 
 ## Progress protocol
 

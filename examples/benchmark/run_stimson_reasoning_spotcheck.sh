@@ -8,7 +8,7 @@ cd "$ROOT"
 
 PDF="inputs/Stimson 1964- Dictionnaire.pdf"
 SOURCE="outputs/stimson-1964-dictionnaire"
-PARSE_RULES="$SOURCE/parse-rules.json"
+PARSE_RULES="$SOURCE/mdf_parsing_guide.json"
 TOOLBOX="assets/Pages from ToolboxReferenceManual.pdf"
 PAGES="100,150,200,250,300,350,400,450,500,550"
 PAGE_LIST=(100 150 200 250 300 350 400 450 500 550)

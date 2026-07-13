@@ -1,8 +1,9 @@
 # Local Web Application UX Specification
 
 This document is the source of truth for user-visible dashboard behavior.
-Internal compatibility names such as `parse_rules`, `/parse-rules`, and
-`parse-rules.json` remain unchanged.
+Internal database/config keys such as `parse_rules` and routes such as
+`/parse-rules` remain unchanged. The canonical generated filename is
+`mdf_parsing_guide.json`.
 
 ## Application shell
 
@@ -120,8 +121,8 @@ Pages and page evidence show source, transcription, verification, and MDF output
 ## MDF parsing guide review
 
 The review screen progresses through waiting, inferring, review required, and
-approved states. It edits `DictionaryMarkerCheatsheet` fields: dictionary name,
-markers/descriptions, guide rules, and abbreviations.
+approved states. It edits the MDF parsing-guide fields: markers/descriptions,
+guide rules, and abbreviations.
 
 Saving is not approval. Approval validates the guide, writes an immutable
 snapshot, binds it to the run and review version, records its SHA-256, and only

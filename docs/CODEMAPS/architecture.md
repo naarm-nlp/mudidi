@@ -16,7 +16,7 @@ Two-stage pipeline: **Stage 1** transcribes scanned dictionary pages; **Stage 2*
 Page images/PDF  ──► Stage 1 (LLM or VLM OCR)  ──► flat .txt / column .tsv
                               │
                               ▼
-Stage 1 transcript ──► Stage 2 Pass 1 (parse-rule discovery) ──► parse-rules.json
+Stage 1 transcript ──► Stage 2 Pass 1 (parse-rule discovery) ──► mdf_parsing_guide.json
                               │
                               ▼
               Stage 2 Pass 2 (direct MDF) ──► per-page .mdf.txt

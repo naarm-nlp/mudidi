@@ -43,7 +43,7 @@ dataset/MUDIDI/
 ```
 <output_dir>/
   run_config.json, run_manifest.json, run_usage.json
-  parse-rules.json, parse-rules_usage.json
+  mdf_parsing_guide.json, mdf_parsing_guide_usage.json
   stage-1/<page_stem>/page_*_stage1.txt
   stage-2/<page_stem>/page_*.mdf.txt, *_stage2_raw.txt, *_usage.json
   stage-{1,2}/<page_stem>/agentic/<stage>/...  # verifier/rewrite audit artifacts
@@ -54,7 +54,7 @@ dataset/MUDIDI/
 ```
 <output_dir>/
   stage-1/<experiment>/<page_stem>/...
-  stage-2/<experiment>/parse-rules.json
+  stage-2/<experiment>/mdf_parsing_guide.json
   stage-2/<experiment>/<page_stem>/...
 ```
 
@@ -77,7 +77,7 @@ CSV columns include: dictionary, page, experiment, character/word quality, marku
 |------|----------|---------|
 | `PROMPT.json` | `assets/` (packaged) | LLM prompt templates |
 | `dictionary_languages.yaml` | per-run or dataset | Language pair config |
-| `parse-rules.json` | output dir | Pass 1 discovered MDF markers |
+| `mdf_parsing_guide.json` | output dir | Pass 1 discovered MDF markers |
 | `.env` | project root | API keys (GEMINI, OPENROUTER, MATHPIX, …) |
 
 ## Stage 1 Eval Cache

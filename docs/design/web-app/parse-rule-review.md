@@ -22,7 +22,7 @@ discovering_parse_rules
   → validate again
   → write and fsync immutable approved/<sha256>.json
   → transactionally record review/version/digest and enqueue Pass 2
-  → update compatibility parse-rules.json
+  → update readable canonical mdf_parsing_guide.json
   → mint run-bound ApprovedParseRules
   → worker reads, hashes, validates, and consumes those exact bytes
 ```
@@ -35,7 +35,6 @@ successful draft save cannot trigger approval.
 The editor covers the complete current schema:
 
 ```text
-dictionary_name: string
 markers[]:
   marker: string
   description: string

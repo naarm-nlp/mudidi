@@ -58,7 +58,7 @@ Responsibilities:
 
 ```
 Stage 1: prompts.py → client.complete_structured(TranscriptionResponse)
-Pass 1:  pass_1.py → load_or_discover_parse_rules → parse-rules.json
+Pass 1:  pass_1.py → load_or_discover_parse_rules → mdf_parsing_guide.json
 Pass 2:  pass_2.py → extract_direct_mdf → page MDF text
 Client:  client.py → litellm.completion (retries, reasoning, cache keys)
 ```
@@ -100,7 +100,7 @@ Supporting: `mdf_lexical_repair.py`, `mdf_stage1_projection.py`, `stage1_task_di
 ## Output Artifacts
 
 ```
-inference:  <output>/stage-1/<page>/, stage-2/<page>/, parse-rules.json
+inference:  <output>/stage-1/<page>/, stage-2/<page>/, mdf_parsing_guide.json
 benchmark:  <output>/stage-1/<experiment>/<page>/, stage-2/<experiment>/
 per page:   *_usage.json, *_stage2_raw.txt, *.mdf.txt, run_usage.json
 ```

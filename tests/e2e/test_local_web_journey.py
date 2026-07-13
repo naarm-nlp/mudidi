@@ -92,7 +92,6 @@ def test_complete_production_journey_requires_and_uses_review(
     page.get_by_role("link", name="Review MDF parsing guide →").click()
 
     expect(page.get_by_role("heading", name="Review MDF parsing guide")).to_be_visible()
-    page.get_by_label("Dictionary name").fill("Browser-approved dictionary")
     page.get_by_role("button", name="Approve and continue MDF parsing").click()
     expect(page.get_by_text("Completed", exact=True)).to_be_visible(timeout=10_000)
 

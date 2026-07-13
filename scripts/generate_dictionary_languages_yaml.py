@@ -7,7 +7,7 @@ Derives layout and language roles from folder names and
 
 MDF gloss markers follow SIL naming by language code in ``markers_for_config``
 (fallback for the legacy schema export path only). The two-pass direct MDF
-pipeline discovers markers in ``parse-rules.json`` instead.
+pipeline discovers markers in ``mdf_parsing_guide.json`` instead.
 """
 
 from __future__ import annotations

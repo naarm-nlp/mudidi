@@ -77,7 +77,7 @@ Outputs are written under:
 ```text
 outputs/my-dictionary/
 ├── resolved_config.json
-├── parse-rules.json
+├── mdf_parsing_guide.json
 ├── stage-1/page_N/page_N_stage1_flat.txt
 └── stage-2/page_N/page_N.mdf.txt
 ```

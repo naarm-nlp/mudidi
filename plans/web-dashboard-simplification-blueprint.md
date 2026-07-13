@@ -36,9 +36,9 @@ engine.
      by the LLM in Stage 2 Pass 1 and reviewed before Stage 2 Pass 2.
    - **MDF manual**: the optional general 65-page MDF reference PDF bundled with
      MUDIDI or a shorter PDF uploaded by the user.
-3. Internal compatibility names remain unchanged: Python symbols, database
-   fields, statuses, routes such as `/parse-rules`, filenames such as
-   `parse-rules.json`, and serialized event/config keys keep `parse_rules`.
+3. Internal Python symbols, database fields, statuses, routes such as
+   `/parse-rules`, and serialized event/config keys keep `parse_rules` unless a
+   later explicit migration supersedes them.
 4. The web dashboard always builds `pipeline.strategy: two_stage`,
    `pipeline.stage1_mode: flat`, and `pipeline.stage1_typography: false`, and it
    never supplies `input.ocr_text`. Advanced alternatives remain supported
@@ -725,6 +725,18 @@ After validation they bypass Pass 1 discovery and execute Stage 2 directly from
 the managed copy; the loader validates them again. LLM-inferred guides still
 require the immutable, run-bound human approval capability. This mutation
 supersedes Step 3 task 6 and the uploaded-guide review assertions in Step 5.
+
+### Plan mutation — canonical guide schema and filename (2026-07-13)
+
+The repository owner removed `dictionary_name` because it does not affect MDF
+parsing, and explicitly replaced the legacy `parse-rules.json` and
+`field_cheatsheet.json` filenames. The schema now contains only `markers`,
+`rules`, and `abbreviations`, rejects the removed field, and Pass 1 no longer
+asks the LLM to infer a dictionary name. The single canonical dataset, cache,
+CLI, web, and pipeline output filename is `mdf_parsing_guide.json`; discovery
+usage is stored as `mdf_parsing_guide_usage.json`. Internal database/config keys
+and `/parse-rules` routes remain unchanged to avoid an unrelated persistence and
+URL migration.
 
 ## Anti-pattern checklist
 
