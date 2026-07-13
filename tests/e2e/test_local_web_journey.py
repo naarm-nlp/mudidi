@@ -171,25 +171,23 @@ def test_provider_key_is_masked_and_revealed_only_on_request(
 ) -> None:
     page = browser_page
     expected_value = "browser-e2e-dummy-value"
-    page.goto(f"{local_site}/providers")
+    page.goto(local_site)
 
-    field = page.locator("#key-openai")
+    field = page.locator("#credential-openai")
     field.fill(expected_value)
-    field.locator("xpath=ancestor::form").get_by_role(
-        "button", name="Save key"
-    ).click()
+    page.get_by_role("button", name="Save OpenAI API key").click()
 
-    expect(page.get_by_text("Encrypted key saved", exact=True)).to_be_visible()
-    field = page.locator("#key-openai")
+    expect(page.get_by_text("Saved", exact=True)).to_be_visible()
+    field = page.locator("#credential-openai")
     expect(field).to_have_attribute("type", "password")
     expect(field).to_have_value("")
 
-    reveal = page.get_by_role("button", name="Show Openai API key")
+    reveal = page.get_by_role("button", name="Show OpenAI API key")
     reveal.click()
     expect(field).to_have_attribute("type", "text")
     expect(field).to_have_value(expected_value)
 
-    page.get_by_role("button", name="Hide Openai API key").click()
+    page.get_by_role("button", name="Hide openai API key").click()
     expect(field).to_have_attribute("type", "password")
 
 

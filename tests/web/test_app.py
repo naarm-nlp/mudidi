@@ -11,7 +11,6 @@ from pydantic import ValidationError
 from mudidi.web.app import _validation_errors, create_app
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
-from mudidi.web.models import LiveModelOption
 
 _PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
@@ -35,8 +34,9 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="stage2_pass1_model"' in response.text
     assert 'name="stage2_pass2_model"' in response.text
     for provider in ("gemini", "openai", "anthropic", "openrouter"):
-        assert f'name="credential_{provider}"' in response.text
         assert f'id="credential-{provider}"' in response.text
+        assert f'data-save-key data-provider="{provider}"' in response.text
+    assert 'href="/providers"' not in response.text
     assert response.text.count('type="password"') >= 4
     assert response.text.count('class="eye-icon eye-show"') == 4
     assert response.text.count('class="eye-icon eye-hide"') == 4
@@ -199,7 +199,7 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "anthropic/claude-sonnet-4-6" in response.text
 
 
-def test_new_run_saves_selected_dashboard_credential_outside_run_config(
+def test_new_run_saves_selected_dashboard_credential_immediately(
     tmp_path: Path,
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
@@ -207,26 +207,18 @@ def test_new_run_saves_selected_dashboard_credential_outside_run_config(
     expected_value = "dashboard-dummy-provider-value"
 
     response = client.post(
-        "/runs/preview",
-        data={
-            "output_directory": str(tmp_path / "output"),
-            "pipeline": "transcription",
-            "provider": "gemini",
-            "stage1_model": "gemini/gemini-3.5-flash",
-            "credential_gemini": expected_value,
-        },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        "/credentials/gemini",
+        data={"api_key": expected_value},
+        headers={"accept": "application/json"},
     )
 
     assert response.status_code == 200
+    assert response.json() == {"status": "saved", "provider": "gemini"}
     resolved = app.state.credential_vault.resolve(Provider.GEMINI)
     assert resolved is not None
     assert resolved.get_secret_value() == expected_value
-    run = app.state.run_store.list_runs()[0]
-    config_text = app.state.job_controller.load_inference_config(
-        run.run_id
-    ).model_dump_json()
-    assert expected_value not in config_text
+    assert app.state.run_store.list_runs() == []
+    assert expected_value not in response.text
 
 
 def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
@@ -375,65 +367,57 @@ def test_empty_pydantic_error_still_has_a_user_facing_validation_issue() -> None
     ]
 
 
-def test_provider_page_lists_bundled_and_custom_models(tmp_path: Path) -> None:
+def test_separate_provider_page_is_removed(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.get("/providers")
 
-    assert response.status_code == 200
-    assert "GPT-5.6 Sol" in response.text
-    assert "Claude Opus 4.8" in response.text
-    assert "Gemini 3.5 Flash" in response.text
-    assert "Other / advanced provider" in response.text
-    assert "LiteLLM-compatible model identifier" in response.text
+    assert response.status_code == 404
 
 
 def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.post(
-        "/providers/anthropic/credential",
+        "/credentials/anthropic",
         data={"api_key": "sk-ant-browser-secret"},
+        headers={"accept": "application/json"},
     )
 
     assert response.status_code == 200
-    assert "Encrypted key saved" in response.text
+    assert response.json() == {"status": "saved", "provider": "anthropic"}
     assert "sk-ant-browser-secret" not in response.text
     assert b"sk-ant-browser-secret" not in (tmp_path / "mudidi-web.sqlite3").read_bytes()
 
     restarted = TestClient(create_app(data_dir=tmp_path))
-    provider_page = restarted.get("/providers")
-    revealed = restarted.post("/providers/anthropic/credential/reveal")
+    home_page = restarted.get("/")
+    revealed = restarted.post("/credentials/anthropic/reveal")
 
-    assert provider_page.status_code == 200
-    assert "persistent" in provider_page.text
-    assert 'type="password"' in provider_page.text
-    assert "data-reveal-key" in provider_page.text
-    assert 'class="eye-icon eye-show"' in provider_page.text
-    assert 'class="eye-icon eye-hide"' in provider_page.text
-    assert "◉" not in provider_page.text
-    assert "sk-ant-browser-secret" not in provider_page.text
+    assert home_page.status_code == 200
+    assert "1 provider key saved" in home_page.text
+    assert "Saved key — leave blank to keep it" in home_page.text
+    assert "sk-ant-browser-secret" not in home_page.text
     assert revealed.status_code == 200
     assert revealed.headers["cache-control"] == "no-store"
     assert revealed.json() == {"api_key": "sk-ant-browser-secret"}
 
-    deleted = restarted.post("/providers/anthropic/credential/delete")
+    deleted = restarted.post("/credentials/anthropic/delete")
     assert deleted.status_code == 200
-    assert "Saved key removed" in deleted.text
-    assert restarted.post("/providers/anthropic/credential/reveal").status_code == 404
+    assert deleted.json() == {"status": "deleted", "provider": "anthropic"}
+    assert restarted.post("/credentials/anthropic/reveal").status_code == 404
 
 
 def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.post(
-        "/providers/openai/credential",
+        "/credentials/openai",
         data={"api_key": "   "},
+        headers={"accept": "application/json"},
     )
 
     assert response.status_code == 422
-    assert "API key cannot be empty" in response.text
-    assert "value=" not in response.text
+    assert response.json() == {"detail": "API key cannot be empty"}
 
 
 def test_new_run_accepts_uploaded_page_images_into_managed_input(
@@ -492,37 +476,3 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
     assert app.state.run_store.list_runs() == []
     assert not (tmp_path / "app-data" / "escape.png").exists()
 
-
-def test_provider_refresh_adds_live_models_without_persisting_key(
-    tmp_path: Path,
-) -> None:
-    class FakeDiscovery:
-        def discover(
-            self, provider: Provider, *, api_key: str
-        ) -> tuple[LiveModelOption, ...]:
-            assert provider is Provider.OPENAI
-            assert api_key == "sk-openai-live"
-            return (
-                LiveModelOption(
-                    model_id="openai/gpt-live-vision",
-                    display_name="GPT Live Vision",
-                    provider=provider,
-                    image_input=None,
-                ),
-            )
-
-    vault = CredentialVault(environ={})
-    vault.set_temporary(Provider.OPENAI, "sk-openai-live")
-    app = create_app(
-        data_dir=tmp_path,
-        credential_vault=vault,
-        model_discovery=FakeDiscovery(),
-    )
-    client = TestClient(app)
-
-    response = client.post("/providers/openai/models/refresh")
-
-    assert response.status_code == 200
-    assert "GPT Live Vision" in response.text
-    assert "openai/gpt-live-vision" in response.text
-    assert "sk-openai-live" not in response.text
