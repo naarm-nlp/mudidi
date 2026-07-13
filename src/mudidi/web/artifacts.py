@@ -159,7 +159,15 @@ class ArtifactService:
         if not _PAGE_ID.fullmatch(page_id):
             raise ArtifactAccessError("invalid source page identifier")
         pages = self.controller.load_inference_config(run_id).input.pages
-        if pages is None or not pages.is_dir() or pages.is_symlink():
+        if pages is None or pages.is_symlink():
+            raise ArtifactAccessError("source page input is unavailable")
+        if pages.is_file():
+            if pages.suffix.lower() != ".pdf":
+                raise ArtifactAccessError("source page input is unavailable")
+            if page_id not in {page.page_id for page in self.list_pages(run_id)}:
+                raise ArtifactAccessError("source page was not found")
+            return pages.resolve(strict=True)
+        if not pages.is_dir():
             raise ArtifactAccessError("source page directory is unavailable")
         root = pages.resolve(strict=True)
         for candidate in root.iterdir():
