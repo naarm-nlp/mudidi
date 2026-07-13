@@ -221,9 +221,9 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="alphabet_file" type="file"' in response.text
     assert 'name="existing_mdf_guide_file" type="file"' in response.text
     assert (
-        "Valid uploaded guides are used directly without a human checkpoint"
-        in response.text
-    )
+        "Optional. Upload a pre-generated MDF parsing guide. "
+        "Skip this if you have not generated one during Stage 2."
+    ) in response.text
     assert "It is still validated and must be reviewed" not in response.text
     assert 'name="stage1_additional_instructions"' in response.text
     assert 'name="stage2_additional_instructions"' in response.text
