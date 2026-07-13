@@ -1,10 +1,11 @@
+{% from "_icons.html" import credential_eye %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>API providers · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-5">
   </head>
   <body class="standalone">
     <main class="providers-page">
@@ -29,7 +30,7 @@
             <label for="key-{{ provider.value }}">API key</label>
             <div class="input-row">
               <input id="key-{{ provider.value }}" name="api_key" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key' if status.source.value == 'persistent' else 'Paste provider API key' }}">
-              <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider.value }}" aria-label="Show {{ provider.value | title }} API key" aria-pressed="false">◉</button>
+              <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider.value }}" aria-label="Show {{ provider.value | title }} API key" aria-pressed="false">{{ credential_eye() }}</button>
               <button type="submit">{{ 'Replace key' if status.source.value == 'persistent' else 'Save key' }}</button>
             </div>
           </form>

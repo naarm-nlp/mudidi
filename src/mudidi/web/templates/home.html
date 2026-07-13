@@ -1,10 +1,11 @@
+{% from "_icons.html" import credential_eye %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-5">
   </head>
   <body>
     <aside class="sidebar">
@@ -92,7 +93,7 @@
                   <label for="credential-{{ provider }}">{{ label }} API key
                     <span class="input-row">
                       <input id="credential-{{ provider }}" name="credential_{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
-                      <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">◉</button>
+                      <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
                     </span>
                   </label>
                 {% endfor %}
