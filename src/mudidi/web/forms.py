@@ -104,8 +104,8 @@ class NewRunForm(BaseModel):
     rewriter_provider: ProviderName | None = None
     rewriter_model: str | None = None
     rewriter_custom_model: str | None = None
-    evaluator_reasoning: ReasoningChoice | None = None
-    rewriter_reasoning: ReasoningChoice | None = None
+    evaluator_reasoning: ReasoningChoice | None = "high"
+    rewriter_reasoning: ReasoningChoice | None = "low"
 
     batch_size: int = Field(default=1, ge=1, le=32)
 

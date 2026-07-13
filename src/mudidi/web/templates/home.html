@@ -179,8 +179,8 @@
                     </label>
                   </div>
                 {% endfor %}
-                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
+                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                 <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
                 <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
               </div>
@@ -281,6 +281,6 @@
       </template>
     </main>
     {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-8" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-9" defer></script>
   </body>
 </html>

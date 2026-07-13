@@ -50,6 +50,8 @@ const restoreRunForm = () => {
     if (name === "output_policy") {
       values = values.map((value) => value === "new" ? "resume" : value);
     }
+    if (name === "evaluator_reasoning" && values[0] === "") values = ["high"];
+    if (name === "rewriter_reasoning" && values[0] === "") values = ["low"];
     const fields = [...runForm.elements].filter((field) => field.name === name);
     fields.forEach((field, index) => {
       if (field.type === "file" || field.type === "password") return;
