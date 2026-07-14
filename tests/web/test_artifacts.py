@@ -12,6 +12,7 @@ from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.app import create_app
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.models import Provider
+from mudidi.web.runs import RunStatus
 
 
 def _prepared_app(tmp_path: Path) -> tuple[object, TestClient, str, Path]:
@@ -146,12 +147,38 @@ def test_page_viewer_entry_keeps_empty_state_when_no_pages_exist(
         config=config,
         provider=Provider.ANTHROPIC,
     )
+    app.state.run_store.transition(run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(run_id, RunStatus.RUNNING_STAGE1)
 
     response = TestClient(app).get(f"/runs/{run_id}/pages")
 
     assert response.status_code == 200
     assert "Page Viewer &amp; Editor" in response.text
     assert "No page outputs yet" in response.text
+    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events">' in response.text
+
+
+def test_page_viewer_refreshes_as_outputs_arrive_during_stage1(
+    tmp_path: Path,
+) -> None:
+    app, client, run_id, output = _prepared_app(tmp_path)
+    app.state.run_store.transition(run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    pages = tmp_path / "pages"
+    (pages / "page_2.png").write_bytes(b"second source image")
+    stage1 = output / "stage-1/page_2"
+    stage1.mkdir(parents=True)
+    (stage1 / "page_2_stage1_flat.txt").write_text(
+        "second transcription",
+        encoding="utf-8",
+    )
+
+    response = client.get(f"/runs/{run_id}/pages/page_1")
+
+    assert response.status_code == 200
+    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events">' in response.text
+    assert 'max="1"' in response.text
+    assert "second transcription" not in response.text
 
 
 def test_download_route_hides_traversal_as_not_found(tmp_path: Path) -> None:
