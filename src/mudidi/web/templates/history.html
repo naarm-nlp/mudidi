@@ -41,7 +41,7 @@
           <article class="run-row">
             <a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a>
             <span>{{ run.status_label }}</span>
-            <small>{{ run.completed_pages }} of {{ run.total_pages }} pages · {{ run.provider }}</small>
+            <small>{{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }} · {{ run.provider }}</small>
             <div class="history-actions">
               {% if run.review_available and run.review_status == 'awaiting_review' %}
               <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review</a>

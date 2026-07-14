@@ -17,7 +17,7 @@
       <header class="page-heading">
         <span class="eyebrow">{{ run.provider }} · local worker</span>
         <h1>{{ run.run_id }}</h1>
-        <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} pages{% endif %}</p>
+        <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}{% endif %}</p>
       </header>
       <div class="content-grid">
         <section class="panel review-card run-progress-card">
@@ -29,7 +29,7 @@
           </div>
           {% if run.total_pages %}
           <div class="progress-summary">
-            <span>{{ run.completed_pages }} of {{ run.total_pages }} pages complete</span>
+            <span>{{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }} complete</span>
             <strong>{{ ((run.completed_pages / run.total_pages) * 100) | round | int }}%</strong>
           </div>
           <div class="progress-track"><span style="width: {{ (run.completed_pages / run.total_pages * 100) if run.total_pages else 0 }}%"></span></div>

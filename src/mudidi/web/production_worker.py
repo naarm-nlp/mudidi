@@ -17,8 +17,6 @@ from mudidi.execution.approval import (
     load_approved_parse_rules,
     mint_approved_parse_rules,
 )
-from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
-from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.execution.events import (
     ParseRulesGenerated,
     PageCompleted,
@@ -27,6 +25,9 @@ from mudidi.execution.events import (
     RunFailed,
     StageStarted,
 )
+from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
+from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
+from mudidi.utils.pdf_split import parse_page_spec
 from mudidi.web.inference_worker import (
     InferencePhase,
     apply_credential_message,
@@ -87,7 +88,10 @@ def main(argv: list[str] | None = None) -> int:
                         sequence=sequence,
                         stage=_event_stage_name(stage_name),
                         occurred_at=datetime.now(UTC),
-                        total_pages=_page_count(config.input.pages),
+                        total_pages=_page_count(
+                            config.input.pages,
+                            config.input.dictionary_pages,
+                        ),
                     ),
                     stream=protocol_stream,
                 )
@@ -214,8 +218,16 @@ def _event_stage_name(stage: str) -> str:
     return "stage2_pass2"
 
 
-def _page_count(pages: Path | None) -> int | None:
-    if pages is None or not pages.is_dir():
+def _page_count(
+    pages: Path | None,
+    dictionary_pages: str | None = None,
+) -> int | None:
+    if pages is None:
+        return None
+    if pages.suffix.lower() == ".pdf":
+        selected_pages = parse_page_spec(dictionary_pages or "")
+        return len(selected_pages) or None
+    if not pages.is_dir():
         return None
     count = sum(
         path.suffix.lower() in {".png", ".jpg", ".jpeg", ".tif", ".tiff"}

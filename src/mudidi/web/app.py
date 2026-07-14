@@ -1515,6 +1515,11 @@ def _stage_label(stage: str | None) -> str:
     }.get(stage, "Pipeline")
 
 
+def _page_progress_detail(completed: int, total: int) -> str:
+    page_label = "page" if total == 1 else "pages"
+    return f"{completed} of {total} {page_label} complete"
+
+
 def _pipeline_steps(
     events: list[dict[str, object]], status: RunStatus
 ) -> list[dict[str, str]]:
@@ -1530,7 +1535,10 @@ def _pipeline_steps(
         if event.get("type") == "stage.started"
     }
     totals = {
-        str(event.get("stage")): int(event.get("total_pages") or 0)
+        str(event.get("stage")): max(
+            int(event.get("total_pages") or 0),
+            completed_by_stage.get(str(event.get("stage")), 0),
+        )
         for event in events
         if event.get("type") == "stage.started"
     }
@@ -1543,7 +1551,13 @@ def _pipeline_steps(
         {
             "label": "Stage 1 — Transcription",
             "state": "completed" if stage1_done else "running" if status is RunStatus.RUNNING_STAGE1 else "pending",
-            "detail": f"{completed_by_stage.get('stage1', 0)} of {totals.get('stage1', 0)} pages complete" if "stage1" in started_stages else "",
+            "detail": (
+                _page_progress_detail(
+                    completed_by_stage.get("stage1", 0), totals.get("stage1", 0)
+                )
+                if "stage1" in started_stages
+                else ""
+            ),
         },
         {
             "label": "MDF parsing guide discovery",
@@ -1558,7 +1572,14 @@ def _pipeline_steps(
         {
             "label": "Stage 2 — MDF conversion",
             "state": "completed" if status is RunStatus.COMPLETED and "stage2_pass2" in started_stages else "running" if status is RunStatus.RUNNING_STAGE2 else "pending",
-            "detail": f"{completed_by_stage.get('stage2_pass2', 0)} of {totals.get('stage2_pass2', 0)} pages complete" if "stage2_pass2" in started_stages else "Starts after guide approval",
+            "detail": (
+                _page_progress_detail(
+                    completed_by_stage.get("stage2_pass2", 0),
+                    totals.get("stage2_pass2", 0),
+                )
+                if "stage2_pass2" in started_stages
+                else "Starts after guide approval"
+            ),
         },
     ]
 
