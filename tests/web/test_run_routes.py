@@ -191,6 +191,9 @@ def test_history_filters_by_query_status_and_provider(tmp_path: Path) -> None:
     assert "beta-dictionary" not in response.text
     assert 'name="status"' in response.text
     assert 'name="provider"' in response.text
+    assert 'action="/runs/alpha-dictionary/delete"' in response.text
+    assert "Remove" in response.text
+    assert 'action="/history/delete-all"' in response.text
 
 
 def test_terminal_run_deletion_removes_local_metadata_but_not_outputs(
@@ -220,12 +223,47 @@ def test_terminal_run_deletion_removes_local_metadata_but_not_outputs(
     assert (output / "result.txt").read_text(encoding="utf-8") == "keep"
 
 
-def test_nonterminal_run_cannot_be_deleted(tmp_path: Path) -> None:
+def test_validated_run_can_be_deleted_from_history(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     app.state.run_store.create_run("keep-validated")
     app.state.run_store.transition("keep-validated", RunStatus.VALIDATED)
+    bundle = app.state.inputs.bundle("keep-validated")
+    bundle.mkdir(parents=True)
 
-    response = TestClient(app).post("/runs/keep-validated/delete")
+    response = TestClient(app).post(
+        "/runs/keep-validated/delete", follow_redirects=False
+    )
 
-    assert response.status_code == 409
-    assert app.state.run_store.get_run("keep-validated").status is RunStatus.VALIDATED
+    assert response.status_code == 303
+    with pytest.raises(KeyError):
+        app.state.run_store.get_run("keep-validated")
+    assert not bundle.parent.exists()
+
+
+def test_delete_all_history_removes_inactive_runs_but_keeps_active_run(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    store = app.state.run_store
+    store.create_run("remove-validated")
+    store.transition("remove-validated", RunStatus.VALIDATED)
+    store.create_run("remove-failed")
+    store.transition("remove-failed", RunStatus.CANCELLED)
+    store.create_run("keep-active")
+    store.transition("keep-active", RunStatus.VALIDATED)
+    store.transition("keep-active", RunStatus.QUEUED)
+    store.transition("keep-active", RunStatus.RUNNING_STAGE1)
+    for run_id in ("remove-validated", "remove-failed", "keep-active"):
+        app.state.inputs.bundle(run_id).mkdir(parents=True)
+
+    response = TestClient(app).post(
+        "/history/delete-all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/history"
+    assert [run.run_id for run in store.list_runs()] == ["keep-active"]
+    assert not app.state.inputs.bundle("remove-validated").parent.exists()
+    assert not app.state.inputs.bundle("remove-failed").parent.exists()
+    assert app.state.inputs.bundle("keep-active").parent.exists()

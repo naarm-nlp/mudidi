@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from mudidi.cli import extract
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
     _openrouter_provider_environment,
@@ -20,6 +21,34 @@ from mudidi.cli.run import (
 )
 from mudidi.config.yaml_config import BenchmarkRunConfig, InferenceConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile, ProfileLanguage
+
+
+def test_single_entry_resolves_progress_callback_from_execution_args(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class ProgressObserved(Exception):
+        pass
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    (pages / "page_1.png").write_bytes(b"progress fixture")
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"stage": "1"},
+            "models": {"default": "gemini/gemini-3-flash-preview"},
+        }
+    )
+    namespace = execution_namespace_from_config(config)
+    namespace.progress_callback = (
+        lambda *_args: (_ for _ in ()).throw(ProgressObserved())
+    )
+    monkeypatch.setattr(extract, "_build_strategy", lambda *_args, **_kwargs: object())
+
+    with pytest.raises(ProgressObserved):
+        extract.main(resolved_args=namespace)
 
 
 def test_resolve_minimal_cli_inference_uses_defaults(tmp_path: Path) -> None:
