@@ -146,7 +146,7 @@ def test_page_detail_combines_safe_source_and_generated_evidence(
     source = client.get(f"/runs/{run_id}/pages/page_1/source")
 
     assert detail.status_code == 200
-    assert "Page page_1" in detail.text
+    assert "Page 1" in detail.text
     assert "hello transcription" in detail.text
     assert "\\lx hello" in detail.text
     assert f"/runs/{run_id}/pages/page_1/source" in detail.text

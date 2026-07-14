@@ -1,1 +1,121 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page {{ page_id }} · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head><body class="standalone"><main class="providers-page"><a class="back-link" href="/runs/{{ run_id }}/pages">← Output Preview</a><header class="page-heading"><span class="eyebrow">Source and generated evidence</span><h1>Page {{ page_id }}</h1></header><section class="page-evidence-grid"><article class="panel page-card"><h2>Source</h2>{% if source_is_image %}<img class="source-preview" src="/runs/{{ run_id }}/pages/{{ page_id }}/source" alt="Source image for {{ page_id }}">{% else %}<a class="back-link" href="/runs/{{ run_id }}/pages/{{ page_id }}/source#page={{ page_id.removeprefix('page_') }}">Open source PDF</a>{% endif %}</article><article class="panel page-card"><span class="eyebrow">Stage 1 transcription</span><pre>{{ stage1 or 'Not generated' }}</pre></article><article class="panel page-card"><span class="eyebrow">Stage 2 MDF</span><pre>{{ stage2 or 'Not generated' }}</pre></article><article class="panel page-card"><h2>Page events</h2><div class="event-list">{% for event in events %}<div><code>#{{ event.sequence }}</code> {{ event.type }}</div>{% else %}<p>No page-scoped events were recorded.</p>{% endfor %}</div></article></section><section class="panel history-list"><h2>Related artifacts</h2>{% for artifact in artifacts %}<a class="artifact-row" href="/runs/{{ run_id }}/artifacts/{{ artifact.relative_path.as_posix() }}"><code>{{ artifact.relative_path.as_posix() }}</code><span>{{ artifact.size_bytes }} bytes</span><strong>Download ↓</strong></a>{% endfor %}</section></main></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page {{ page_id.removeprefix('page_') }} editor · MUDIDI</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=page-editor-1">
+    <script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>
+  </head>
+  <body class="standalone">
+    <main class="page-editor-page">
+      <a class="back-link" href="/runs/{{ run_id }}/pages">← Output Preview</a>
+
+      <header class="page-editor-heading">
+        <div>
+          <span class="eyebrow">Page correction workspace</span>
+          <h1>Page {{ page_id.removeprefix('page_') }}</h1>
+          <p>Compare the source with each generated stage, correct the text, then save.</p>
+        </div>
+        {% if saved %}<div class="save-confirmation" role="status">Changes saved</div>{% endif %}
+      </header>
+
+      <nav class="panel page-navigator" aria-label="Processed page navigation">
+        {% if previous_page %}
+        <a class="page-step-button" href="/runs/{{ run_id }}/pages/{{ previous_page.page_id }}">← Previous</a>
+        {% else %}
+        <span class="page-step-button disabled" aria-disabled="true">← Previous</span>
+        {% endif %}
+        <label class="page-slider-label">
+          <span>Navigate processed pages</span>
+          <input
+            type="range"
+            min="0"
+            max="{{ page_count - 1 }}"
+            value="{{ page_index }}"
+            step="1"
+            data-page-slider
+            data-page-urls='{{ page_urls | tojson }}'
+            data-page-labels='{{ page_labels | tojson }}'
+          >
+          <output data-page-position>Page {{ page_index + 1 }} of {{ page_count }} · {{ page_id.removeprefix('page_') }}</output>
+        </label>
+        {% if next_page %}
+        <a class="page-step-button" href="/runs/{{ run_id }}/pages/{{ next_page.page_id }}">Next →</a>
+        {% else %}
+        <span class="page-step-button disabled" aria-disabled="true">Next →</span>
+        {% endif %}
+      </nav>
+
+      <section class="page-editor-workspace">
+        <article class="panel source-editor-panel">
+          <div class="page-panel-heading">
+            <div>
+              <span class="eyebrow">Original source</span>
+              <h2>{% if source_is_image %}Source image{% else %}PDF page {{ page_id.removeprefix('page_') }}{% endif %}</h2>
+            </div>
+            <a class="back-link" href="/runs/{{ run_id }}/pages/{{ page_id }}/source#page={{ page_id.removeprefix('page_') }}" target="_blank" rel="noopener">Open separately ↗</a>
+          </div>
+          {% if source_is_image %}
+          <img class="source-preview" src="/runs/{{ run_id }}/pages/{{ page_id }}/source" alt="Source image for {{ page_id }}">
+          {% else %}
+          <iframe class="source-document" src="/runs/{{ run_id }}/pages/{{ page_id }}/source#page={{ page_id.removeprefix('page_') }}&amp;view=FitH" title="Source PDF page {{ page_id.removeprefix('page_') }}"></iframe>
+          {% endif %}
+        </article>
+
+        <form class="page-text-editor" method="post" action="/runs/{{ run_id }}/pages/{{ page_id }}/edit">
+          <article class="panel text-editor-panel">
+            <div class="page-panel-heading">
+              <div>
+                <span class="eyebrow">Stage 1</span>
+                <h2>Transcription</h2>
+              </div>
+              {% if stage1 is not none %}<span class="editor-state">Editable</span>{% endif %}
+            </div>
+            {% if stage1 is not none %}
+            <textarea name="stage1_text" aria-label="Stage 1 transcription">{{ stage1 }}</textarea>
+            <p class="editor-note">Saving a transcription correction does not regenerate Stage 2 MDF.</p>
+            {% else %}
+            <div class="empty-state"><p>No Stage 1 transcription was generated for this page.</p></div>
+            {% endif %}
+          </article>
+
+          <article class="panel text-editor-panel">
+            <div class="page-panel-heading">
+              <div>
+                <span class="eyebrow">Stage 2</span>
+                <h2>MDF output</h2>
+              </div>
+              {% if stage2 %}<span class="editor-state">Editable</span>{% endif %}
+            </div>
+            {% if stage2 is not none %}
+            <textarea name="stage2_text" aria-label="Stage 2 MDF output" spellcheck="false">{{ stage2 }}</textarea>
+            {% else %}
+            <div class="empty-state"><p>No Stage 2 MDF output was generated for this page.</p></div>
+            {% endif %}
+          </article>
+
+          {% if stage1 is not none or stage2 is not none %}
+          <div class="page-editor-savebar">
+            <span>Edits replace the corresponding local output files.</span>
+            <button class="primary" type="submit">Save page changes</button>
+          </div>
+          {% endif %}
+        </form>
+      </section>
+
+      <details class="panel related-artifacts">
+        <summary>Related artifacts ({{ artifacts | length }})</summary>
+        <div class="history-list">
+          {% for artifact in artifacts %}
+          <a class="artifact-row" href="/runs/{{ run_id }}/artifacts/{{ artifact.relative_path.as_posix() }}">
+            <code>{{ artifact.relative_path.as_posix() }}</code>
+            <span>{{ artifact.size_bytes }} bytes</span>
+            <strong>Download ↓</strong>
+          </a>
+          {% endfor %}
+        </div>
+      </details>
+    </main>
+  </body>
+</html>

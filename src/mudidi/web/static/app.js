@@ -395,3 +395,45 @@ if (liveRun && window.EventSource) {
     });
   });
 }
+
+const pageSlider = document.querySelector("[data-page-slider]");
+if (pageSlider) {
+  const position = document.querySelector("[data-page-position]");
+  let pageUrls = [];
+  let pageLabels = [];
+  try {
+    pageUrls = JSON.parse(pageSlider.dataset.pageUrls || "[]");
+    pageLabels = JSON.parse(pageSlider.dataset.pageLabels || "[]");
+  } catch (_error) {
+    pageSlider.disabled = true;
+  }
+
+  pageSlider.addEventListener("input", () => {
+    const index = Number(pageSlider.value);
+    if (position && pageLabels[index] !== undefined) {
+      position.textContent = `Page ${index + 1} of ${pageUrls.length} · ${pageLabels[index]}`;
+    }
+  });
+  pageSlider.addEventListener("change", () => {
+    const destination = pageUrls[Number(pageSlider.value)];
+    if (destination) window.location.assign(destination);
+  });
+}
+
+const pageTextEditor = document.querySelector("form.page-text-editor");
+if (pageTextEditor) {
+  let hasUnsavedChanges = false;
+  pageTextEditor.querySelectorAll("textarea").forEach((textarea) => {
+    textarea.addEventListener("input", () => {
+      hasUnsavedChanges = true;
+    });
+  });
+  pageTextEditor.addEventListener("submit", () => {
+    hasUnsavedChanges = false;
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedChanges) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+}

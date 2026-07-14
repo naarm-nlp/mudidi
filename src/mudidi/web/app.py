@@ -48,6 +48,7 @@ _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
 _MAX_REQUEST_BYTES = 25 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
+_ALLOW_SAME_ORIGIN_FRAME_HEADER = "X-MUDIDI-Allow-Same-Origin-Frame"
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
@@ -792,22 +793,24 @@ def create_app(
 
     @app.get("/runs/{run_id}/pages/{page_id}", response_class=HTMLResponse)
     async def page_detail(request: Request, run_id: str, page_id: str) -> HTMLResponse:
-        """Combine source, generated text, page events, and artifact metadata."""
+        """Render source and editable generated text for one processed page."""
 
         try:
+            pages = app.state.artifacts.list_pages(run_id)
             page = next(
                 item
-                for item in app.state.artifacts.list_pages(run_id)
+                for item in pages
                 if item.page_id == page_id
             )
+            page_index = pages.index(page)
             source = app.state.artifacts.source_page(run_id, page_id)
             stage1 = (
-                app.state.artifacts.preview_text(run_id, page.stage1.relative_path)
+                app.state.artifacts.editable_text(run_id, page.stage1)
                 if page.stage1
                 else None
             )
             stage2 = (
-                app.state.artifacts.preview_text(run_id, page.stage2.relative_path)
+                app.state.artifacts.editable_text(run_id, page.stage2)
                 if page.stage2
                 else None
             )
@@ -815,12 +818,6 @@ def create_app(
                 artifact
                 for artifact in app.state.artifacts.list_artifacts(run_id)
                 if page_id in artifact.relative_path.parts
-            ]
-            events = [
-                event
-                for event in app.state.run_store.list_events(run_id)
-                if str(event.get("page", ""))
-                in {page_id, page_id.removeprefix("page_")}
             ]
         except (
             ArtifactAccessError,
@@ -839,9 +836,59 @@ def create_app(
                 "source_is_image": source.suffix.lower() != ".pdf",
                 "stage1": stage1,
                 "stage2": stage2,
-                "events": events,
                 "artifacts": related,
+                "page_index": page_index,
+                "page_count": len(pages),
+                "page_urls": [
+                    f"/runs/{run_id}/pages/{item.page_id}" for item in pages
+                ],
+                "page_labels": [item.page_id.removeprefix("page_") for item in pages],
+                "previous_page": pages[page_index - 1] if page_index > 0 else None,
+                "next_page": (
+                    pages[page_index + 1] if page_index + 1 < len(pages) else None
+                ),
+                "saved": request.query_params.get("saved") == "1",
             },
+        )
+
+    @app.post("/runs/{run_id}/pages/{page_id}/edit")
+    async def edit_page_artifacts(
+        request: Request,
+        run_id: str,
+        page_id: str,
+    ) -> RedirectResponse:
+        """Persist explicit corrections to existing Stage 1 and Stage 2 files."""
+
+        submitted = await request.form()
+        updates = 0
+        try:
+            for field, stage in (
+                ("stage1_text", "stage1"),
+                ("stage2_text", "stage2"),
+            ):
+                value = submitted.get(field)
+                if value is None:
+                    continue
+                app.state.artifacts.update_page_text(
+                    run_id,
+                    page_id,
+                    stage,
+                    str(value),
+                )
+                updates += 1
+        except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
+            raise HTTPException(
+                status_code=404,
+                detail="page artifact not found",
+            ) from exc
+        if updates == 0:
+            raise HTTPException(
+                status_code=422,
+                detail="no editable page text submitted",
+            )
+        return RedirectResponse(
+            f"/runs/{run_id}/pages/{page_id}?saved=1",
+            status_code=303,
         )
 
     @app.get("/runs/{run_id}/pages/{page_id}/source")
@@ -854,7 +901,10 @@ def create_app(
             raise HTTPException(
                 status_code=404, detail="source page not found"
             ) from exc
-        return FileResponse(path)
+        return FileResponse(
+            path,
+            headers={_ALLOW_SAME_ORIGIN_FRAME_HEADER: "1"},
+        )
 
     @app.get("/runs/{run_id}/usage", response_class=HTMLResponse)
     async def run_usage(request: Request, run_id: str) -> HTMLResponse:
@@ -1670,9 +1720,16 @@ def _origin_matches_host(origin: str, host: str) -> bool:
 
 def _add_security_headers(response: object) -> object:
     headers = getattr(response, "headers")
-    headers["Content-Security-Policy"] = _CSP
+    allow_same_origin_frame = headers.get(_ALLOW_SAME_ORIGIN_FRAME_HEADER)
+    if allow_same_origin_frame:
+        del headers[_ALLOW_SAME_ORIGIN_FRAME_HEADER]
+    headers["Content-Security-Policy"] = (
+        _CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'")
+        if allow_same_origin_frame
+        else _CSP
+    )
     headers["X-Content-Type-Options"] = "nosniff"
     headers["Referrer-Policy"] = "no-referrer"
-    headers["X-Frame-Options"] = "DENY"
+    headers["X-Frame-Options"] = "SAMEORIGIN" if allow_same_origin_frame else "DENY"
     headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     return response

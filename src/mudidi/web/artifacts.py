@@ -12,6 +12,7 @@ from mudidi.web.jobs import JobController
 
 _TEXT_SUFFIXES = {".txt", ".tsv", ".mdf", ".json", ".jsonl", ".log"}
 _MAX_PREVIEW_BYTES = 512_000
+_MAX_EDIT_BYTES = 2_000_000
 _PAGE_ID = re.compile(r"^page_[A-Za-z0-9_-]+$")
 _SOURCE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".pdf"}
 
@@ -138,8 +139,48 @@ class ArtifactService:
                 stage1=values.get("stage1"),
                 stage2=values.get("stage2"),
             )
-            for page_id, values in sorted(grouped.items())
+            for page_id, values in sorted(
+                grouped.items(), key=lambda item: _page_sort_key(item[0])
+            )
         ]
+
+    def editable_text(self, run_id: str, artifact: RunArtifact) -> str:
+        """Read a complete, bounded UTF-8 artifact for browser correction."""
+
+        path = self.resolve(run_id, artifact.relative_path)
+        if path.suffix.lower() not in _TEXT_SUFFIXES:
+            raise ArtifactAccessError("artifact is not editable text")
+        if path.stat().st_size > _MAX_EDIT_BYTES:
+            raise ArtifactAccessError("artifact is too large for browser editing")
+        try:
+            return path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise ArtifactAccessError("artifact is not valid UTF-8 text") from exc
+
+    def update_page_text(
+        self,
+        run_id: str,
+        page_id: str,
+        stage: str,
+        text: str,
+    ) -> None:
+        """Replace one existing page output without permitting arbitrary paths."""
+
+        if not _PAGE_ID.fullmatch(page_id):
+            raise ArtifactAccessError("invalid page identifier")
+        if stage not in {"stage1", "stage2"}:
+            raise ArtifactAccessError("invalid editable stage")
+        if len(text.encode("utf-8")) > _MAX_EDIT_BYTES:
+            raise ArtifactAccessError("edited artifact is too large")
+        page = next(
+            (item for item in self.list_pages(run_id) if item.page_id == page_id),
+            None,
+        )
+        artifact = getattr(page, stage, None) if page is not None else None
+        if artifact is None:
+            raise ArtifactAccessError("editable page artifact was not found")
+        path = self.resolve(run_id, artifact.relative_path)
+        path.write_text(text, encoding="utf-8")
 
     def preview_text(self, run_id: str, relative_path: Path) -> str:
         """Read a bounded text preview for a known textual artifact."""
@@ -229,6 +270,16 @@ def _read_json_object(path: Path) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise ArtifactAccessError(f"usage artifact is not an object: {path.name}")
     return payload
+
+
+def _page_sort_key(page_id: str) -> tuple[tuple[int, object], ...]:
+    """Sort numeric page identifiers naturally while retaining named pages."""
+
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.casefold())
+        for part in re.split(r"(\d+)", page_id)
+        if part
+    )
 
 
 def _optional_float(value: object) -> float | None:
