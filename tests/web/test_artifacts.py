@@ -108,25 +108,50 @@ def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
 
     overview = client.get(f"/runs/{run_id}")
     outputs = client.get(f"/runs/{run_id}/outputs")
-    pages = client.get(f"/runs/{run_id}/pages")
+    pages = client.get(f"/runs/{run_id}/pages", follow_redirects=False)
     usage = client.get(f"/runs/{run_id}/usage")
     download = client.get(f"/runs/{run_id}/artifacts/stage-2/page_1/page_1.mdf.txt")
 
     assert overview.status_code == 200
-    assert "Output Preview" in overview.text
+    assert "Page Viewer &amp; Editor" in overview.text
+    assert "Output Preview" not in overview.text
     assert "File Artifacts" in overview.text
     assert outputs.status_code == 200
     assert "File Artifacts" in outputs.text
     assert "page_1.mdf.txt" in outputs.text
-    assert pages.status_code == 200
-    assert "Output Preview" in pages.text
-    assert "hello transcription" in pages.text
-    assert "\\lx hello" in pages.text
+    assert pages.status_code == 303
+    assert pages.headers["location"] == f"/runs/{run_id}/pages/page_1"
     assert usage.status_code == 200
     assert "120" in usage.text
     assert "$0.012" in usage.text
     assert download.status_code == 200
     assert download.text.startswith("\\lx hello")
+
+
+def test_page_viewer_entry_keeps_empty_state_when_no_pages_exist(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"stage": "1"},
+        }
+    )
+    (tmp_path / "pages").mkdir()
+    run_id = "empty-page-viewer"
+    app.state.job_controller.prepare_inference(
+        run_id,
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+
+    response = TestClient(app).get(f"/runs/{run_id}/pages")
+
+    assert response.status_code == 200
+    assert "Page Viewer &amp; Editor" in response.text
+    assert "No page outputs yet" in response.text
 
 
 def test_download_route_hides_traversal_as_not_found(tmp_path: Path) -> None:
@@ -147,6 +172,8 @@ def test_page_detail_combines_safe_source_and_generated_evidence(
 
     assert detail.status_code == 200
     assert "Page 1" in detail.text
+    assert f'href="/runs/{run_id}"' in detail.text
+    assert "Output Preview" not in detail.text
     assert "hello transcription" in detail.text
     assert "\\lx hello" in detail.text
     assert f"/runs/{run_id}/pages/page_1/source" in detail.text
