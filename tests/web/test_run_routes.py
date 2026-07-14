@@ -132,6 +132,37 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "MDF parsing guide discovery" in response.text
 
 
+def test_run_overview_uses_one_timeline_with_inline_review_action(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = "review-progress"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    app.state.parse_rule_reviews.create_generated(
+        run_id,
+        {
+            "markers": [{"marker": "lx", "description": "Headword"}],
+            "rules": ["Begin each entry with a headword."],
+            "abbreviations": {},
+        },
+        sample_pages=["1"],
+    )
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert 'class="event-list"' not in response.text
+    assert 'class="checkpoint"' not in response.text
+    active_step = response.text.split('class="pipeline-step running"', 1)[1]
+    active_step = active_step.split("</article>", 1)[0]
+    assert "Review MDF parsing guide" in active_step
+    assert f'href="/runs/{run_id}/parse-rules"' in active_step
+
+
 def test_unknown_run_returns_404(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
