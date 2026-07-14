@@ -50,6 +50,25 @@ def test_parse_rule_editor_renders_complete_schema(tmp_path: Path) -> None:
     assert "Approve and continue" in response.text
 
 
+def test_completed_parse_rule_guide_is_read_only_snapshot(tmp_path: Path) -> None:
+    app, client, run_id = _review_app(tmp_path)
+    app.state.parse_rule_reviews.approve(run_id)
+    app.state.run_store.transition(run_id, RunStatus.COMPLETED)
+
+    response = client.get(f"/runs/{run_id}/parse-rules")
+
+    assert response.status_code == 200
+    assert "Immutable approved snapshot" in response.text
+    assert "This completed run cannot be changed" in response.text
+    assert "Headword" in response.text
+    assert "Begin each entry with a headword." in response.text
+    assert 'name="marker_code"' not in response.text
+    assert 'name="rule"' not in response.text
+    assert 'name="abbreviation_key"' not in response.text
+    assert "Save draft" not in response.text
+    assert "Approve and continue MDF parsing" not in response.text
+
+
 def test_structured_editor_saves_normalized_draft(tmp_path: Path) -> None:
     app, client, run_id = _review_app(tmp_path)
 
