@@ -176,6 +176,30 @@ def test_run_overview_recovers_missing_total_and_uses_singular_page(
     assert "1 of 0 pages complete" not in response.text
 
 
+def test_run_overview_counts_resumed_skipped_stage_as_complete(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = "resumed-stage-progress"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    store.append_event(
+        run_id,
+        _event(run_id, 1, "stage.started", "stage1", total_pages=1),
+    )
+    store.append_event(
+        run_id,
+        _event(run_id, 2, "stage.started", "stage2_pass1", total_pages=1),
+    )
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert "1 of 1 page complete" in response.text
+    assert "0 of 1 page complete" not in response.text
+
+
 def test_run_overview_uses_one_timeline_with_inline_review_action(
     tmp_path: Path,
 ) -> None:
