@@ -154,9 +154,14 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .demo-launch { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1136px; margin: 0 auto 40px; padding: 15px 20px; border: 1px solid #b9ddd6; border-radius: 10px; color: #195950; background: var(--color-accent-soft); font-size: 13px; }
 .demo-launch button { padding: 9px 14px; border: 0; border-radius: 7px; color: #fff; background: var(--color-accent); }
 .history-list { padding: 8px 24px; }
-.run-row { display: grid; grid-template-columns: 1fr 170px 240px 100px; align-items: center; gap: 16px; padding: 17px 5px; border-bottom: 1px solid var(--color-line); }
+.run-row { display: grid; grid-template-columns: 1fr 170px 240px 180px; align-items: center; gap: 16px; padding: 17px 5px; border-bottom: 1px solid var(--color-line); }
 .run-row span { color: var(--color-accent); font-weight: 700; }
 .run-row small { color: var(--color-muted); text-align: right; }
+.history-actions { display: flex; justify-content: flex-end; align-items: center; gap: 13px; }
+.history-actions form { margin: 0; }
+.history-delete { padding: 6px 9px; border: 1px solid #df8c81; border-radius: 6px; color: #a33b31; background: #fff; cursor: pointer; }
+.history-delete-all { margin-top: 20px; padding: 20px 4px; border-top: 1px solid var(--color-line); }
+.history-delete-all p { margin: 8px 0 0; color: var(--color-muted); font-size: 12px; }
 .history-filters { display: grid; grid-template-columns: 1fr 190px 190px auto; align-items: end; gap: 12px; margin-bottom: 18px; padding: 18px; }
 .history-filters label { margin: 0; }
 .history-filters input, .history-filters select { width: 100%; margin-top: 7px; padding: 9px 10px; border: 1px solid var(--color-line); border-radius: 7px; background: #fff; }

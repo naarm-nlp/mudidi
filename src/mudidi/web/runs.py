@@ -40,6 +40,22 @@ class ActiveRunExistsError(RuntimeError):
     """Raised when a second inference worker would become active."""
 
 
+_RUN_DELETION_BLOCKED = frozenset(
+    {
+        RunStatus.QUEUED,
+        RunStatus.RUNNING_STAGE1,
+        RunStatus.DISCOVERING_PARSE_RULES,
+        RunStatus.RUNNING_STAGE2,
+    }
+)
+
+
+def can_delete_run(status: RunStatus) -> bool:
+    """Return whether a run has no queued or active worker to protect."""
+
+    return status not in _RUN_DELETION_BLOCKED
+
+
 @dataclass(frozen=True, slots=True)
 class RunRecord:
     """Non-secret persisted metadata for one web run."""
@@ -244,8 +260,8 @@ class RunStore:
             raise KeyError(run_id)
         return _record_from_row(row)
 
-    def delete_terminal(self, run_id: str) -> None:
-        """Delete metadata only for a run that can no longer execute."""
+    def delete_inactive(self, run_id: str) -> None:
+        """Delete metadata only when no worker is queued or active."""
 
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -255,17 +271,32 @@ class RunStore:
             if row is None:
                 raise KeyError(run_id)
             status = RunStatus(row["status"])
-            if status not in {
-                RunStatus.COMPLETED,
-                RunStatus.FAILED,
-                RunStatus.CANCELLED,
-            }:
+            if not can_delete_run(status):
                 connection.rollback()
                 raise InvalidRunTransition(
-                    f"only completed, failed, or cancelled runs can be deleted; got {status.value}"
+                    f"queued or active runs cannot be deleted; got {status.value}"
                 )
             connection.execute("DELETE FROM runs WHERE run_id = ?", (run_id,))
             connection.commit()
+
+    def delete_all_inactive(self) -> list[str]:
+        """Atomically delete every run without a queued or active worker."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            rows = connection.execute("SELECT run_id, status FROM runs").fetchall()
+            run_ids = [
+                str(row["run_id"])
+                for row in rows
+                if can_delete_run(RunStatus(row["status"]))
+            ]
+            if run_ids:
+                connection.executemany(
+                    "DELETE FROM runs WHERE run_id = ?",
+                    [(run_id,) for run_id in run_ids],
+                )
+            connection.commit()
+        return run_ids
 
     def transition(self, run_id: str, target: RunStatus) -> RunRecord:
         """Apply a generic legal transition.

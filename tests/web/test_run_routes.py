@@ -267,3 +267,22 @@ def test_delete_all_history_removes_inactive_runs_but_keeps_active_run(
     assert not app.state.inputs.bundle("remove-validated").parent.exists()
     assert not app.state.inputs.bundle("remove-failed").parent.exists()
     assert app.state.inputs.bundle("keep-active").parent.exists()
+
+
+def test_active_run_has_no_history_remove_action_and_rejects_deletion(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    store.create_run("active-run")
+    store.transition("active-run", RunStatus.VALIDATED)
+    store.transition("active-run", RunStatus.QUEUED)
+    store.transition("active-run", RunStatus.RUNNING_STAGE1)
+    client = TestClient(app)
+
+    history = client.get("/history")
+    deletion = client.post("/runs/active-run/delete")
+
+    assert 'action="/runs/active-run/delete"' not in history.text
+    assert deletion.status_code == 409
+    assert store.get_run("active-run").status is RunStatus.RUNNING_STAGE1

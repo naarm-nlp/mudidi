@@ -1543,7 +1543,6 @@ Examples:
     )
 
     args = resolved_args if resolved_args is not None else parser.parse_args()
-    progress_callback = getattr(args, "progress_callback", None)
     attach_stage_models(args)
 
     if getattr(args, "pages", None):
@@ -1968,6 +1967,8 @@ def _run_samples_dir(args, parser) -> int:
 
 def _run_single_entry(args, parser) -> int:
     """Run extraction for a single entry (snippets directory or source PDF)."""
+
+    progress_callback = getattr(args, "progress_callback", None)
     input_path = Path(args.input_image)
     if not input_path.is_dir() and not (
         input_path.is_file() and input_path.suffix.lower() in _PDF_EXTS

@@ -283,6 +283,14 @@ document.querySelectorAll("[data-confirm-delete]").forEach((form) => {
   });
 });
 
+document.querySelectorAll("[data-confirm-delete-all]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    if (!window.confirm("Delete all inactive runs from local history? Generated output files will be kept.")) {
+      event.preventDefault();
+    }
+  });
+});
+
 const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
 const customManual = document.querySelector("[data-custom-mdf-manual]");
 const synchronizeManual = () => {

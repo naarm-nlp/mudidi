@@ -36,6 +36,7 @@ from mudidi.web.models import (
 )
 from mudidi.web.parse_rules import ParseRuleReviewService
 from mudidi.web.runs import (
+    can_delete_run,
     InvalidRunTransition,
     PresetRecord,
     RunRecord,
@@ -600,7 +601,8 @@ def create_app(
     ) -> HTMLResponse:
         """Render durable newest-first local run history."""
 
-        runs = app.state.run_store.list_runs()
+        all_runs = app.state.run_store.list_runs()
+        runs = all_runs
         query = q.strip().casefold()
         if query:
             runs = [run for run in runs if query in run.run_id.casefold()]
@@ -619,6 +621,7 @@ def create_app(
                 "providers": tuple(
                     provider for provider in Provider if provider is not Provider.CUSTOM
                 ),
+                "has_deletable_runs": any(can_delete_run(run.status) for run in all_runs),
             },
         )
 
@@ -983,16 +986,25 @@ def create_app(
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
 
     @app.post("/runs/{run_id}/delete")
-    async def delete_terminal_run(run_id: str) -> RedirectResponse:
-        """Delete terminal local metadata/inputs while preserving user outputs."""
+    async def delete_inactive_run(run_id: str) -> RedirectResponse:
+        """Delete inactive local metadata/inputs while preserving user outputs."""
 
         try:
-            app.state.run_store.delete_terminal(run_id)
+            app.state.run_store.delete_inactive(run_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
         except InvalidRunTransition as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         app.state.inputs.discard_run(run_id)
+        return RedirectResponse("/history", status_code=303)
+
+    @app.post("/history/delete-all")
+    async def delete_all_history() -> RedirectResponse:
+        """Delete all inactive local run records while preserving user outputs."""
+
+        run_ids = app.state.run_store.delete_all_inactive()
+        for run_id in run_ids:
+            app.state.inputs.discard_run(run_id)
         return RedirectResponse("/history", status_code=303)
 
     @app.post("/runs/{run_id}/resume")
@@ -1433,6 +1445,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         },
         "is_terminal": run.status
         in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},
+        "delete_available": can_delete_run(run.status),
         "review_available": review_row is not None,
         "review_status": review_row.get("status") if review_row else None,
         "resume_available": run.status

@@ -67,7 +67,7 @@
           {% if run.resume_available %}
           <form method="post" action="/runs/{{ run.run_id }}/resume"><button class="primary" type="submit">Resume run</button></form>
           {% endif %}
-          {% if run.is_terminal %}
+          {% if run.delete_available %}
           <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete><button class="danger" type="submit">Delete local run record</button></form>
           {% endif %}
           </div>

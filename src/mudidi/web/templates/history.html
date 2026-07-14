@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Run history · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-3">
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-3" defer></script>
   </head>
   <body class="standalone">
     <main class="providers-page">
@@ -41,19 +42,32 @@
             <a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a>
             <span>{{ run.status_label }}</span>
             <small>{{ run.completed_pages }} of {{ run.total_pages }} pages · {{ run.provider }}</small>
-            {% if run.review_available and run.review_status == 'awaiting_review' %}
-            <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review MDF parsing guide</a>
-            {% elif run.resume_available %}
-            <a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>
-            {% else %}
-            <a class="back-link" href="/runs/{{ run.run_id }}">View</a>
-            {% endif %}
+            <div class="history-actions">
+              {% if run.review_available and run.review_status == 'awaiting_review' %}
+              <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review</a>
+              {% elif run.resume_available %}
+              <a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>
+              {% else %}
+              <a class="back-link" href="/runs/{{ run.run_id }}">View</a>
+              {% endif %}
+              {% if run.delete_available %}
+              <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete>
+                <button class="history-delete" type="submit">Remove</button>
+              </form>
+              {% endif %}
+            </div>
           </article>
           {% endfor %}
         {% else %}
         <div class="empty-state"><h2>No matching runs</h2><p>Change the filters or configure a new production run.</p></div>
         {% endif %}
       </section>
+      {% if has_deletable_runs %}
+      <form class="history-delete-all" method="post" action="/history/delete-all" data-confirm-delete-all>
+        <button class="danger" type="submit">Delete all history</button>
+        <p>Removes inactive dashboard records and managed inputs. Generated output files are kept.</p>
+      </form>
+      {% endif %}
     </main>
   </body>
 </html>
