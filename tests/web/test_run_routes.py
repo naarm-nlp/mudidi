@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -10,6 +11,24 @@ from fastapi.testclient import TestClient
 
 from mudidi.web.app import create_app
 from mudidi.web.runs import RunStatus
+
+
+def _event(
+    run_id: str,
+    sequence: int,
+    event_type: str,
+    stage: str,
+    **details: object,
+) -> dict[str, object]:
+    return {
+        "version": 1,
+        "type": event_type,
+        "run_id": run_id,
+        "sequence": sequence,
+        "occurred_at": datetime(2026, 7, 14, tzinfo=UTC).isoformat(),
+        "stage": stage,
+        **details,
+    }
 
 
 def test_offline_demo_runs_to_completion_and_appears_in_history(
@@ -75,6 +94,45 @@ def test_active_page_links_to_running_job_and_cancel_route(tmp_path: Path) -> No
     assert run_id in active.text
     assert cancelled.status_code == 303
     assert app.state.run_store.get_run(run_id).status is RunStatus.CANCELLED
+
+
+def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = "progress-details"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2))
+    store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
+    store.append_event(run_id, _event(run_id, 3, "page.completed", "stage1", page=2))
+    store.append_event(run_id, _event(run_id, 4, "stage.started", "stage2_pass1"))
+    store.append_event(
+        run_id,
+        _event(
+            run_id,
+            5,
+            "parse_rules.generated",
+            "stage2_pass1",
+            artifact_path="/tmp/mdf_parsing_guide.json",
+        ),
+    )
+    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    store.transition(run_id, RunStatus.AWAITING_PARSE_RULES_REVIEW)
+    store.transition(run_id, RunStatus.RUNNING_STAGE2)
+    store.append_event(
+        run_id, _event(run_id, 6, "stage.started", "stage2_pass2", total_pages=2)
+    )
+    store.append_event(run_id, _event(run_id, 7, "page.started", "stage2_pass2", page=2))
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert "Stage 2 — MDF conversion" in response.text
+    assert "Currently processing: Page 2 of 2" in response.text
+    assert "Stage 1 — Transcription completed" in response.text
+    assert "MDF parsing guide discovery" in response.text
 
 
 def test_unknown_run_returns_404(tmp_path: Path) -> None:
