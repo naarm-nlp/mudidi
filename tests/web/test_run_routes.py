@@ -132,6 +132,36 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "MDF parsing guide discovery" in response.text
 
 
+def test_run_overview_recovers_missing_total_and_uses_singular_page(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = "single-page-progress"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    store.append_event(
+        run_id,
+        _event(run_id, 1, "stage.started", "stage1", total_pages=0),
+    )
+    store.append_event(
+        run_id,
+        _event(run_id, 2, "page.completed", "stage1", page=1),
+    )
+    store.append_event(
+        run_id,
+        _event(run_id, 3, "stage.started", "stage2_pass1"),
+    )
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert "1 of 1 page complete" in response.text
+    assert "1 of 0 pages complete" not in response.text
+
+
 def test_run_overview_uses_one_timeline_with_inline_review_action(
     tmp_path: Path,
 ) -> None:

@@ -50,6 +50,13 @@ def _credential() -> object:
     return vault.resolve(Provider.ANTHROPIC)
 
 
+def test_pdf_page_count_uses_selected_dictionary_range(tmp_path: Path) -> None:
+    pdf = tmp_path / "dictionary.pdf"
+    pdf.touch()
+
+    assert production_worker._page_count(pdf, "10-12,15") == 4
+
+
 def test_complete_production_path_pauses_then_resumes_approved_pass2(
     tmp_path: Path,
 ) -> None:
