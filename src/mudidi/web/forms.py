@@ -261,11 +261,34 @@ class NewRunForm(BaseModel):
     def to_summary(self) -> dict[str, str]:
         """Return concise, non-secret review labels for the UI."""
 
+        runs_stage1 = self.pipeline in {
+            PipelineChoice.COMPLETE,
+            PipelineChoice.TRANSCRIPTION,
+        }
+        runs_stage2 = self.pipeline in {
+            PipelineChoice.COMPLETE,
+            PipelineChoice.STRUCTURE,
+        }
+        default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
+        parse_rule_pages = "Not used"
+        if runs_stage2:
+            parse_rule_pages = (
+                ", ".join(self.parse_rules_pages)
+                if self.parse_rules_pages
+                else "Automatic selection"
+            )
+        stage1_summary = (stage1_model or default_model) if runs_stage1 else "Not used"
+        pass1_summary = (pass1_model or default_model) if runs_stage2 else "Not used"
+        pass2_summary = (pass2_model or default_model) if runs_stage2 else "Not used"
         return {
             "input": str(self.pages),
             "output": str(self.output_directory),
             "pipeline": self.pipeline.value,
-            "model": self._stage_models()[0],
+            "dictionary_pages": self.dictionary_pages or "All provided pages",
+            "parse_rule_pages": parse_rule_pages,
+            "stage_1_model": stage1_summary,
+            "stage_2_pass_1_model": pass1_summary,
+            "stage_2_pass_2_model": pass2_summary,
             "agentic": self._agentic_summary(),
             "mdf_manual": {
                 "none": "Not used",

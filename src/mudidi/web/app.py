@@ -1238,11 +1238,38 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
         if enabled
     ]
     manual = config.input.toolbox_pdf
+    runs_stage1 = config.pipeline.stage in {"1", "all"}
+    runs_stage2 = config.pipeline.stage in {
+        "2",
+        "all",
+        "2-pass-1",
+        "2-pass-2",
+    }
+    parse_rule_pages = "Not used"
+    if runs_stage2:
+        parse_rule_pages = (
+            ", ".join(config.pipeline.parse_rules_pages)
+            if config.pipeline.parse_rules_pages
+            else "Automatic selection"
+        )
+    stage1_summary = (
+        config.models.stage1 or config.models.default
+    ) if runs_stage1 else "Not used"
+    pass1_summary = (
+        config.models.stage2_pass1 or config.models.default
+    ) if runs_stage2 else "Not used"
+    pass2_summary = (
+        config.models.stage2_pass2 or config.models.default
+    ) if runs_stage2 else "Not used"
     return {
         "input": str(config.input.pages),
         "output": str(config.output.directory),
         "pipeline": str(config.pipeline.stage),
-        "model": config.models.default,
+        "dictionary_pages": config.input.dictionary_pages or "All provided pages",
+        "parse_rule_pages": parse_rule_pages,
+        "stage_1_model": stage1_summary,
+        "stage_2_pass_1_model": pass1_summary,
+        "stage_2_pass_2_model": pass2_summary,
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",
         "additional_instructions": ", ".join(
             label
