@@ -75,9 +75,11 @@
             </div>
             <label for="output">Output directory</label>
             <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
-            <label>Existing output policy
-              <select name="output_policy"><option value="resume" selected>Resume compatible existing artifacts</option><option value="overwrite">Overwrite existing artifacts</option></select>
-            </label>
+            <fieldset class="choice-group pipeline-choices output-policy-choices">
+              <legend>Existing output policy</legend>
+              <label><input type="radio" name="output_policy" value="resume" checked> <span>Resume compatible existing artifacts</span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>
+              <label><input type="radio" name="output_policy" value="overwrite"> <span>Overwrite existing artifacts</span><button class="info-button" type="button" aria-label="About overwriting existing artifacts" data-help="Replaces existing artifacts and reruns the selected work. Use this when inputs, models, instructions, or settings changed, or when you intentionally want fresh outputs.">i</button></label>
+            </fieldset>
             <fieldset class="choice-group pipeline-choices" data-pipeline-select>
               <legend>Pipeline</legend>
               <label><input type="radio" name="pipeline" value="complete" checked> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
