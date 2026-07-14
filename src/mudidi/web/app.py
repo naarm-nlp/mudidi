@@ -16,6 +16,7 @@ from fastapi.responses import (
     JSONResponse,
     PlainTextResponse,
     RedirectResponse,
+    Response,
     StreamingResponse,
 )
 from fastapi.staticfiles import StaticFiles
@@ -758,37 +759,22 @@ def create_app(
         )
 
     @app.get("/runs/{run_id}/pages", response_class=HTMLResponse)
-    async def run_pages(request: Request, run_id: str) -> HTMLResponse:
-        """Render bounded Stage 1 and Stage 2 text grouped by source page."""
+    async def run_pages(request: Request, run_id: str) -> Response:
+        """Open the page editor at the first processed page or show an empty state."""
 
         try:
             pages = app.state.artifacts.list_pages(run_id)
-            page_views = [
-                {
-                    "page_id": page.page_id,
-                    "stage1": (
-                        app.state.artifacts.preview_text(
-                            run_id, page.stage1.relative_path
-                        )
-                        if page.stage1
-                        else None
-                    ),
-                    "stage2": (
-                        app.state.artifacts.preview_text(
-                            run_id, page.stage2.relative_path
-                        )
-                        if page.stage2
-                        else None
-                    ),
-                }
-                for page in pages
-            ]
         except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run pages not found") from exc
+        if pages:
+            return RedirectResponse(
+                f"/runs/{run_id}/pages/{pages[0].page_id}",
+                status_code=303,
+            )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="pages.html",
-            context={"run_id": run_id, "pages": page_views},
+            context={"run_id": run_id},
         )
 
     @app.get("/runs/{run_id}/pages/{page_id}", response_class=HTMLResponse)

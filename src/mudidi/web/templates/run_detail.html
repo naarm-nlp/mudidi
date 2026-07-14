@@ -78,7 +78,7 @@
           <nav class="detail-tabs">
             <a class="active" href="#">Overview</a>
             {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
-            <a href="/runs/{{ run.run_id }}/pages">Output Preview</a>
+            <a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>
             <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
             <a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>
             <a href="/runs/{{ run.run_id }}/usage">Usage</a>

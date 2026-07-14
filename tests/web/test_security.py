@@ -80,6 +80,7 @@ def test_llm_derived_page_text_is_html_escaped(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     pages = tmp_path / "pages"
     pages.mkdir()
+    (pages / "page_1.png").write_bytes(b"safe source image")
     output = tmp_path / "output"
     from mudidi.config.yaml_config import InferenceConfig
     from mudidi.web.models import Provider
