@@ -33,7 +33,7 @@ def run_server(
         raise ValueError("port must be between 1 and 65535")
 
     load_dotenv()
-    app = create_app(data_dir=data_dir)
+    app = create_app(data_dir=data_dir, container_mode=container_mode)
     if open_browser:
         url = f"http://{host}:{port}/"
         threading.Timer(0.8, webbrowser.open, args=(url,)).start()

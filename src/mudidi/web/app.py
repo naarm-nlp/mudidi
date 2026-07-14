@@ -79,6 +79,7 @@ def create_app(
     credential_vault: CredentialVault | None = None,
     offline_inference: bool = False,
     model_discovery: ModelDiscovery | None = None,
+    container_mode: bool = False,
 ) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
@@ -86,6 +87,8 @@ def create_app(
         data_dir: Directory reserved for web metadata and managed uploads. The
             directory is created eagerly so startup fails before serving when
             it is not writable.
+        container_mode: Permit the local host aliases used to reach the app
+            through Docker Desktop. Arbitrary host headers remain rejected.
 
     Returns:
         Configured FastAPI application.
@@ -128,10 +131,12 @@ def create_app(
     app.state.inputs.reconcile(
         {run.run_id for run in app.state.run_store.list_runs()}
     )
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=["127.0.0.1", "localhost", "testserver"],
-    )
+    allowed_hosts = ["127.0.0.1", "localhost", "testserver"]
+    if container_mode:
+        allowed_hosts.extend(
+            ["0.0.0.0", "host.docker.internal", "docker.for.mac.localhost"]
+        )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
     @app.middleware("http")
     async def localhost_security(request: Request, call_next: object) -> object:
