@@ -47,6 +47,19 @@ See the
 **[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
 for startup, shutdown, logs, persistence, and troubleshooting.
 
+### Web dashboard with uv
+
+For a native Python installation instead of Docker, install the web extra and
+start the dashboard:
+
+```bash
+uv sync --frozen --extra web
+uv run mudidi web
+```
+
+MUDIDI opens <http://127.0.0.1:8000>. Use `--no-browser` to prevent it from
+opening a browser automatically, or `--port 8080` to choose another local port.
+
 ### CLI and YAML workflows with uv (recommended)
 
 ### Install uv on macOS or Linux
