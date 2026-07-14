@@ -154,6 +154,53 @@ def test_page_detail_combines_safe_source_and_generated_evidence(
     assert source.content == b"safe source image"
 
 
+def test_page_editor_saves_stage_outputs_to_existing_artifacts(tmp_path: Path) -> None:
+    _app, client, run_id, output = _prepared_app(tmp_path)
+
+    response = client.post(
+        f"/runs/{run_id}/pages/page_1/edit",
+        data={
+            "stage1_text": "corrected transcription\nsecond line",
+            "stage2_text": "\\lx corrected\n\\ge revised gloss",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].endswith("/pages/page_1?saved=1")
+    assert (output / "stage-1/page_1/page_1_stage1_flat.txt").read_text(
+        encoding="utf-8"
+    ) == "corrected transcription\nsecond line"
+    assert (output / "stage-2/page_1/page_1.mdf.txt").read_text(
+        encoding="utf-8"
+    ) == "\\lx corrected\n\\ge revised gloss"
+
+
+def test_page_editor_has_natural_slider_navigation_and_no_event_panel(
+    tmp_path: Path,
+) -> None:
+    _app, client, run_id, output = _prepared_app(tmp_path)
+    pages = tmp_path / "pages"
+    for number in (2, 10):
+        (pages / f"page_{number}.png").write_bytes(b"safe source image")
+        stage1 = output / f"stage-1/page_{number}"
+        stage1.mkdir(parents=True)
+        (stage1 / f"page_{number}_stage1_flat.txt").write_text(
+            f"page {number}", encoding="utf-8"
+        )
+
+    response = client.get(f"/runs/{run_id}/pages/page_2")
+
+    assert response.status_code == 200
+    assert "Page events" not in response.text
+    assert 'type="range"' in response.text
+    assert 'min="0"' in response.text
+    assert 'max="2"' in response.text
+    assert 'value="1"' in response.text
+    assert f'href="/runs/{run_id}/pages/page_1"' in response.text
+    assert f'href="/runs/{run_id}/pages/page_10"' in response.text
+
+
 def test_page_detail_uses_source_pdf_for_pdf_backed_output(
     tmp_path: Path,
 ) -> None:
@@ -189,9 +236,13 @@ def test_page_detail_uses_source_pdf_for_pdf_backed_output(
 
     assert detail.status_code == 200
     assert "PDF transcription" in detail.text
-    assert "Open source PDF" in detail.text
+    assert '<iframe class="source-document"' in detail.text
+    assert f'/runs/{run_id}/pages/page_34/source#page=34' in detail.text
+    assert "Page events" not in detail.text
     assert source.status_code == 200
     assert source.content == source_pdf.read_bytes()
+    assert source.headers["x-frame-options"] == "SAMEORIGIN"
+    assert "frame-ancestors 'self'" in source.headers["content-security-policy"]
 
 
 def test_source_page_route_rejects_unknown_or_unsafe_page(tmp_path: Path) -> None:
