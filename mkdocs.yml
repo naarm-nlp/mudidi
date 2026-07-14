@@ -37,7 +37,7 @@ nav:
       - uv environments: uv.md
   - Production Inference:
       - Overview: production/index.md
-      - Web dashboard (Docker): production/local-web-app.md
+      - Local web dashboard: production/local-web-app.md
   - Benchmarking & Evaluation:
       - Overview: benchmarking/index.md
       - Advanced VLM backends: benchmarking/vlm.md

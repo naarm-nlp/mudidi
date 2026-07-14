@@ -4,7 +4,7 @@ MUDIDI includes a localhost dashboard for production inference without YAML or
 CLI flags. The pipeline and files stay on the computer running MUDIDI; only
 model requests are sent to the selected provider.
 
-## Docker setup and launch
+## Start the dashboard
 
 ### Docker (recommended)
 
@@ -51,7 +51,25 @@ If Docker reports that it cannot connect to the Docker daemon, start Docker
 Desktop (macOS or Windows) or the Docker service (Linux), wait until the engine
 is ready, and repeat the Compose command.
 
-## Native dashboard alternative
+### Native dashboard with uv
+
+Native runs use the tools installed on the host computer. Install `pdftk` before
+processing a multi-page PDF:
+
+=== "macOS"
+
+    ```bash
+    brew install pdftk-java
+    ```
+
+=== "Ubuntu or WSL2"
+
+    ```bash
+    sudo apt update
+    sudo apt install -y pdftk-java
+    ```
+
+Then install the web dependencies and start MUDIDI:
 
 ```bash
 uv sync --frozen --extra web
@@ -62,6 +80,10 @@ Save the API key for your model provider under **API credentials** on the
 **New Run** screen by clicking **Save key** beside that provider.
 MUDIDI opens `http://127.0.0.1:8000`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
+
+`uv` installs MUDIDI's Python dependencies, but it does not install operating
+system programs such as `pdftk`. Docker already includes `pdftk-java` in its
+image.
 
 ## Create a run
 
@@ -76,7 +98,9 @@ The **New Run** screen asks you to:
 4. Choose a provider, model, and independent reasoning level for each active
    stage.
 5. Optionally enable **Agentic verification**.
-6. Review the resolved configuration and start.
+6. Review the resolved configuration and start. The review includes the
+   selected dictionary pages, representative parsing-guide pages, Stage 1
+   model, Stage 2 Pass 1 model, and Stage 2 Pass 2 model.
 
 Browser-selected inputs are copied into an input bundle owned by the run. This
 allows review, restart, and resume without depending on the original browser
@@ -98,7 +122,9 @@ asks for:
 - the information types found in entries.
 
 Leave the whole section blank when you are unsure. The profile is guidance, not
-source text, and MUDIDI still checks the scanned page.
+source text, and MUDIDI still checks the scanned page. It does not strictly
+limit discovery to the information types you enter: the model may identify
+additional entry structures and rules visible in the dictionary.
 
 ## Additional context
 
@@ -171,6 +197,24 @@ uses automatic routing.
 Selecting **None / lowest supported** reasoning resolves to `low`; MUDIDI only
 sends reasoning controls to model families known to support them.
 
+## Complete-digitization workflow
+
+For a complete run, the dashboard displays these steps in execution order:
+
+1. **Stage 1 — Transcription** processes all selected dictionary pages.
+2. **MDF parsing guide discovery** samples the configured representative pages
+   from the Stage 1 transcriptions. If no pages were specified, MUDIDI selects
+   them automatically.
+3. **Review parsing guide** pauses the run for human review and approval.
+4. **Stage 2 — MDF conversion** converts each Stage 1 transcription into MDF
+   using the approved guide snapshot.
+
+The Overview reports the active stage, completed-page count, current page, and
+failure details. Updates arrive while the run is active. Select **Cancel run**
+to interrupt an active worker. An interrupted run can be resumed from its safe
+checkpoint, and compatible completed artifacts are reused when the output
+policy is **Resume**.
+
 ## MDF parsing guide review checkpoint
 
 Complete and MDF-parsing runs pause when Stage 2 **infers** an MDF parsing guide.
@@ -181,6 +225,12 @@ Saving a draft is not approval. Page parsing cannot start without a server-minte
 approval bound to the exact run, review version, immutable snapshot, digest, and
 approval time.
 
+After approval, the dashboard page becomes read-only. It shows the immutable
+snapshot actually used by Stage 2; editing it after the run finishes cannot
+change the completed output or the guide used by a future run. To reuse revised
+rules, save or upload the intended parsing-guide JSON when configuring a new
+run.
+
 A user-uploaded existing MDF parsing guide follows a different path: MUDIDI
 copies it into the run-owned input bundle, validates its JSON and marker format,
 and uses it directly without Pass 1 discovery or a human checkpoint. The guide
@@ -188,16 +238,40 @@ is validated again when Stage 2 loads it. Uploading a guide therefore means the
 user is supplying the intended parsing rules, while malformed files still fail
 safely before MDF parsing.
 
-## Monitor and inspect
+## Monitor, inspect, and correct pages
 
 Run views include:
 
 - **Overview** — durable status, progress, resume, and cancellation.
-- **MDF parsing guide** — structured Stage 2 guide review and approval.
-- **Output Preview** — bounded Stage 1 and Stage 2 previews.
+- **MDF parsing guide** — structured review before approval and the read-only
+  approved snapshot afterward.
+- **Page Viewer & Editor** — the rendered source page beside editable generated
+  text, with previous/next controls and a slider across processed pages.
 - **Live Logs** — bounded diagnostics with known keys redacted.
 - **File Artifacts** — downloads constrained to the validated output directory.
 - **Usage** — reported token and cost totals.
+
+The Page Viewer & Editor becomes useful before the whole pipeline finishes:
+
+- when only Stage 1 exists for a page, it shows the source and Stage 1
+  transcription;
+- when Stage 2 finishes that page, it shows both Stage 1 and Stage 2 MDF;
+- newly completed pages become available automatically while a run is active;
+- only processed pages appear in the slider.
+
+Saving changes replaces the corresponding Stage 1 and/or Stage 2 text file in
+the run's configured output directory. A Stage 1 correction does **not**
+regenerate an existing Stage 2 file, so correct Stage 2 separately or rerun MDF
+conversion when consistency matters. Avoid editing the page currently being
+written by the worker because its output may replace your change.
+
+## Run history
+
+Run history can be searched by run ID and filtered by status or provider. Each
+inactive run has a **Remove** action directly in the list, and **Delete all
+history** removes all inactive dashboard records and their managed inputs.
+These actions do not delete generated files from the configured output
+directory. Active runs must first finish or be cancelled.
 
 Runs and events survive restart. A run active when the app stopped becomes
 interrupted and must be resumed explicitly. Presets own independent copies of
@@ -240,8 +314,10 @@ Override the complete data directory with:
 uv run mudidi web --data-dir path/to/private-app-data
 ```
 
-Generated dictionary files remain in the selected output directory. The first
-release permits one inference worker at a time.
+Generated dictionary files remain in the selected output directory. In Docker,
+paths under `/data` are persisted in the host's `mudidi-data/` directory. With
+`uv`, output paths refer directly to the host filesystem. The first release
+permits one inference worker at a time.
 
 ## Troubleshooting
 
@@ -253,6 +329,16 @@ release permits one inference worker at a time.
 - **Interrupted** — inspect the run and explicitly resume it.
 - **Request body too large** — select a smaller input set or split the source
   before creating the run.
+- **`pdftk is not available on PATH` / `extraction returned 1`** — a native
+  `uv` run cannot split a multi-page PDF until `pdftk-java` is installed. Use
+  `brew install pdftk-java` on macOS or `sudo apt install -y pdftk-java` on
+  Ubuntu/WSL2, then restart the dashboard and create a new run.
+- **Address already in use on `127.0.0.1:8000`** — another dashboard process is
+  already listening. On macOS or Linux, inspect it with
+  `lsof -nP -iTCP:8000 -sTCP:LISTEN`, stop the listed process with `kill PID`,
+  or start MUDIDI on another port with `uv run mudidi web --port 8080`.
+- **Docker cannot connect to the daemon** — start Docker Desktop or the Docker
+  service and wait for `docker info` to succeed.
 
 For advanced options omitted from the dashboard, use the
 [YAML configuration guide](../getting-started/configuration.md) and
