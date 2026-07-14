@@ -106,9 +106,21 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="mathpix_max_wait_seconds"' not in response.text
     assert 'name="output_policy"' in response.text
     assert "Require a new or empty directory" not in response.text
-    assert '<option value="resume" selected>' in response.text
+    assert (
+        '<input type="radio" name="output_policy" value="resume" checked>'
+        in response.text
+    )
     assert "Resume compatible existing artifacts" in response.text
-    assert '<option value="overwrite">Overwrite existing artifacts</option>' in response.text
+    assert (
+        '<input type="radio" name="output_policy" value="overwrite">'
+        in response.text
+    )
+    assert "Overwrite existing artifacts" in response.text
+    assert 'aria-label="About resuming existing artifacts"' in response.text
+    assert 'aria-label="About overwriting existing artifacts"' in response.text
+    assert "after an interrupted run" in response.text
+    assert "inputs, models, instructions, or settings changed" in response.text
+    assert '<select name="output_policy">' not in response.text
     assert "Dictionary Profile (optional)" in response.text
     assert "can improve extraction accuracy" in response.text
     assert 'name="profile_headword_language"' in response.text
