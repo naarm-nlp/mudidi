@@ -22,7 +22,11 @@ Windows, and Linux without requiring a separate Python, uv, or `pdftk`
 installation. Install [Docker Desktop](https://docs.docker.com/desktop/) on
 macOS or Windows, or Docker Engine with the Compose plugin on Linux.
 
-Clone the repository, open a terminal in it, and run:
+Before running MUDIDI, make sure Docker is running: start Docker Desktop on
+macOS or Windows, or start the Docker daemon on Linux, and wait until the
+Docker engine is ready. You can verify it with `docker info`.
+
+Then clone the repository, open a terminal in it, and run:
 
 ```bash
 docker compose up --build
