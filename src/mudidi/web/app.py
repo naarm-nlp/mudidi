@@ -1460,6 +1460,7 @@ def _render_parse_rule_editor(
     try:
         review = app.state.parse_rule_reviews.get(run_id)
         payload = app.state.parse_rule_reviews.load_editable_payload(run_id)
+        run = app.state.run_store.get_run(run_id)
     except KeyError as exc:
         raise HTTPException(
             status_code=404, detail="MDF parsing guide review not found"
@@ -1475,6 +1476,7 @@ def _render_parse_rule_editor(
         name="parse_rules.html",
         context={
             "run_id": run_id,
+            "run": run,
             "review": review,
             "markers": markers or [{"marker": "", "description": ""}],
             "rules": rules or [""],
