@@ -51,6 +51,12 @@ _MAX_REQUEST_BYTES = 25 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
 _ALLOW_SAME_ORIGIN_FRAME_HEADER = "X-MUDIDI-Allow-Same-Origin-Frame"
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_LIVE_RUN_STATUSES = {
+    RunStatus.QUEUED,
+    RunStatus.RUNNING_STAGE1,
+    RunStatus.DISCOVERING_PARSE_RULES,
+    RunStatus.RUNNING_STAGE2,
+}
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
@@ -763,6 +769,8 @@ def create_app(
         """Open the page editor at the first processed page or show an empty state."""
 
         try:
+            run = app.state.run_store.get_run(run_id)
+            events = app.state.run_store.list_events(run_id)
             pages = app.state.artifacts.list_pages(run_id)
         except (ArtifactAccessError, KeyError, OSError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run pages not found") from exc
@@ -774,7 +782,14 @@ def create_app(
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="pages.html",
-            context={"run_id": run_id},
+            context={
+                "run_id": run_id,
+                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "last_event_sequence": max(
+                    (int(event.get("sequence", 0)) for event in events),
+                    default=0,
+                ),
+            },
         )
 
     @app.get("/runs/{run_id}/pages/{page_id}", response_class=HTMLResponse)
@@ -782,6 +797,8 @@ def create_app(
         """Render source and editable generated text for one processed page."""
 
         try:
+            run = app.state.run_store.get_run(run_id)
+            events = app.state.run_store.list_events(run_id)
             pages = app.state.artifacts.list_pages(run_id)
             page = next(
                 item
@@ -834,6 +851,11 @@ def create_app(
                     pages[page_index + 1] if page_index + 1 < len(pages) else None
                 ),
                 "saved": request.query_params.get("saved") == "1",
+                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "last_event_sequence": max(
+                    (int(event.get("sequence", 0)) for event in events),
+                    default=0,
+                ),
             },
         )
 
@@ -1080,7 +1102,10 @@ def create_app(
             app.state.run_store.get_run(run_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
-        last_header = request.headers.get("last-event-id", "0")
+        last_header = request.query_params.get(
+            "after",
+            request.headers.get("last-event-id", "0"),
+        )
         try:
             last_sequence = max(0, int(last_header))
         except ValueError:
@@ -1498,14 +1523,13 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "current_page": current_page,
         "pipeline_steps": _pipeline_steps(events, run.status),
         "events": events,
+        "last_event_sequence": max(
+            (int(event.get("sequence", 0)) for event in events),
+            default=0,
+        ),
         "failure_message": _failure_message(events),
         "created_at": run.created_at,
-        "is_active": run.status
-        in {
-            RunStatus.RUNNING_STAGE1,
-            RunStatus.DISCOVERING_PARSE_RULES,
-            RunStatus.RUNNING_STAGE2,
-        },
+        "is_active": run.status in _LIVE_RUN_STATUSES,
         "is_terminal": run.status
         in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},
         "delete_available": can_delete_run(run.status),
@@ -1583,13 +1607,26 @@ def _pipeline_steps(
         totals.get("stage1", 0) > 0
         and completed_by_stage.get("stage1", 0) >= totals["stage1"]
     )
+    stage1_completed = (
+        totals.get("stage1", 0)
+        if stage1_done
+        else completed_by_stage.get("stage1", 0)
+    )
+    stage2_done = (
+        status is RunStatus.COMPLETED and "stage2_pass2" in started_stages
+    )
+    stage2_completed = (
+        totals.get("stage2_pass2", 0)
+        if stage2_done
+        else completed_by_stage.get("stage2_pass2", 0)
+    )
     return [
         {
             "label": "Stage 1 — Transcription",
             "state": "completed" if stage1_done else "running" if status is RunStatus.RUNNING_STAGE1 else "pending",
             "detail": (
                 _page_progress_detail(
-                    completed_by_stage.get("stage1", 0), totals.get("stage1", 0)
+                    stage1_completed, totals.get("stage1", 0)
                 )
                 if "stage1" in started_stages
                 else ""
@@ -1607,10 +1644,10 @@ def _pipeline_steps(
         },
         {
             "label": "Stage 2 — MDF conversion",
-            "state": "completed" if status is RunStatus.COMPLETED and "stage2_pass2" in started_stages else "running" if status is RunStatus.RUNNING_STAGE2 else "pending",
+            "state": "completed" if stage2_done else "running" if status is RunStatus.RUNNING_STAGE2 else "pending",
             "detail": (
                 _page_progress_detail(
-                    completed_by_stage.get("stage2_pass2", 0),
+                    stage2_completed,
                     totals.get("stage2_pass2", 0),
                 )
                 if "stage2_pass2" in started_stages

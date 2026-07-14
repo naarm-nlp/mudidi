@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}
     <title>Page {{ page_id.removeprefix('page_') }} editor · MUDIDI</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=page-editor-1">
     <script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>

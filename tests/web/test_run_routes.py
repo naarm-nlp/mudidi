@@ -196,8 +196,10 @@ def test_run_overview_counts_resumed_skipped_stage_as_complete(tmp_path: Path) -
     response = TestClient(app).get(f"/runs/{run_id}")
 
     assert response.status_code == 200
-    assert "1 of 1 page complete" in response.text
-    assert "0 of 1 page complete" not in response.text
+    stage1_step = response.text.split("Stage 1 — Transcription", 1)[1]
+    stage1_step = stage1_step.split("</article>", 1)[0]
+    assert "1 of 1 page complete" in stage1_step
+    assert "0 of 1 page complete" not in stage1_step
 
 
 def test_run_overview_uses_one_timeline_with_inline_review_action(

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events">{% endif %}
+    {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endif %}
     <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-2" defer></script>
     <title>{{ run.run_id }} · MUDIDI</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-2">
