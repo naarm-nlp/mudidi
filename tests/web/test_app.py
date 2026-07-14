@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
@@ -170,6 +171,33 @@ def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
 
 def test_untrusted_host_is_rejected(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/", headers={"host": "attacker.example"})
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "host",
+    [
+        "0.0.0.0:8000",
+        "host.docker.internal:8000",
+        "docker.for.mac.localhost:8000",
+    ],
+)
+def test_container_mode_accepts_docker_loopback_hosts(
+    tmp_path: Path,
+    host: str,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path, container_mode=True))
+
+    response = client.get("/", headers={"host": host})
+
+    assert response.status_code == 200
+
+
+def test_container_mode_still_rejects_untrusted_hosts(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path, container_mode=True))
 
     response = client.get("/", headers={"host": "attacker.example"})
 

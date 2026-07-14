@@ -111,3 +111,27 @@ def test_container_mode_binds_inside_container_without_opening_browser(
 
     assert result == 0
     assert calls == [{"host": "0.0.0.0", "port": 8000, "workers": 1}]
+
+
+def test_container_mode_configures_the_application_for_docker_hosts(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    create_calls: list[dict[str, object]] = []
+
+    def fake_create_app(**kwargs: object) -> object:
+        create_calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr("mudidi.web.app.create_app", fake_create_app)
+    monkeypatch.setattr("uvicorn.run", lambda *_args, **_kwargs: None)
+
+    run_server(
+        host="127.0.0.1",
+        port=8000,
+        data_dir=tmp_path,
+        open_browser=False,
+        container_mode=True,
+    )
+
+    assert create_calls == [{"data_dir": tmp_path, "container_mode": True}]
