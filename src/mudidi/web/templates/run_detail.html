@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events">{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-1" defer></script>
+    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-2" defer></script>
     <title>{{ run.run_id }} · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-2">
   </head>
   <body class="standalone">
     <main class="providers-page">
@@ -20,43 +20,47 @@
         <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} pages{% endif %}</p>
       </header>
       <div class="content-grid">
-        <section class="panel review-card">
-          <h2>Progress</h2>
+        <section class="panel review-card run-progress-card">
+          <div class="progress-heading">
+            <div>
+              <span class="eyebrow">Pipeline progress</span>
+              <h2>{{ run.current_stage_label }}</h2>
+            </div>
+          </div>
+          {% if run.total_pages %}
+          <div class="progress-summary">
+            <span>{{ run.completed_pages }} of {{ run.total_pages }} pages complete</span>
+            <strong>{{ ((run.completed_pages / run.total_pages) * 100) | round | int }}%</strong>
+          </div>
           <div class="progress-track"><span style="width: {{ (run.completed_pages / run.total_pages * 100) if run.total_pages else 0 }}%"></span></div>
           {% if run.current_page and run.total_pages %}
           <p class="progress-current">Currently processing: Page {{ run.current_page }} of {{ run.total_pages }}</p>
           {% endif %}
-          <div class="pipeline-steps">
+          {% endif %}
+          <div class="pipeline-steps" role="list" aria-label="Pipeline stages">
             {% for step in run.pipeline_steps %}
-            <article class="pipeline-step {{ step.state }}">
-              <strong>{{ '✓' if step.state == 'completed' else '●' if step.state == 'running' else '○' }} {{ step.label }}{% if step.state == 'completed' %} completed{% endif %}</strong>
-              {% if step.detail %}<span>{{ step.detail }}</span>{% endif %}
+            <article class="pipeline-step {{ step.state }}" role="listitem">
+              <span class="pipeline-marker" aria-hidden="true">{{ '✓' if step.state == 'completed' else '' }}</span>
+              <div class="pipeline-step-content">
+                <div class="pipeline-step-heading">
+                  <strong>{{ step.label }}</strong>
+                  <span class="pipeline-state">{{ 'Complete' if step.state == 'completed' else 'In progress' if step.state == 'running' else 'Next' }}</span>
+                </div>
+                {% if step.detail %}<p>{{ step.detail }}</p>{% endif %}
+                {% if step.label == 'Review parsing guide' and step.state == 'running' and run.review_available %}
+                <a class="primary pipeline-action" href="/runs/{{ run.run_id }}/parse-rules">Review MDF parsing guide →</a>
+                {% endif %}
+              </div>
             </article>
             {% endfor %}
           </div>
-          {% if run.review_available and run.review_status == 'awaiting_review' %}
-          <div class="checkpoint">
-            <strong>The MDF parsing guide is ready for review</strong>
-            <p>MDF page parsing cannot begin until you explicitly approve this guide.</p>
-            <a class="link-button" href="/runs/{{ run.run_id }}/parse-rules">Review MDF parsing guide →</a>
-          </div>
-          {% endif %}
           {% if run.failure_message %}
           <div class="failure-details" role="alert">
             <strong>Failure details</strong>
             <p>{{ run.failure_message }}</p>
           </div>
           {% endif %}
-          <div class="event-list">
-            {% for event in run.events %}
-            <article>
-              <code>#{{ event.sequence }}</code>
-              <strong>{{ event.display_type }}</strong>
-              {% if event.page %}<span>Page {{ event.page }}</span>{% endif %}
-              {% if event.message %}<span>{{ event.message }}</span>{% endif %}
-            </article>
-            {% endfor %}
-          </div>
+          <div class="run-actions">
           {% if run.is_active %}
           <form method="post" action="/runs/{{ run.run_id }}/cancel"><button class="danger" type="submit">Cancel run</button></form>
           {% endif %}
@@ -66,6 +70,7 @@
           {% if run.is_terminal %}
           <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete><button class="danger" type="submit">Delete local run record</button></form>
           {% endif %}
+          </div>
         </section>
         <aside class="panel summary">
           <span class="eyebrow">Run tabs</span>

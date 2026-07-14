@@ -1415,7 +1415,11 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "provider": run.provider or "Not selected",
         "completed_pages": completed_pages,
         "total_pages": total_pages,
-        "current_stage_label": _stage_label(active_stage),
+        "current_stage_label": (
+            "Review parsing guide"
+            if run.status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+            else _stage_label(active_stage)
+        ),
         "current_page": current_page,
         "pipeline_steps": _pipeline_steps(events, run.status),
         "events": events,

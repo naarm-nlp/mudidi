@@ -128,7 +128,7 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert response.status_code == 200
     assert "Stage 2 — MDF conversion" in response.text
     assert "Currently processing: Page 2 of 2" in response.text
-    assert "Stage 1 — Transcription completed" in response.text
+    assert "Stage 1 — Transcription" in response.text
     assert "MDF parsing guide discovery" in response.text
 
 
@@ -157,6 +157,7 @@ def test_run_overview_uses_one_timeline_with_inline_review_action(
     assert response.status_code == 200
     assert 'class="event-list"' not in response.text
     assert 'class="checkpoint"' not in response.text
+    assert "<h2>Review parsing guide</h2>" in response.text
     active_step = response.text.split('class="pipeline-step running"', 1)[1]
     active_step = active_step.split("</article>", 1)[0]
     assert "Review MDF parsing guide" in active_step
