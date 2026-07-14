@@ -77,6 +77,20 @@ def test_event_stream_replays_persisted_events_as_sse(tmp_path: Path) -> None:
     assert json.loads(data_lines[-1])["type"] == "run.completed"
 
 
+def test_event_stream_can_start_after_the_latest_persisted_event(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    client = TestClient(app)
+    started = client.post("/runs/demo", data={"page_count": "1"})
+    run_id = started.url.path.rsplit("/", 1)[-1]
+    app.state.job_controller.wait(run_id, timeout=5)
+    latest = app.state.run_store.list_events(run_id)[-1]["sequence"]
+
+    response = client.get(f"/runs/{run_id}/events?after={latest}")
+
+    assert response.status_code == 200
+    assert response.text == ""
+
+
 def test_active_page_links_to_running_job_and_cancel_route(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path)
     client = TestClient(app)

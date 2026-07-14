@@ -155,7 +155,7 @@ def test_page_viewer_entry_keeps_empty_state_when_no_pages_exist(
     assert response.status_code == 200
     assert "Page Viewer &amp; Editor" in response.text
     assert "No page outputs yet" in response.text
-    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events">' in response.text
+    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events?after=0">' in response.text
 
 
 def test_page_viewer_refreshes_as_outputs_arrive_during_stage1(
@@ -176,7 +176,7 @@ def test_page_viewer_refreshes_as_outputs_arrive_during_stage1(
     response = client.get(f"/runs/{run_id}/pages/page_1")
 
     assert response.status_code == 200
-    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events">' in response.text
+    assert f'<meta name="mudidi-events" content="/runs/{run_id}/events?after=0">' in response.text
     assert 'max="1"' in response.text
     assert "second transcription" not in response.text
 
