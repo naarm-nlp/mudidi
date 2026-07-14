@@ -1370,15 +1370,40 @@ def _all_models(app: FastAPI) -> tuple[object, ...]:
 
 
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
-    events = [
-        {**event, "display_type": _event_label(str(event.get("type", "")))}
-        for event in store.list_events(run.run_id)
-    ]
-    completed_pages = sum(event.get("type") == "page.completed" for event in events)
+    events = store.list_events(run.run_id)
+    for event in events:
+        event["display_type"] = _event_label(
+            str(event.get("type", "")), str(event.get("stage", ""))
+        )
+    active_stage = {
+        RunStatus.RUNNING_STAGE1: "stage1",
+        RunStatus.DISCOVERING_PARSE_RULES: "stage2_pass1",
+        RunStatus.AWAITING_PARSE_RULES_REVIEW: "stage2_pass1",
+        RunStatus.RUNNING_STAGE2: "stage2_pass2",
+    }.get(run.status)
+    stage_events = [event for event in events if event.get("stage") == active_stage]
+    completed_pages = sum(
+        event.get("type") == "page.completed" for event in stage_events
+    )
     started = next(
-        (event for event in events if event.get("type") == "stage.started"), {}
+        (event for event in reversed(stage_events) if event.get("type") == "stage.started"),
+        {},
     )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
+    current_page = next(
+        (
+            int(event["page"])
+            for event in reversed(stage_events)
+            if event.get("type") == "page.started"
+            and not any(
+                later.get("type") == "page.completed"
+                and later.get("stage") == active_stage
+                and later.get("page") == event.get("page")
+                for later in events[events.index(event) + 1 :]
+            )
+        ),
+        None,
+    )
     try:
         review_row = store.get_parse_rule_review(run.run_id)
     except KeyError:
@@ -1390,6 +1415,9 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "provider": run.provider or "Not selected",
         "completed_pages": completed_pages,
         "total_pages": total_pages,
+        "current_stage_label": _stage_label(active_stage),
+        "current_page": current_page,
+        "pipeline_steps": _pipeline_steps(events, run.status),
         "events": events,
         "failure_message": _failure_message(events),
         "created_at": run.created_at,
@@ -1435,11 +1463,68 @@ def _status_label(status: RunStatus) -> str:
     return status.value.replace("_", " ").title()
 
 
-def _event_label(event_type: str) -> str:
+def _stage_label(stage: str | None) -> str:
+    return {
+        "stage1": "Stage 1 — Transcription",
+        "stage2_pass1": "MDF parsing guide discovery",
+        "stage2_pass2": "Stage 2 — MDF conversion",
+    }.get(stage, "Pipeline")
+
+
+def _pipeline_steps(
+    events: list[dict[str, object]], status: RunStatus
+) -> list[dict[str, str]]:
+    """Build the fixed pipeline timeline from durable worker events."""
+
+    started_stages = {str(event.get("stage")) for event in events if event.get("type") == "stage.started"}
+    completed_by_stage = {
+        str(event.get("stage")): sum(
+            item.get("type") == "page.completed" and item.get("stage") == event.get("stage")
+            for item in events
+        )
+        for event in events
+        if event.get("type") == "stage.started"
+    }
+    totals = {
+        str(event.get("stage")): int(event.get("total_pages") or 0)
+        for event in events
+        if event.get("type") == "stage.started"
+    }
+    guide_ready = any(event.get("type") == "parse_rules.generated" for event in events)
+    stage1_done = "stage2_pass1" in started_stages or "stage2_pass2" in started_stages or (
+        totals.get("stage1", 0) > 0
+        and completed_by_stage.get("stage1", 0) >= totals["stage1"]
+    )
+    return [
+        {
+            "label": "Stage 1 — Transcription",
+            "state": "completed" if stage1_done else "running" if status is RunStatus.RUNNING_STAGE1 else "pending",
+            "detail": f"{completed_by_stage.get('stage1', 0)} of {totals.get('stage1', 0)} pages complete" if "stage1" in started_stages else "",
+        },
+        {
+            "label": "MDF parsing guide discovery",
+            "state": "completed" if guide_ready else "running" if status is RunStatus.DISCOVERING_PARSE_RULES else "pending",
+            "detail": "Guide ready for review" if guide_ready else "Starts after Stage 1 is complete",
+        },
+        {
+            "label": "Review parsing guide",
+            "state": "completed" if "stage2_pass2" in started_stages else "running" if status is RunStatus.AWAITING_PARSE_RULES_REVIEW else "pending",
+            "detail": "Approval is required before MDF conversion" if status is RunStatus.AWAITING_PARSE_RULES_REVIEW else "",
+        },
+        {
+            "label": "Stage 2 — MDF conversion",
+            "state": "completed" if status is RunStatus.COMPLETED and "stage2_pass2" in started_stages else "running" if status is RunStatus.RUNNING_STAGE2 else "pending",
+            "detail": f"{completed_by_stage.get('stage2_pass2', 0)} of {totals.get('stage2_pass2', 0)} pages complete" if "stage2_pass2" in started_stages else "Starts after guide approval",
+        },
+    ]
+
+
+def _event_label(event_type: str, stage: str) -> str:
     labels = {
         "parse_rules.generated": "MDF parsing guide inferred",
-        "stage.started": "Stage started",
-        "page.completed": "Page completed",
+        "stage.started": f"{_stage_label(stage)} started",
+        "page.started": f"{_stage_label(stage)} page started",
+        "page.completed": f"{_stage_label(stage)} page completed",
         "run.completed": "Run completed",
         "run.failed": "Run failed",
     }

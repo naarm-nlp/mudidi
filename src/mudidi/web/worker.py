@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from mudidi.execution.events import (
     PageCompleted,
+    PageStarted,
     RunCompleted,
     RunFailed,
     StageStarted,
@@ -44,6 +45,16 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
     for page in range(1, args.page_count + 1):
+        sequence += 1
+        _emit(
+            PageStarted(
+                run_id=args.run_id,
+                sequence=sequence,
+                stage="stage1",
+                page=page,
+                occurred_at=datetime.now(UTC),
+            )
+        )
         if args.delay_seconds:
             time.sleep(args.delay_seconds)
         sequence += 1
@@ -79,7 +90,9 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _emit(event: StageStarted | PageCompleted | RunCompleted | RunFailed) -> None:
+def _emit(
+    event: StageStarted | PageStarted | PageCompleted | RunCompleted | RunFailed,
+) -> None:
     print(json.dumps(event.model_dump(mode="json"), separators=(",", ":")), flush=True)
 
 

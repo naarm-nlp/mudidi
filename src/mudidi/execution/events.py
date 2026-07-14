@@ -38,6 +38,13 @@ class PageCompleted(ExecutionEvent):
     page: int = Field(ge=1)
 
 
+class PageStarted(ExecutionEvent):
+    """One source page began processing within a stage."""
+
+    type: Literal["page.started"] = "page.started"
+    page: int = Field(ge=1)
+
+
 class RunCompleted(ExecutionEvent):
     """The requested run completed successfully."""
 
@@ -59,7 +66,12 @@ class ParseRulesGenerated(ExecutionEvent):
 
 
 ExecutionEventUnion = Annotated[
-    StageStarted | PageCompleted | RunCompleted | RunFailed | ParseRulesGenerated,
+    StageStarted
+    | PageStarted
+    | PageCompleted
+    | RunCompleted
+    | RunFailed
+    | ParseRulesGenerated,
     Field(discriminator="type"),
 ]
 _EVENT_ADAPTER = TypeAdapter(ExecutionEventUnion)

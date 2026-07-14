@@ -8,7 +8,7 @@ import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal, Sequence, cast
+from typing import Any, Callable, Literal, Sequence, cast
 
 from mudidi.config.run_config import RUN_STAGE_CHOICES, stage_from_cli
 from mudidi.llm.prompt_store import configure_prompts, default_prompts_path
@@ -844,6 +844,7 @@ def execute_extraction_config(
     config: InferenceConfig | BenchmarkRunConfig,
     *,
     approved_parse_rules: object | None = None,
+    progress_callback: Callable[[str, int, str], None] | None = None,
 ) -> int:
     """Execute one typed extraction configuration.
 
@@ -855,6 +856,7 @@ def execute_extraction_config(
     configure_prompts(default_prompts_path())
     namespace = execution_namespace_from_config(config)
     namespace.approved_parse_rules = approved_parse_rules
+    namespace.progress_callback = progress_callback
     _write_resolved_config(config)
     from mudidi.cli import extract as extract_module
 

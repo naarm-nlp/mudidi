@@ -8,7 +8,8 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from threading import Lock
+from typing import Any, Callable
 
 from mudidi.cli.run import execute_extraction_config
 from mudidi.config.yaml_config import InferenceConfig
@@ -20,6 +21,8 @@ from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.execution.events import (
     ParseRulesGenerated,
+    PageCompleted,
+    PageStarted,
     RunCompleted,
     RunFailed,
     StageStarted,
@@ -51,6 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     """Read one secret message, execute stages, and reserve stdout for events."""
 
     args = build_parser().parse_args(argv)
+    protocol_stream = sys.stdout
     credential_message = sys.stdin.readline().strip()
     # Empty redaction sentinel; populated only from the private credential message.
     secret_value = ""  # nosec B105
@@ -71,21 +75,55 @@ def main(argv: list[str] | None = None) -> int:
             if phase is InferencePhase.PASS2
             else None
         )
-        stage = _event_stage(phase)
-        sequence += 1
-        _emit(
-            StageStarted(
-                run_id=args.run_id,
-                sequence=sequence,
-                stage=stage,
-                occurred_at=datetime.now(UTC),
-                total_pages=_page_count(config.input.pages),
-            )
-        )
+        sequence_lock = Lock()
+
+        def emit_stage(stage_name: str) -> None:
+            nonlocal sequence
+            with sequence_lock:
+                sequence += 1
+                _emit(
+                    StageStarted(
+                        run_id=args.run_id,
+                        sequence=sequence,
+                        stage=_event_stage_name(stage_name),
+                        occurred_at=datetime.now(UTC),
+                        total_pages=_page_count(config.input.pages),
+                    ),
+                    stream=protocol_stream,
+                )
+
+        def emit_page(status: str, page: int, stage_name: str) -> None:
+            nonlocal sequence
+            event_class = PageStarted if status == "started" else PageCompleted
+            with sequence_lock:
+                sequence += 1
+                _emit(
+                    event_class(
+                        run_id=args.run_id,
+                        sequence=sequence,
+                        stage=_event_stage_name(stage_name),
+                        page=page,
+                        occurred_at=datetime.now(UTC),
+                    ),
+                    stream=protocol_stream,
+                )
+
         args.log_file.parent.mkdir(parents=True, exist_ok=True)
         executor = (
             _offline_execute if args.offline_executor else execute_extraction_config
         )
+
+        def execute_with_progress(
+            phase_config: InferenceConfig,
+            *,
+            approved_parse_rules: object | None = None,
+        ) -> int:
+            return executor(
+                phase_config,
+                approved_parse_rules=approved_parse_rules,
+                progress_callback=emit_page,
+            )
+
         with args.log_file.open("a", encoding="utf-8") as log_stream:
             with (
                 contextlib.redirect_stdout(log_stream),
@@ -94,8 +132,9 @@ def main(argv: list[str] | None = None) -> int:
                 result = run_inference_phase(
                     config,
                     phase,
-                    execute=executor,
+                    execute=execute_with_progress,
                     approved_rules=approved_rules,
+                    on_stage_started=emit_stage,
                 )
         if result.return_code != 0:
             raise RuntimeError(f"extraction returned {result.return_code}")
@@ -112,14 +151,15 @@ def main(argv: list[str] | None = None) -> int:
                     stage="stage2_pass1",
                     occurred_at=datetime.now(UTC),
                     artifact_path=result.parse_rules_path,
-                )
+                ),
+                stream=protocol_stream,
             )
         else:
             _emit(
                 RunCompleted(
                     run_id=args.run_id,
                     sequence=sequence,
-                    stage=stage,
+                    stage=_event_stage(phase),
                     occurred_at=datetime.now(UTC),
                 )
             )
@@ -136,7 +176,8 @@ def main(argv: list[str] | None = None) -> int:
                 stage=_event_stage(InferencePhase(args.phase)),
                 occurred_at=datetime.now(UTC),
                 message=message[:500],
-            )
+            ),
+            stream=protocol_stream,
         )
         return 1
 
@@ -163,6 +204,16 @@ def _event_stage(phase: InferencePhase) -> str:
     return "stage1"
 
 
+def _event_stage_name(stage: str) -> str:
+    """Map extract's stage notation onto the durable event protocol."""
+
+    if stage == "1":
+        return "stage1"
+    if stage == "2-pass-1":
+        return "stage2_pass1"
+    return "stage2_pass2"
+
+
 def _page_count(pages: Path | None) -> int | None:
     if pages is None or not pages.is_dir():
         return None
@@ -178,11 +229,14 @@ def _offline_execute(
     config: InferenceConfig,
     *,
     approved_parse_rules: object | None = None,
+    progress_callback: Callable[[str, int, str], None] | None = None,
 ) -> int:
     """Produce deterministic local artifacts through the production protocol."""
 
     stage = config.pipeline.stage
     if stage == "1":
+        if progress_callback is not None:
+            progress_callback("started", 1, stage)
         path = config.output.directory / "stage-1/page_1/page_1_stage1_flat.txt"
         content = "offline transcription\n"
     elif stage == "2-pass-1":
@@ -201,6 +255,8 @@ def _offline_execute(
     elif stage == "2-pass-2":
         if approved_parse_rules is None:
             raise ValueError("offline Pass 2 still requires approved rules")
+        if progress_callback is not None:
+            progress_callback("started", 1, stage)
         path = config.output.directory / "stage-2/page_1/page_1_mdf.txt"
         content = "\\lx offline\n\\ge result\n"
     elif stage == "2":
@@ -208,17 +264,25 @@ def _offline_execute(
         if guide is None:
             raise ValueError("offline direct Stage 2 requires an uploaded MDF guide")
         validate_marker_cheatsheet(json.loads(guide.read_text(encoding="utf-8")))
+        if progress_callback is not None:
+            progress_callback("started", 1, stage)
         path = config.output.directory / "stage-2/page_1/page_1_mdf.txt"
         content = "\\lx offline\n\\ge result\n"
     else:
         raise ValueError(f"unsafe offline web stage: {stage}")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+    if progress_callback is not None and stage != "2-pass-1":
+        progress_callback("completed", 1, stage)
     return 0
 
 
-def _emit(event: Any) -> None:
-    print(json.dumps(event.model_dump(mode="json"), separators=(",", ":")), flush=True)
+def _emit(event: Any, *, stream: Any = None) -> None:
+    print(
+        json.dumps(event.model_dump(mode="json"), separators=(",", ":")),
+        file=stream or sys.stdout,
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

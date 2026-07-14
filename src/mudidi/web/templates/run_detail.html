@@ -17,12 +17,23 @@
       <header class="page-heading">
         <span class="eyebrow">{{ run.provider }} · local worker</span>
         <h1>{{ run.run_id }}</h1>
-        <p>{{ run.completed_pages }} of {{ run.total_pages }} pages</p>
+        <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} pages{% endif %}</p>
       </header>
       <div class="content-grid">
         <section class="panel review-card">
           <h2>Progress</h2>
           <div class="progress-track"><span style="width: {{ (run.completed_pages / run.total_pages * 100) if run.total_pages else 0 }}%"></span></div>
+          {% if run.current_page and run.total_pages %}
+          <p class="progress-current">Currently processing: Page {{ run.current_page }} of {{ run.total_pages }}</p>
+          {% endif %}
+          <div class="pipeline-steps">
+            {% for step in run.pipeline_steps %}
+            <article class="pipeline-step {{ step.state }}">
+              <strong>{{ '✓' if step.state == 'completed' else '●' if step.state == 'running' else '○' }} {{ step.label }}{% if step.state == 'completed' %} completed{% endif %}</strong>
+              {% if step.detail %}<span>{{ step.detail }}</span>{% endif %}
+            </article>
+            {% endfor %}
+          </div>
           {% if run.review_available and run.review_status == 'awaiting_review' %}
           <div class="checkpoint">
             <strong>The MDF parsing guide is ready for review</strong>

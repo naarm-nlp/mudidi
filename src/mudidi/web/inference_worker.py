@@ -78,6 +78,7 @@ def run_inference_phase(
     *,
     execute: ExecutionCallable,
     approved_rules: DictionaryMarkerCheatsheet | None,
+    on_stage_started: Callable[[str], None] | None = None,
 ) -> InferencePhaseResult:
     """Execute one decomposed phase without allowing automatic web Pass 2."""
 
@@ -85,6 +86,8 @@ def run_inference_phase(
         raise ValueError("Pass 2 requires loaded approved parse rules")
     configurations = phase_configs(config, phase)
     for phase_config in configurations:
+        if on_stage_started is not None:
+            on_stage_started(phase_config.pipeline.stage)
         result = execute(
             phase_config,
             approved_parse_rules=(

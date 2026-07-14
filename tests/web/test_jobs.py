@@ -36,12 +36,15 @@ def test_fake_subprocess_persists_progress_and_completes(
     events = store.list_events("run-1")
     assert [event["type"] for event in events] == [
         "stage.started",
+        "page.started",
         "page.completed",
+        "page.started",
         "page.completed",
+        "page.started",
         "page.completed",
         "run.completed",
     ]
-    assert [event["sequence"] for event in events] == [1, 2, 3, 4, 5]
+    assert [event["sequence"] for event in events] == list(range(1, 9))
 
 
 def test_worker_failure_records_terminal_event_and_failed_state(

@@ -380,7 +380,7 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
 if (liveRun && window.EventSource) {
   const eventSource = new EventSource(liveRun.content);
-  ["parse_rules.generated", "run.completed", "run.failed"].forEach((eventName) => {
+  ["stage.started", "page.started", "page.completed", "parse_rules.generated", "run.completed", "run.failed"].forEach((eventName) => {
     eventSource.addEventListener(eventName, () => {
       eventSource.close();
       window.location.reload();

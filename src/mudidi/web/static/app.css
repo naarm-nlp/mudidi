@@ -164,6 +164,11 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .detail-nav { display: flex; justify-content: space-between; align-items: center; }
 .progress-track { height: 10px; margin: 18px 0 25px; overflow: hidden; border-radius: 5px; background: #e6ebee; }
 .progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--color-accent); }
+.progress-current { margin: -10px 0 18px; font-weight: 700; }
+.pipeline-steps { margin: 18px 0 25px; }
+.pipeline-step { display: grid; gap: 5px; padding: 11px 0; border-bottom: 1px solid var(--color-line); }
+.pipeline-step span { color: var(--color-muted); font-size: 13px; }
+.pipeline-step.pending strong { color: var(--color-muted); }
 .event-list { margin-bottom: 25px; }
 .event-list article { display: grid; grid-template-columns: 48px 1fr auto; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-line); font-size: 13px; }
 .event-list code, .event-list span { color: var(--color-muted); }

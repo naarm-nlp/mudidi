@@ -251,7 +251,7 @@ def test_interrupted_approved_pass2_resumes_from_authenticated_snapshot(
     assert (tmp_path / "output/stage-2/page_1/page_1_mdf.txt").is_file()
 
 
-def test_production_failure_uses_sequence_after_stage_started(
+def test_production_failure_uses_sequence_after_phase_setup(
     tmp_path: Path,
     monkeypatch: object,
     capsys: object,
@@ -285,5 +285,5 @@ def test_production_failure_uses_sequence_after_stage_started(
 
     events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]  # type: ignore[attr-defined]
     assert result == 1
-    assert [event["type"] for event in events] == ["stage.started", "run.failed"]
-    assert [event["sequence"] for event in events] == [8, 9]
+    assert [event["type"] for event in events] == ["run.failed"]
+    assert [event["sequence"] for event in events] == [8]

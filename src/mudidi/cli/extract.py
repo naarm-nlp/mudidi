@@ -1543,6 +1543,7 @@ Examples:
     )
 
     args = resolved_args if resolved_args is not None else parser.parse_args()
+    progress_callback = getattr(args, "progress_callback", None)
     attach_stage_models(args)
 
     if getattr(args, "pages", None):
@@ -2377,6 +2378,8 @@ def _run_single_entry(args, parser) -> int:
                 return "skipped"
 
             phase_tag = f" [stage {page_run_stage}]" if len(run_phases) > 1 else ""
+            if progress_callback is not None:
+                progress_callback("started", page_number, page_run_stage)
             _locked_print(
                 f"\n[{idx+1}/{total}] Processing: {image_file.name}  "
                 f"(page {page_number}){phase_tag}"
@@ -2539,6 +2542,8 @@ def _run_single_entry(args, parser) -> int:
                 _locked_print(
                     f"  → Finished {stem} [stage {page_run_stage}] in {elapsed:.1f}s"
                 )
+                if progress_callback is not None:
+                    progress_callback("completed", page_number, page_run_stage)
                 return "processed"
 
             except Exception as exc:

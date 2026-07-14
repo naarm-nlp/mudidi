@@ -103,7 +103,7 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     store.create_run(run_id)
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
-    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.start_uploaded_guide_stage2(run_id)
     store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2))
     store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
     store.append_event(run_id, _event(run_id, 3, "page.completed", "stage1", page=2))
@@ -118,9 +118,6 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
             artifact_path="/tmp/mdf_parsing_guide.json",
         ),
     )
-    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
-    store.transition(run_id, RunStatus.AWAITING_PARSE_RULES_REVIEW)
-    store.transition(run_id, RunStatus.RUNNING_STAGE2)
     store.append_event(
         run_id, _event(run_id, 6, "stage.started", "stage2_pass2", total_pages=2)
     )
