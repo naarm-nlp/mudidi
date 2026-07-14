@@ -79,6 +79,27 @@ def test_stage_specific_models_override_default(tmp_path: Path) -> None:
     assert config.models.stage2_pass2 == "openai/gpt-5.4"
 
 
+def test_review_summary_lists_page_ranges_and_effective_stage_models(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        dictionary_pages="10-12",
+        parse_rules_pages=["10", "12"],
+        stage1_model="gemini/gemini-3.1-pro-preview",
+        stage2_pass1_model="anthropic/claude-opus-4-6",
+        stage2_pass2_model="openai/gpt-5.4",
+    )
+
+    summary = form.to_summary()
+
+    assert summary["dictionary_pages"] == "10-12"
+    assert summary["parse_rule_pages"] == "10, 12"
+    assert summary["stage_1_model"] == "gemini/gemini-3.1-pro-preview"
+    assert summary["stage_2_pass_1_model"] == "anthropic/claude-opus-4-6"
+    assert summary["stage_2_pass_2_model"] == "openai/gpt-5.4"
+
+
 def test_stage_models_accept_provider_specific_other_values(tmp_path: Path) -> None:
     config = _form(
         tmp_path,

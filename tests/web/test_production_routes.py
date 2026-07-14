@@ -53,6 +53,38 @@ def _pdf_bytes() -> bytes:
         document.close()
 
 
+def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    response = TestClient(app).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "dictionary_pages": "10-12",
+            "parse_rules_pages": "10,12",
+            "provider": "anthropic",
+            "stage1_model": "gemini/gemini-3.1-pro-preview",
+            "stage2_pass1_model": "anthropic/claude-opus-4-6",
+            "stage2_pass2_model": "openai/gpt-5.4",
+            "reasoning": "low",
+            "agentic": "false",
+        },
+        files={"page_files": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert "Dictionary Pages" in response.text
+    assert "10-12" in response.text
+    assert "Parse Rule Pages" in response.text
+    assert "10, 12" in response.text
+    assert "Stage 1 Model" in response.text
+    assert "gemini/gemini-3.1-pro-preview" in response.text
+    assert "Stage 2 Pass 1 Model" in response.text
+    assert "anthropic/claude-opus-4-6" in response.text
+    assert "Stage 2 Pass 2 Model" in response.text
+    assert "openai/gpt-5.4" in response.text
+
+
 def test_review_start_pause_approve_and_complete_offline_journey(
     tmp_path: Path,
 ) -> None:
