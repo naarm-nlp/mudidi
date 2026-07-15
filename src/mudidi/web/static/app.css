@@ -95,6 +95,7 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .form-grid label { display: grid; gap: 8px; }
 .field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
 .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--color-line); border-radius: 7px; color: var(--color-ink); background: #fff; }
+.page-spec-input::placeholder { color: #7f8d93; opacity: .5; font-style: italic; }
 .form-grid textarea { min-height: 96px; resize: vertical; }
 .choice-group { margin: 24px 0 8px; padding: 14px 16px; border: 1px solid var(--color-line); border-radius: 9px; }
 .choice-group legend { padding: 0 6px; font-size: 13px; font-weight: 800; }
