@@ -220,6 +220,21 @@ def test_dashboard_page_specs_accept_only_positive_arabic_ranges(
         _form(tmp_path, pages=pdf, **values)
 
 
+def test_dashboard_page_specs_accept_single_range_list_and_combination(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        dictionary_pages="1, 5, 10-20",
+        introduction_pages="1-5",
+        parse_rules_pages=["1", "5", "10-20"],
+    )
+
+    assert form.dictionary_pages == "1,5,10-20"
+    assert form.introduction_pages == "1-5"
+    assert form.parse_rules_pages == ["1", "5", "10-20"]
+
+
 def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/")
 
@@ -303,6 +318,25 @@ def test_dashboard_accepts_exactly_one_required_dictionary_pdf(tmp_path: Path) -
     assert 'name="dictionary_pdf" type="file" accept=".pdf" multiple' not in response.text
     assert 'name="dictionary_pages" required' in response.text
     assert "Dictionary page numbers are required" in response.text
+
+
+def test_page_fields_show_faded_explicit_examples_and_complete_syntax_help(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    response = client.get("/")
+    css = client.get("/static/app.css")
+
+    assert response.status_code == 200
+    assert 'name="dictionary_pages" required placeholder="ex: 30-35"' in response.text
+    assert 'name="introduction_pages" placeholder="ex: 1-5"' in response.text
+    assert 'name="parse_rules_pages" placeholder="ex: 30-32"' in response.text
+    assert "one page number" in response.text
+    assert "a page range" in response.text
+    assert "comma-separated page numbers" in response.text
+    assert "a combination of page numbers and ranges" in response.text
+    assert ".page-spec-input::placeholder" in css.text
+    assert "opacity: .5" in css.text
 
 
 def test_dashboard_rejects_an_image_and_highlights_dictionary_pdf(
