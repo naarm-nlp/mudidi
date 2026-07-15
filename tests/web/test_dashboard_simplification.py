@@ -30,6 +30,16 @@ def _one_page_pdf() -> bytes:
         document.close()
 
 
+def _pdf_with_pages(page_count: int) -> bytes:
+    document = fitz.open()
+    for _ in range(page_count):
+        document.new_page()
+    try:
+        return document.tobytes()
+    finally:
+        document.close()
+
+
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
     pages = tmp_path / "pages"
     pages.mkdir(exist_ok=True)
@@ -279,6 +289,139 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "run Complete digitization first without an MDF manual" in response.text
     assert "human checkpoint" in response.text
     assert "MDF parsing guide inferred by the LLM" in response.text
+
+
+def test_dashboard_accepts_exactly_one_required_dictionary_pdf(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    assert 'name="dictionary_pdf" type="file" accept=".pdf" required' in response.text
+    assert 'name="page_files"' not in response.text
+    assert 'name="page_directory"' not in response.text
+    assert 'name="dictionary_pdf" type="file" accept=".pdf" multiple' not in response.text
+    assert 'name="dictionary_pages" required' in response.text
+    assert "Dictionary page numbers are required" in response.text
+
+
+def test_dashboard_rejects_an_image_and_highlights_dictionary_pdf(
+    tmp_path: Path,
+) -> None:
+    response = TestClient(create_app(data_dir=tmp_path / "app-data")).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "dictionary_pages": "1",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+        },
+        files={"dictionary_pdf": ("page_1.png", _PNG, "image/png")},
+    )
+
+    assert response.status_code == 422
+    assert "New run" in response.text
+    assert 'data-field-error="pages"' in response.text
+    assert 'name="dictionary_pdf"' in response.text
+    assert 'aria-invalid="true"' in response.text
+    assert "Upload one PDF dictionary file" in response.text
+
+
+def test_dashboard_rejects_multiple_dictionary_pdfs(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path / "app-data")).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "dictionary_pages": "1",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+        },
+        files=[
+            ("dictionary_pdf", ("first.pdf", _one_page_pdf(), "application/pdf")),
+            ("dictionary_pdf", ("second.pdf", _one_page_pdf(), "application/pdf")),
+        ],
+    )
+
+    assert response.status_code == 422
+    assert 'data-field-error="pages"' in response.text
+    assert "Upload exactly one dictionary PDF" in response.text
+
+
+def test_dashboard_requires_dictionary_pages_and_marks_the_field_red(
+    tmp_path: Path,
+) -> None:
+    response = TestClient(create_app(data_dir=tmp_path / "app-data")).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _one_page_pdf(), "application/pdf")
+        },
+    )
+
+    assert response.status_code == 422
+    assert 'data-field-error="dictionary_pages"' in response.text
+    assert 'name="dictionary_pages"' in response.text
+    assert "Dictionary page numbers are required" in response.text
+
+
+def test_dashboard_rejects_page_numbers_beyond_the_uploaded_pdf(
+    tmp_path: Path,
+) -> None:
+    response = TestClient(create_app(data_dir=tmp_path / "app-data")).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "dictionary_pages": "1-4",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+        },
+        files={
+            "dictionary_pdf": (
+                "dictionary.pdf",
+                _pdf_with_pages(3),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 422
+    assert 'data-field-error="dictionary_pages"' in response.text
+    assert "has 3 pages" in response.text
+    assert "page 4" in response.text
+
+
+def test_dashboard_accepts_the_uploaded_pdf_last_page(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path / "app-data")).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "dictionary_pages": "1-3",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+        },
+        files={
+            "dictionary_pdf": (
+                "dictionary.pdf",
+                _pdf_with_pages(3),
+                "application/pdf",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Review your run" in response.text
 
 
 def test_removed_bundled_manual_source_is_rejected(tmp_path: Path) -> None:
