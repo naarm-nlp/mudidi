@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import fitz
 import pytest
 from pydantic import ValidationError
 
@@ -11,11 +12,17 @@ from mudidi.web.forms import NewRunForm, PipelineChoice
 
 
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
-    pages = tmp_path / "pages"
-    pages.mkdir(exist_ok=True)
+    pages = tmp_path / "dictionary.pdf"
+    document = fitz.open()
+    document.new_page()
+    try:
+        pages.write_bytes(document.tobytes())
+    finally:
+        document.close()
     output = tmp_path / "output"
     values: dict[str, object] = {
         "pages": pages,
+        "dictionary_pages": "1",
         "output_directory": output,
         "pipeline": PipelineChoice.COMPLETE,
         "provider": "anthropic",
@@ -177,8 +184,8 @@ def test_pdf_input_requires_dictionary_page_range(tmp_path: Path) -> None:
     pdf = tmp_path / "dictionary.pdf"
     pdf.write_bytes(b"%PDF-1.4")
 
-    with pytest.raises(ValueError, match="dictionary_pages"):
-        _form(tmp_path, pages=pdf).to_inference_config()
+    with pytest.raises(ValueError, match="Dictionary page numbers are required"):
+        _form(tmp_path, pages=pdf, dictionary_pages=None).to_inference_config()
 
 
 def test_stage2_workflow_always_reports_review_checkpoint(tmp_path: Path) -> None:

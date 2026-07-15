@@ -142,6 +142,7 @@ const synchronizeCustomModel = (select) => {
   const customSelected = select.value === "__other__";
   custom.hidden = !customSelected;
   custom.disabled = !active || !customSelected;
+  custom.required = active && customSelected;
 };
 
 const synchronizeModels = (providerChanged = false) => {
@@ -300,6 +301,7 @@ const synchronizeManual = () => {
   customManual.hidden = !visible;
   customManual.querySelectorAll("input").forEach((input) => {
     input.disabled = !visible;
+    input.required = visible;
   });
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
@@ -311,9 +313,27 @@ synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
 if (runForm) {
-  runForm.addEventListener("input", persistRunForm);
+  runForm.addEventListener("input", (event) => {
+    persistRunForm();
+    if (event.target.validity?.valid) {
+      const section = event.target.closest(".dropzone, label, .input-row, fieldset");
+      if (section && !section.hasAttribute("data-field-error")) {
+        section.classList.remove("field-invalid");
+      }
+    }
+  });
   runForm.addEventListener("change", persistRunForm);
-  runForm.addEventListener("submit", persistRunForm);
+  runForm.addEventListener("invalid", (event) => {
+    runForm.classList.add("was-validated");
+    const invalidSection = event.target.closest(".dropzone, label, .input-row, fieldset");
+    if (invalidSection) invalidSection.classList.add("field-invalid");
+    const details = event.target.closest("details");
+    if (details) details.open = true;
+  }, true);
+  runForm.addEventListener("submit", () => {
+    runForm.classList.add("was-validated");
+    persistRunForm();
+  });
 }
 
 document.querySelectorAll("[data-reveal-key]").forEach((button) => {

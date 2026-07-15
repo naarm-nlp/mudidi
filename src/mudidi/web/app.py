@@ -27,7 +27,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
 from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
-from mudidi.web.forms import NewRunForm
+from mudidi.web.forms import FormFieldError, NewRunForm
 from mudidi.web.jobs import JobController
 from mudidi.web.inputs import InputMaterializer, rebase_managed_config
 from mudidi.web.models import (
@@ -205,9 +205,13 @@ def create_app(
         name="static",
     )
 
-    @app.get("/", response_class=HTMLResponse)
-    async def home(request: Request) -> HTMLResponse:
-        """Render the local production-inference workspace."""
+    def home_context(
+        request: Request,
+        *,
+        preset_id: str = "",
+        validation_errors: list[dict[str, str]] | None = None,
+    ) -> dict[str, object]:
+        """Build the dashboard context for initial and rejected submissions."""
 
         presets = app.state.run_store.list_presets()
         credential_statuses = {
@@ -222,7 +226,6 @@ def create_app(
         selected_preset = None
         preset_state = None
         preset_assets: dict[str, object] = {}
-        preset_id = request.query_params.get("preset", "").strip()
         if preset_id:
             try:
                 selected_preset = app.state.run_store.get_preset(preset_id)
@@ -236,21 +239,32 @@ def create_app(
                 selected_preset,
                 presets_root=app.state.inputs.presets_root,
             )
+        errors = validation_errors or []
+        return {
+            "request": request,
+            "active_page": "new-run",
+            "models": _all_models(app),
+            "presets": presets,
+            "selected_preset": selected_preset,
+            "preset_state": preset_state,
+            "preset_assets": preset_assets,
+            "credential_statuses": credential_statuses,
+            "credential_ready_count": sum(
+                status.available for status in credential_statuses.values()
+            ),
+            "validation_errors": errors,
+            "errors_by_field": {error["key"]: error["message"] for error in errors},
+        }
+
+    @app.get("/", response_class=HTMLResponse)
+    async def home(request: Request) -> HTMLResponse:
+        """Render the local production-inference workspace."""
+
+        preset_id = request.query_params.get("preset", "").strip()
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="home.html",
-            context={
-                "active_page": "new-run",
-                "models": _all_models(app),
-                "presets": presets,
-                "selected_preset": selected_preset,
-                "preset_state": preset_state,
-                "preset_assets": preset_assets,
-                "credential_statuses": credential_statuses,
-                "credential_ready_count": sum(
-                    status.available for status in credential_statuses.values()
-                ),
-            },
+            context=home_context(request, preset_id=preset_id),
         )
 
     @app.get("/healthz")
@@ -265,6 +279,7 @@ def create_app(
 
         submitted = await request.form()
         upload_fields = {
+            "dictionary_pdf",
             "page_files",
             "page_directory",
             "introduction_file",
@@ -312,14 +327,15 @@ def create_app(
             if values:
                 payload[field_name] = values
         run_id = f"run-{uuid4().hex[:12]}"
-        page_files = [
+        dictionary_pdfs = [
             value
-            for value in submitted.getlist("page_files")
+            for value in submitted.getlist("dictionary_pdf")
             if getattr(value, "filename", "")
         ]
-        page_directory = [
+        retired_page_uploads = [
             value
-            for value in submitted.getlist("page_directory")
+            for field in ("page_files", "page_directory")
+            for value in submitted.getlist(field)
             if getattr(value, "filename", "")
         ]
 
@@ -356,21 +372,23 @@ def create_app(
                 raise ValueError("dashboard input paths must be selected in the browser")
             if str(submitted.get("pages", "")).strip():
                 raise ValueError("select dictionary files in the browser")
-            if page_files and page_directory:
-                raise ValueError("choose page files or a page folder, not both")
-            selected_pages = page_directory or page_files
-            if selected_pages:
+            if retired_page_uploads:
+                raise FormFieldError("pages", "Upload one PDF dictionary file.")
+            if len(dictionary_pdfs) > 1:
+                raise FormFieldError("pages", "Upload exactly one dictionary PDF.")
+            if dictionary_pdfs:
+                filename = str(getattr(dictionary_pdfs[0], "filename", ""))
+                if Path(filename).suffix.lower() != ".pdf":
+                    raise FormFieldError("pages", "Upload one PDF dictionary file.")
                 payload["pages"] = await app.state.inputs.materialize_pages(
                     run_id,
-                    selected_pages,
+                    dictionary_pdfs,
                     replace=preset_config is not None,
                 )
             elif preset_config is not None:
                 payload["pages"] = preset_config.input.pages
             else:
-                payload["pages"] = await app.state.inputs.materialize_pages(
-                    run_id, []
-                )
+                raise FormFieldError("pages", "Upload one PDF dictionary file.")
 
             pipeline_value = str(payload.get("pipeline", "complete"))
             runs_stage1 = pipeline_value in {"complete", "transcription"}
@@ -456,10 +474,15 @@ def create_app(
             validate_config_paths(config)
         except (ValidationError, ValueError) as exc:
             app.state.inputs.discard(run_id)
+            validation_errors = _validation_errors(exc)
             return _TEMPLATES.TemplateResponse(
                 request=request,
-                name="form_error.html",
-                context={"validation_errors": _validation_errors(exc)},
+                name="home.html",
+                context=home_context(
+                    request,
+                    preset_id=preset_id,
+                    validation_errors=validation_errors,
+                ),
                 status_code=422,
             )
         try:
@@ -1146,8 +1169,18 @@ def create_app(
 def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]]:
     """Return safe, user-facing validation details without submitted values."""
 
+    if isinstance(exc, FormFieldError):
+        return [
+            {
+                "key": exc.field,
+                "field": exc.field.replace("_", " ").title(),
+                "message": str(exc),
+            }
+        ]
     if not isinstance(exc, ValidationError):
-        return [{"field": "Configuration", "message": str(exc)}]
+        return [
+            {"key": "configuration", "field": "Configuration", "message": str(exc)}
+        ]
 
     issues: list[dict[str, str]] = []
     for error in exc.errors():
@@ -1157,9 +1190,10 @@ def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]
         message = str(error.get("msg", "Invalid value"))
         if message.lower().startswith("value error, "):
             message = message[len("value error, ") :]
-        issues.append({"field": field, "message": message})
+        issues.append({"key": raw_field, "field": field, "message": message})
     return issues or [
         {
+            "key": "configuration",
             "field": "Configuration",
             "message": "The submitted configuration could not be validated",
         }

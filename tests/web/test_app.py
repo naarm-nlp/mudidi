@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import base64
 from pathlib import Path
 
+import fitz
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -12,9 +12,14 @@ from pydantic import ValidationError
 from mudidi.web.app import _validation_errors, create_app
 from mudidi.web.models import Provider
 
-_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-)
+def _pdf_bytes(page_count: int = 1) -> bytes:
+    document = fitz.open()
+    for _ in range(page_count):
+        document.new_page()
+    try:
+        return document.tobytes()
+    finally:
+        document.close()
 
 
 def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
@@ -107,7 +112,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="output_policy"' in response.text
     assert "Require a new or empty directory" not in response.text
     assert (
-        '<input type="radio" name="output_policy" value="resume" checked>'
+            '<input type="radio" name="output_policy" value="resume" checked required>'
         in response.text
     )
     assert "Resume compatible existing artifacts" in response.text
@@ -248,8 +253,11 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 200
@@ -292,8 +300,11 @@ def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "temperature": "-1",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 422
@@ -318,8 +329,11 @@ def test_preview_ignores_retired_controls_from_a_stale_browser_tab(
             "page_limit": "12",
             "media_reference": "inline",
             "prompt_cache": "off",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 200
@@ -342,8 +356,11 @@ def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
             "stage1_model": "openrouter/anthropic/claude-sonnet-5",
             "temperature": "0.1",
             "reasoning": "none",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 200
@@ -373,8 +390,11 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "profile_page_layout": "There are two columns with independent entries.",
             "profile_information_types": ["translation", "other"],
             "profile_other_information_types": "dialect labels, semantic domains",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 200
@@ -420,6 +440,7 @@ def test_empty_pydantic_error_still_has_a_user_facing_validation_issue() -> None
 
     assert _validation_errors(error) == [
         {
+            "key": "configuration",
             "field": "Configuration",
             "message": "The submitted configuration could not be validated",
         }
@@ -479,7 +500,7 @@ def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> Non
     assert response.json() == {"detail": "API key cannot be empty"}
 
 
-def test_new_run_accepts_uploaded_page_images_into_managed_input(
+def test_new_run_accepts_uploaded_dictionary_pdf_into_managed_input(
     tmp_path: Path,
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
@@ -493,11 +514,15 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
+            "dictionary_pages": "1-2",
         },
-        files=[
-            ("page_files", ("page_1.png", _PNG, "image/png")),
-            ("page_files", ("page_2.png", _PNG, "image/png")),
-        ],
+        files={
+            "dictionary_pdf": (
+                "dictionary.pdf",
+                _pdf_bytes(2),
+                "application/pdf",
+            )
+        },
     )
 
     assert response.status_code == 200
@@ -506,13 +531,11 @@ def test_new_run_accepts_uploaded_page_images_into_managed_input(
     config = app.state.job_controller.load_inference_config(runs[0].run_id)
     assert config.input.pages is not None
     assert (
-        config.input.pages.parent
+        config.input.pages.parent.parent
         == (tmp_path / "app-data" / "runs" / runs[0].run_id / "inputs").resolve()
     )
-    assert sorted(path.name for path in config.input.pages.iterdir()) == [
-        "page_1.png",
-        "page_2.png",
-    ]
+    assert config.input.pages.name == "dictionary.pdf"
+    assert config.input.pages.is_file()
 
 
 def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> None:
@@ -527,8 +550,11 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("../escape.png", b"image", "image/png")},
+        files={
+            "dictionary_pdf": ("../escape.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
 
     assert response.status_code == 422

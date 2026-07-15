@@ -23,6 +23,7 @@ from mudidi.schemas.dictionary_profile import (
     InformationType,
     ProfileLanguage,
 )
+from mudidi.utils.pdf_split import parse_page_spec
 from mudidi.web.models import Provider, normalize_custom_model
 
 
@@ -44,6 +45,14 @@ _PIPELINE_STAGE = {
     PipelineChoice.TRANSCRIPTION: "1",
     PipelineChoice.STRUCTURE: "2",
 }
+
+
+class FormFieldError(ValueError):
+    """Validation failure associated with one dashboard form field."""
+
+    def __init__(self, field: str, message: str) -> None:
+        super().__init__(message)
+        self.field = field
 
 
 class NewRunForm(BaseModel):
@@ -141,8 +150,13 @@ class NewRunForm(BaseModel):
     def to_inference_config(self) -> InferenceConfig:
         """Build the existing authoritative typed production configuration."""
 
-        if self.pages.suffix.lower() == ".pdf" and not self.dictionary_pages:
-            raise ValueError("dictionary_pages is required for PDF input")
+        if self.pages.suffix.lower() != ".pdf":
+            raise FormFieldError("pages", "Upload one PDF dictionary file.")
+        if not self.dictionary_pages:
+            raise FormFieldError(
+                "dictionary_pages", "Dictionary page numbers are required."
+            )
+        self._validate_pdf_page_bounds()
         output = self.output_directory.expanduser().resolve()
         if output.exists() and not output.is_dir():
             raise ValueError("output path exists and is not a directory")
@@ -257,6 +271,61 @@ class NewRunForm(BaseModel):
                 media_reference="auto",
             ),
         )
+
+    def _validate_pdf_page_bounds(self) -> None:
+        """Reject page selections that cannot exist in the uploaded PDF."""
+
+        try:
+            import fitz
+
+            with fitz.open(self.pages) as document:
+                page_count = document.page_count
+        except Exception as exc:
+            raise FormFieldError(
+                "pages", "The uploaded dictionary PDF is unreadable."
+            ) from exc
+
+        dictionary_pages = parse_page_spec(self.dictionary_pages or "")
+        _check_page_bounds(
+            "dictionary_pages",
+            "Dictionary pages",
+            dictionary_pages,
+            page_count,
+        )
+        if self.introduction_pages:
+            _check_page_bounds(
+                "introduction_pages",
+                "Introduction pages",
+                parse_page_spec(self.introduction_pages),
+                page_count,
+            )
+        if self.parse_rules_pages:
+            representative_pages = [
+                page
+                for spec in self.parse_rules_pages
+                for page in parse_page_spec(spec)
+            ]
+            _check_page_bounds(
+                "parse_rules_pages",
+                "Representative MDF parsing guide pages",
+                representative_pages,
+                page_count,
+            )
+            dictionary_page_set = set(dictionary_pages)
+            outside_dictionary = next(
+                (
+                    page
+                    for page in representative_pages
+                    if page not in dictionary_page_set
+                ),
+                None,
+            )
+            if outside_dictionary is not None:
+                raise FormFieldError(
+                    "parse_rules_pages",
+                    "Representative MDF parsing guide page "
+                    f"{outside_dictionary} is not included in Dictionary pages.",
+                )
 
     def to_summary(self) -> dict[str, str]:
         """Return concise, non-secret review labels for the UI."""
@@ -496,6 +565,22 @@ def _effective_reasoning(value: ReasoningChoice) -> Literal["low", "medium", "hi
     """Map the dashboard's portable ``none`` choice to the lowest level."""
 
     return "low" if value == "none" else value
+
+
+def _check_page_bounds(
+    field: str,
+    label: str,
+    pages: list[int],
+    page_count: int,
+) -> None:
+    invalid_page = next((page for page in pages if page > page_count), None)
+    if invalid_page is not None:
+        noun = "page" if page_count == 1 else "pages"
+        raise FormFieldError(
+            field,
+            f"{label} includes page {invalid_page}, but the uploaded PDF has "
+            f"{page_count} {noun}.",
+        )
 
 
 def _normalize_page_spec(value: str) -> str:

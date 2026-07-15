@@ -55,6 +55,13 @@
 
         <div class="content-grid">
           <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
+            {% if validation_errors %}
+            <section class="form-error-summary" role="alert" aria-labelledby="form-error-title">
+              <h2 id="form-error-title">Check the highlighted configuration</h2>
+              <p>{{ validation_errors|length }} issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
+              <ul>{% for error in validation_errors %}<li><strong>{{ error.field }}:</strong> {{ error.message }}</li>{% endfor %}</ul>
+            </section>
+            {% endif %}
             {% if selected_preset %}
             <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id }}">
             <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused unless you choose replacement files. Review and edit any setting before continuing.</p></div>
@@ -63,26 +70,25 @@
               <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
               <span class="private">Files stay on this computer</span>
             </div>
-            <div class="dropzone">
+            <div class="dropzone{% if errors_by_field.pages %} field-invalid{% endif %}"{% if errors_by_field.pages %} data-field-error="pages"{% endif %}>
               <span class="file-icon">⇧</span>
-              <h3>Drop a PDF or page images here</h3>
-              <p>{% if selected_preset %}Saved dictionary pages will be reused unless you choose replacements.{% else %}PDF, PNG, JPEG or WebP · copied into this run's local input bundle{% endif %}</p>
+              <h3>Upload one dictionary PDF</h3>
+              <p>{% if selected_preset %}The saved dictionary PDF will be reused unless you choose a replacement.{% else %}PDF only · copied into this run's local input bundle{% endif %}</p>
               {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
-              <label class="path-label" for="page-files">Choose a PDF or page images</label>
-              <input id="page-files" name="page_files" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple>
-              <label class="path-label" for="page-directory">Or choose a folder of page images</label>
-              <input id="page-directory" name="page_directory" type="file" accept=".png,.jpg,.jpeg,.webp" webkitdirectory multiple>
+              <label class="path-label" for="dictionary-pdf">Dictionary PDF <span class="required-marker" aria-hidden="true">*</span></label>
+              <input id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %}{% if errors_by_field.pages %} aria-invalid="true" aria-describedby="pages-error"{% endif %}>
+              {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
             </div>
             <label for="output">Output directory</label>
             <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
             <fieldset class="choice-group pipeline-choices output-policy-choices">
               <legend>Existing output policy</legend>
-              <label><input type="radio" name="output_policy" value="resume" checked> <span>Resume compatible existing artifacts</span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>
+              <label><input type="radio" name="output_policy" value="resume" checked required> <span>Resume compatible existing artifacts</span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>
               <label><input type="radio" name="output_policy" value="overwrite"> <span>Overwrite existing artifacts</span><button class="info-button" type="button" aria-label="About overwriting existing artifacts" data-help="Replaces existing artifacts and reruns the selected work. Use this when inputs, models, instructions, or settings changed, or when you intentionally want fresh outputs.">i</button></label>
             </fieldset>
             <fieldset class="choice-group pipeline-choices" data-pipeline-select>
               <legend>Pipeline</legend>
-              <label><input type="radio" name="pipeline" value="complete" checked> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
+              <label><input type="radio" name="pipeline" value="complete" checked required> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
               <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
               <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
             </fieldset>
@@ -106,7 +112,7 @@
             </fieldset>
             <div class="form-grid">
               <label>Provider
-                <select name="provider" data-provider-select>
+                <select name="provider" data-provider-select required>
                   <option value="anthropic">Anthropic</option>
                   <option value="openai">OpenAI</option>
                   <option value="gemini" selected>Google Gemini</option>
@@ -127,14 +133,14 @@
                 ('stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
               ] %}
                 <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} <button class="info-button" type="button" aria-label="About {{ label }}" data-help="{{ help_text }}">i</button></span>
-                  <select name="{{ field }}" data-model-select>
+                  <select name="{{ field }}" data-model-select required>
                     {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
                     <option value="__other__" data-model-provider="other">Other model…</option>
                   </select>
                   <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
                 </label>
                 <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} reasoning <button class="info-button" type="button" aria-label="About {{ label }} reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
-                  <select name="{{ reasoning_field }}">
+                  <select name="{{ reasoning_field }}" required>
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
@@ -143,9 +149,9 @@
                 </label>
               {% endfor %}
               <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
-                <input name="temperature" type="number" min="0" step="0.05" value="0.1">
+                <input name="temperature" type="number" min="0" step="0.05" value="0.1" required>
               </label>
-              <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1"></label>
+              <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1" required></label>
             </div>
             <fieldset class="choice-group agentic-choice">
               <legend>Agentic verification</legend>
@@ -188,20 +194,20 @@
                 <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
               </div>
             </details>
-            <details>
+            <details{% if errors_by_field.dictionary_pages or errors_by_field.introduction_pages or errors_by_field.parse_rules_pages %} open{% endif %}>
               <summary>Input and context</summary>
               <div class="form-grid">
-                <label><span class="field-heading">PDF dictionary pages <button class="info-button" type="button" aria-label="About PDF dictionary pages" data-help="Enter 1-based page numbers or ranges from the uploaded PDF, separated by commas. Leave blank to process every PDF page. If the PDF contains front matter, specify the dictionary-page range so those pages are not transcribed as entries.">i</button></span><input name="dictionary_pages" placeholder="1-120,125"></label>
-                <label><span class="field-heading">PDF introduction pages <button class="info-button" type="button" aria-label="About PDF introduction pages" data-help="Optional 1-based page numbers or ranges for introduction or front matter from the same uploaded PDF. These pages are supplied to the model as context. They are not automatically removed from the dictionary-page selection, so set both ranges when necessary.">i</button></span><input name="introduction_pages" placeholder="1-12,15"></label>
+                <label{% if errors_by_field.dictionary_pages %} class="field-invalid" data-field-error="dictionary_pages"{% endif %}><span class="field-heading">PDF dictionary pages <span><span class="required-marker" aria-hidden="true">*</span> <button class="info-button" type="button" aria-label="About PDF dictionary pages" data-help="Dictionary page numbers are required. Enter 1-based page numbers or ascending ranges from the uploaded PDF, separated by commas. Every number must exist in the PDF.">i</button></span></span><input name="dictionary_pages" required placeholder="1-120,125"{% if errors_by_field.dictionary_pages %} aria-invalid="true" aria-describedby="dictionary-pages-error"{% endif %}><small>Dictionary page numbers are required.</small>{% if errors_by_field.dictionary_pages %}<small id="dictionary-pages-error" class="field-error-message">{{ errors_by_field.dictionary_pages }}</small>{% endif %}</label>
+                <label{% if errors_by_field.introduction_pages %} class="field-invalid" data-field-error="introduction_pages"{% endif %}><span class="field-heading">PDF introduction pages <button class="info-button" type="button" aria-label="About PDF introduction pages" data-help="Optional 1-based page numbers or ranges for introduction or front matter from the same uploaded PDF. These pages are supplied to the model as context. They are not automatically removed from the dictionary-page selection, so set both ranges when necessary.">i</button></span><input name="introduction_pages" placeholder="1-12,15"{% if errors_by_field.introduction_pages %} aria-invalid="true" aria-describedby="introduction-pages-error"{% endif %}>{% if errors_by_field.introduction_pages %}<small id="introduction-pages-error" class="field-error-message">{{ errors_by_field.introduction_pages }}</small>{% endif %}</label>
                 <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
                 <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>{% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}<input name="existing_mdf_guide_file" type="file" accept=".json"></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button></span><input name="parse_rules_pages" placeholder="1,3-4"></label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary.">i</button></span><input name="parse_rules_pages" placeholder="1,3-4"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
               </div>
               <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
                 <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
-                <label><input type="radio" name="mdf_manual_source" value="upload"> Upload my own MDF manual</label>
+                <label><input type="radio" name="mdf_manual_source" value="upload" required> Upload my own MDF manual</label>
                 <label data-custom-mdf-manual hidden>MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
                 <div class="mdf-manual-official">
                   <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>

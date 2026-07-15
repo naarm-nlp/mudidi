@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import json
 import re
 import shutil
@@ -14,11 +13,6 @@ from mudidi.web.app import create_app
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.runs import RunStatus
-
-_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-)
-
 
 def _preview(client: TestClient, tmp_path: Path) -> str:
     response = client.post(
@@ -33,8 +27,11 @@ def _preview(client: TestClient, tmp_path: Path) -> str:
             "verify_stage1": "true",
             "verify_stage2": "true",
             "parse_rules_pages": "1",
+            "dictionary_pages": "1",
         },
-        files={"page_files": ("page_1.png", _PNG, "image/png")},
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
     )
     assert response.status_code == 200
     match = re.search(r'action="/runs/([^/]+)/start"', response.text)
@@ -42,11 +39,12 @@ def _preview(client: TestClient, tmp_path: Path) -> str:
     return match.group(1)
 
 
-def _pdf_bytes() -> bytes:
+def _pdf_bytes(page_count: int = 1) -> bytes:
     import fitz
 
     document = fitz.open()
-    document.new_page()
+    for _ in range(page_count):
+        document.new_page()
     try:
         return document.tobytes()
     finally:
@@ -69,7 +67,13 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
             "reasoning": "low",
             "agentic": "false",
         },
-        files={"page_files": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
+        files={
+            "dictionary_pdf": (
+                "dictionary.pdf",
+                _pdf_bytes(12),
+                "application/pdf",
+            )
+        },
     )
 
     assert response.status_code == 200
@@ -269,10 +273,10 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert 'id="preset-form-state"' in loaded.text
     assert str(tmp_path / "output") in loaded.text
     assert "Loaded preset: My verified setup" in loaded.text
-    assert 'id="page-files"' in loaded.text
-    assert re.search(r'id="page-files"[^>]*disabled', loaded.text) is None
+    assert 'id="dictionary-pdf"' in loaded.text
+    assert re.search(r'id="dictionary-pdf"[^>]*disabled', loaded.text) is None
     assert re.search(r'name="existing_mdf_guide_file"[^>]*disabled', loaded.text) is None
-    assert "page_1.png" in loaded.text
+    assert "dictionary.pdf" in loaded.text
     assert "saved-guide.json" in loaded.text
     assert "saved-manual.pdf" in loaded.text
     assert f'/presets/{preset.preset_id}/files/pages/0' in loaded.text
@@ -282,7 +286,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     saved_page = client.get(f"/presets/{preset.preset_id}/files/pages/0")
     saved_guide = client.get(f"/presets/{preset.preset_id}/files/mdf-guide")
     saved_manual = client.get(f"/presets/{preset.preset_id}/files/mdf-manual")
-    assert saved_page.content == _PNG
+    assert saved_page.content.startswith(b"%PDF-")
     assert saved_guide.json()["markers"][0]["marker"] == "lx"
     assert saved_manual.content.startswith(b"%PDF-")
 
@@ -302,6 +306,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "reasoning": "low",
             "agentic": "false",
             "parse_rules_pages": "1",
+            "dictionary_pages": "1",
         },
     )
 
@@ -328,9 +333,13 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "reasoning": "low",
             "agentic": "false",
             "mdf_manual_source": "upload",
+            "dictionary_pages": "1",
         },
         files=[
-            ("page_files", ("replacement.png", _PNG, "image/png")),
+            (
+                "dictionary_pdf",
+                ("replacement.pdf", _pdf_bytes(), "application/pdf"),
+            ),
             (
                 "existing_mdf_guide_file",
                 (
@@ -350,8 +359,8 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     replacement_config = app.state.job_controller.load_inference_config(
         replacement_run.run_id
     )
-    assert replacement_config.input.pages.name == "pages"
-    assert (replacement_config.input.pages / "replacement.png").is_file()
+    assert replacement_config.input.pages.name == "replacement.pdf"
+    assert replacement_config.input.pages.is_file()
     assert replacement_config.pipeline.parse_rules_file.name == "replacement-guide.json"
     assert replacement_config.input.toolbox_pdf.name == "replacement.pdf"
 

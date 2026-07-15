@@ -41,10 +41,11 @@ def _pdf_with_pages(page_count: int) -> bytes:
 
 
 def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
-    pages = tmp_path / "pages"
-    pages.mkdir(exist_ok=True)
+    pages = tmp_path / "dictionary.pdf"
+    pages.write_bytes(_one_page_pdf())
     values: dict[str, object] = {
         "pages": pages,
+        "dictionary_pages": "1",
         "output_directory": tmp_path / "output",
         "pipeline": "complete",
         "provider": "anthropic",
@@ -224,9 +225,10 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
 
     assert response.status_code == 200
     assert 'id="pages" name="pages"' not in response.text
-    assert 'name="page_files" type="file"' in response.text
-    assert 'name="page_directory" type="file"' in response.text
-    assert "webkitdirectory" in response.text
+    assert 'name="dictionary_pdf" type="file" accept=".pdf" required' in response.text
+    assert 'name="page_files"' not in response.text
+    assert 'name="page_directory"' not in response.text
+    assert "webkitdirectory" not in response.text
     assert 'name="introduction_file"' not in response.text
     assert 'name="introduction_directory"' not in response.text
     assert 'name="alphabet_file"' not in response.text
@@ -243,7 +245,7 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "Paste a character inventory" in response.text
     assert "Chukchi-Cyrillic: а б в г ӄ" in response.text
     assert 'aria-label="About the existing MDF parsing guide"' in response.text
-    assert "Leave blank to process every PDF page" in response.text
+    assert "Dictionary page numbers are required" in response.text
     assert "front matter from the same uploaded PDF" in response.text
     assert "Optional. Upload a pre-generated MDF parsing guide" in response.text
     assert "<small>Optional. Upload a pre-generated MDF parsing guide" not in response.text
@@ -444,6 +446,7 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             "provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
+            "dictionary_pages": "1-4",
             "stage1_additional_instructions": "Keep uncertain letters marked.",
             "stage2_additional_instructions": "Use the custom nt marker.",
             "character_inventory": "Chukchi-Cyrillic: а б в г ӄ",
@@ -451,7 +454,10 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             "parse_rules_pages": "1,3-4",
         },
         files=[
-            ("page_files", ("page_1.png", _PNG, "image/png")),
+            (
+                "dictionary_pdf",
+                ("dictionary.pdf", _pdf_with_pages(4), "application/pdf"),
+            ),
             ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
             ("custom_mdf_manual", ("manual.pdf", _one_page_pdf(), "application/pdf")),
         ],
