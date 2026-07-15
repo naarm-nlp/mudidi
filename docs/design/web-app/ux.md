@@ -15,16 +15,30 @@ area, and optional right summary rail. The baseline wireframe is
 
 ## Input
 
-The browser selects a source PDF, page images, or a page-image folder. Additional
-file/folder controls cover an introduction, alphabet/orthography guide, existing
-MDF parsing guide, and custom MDF manual. Files are copied into run-owned local
-storage. The output directory remains typed because browser file APIs do not
-provide an arbitrary absolute path to a localhost server.
+The browser selects exactly one dictionary PDF. The dashboard rejects page
+images, multiple source files, and page-image folders; those input modes remain
+available through YAML and the CLI. The existing MDF parsing guide and custom
+MDF manual remain optional file uploads. Character inventory and additional
+instructions are direct text inputs. Uploaded files are copied into run-owned
+local storage. The output directory remains typed because browser file APIs do
+not provide an arbitrary absolute path to a localhost server.
 
-PDF page fields accept positive Arabic numbers, commas, and ascending ranges,
-for example `1-12,15`. Roman numerals are rejected. A source PDF uses numeric
-introduction pages from that PDF; a page-image input may use a separate
-introduction file or folder.
+The dictionary PDF and **PDF dictionary pages** are required. Page fields accept
+positive, 1-based Arabic page numbers in any of these forms: one number (`5`),
+one ascending range (`10-20`), comma-separated numbers (`1,5,9`), or a
+combination (`1,5,10-20`). Roman numerals, zero, negative values, descending
+ranges, and pages beyond the uploaded PDF's page count are rejected.
+
+Introduction pages and representative MDF parsing-guide pages are optional and
+use the same grammar and PDF bounds. Representative pages must also be included
+in the dictionary-page selection. Placeholder examples use faded text with an
+`ex:` prefix (`ex: 30-35`, `ex: 1-5`, and `ex: 30-32`) so they cannot be
+mistaken for submitted values.
+
+The browser marks required controls, but the server remains authoritative. A
+missing required value or invalid page specification blocks review, returns the
+user to the New Run form, opens the affected section, and marks the field in red
+with an associated text explanation.
 
 The optional **Dictionary Profile** collects:
 
@@ -107,7 +121,8 @@ samples them to infer dictionary-specific MDF markers and entry structure.
 
 The pre-run view summarizes input, output, pipeline, models, Agentic state,
 additional context, MDF manual use, and MDF parsing guide review requirement.
-All inputs are validated before a durable run is created.
+All required inputs, page syntax, and PDF page bounds are validated before a
+durable run is created.
 
 ## Active Run
 

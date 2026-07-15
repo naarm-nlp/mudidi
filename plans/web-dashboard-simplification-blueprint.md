@@ -738,6 +738,23 @@ usage is stored as `mdf_parsing_guide_usage.json`. Internal database/config keys
 and `/parse-rules` routes remain unchanged to avoid an unrelated persistence and
 URL migration.
 
+### Plan mutation — PDF-only dashboard input and bounded page fields (2026-07-15)
+
+The repository owner clarified that the web dashboard supports exactly one
+dictionary PDF, not multiple images or a page-image directory. The dictionary
+PDF and `dictionary_pages` are mandatory. Dictionary, introduction, and
+representative MDF parsing-guide page fields accept one page, an ascending
+range, comma-separated pages, or combinations such as `1,5,10-20`; every page
+must be positive, 1-based, and within the uploaded PDF. Representative pages
+must also be part of the dictionary-page selection.
+
+Resolution: browser and server validation block review when required fields are
+missing or page selections are invalid, and the New Run form identifies each
+affected field in red with text explaining the correction. This mutation
+supersedes earlier tasks and acceptance criteria for dashboard page-image,
+multi-file, directory, and separate introduction-file uploads. It does not
+remove those input modes from YAML or CLI workflows.
+
 ## Anti-pattern checklist
 
 Reject an implementation that:

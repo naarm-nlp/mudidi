@@ -172,7 +172,7 @@ def test_home_explains_each_pipeline_model_role(tmp_path: Path) -> None:
     assert 'aria-label="About Stage 1 model"' in response.text
     assert 'aria-label="About Stage 2 Pass 1 model"' in response.text
     assert 'aria-label="About Stage 2 Pass 2 model"' in response.text
-    assert "transcribes page images into faithful flat text" in response.text
+    assert "transcribes the selected dictionary pages into faithful flat text" in response.text
     assert "infers the dictionary-specific MDF parsing guide" in response.text
     assert "applies the approved MDF parsing guide" in response.text
 

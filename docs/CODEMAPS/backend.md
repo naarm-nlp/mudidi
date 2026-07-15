@@ -1,8 +1,36 @@
-<!-- Generated: 2026-07-11 | Files scanned: 255 | Token estimate: ~900 -->
+<!-- Generated: 2026-07-15 | Files scanned: 273 | Token estimate: ~1200 -->
 
-# Pipeline & CLI Architecture
+# Web, Pipeline, and CLI Architecture
 
-> MUDIDI has no HTTP backend. This codemap covers the processing pipeline (CLI → extraction → LLM/OCR).
+MUDIDI provides a local FastAPI dashboard backend and a CLI. Both resolve into
+the typed inference configuration and shared extraction pipeline.
+
+## Local dashboard backend
+
+```text
+mudidi web (web/server.py)
+  → create_app (web/app.py)
+  → POST /runs/preview
+       ├─ copy one uploaded PDF into run-owned storage (web/inputs.py)
+       ├─ validate required form fields and PDF page bounds (web/forms.py)
+       ├─ build InferenceConfig
+       └─ prepare a validated run (web/jobs.py, web/runs.py)
+  → POST /runs/{id}/start
+       └─ dedicated inference subprocess (web/inference_worker.py)
+```
+
+The dashboard route rejects legacy image and directory upload fields. It
+requires exactly one dictionary PDF and a dictionary-page specification.
+Dictionary, introduction, and representative MDF parsing-guide pages share the
+same positive 1-based grammar and are checked against the PDF page count before
+a durable run is created. `FormFieldError` associates failures with controls so
+the server-rendered form can identify them inline.
+
+Run metadata and events are stored in SQLite. Uploaded inputs, instruction
+text, presets, and output artifacts are kept in managed local directories.
+`web/jobs.py` enforces the single-worker lifecycle, while `web/runs.py` owns
+durable state transitions, cancellation, resume, and the MDF parsing-guide
+approval checkpoint.
 
 ## CLI Dispatch
 

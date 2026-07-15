@@ -83,8 +83,9 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 
 ### Basic
 
-- PDF or page-image input
-- PDF dictionary and introduction page ranges
+- Exactly one dictionary PDF (required; no dashboard image/folder input)
+- Required PDF dictionary pages and optional introduction pages, accepting a
+  single page, range, comma-separated pages, or combinations
 - Output directory
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
@@ -97,7 +98,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 
 - Stage-specific models and reasoning
 - Flat Stage 1 output with typography preservation off
-- Introduction and alphabet uploads plus direct additional instructions
+- Character inventory and direct stage-specific additional instructions
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
 - Optional user-uploaded MDF manual with a link to SIL's official documentation
 - Stage-specific agentic verification, iteration budget, evaluator/rewriter
@@ -106,6 +107,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 
 ### Deliberately omitted from the dashboard
 
+- page-image, multiple-file, and page-directory source inputs;
 - discovery-only and direct Pass 2 commands;
 - OCR hints and Stage 1 column mode;
 - MinerU, PaddleOCR-VL, GLM-OCR, and Mathpix settings.

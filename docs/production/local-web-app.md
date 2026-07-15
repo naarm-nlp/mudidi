@@ -89,23 +89,40 @@ image.
 
 The **New Run** screen asks you to:
 
-1. Choose a source PDF, page images, or a folder of page images.
-2. Enter an output directory on the same computer running MUDIDI.
-3. Select one pipeline:
+1. Choose exactly one dictionary PDF.
+2. Enter the required **PDF dictionary pages** to process. You may enter one
+   page (`5`), one range (`10-20`), comma-separated pages (`1,5,9`), or a
+   combination (`1,5,10-20`).
+3. Enter an output directory on the same computer running MUDIDI.
+4. Select one pipeline:
    - **Complete digitization**
    - **Transcription only**
    - **Parse transcription into MDF (Multi-Dictionary Formatter)**
-4. Choose a provider, model, and independent reasoning level for each active
+5. Choose a provider, model, and independent reasoning level for each active
    stage.
-5. Optionally enable **Agentic verification**.
-6. Review the resolved configuration and start. The review includes the
+6. Optionally enable **Agentic verification**.
+7. Review the resolved configuration and start. The review includes the
    selected dictionary pages, representative parsing-guide pages, Stage 1
    model, Stage 2 Pass 1 model, and Stage 2 Pass 2 model.
+
+The dashboard cannot continue unless the dictionary PDF, dictionary pages, and
+the other required fields in the form are present. Page numbers are 1-based:
+zero, negative numbers, descending ranges, and pages beyond the uploaded PDF's
+page count are rejected. Invalid submissions remain on **New Run** and show a
+red outline and explanation on each field that needs attention.
+
+The grey values beginning with `ex:` are examples only; they are not submitted
+as values. The current examples are `ex: 30-35` for dictionary pages,
+`ex: 1-5` for introduction pages, and `ex: 30-32` for representative MDF
+parsing-guide pages.
 
 Browser-selected inputs are copied into an input bundle owned by the run. This
 allows review, restart, and resume without depending on the original browser
 selection. The output directory remains a text field because a standard browser
 cannot disclose an arbitrary absolute folder path to a localhost server.
+
+The web dashboard does not accept page images, multiple files, or a folder of
+images. Those input modes remain available through YAML and the CLI.
 
 Dashboard transcription always uses flat Stage 1 output and does not preserve
 typography. OCR hints, column mode, and expert OCR/VLM backends remain available
@@ -130,15 +147,17 @@ additional entry structures and rules visible in the dictionary.
 
 The dashboard can attach:
 
-- PDF dictionary and introduction page numbers using Arabic numbers, commas,
-  and ranges such as `1-12,15`;
+- required PDF dictionary page numbers using one number, an ascending range,
+  comma-separated numbers, or a combination such as `1,5,10-20`;
+- optional PDF introduction page numbers using the same syntax;
 - a character inventory entered directly as text;
 - Stage 1 and Stage 2 additional instructions entered directly as text;
-- representative MDF parsing guide pages;
+- optional representative MDF parsing guide pages using the same page syntax;
 - an existing MDF parsing guide JSON file.
 
-Roman numeral page specifications are not accepted. When the dictionary source
-is one PDF, use its numeric introduction-page field.
+All page numbers must be positive Arabic numbers within the uploaded PDF.
+Representative MDF parsing-guide pages must also be included in the selected
+dictionary pages. Roman numeral page specifications are not accepted.
 
 Additional instructions are stored as bounded UTF-8 files in the run input
 bundle and passed through the same prompt-guide mechanism used by YAML/CLI.
@@ -327,8 +346,8 @@ permits one inference worker at a time.
 - **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
   guide; this pause is intentional.
 - **Interrupted** — inspect the run and explicitly resume it.
-- **Request body too large** — select a smaller input set or split the source
-  before creating the run.
+- **Request body too large** — compress the dictionary PDF or create a smaller
+  PDF containing the pages needed for the run, then upload that single PDF.
 - **`pdftk is not available on PATH` / `extraction returned 1`** — a native
   `uv` run cannot split a multi-page PDF until `pdftk-java` is installed. Use
   `brew install pdftk-java` on macOS or `sudo apt install -y pdftk-java` on

@@ -47,6 +47,23 @@ See the
 **[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
 for startup, shutdown, logs, persistence, and troubleshooting.
 
+### Create a dashboard run
+
+The web dashboard accepts exactly one dictionary PDF. Both the PDF and **PDF
+dictionary pages** are required before a run can be reviewed. Page selections
+are 1-based and may be a single page (`5`), a range (`10-20`), comma-separated
+pages (`1,5,9`), or a combination (`1,5,10-20`). Every selected page must exist
+in the uploaded PDF.
+
+The introduction-page and representative MDF parsing-guide page fields are
+optional and use the same syntax. Examples shown in the fields, such as
+`ex: 30-35`, are placeholders rather than prefilled values. If a required value
+is missing or a page selection is invalid, the dashboard blocks the run and
+marks the affected field in red with an explanation.
+
+Page-image and directory inputs remain available through the CLI and YAML
+workflows; they are not accepted by the web dashboard.
+
 ### Web dashboard with uv
 
 For a native Python installation instead of Docker, install the web extra and

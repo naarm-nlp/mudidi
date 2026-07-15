@@ -128,7 +128,7 @@
                 <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
               </datalist>
               {% for field, custom_field, reasoning_field, label, stages, help_text in [
-                ('stage1_model', 'stage1_custom_model', 'stage1_reasoning', 'Stage 1 model', 'stage1', 'Stage 1 transcribes page images into faithful flat text.'),
+                ('stage1_model', 'stage1_custom_model', 'stage1_reasoning', 'Stage 1 model', 'stage1', 'Stage 1 transcribes the selected dictionary pages into faithful flat text.'),
                 ('stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
                 ('stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
               ] %}
