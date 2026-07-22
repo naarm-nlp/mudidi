@@ -18,8 +18,8 @@ docker compose up --build
 ```
 
 The first build downloads and installs the image dependencies. When the log
-says the application has started, open `http://localhost:8000`. The Compose
-port is published only on
+prints `MUDIDI dashboard: http://localhost:8000/`, open that address. The
+Compose port is published only on
 `127.0.0.1`; do not change it to a public interface because this is a local,
 single-user application.
 
@@ -78,7 +78,7 @@ uv run mudidi web
 
 Save the API key for your model provider under **API credentials** on the
 **New Run** screen by clicking **Save key** beside that provider.
-MUDIDI opens `http://127.0.0.1:8000`. It binds to loopback and is not intended
+MUDIDI opens `http://localhost:8000`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 `uv` installs MUDIDI's Python dependencies, but it does not install operating

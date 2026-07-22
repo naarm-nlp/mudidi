@@ -34,9 +34,16 @@ def run_server(
 
     load_dotenv()
     app = create_app(data_dir=data_dir, container_mode=container_mode)
+    browser_url = f"http://localhost:{port}/"
+    print(f"MUDIDI dashboard: {browser_url}", flush=True)
     if open_browser:
-        url = f"http://{host}:{port}/"
-        threading.Timer(0.8, webbrowser.open, args=(url,)).start()
+        threading.Timer(0.8, webbrowser.open, args=(browser_url,)).start()
     bind_host = "0.0.0.0" if container_mode else host
-    uvicorn.run(app, host=bind_host, port=port, workers=1)
+    uvicorn.run(
+        app,
+        host=bind_host,
+        port=port,
+        workers=1,
+        log_level="warning",
+    )
     return 0

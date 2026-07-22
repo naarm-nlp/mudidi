@@ -213,7 +213,7 @@ assets must be vendored for offline local operation.
 5. Vendor static dependencies; add content hashes or version comments.
 6. Add health and home/New Run placeholder routes.
 7. Add Host/Origin groundwork and safe template defaults. Do not expose the
-   server on `0.0.0.0` by default.
+   server on all network interfaces by default.
 8. Package templates/static files in wheels and verify installed-resource
    lookup rather than relying on the repository CWD.
 
