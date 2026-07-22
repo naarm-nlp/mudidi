@@ -74,7 +74,7 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
-MUDIDI opens <http://127.0.0.1:8000>. Use `--no-browser` to prevent it from
+MUDIDI opens <http://localhost:8000>. Use `--no-browser` to prevent it from
 opening a browser automatically, or `--port 8080` to choose another local port.
 
 ### CLI and YAML workflows with uv (recommended)
