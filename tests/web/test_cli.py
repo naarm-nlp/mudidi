@@ -87,7 +87,14 @@ def test_server_uses_exactly_one_uvicorn_worker(
     )
 
     assert result == 0
-    assert calls == [{"host": "127.0.0.1", "port": 8123, "workers": 1}]
+    assert calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8123,
+            "workers": 1,
+            "log_level": "warning",
+        }
+    ]
 
 
 def test_server_opens_and_advertises_localhost(
