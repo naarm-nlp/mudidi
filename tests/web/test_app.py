@@ -266,6 +266,79 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
     assert "anthropic/claude-sonnet-4-6" in response.text
 
 
+@pytest.mark.parametrize(
+    "submitted_output",
+    [
+        "outputs/web-output",
+        "/Users/example/project/outputs/web-output",
+    ],
+)
+def test_container_dashboard_rebases_project_outputs_to_the_host_mount(
+    tmp_path: Path,
+    submitted_output: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", container_mode=True)
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": submitted_output,
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-4-6",
+            "reasoning": "low",
+            "dictionary_pages": "1",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.output.directory == Path("/app/outputs/web-output")
+
+
+def test_container_dashboard_rejects_unmounted_host_output_path(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(
+        create_app(data_dir=tmp_path / "app-data", container_mode=True)
+    )
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": "/Users/example/Desktop/custom-output",
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-4-6",
+            "reasoning": "low",
+            "dictionary_pages": "1",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
+    )
+
+    assert response.status_code == 422
+    assert 'data-field-error="output_directory"' in response.text
+    assert "Use outputs/ or /data/ for Docker output files" in response.text
+
+
+def test_container_dashboard_defaults_to_the_host_outputs_mount(
+    tmp_path: Path,
+) -> None:
+    response = TestClient(
+        create_app(data_dir=tmp_path / "app-data", container_mode=True)
+    ).get("/")
+
+    assert response.status_code == 200
+    assert 'name="output_directory" value="outputs"' in response.text
+
+
 def test_new_run_saves_selected_dashboard_credential_immediately(
     tmp_path: Path,
 ) -> None:

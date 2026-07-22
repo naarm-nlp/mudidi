@@ -16,6 +16,7 @@ def test_compose_publishes_only_to_host_loopback_and_persists_data() -> None:
 
     assert service["ports"] == ["127.0.0.1:8000:8000"]
     assert "./mudidi-data:/data" in service["volumes"]
+    assert "./outputs:/app/outputs" in service["volumes"]
     assert service["init"] is True
     assert "no-new-privileges:true" in service["security_opt"]
 
