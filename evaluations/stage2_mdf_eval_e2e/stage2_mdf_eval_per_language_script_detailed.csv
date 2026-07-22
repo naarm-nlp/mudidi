@@ -1,417 +1,422 @@
-experiment,language,page,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.891566,1.0,0.921753,166,40,148,22,22
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.489083,0.681818,0.596548,229,119,112,22,15
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.560484,0.608696,0.608696,248,109,139,46,28
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.574468,0.9,0.654762,141,69,81,20,18
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.270476,0.294118,0.196373,525,386,142,51,15
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.03081,0.089286,0.063961,1136,1125,35,56,5
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.422131,0.456522,0.373529,732,434,309,92,42
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.370173,0.470588,0.426262,751,510,278,68,32
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.040111,0.034722,0.03125,1795,1724,72,144,5
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.514673,0.818182,0.550103,886,457,456,77,63
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.1275,0.132231,0.077448,1200,1054,153,121,16
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.094017,0.5,0.5,585,530,55,84,42
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.117241,0.212766,0.082243,290,267,34,47,10
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.044847,0.146341,0.031491,1048,1003,47,41,6
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.145103,0.394737,0.256861,2226,1988,323,76,30
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.081614,0.255319,0.132466,1115,1063,91,94,24
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.00348,0.06,0.006524,862,859,3,50,3
-claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.070671,0.192308,0.064064,283,269,20,52,10
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.084559,0.3125,0.060183,272,258,23,32,10
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.136865,0.642857,0.141178,453,426,62,42,27
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.891566,1.0,0.921753,166,40,148,22,22
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.576419,0.727273,0.642003,229,99,132,22,16
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.58871,0.652174,0.652174,248,102,146,46,30
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.638298,0.9,0.708636,141,65,90,20,18
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.03619,0.137255,0.06355,525,510,19,51,7
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.024648,0.089286,0.047765,1136,1140,28,56,5
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.311475,0.326087,0.234643,732,521,228,92,30
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.135819,0.294118,0.153173,751,690,102,68,20
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.109192,0.111111,0.084077,1795,1700,196,144,16
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.22009,0.909091,0.26237,886,755,195,77,70
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.0,0.0,0.0,1713,1713,0,139,0
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.1275,0.132231,0.077448,1200,1054,153,121,16
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.003419,0.02381,0.015873,585,585,2,84,2
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.017241,0.085106,0.012582,290,290,5,47,4
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.044847,0.146341,0.031491,1048,1003,47,41,6
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.036411,0.095238,0.013601,769,747,28,21,2
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.128032,0.394737,0.25844,2226,2034,285,76,30
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.083408,0.255319,0.133928,1115,1066,93,94,24
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.00348,0.06,0.006524,862,859,3,50,3
-claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.088339,0.211538,0.083295,283,264,25,52,11
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.084559,0.3125,0.060183,272,258,23,32,10
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.136865,0.642857,0.141178,453,426,62,42,27
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.891566,1.0,0.921753,166,40,148,22,22
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.576419,0.727273,0.642003,229,99,132,22,16
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.58871,0.652174,0.652174,248,102,146,46,30
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.617021,0.9,0.697619,141,62,87,20,18
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.142857,0.235294,0.152486,525,454,75,51,12
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.049296,0.107143,0.081818,1136,1104,56,56,6
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.088798,0.173913,0.072587,732,685,65,92,16
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.13715,0.264706,0.150224,751,700,103,68,18
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.058496,0.0625,0.059028,1795,1691,105,144,9
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.145598,0.818182,0.171461,886,821,129,77,63
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.01,0.090909,0.010167,1200,1199,12,121,11
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.094017,0.5,0.5,585,530,55,84,42
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.420792,0.780488,0.406707,202,165,85,41,32
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.117241,0.212766,0.082243,290,267,34,47,10
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.044847,0.146341,0.031491,1048,1003,47,41,6
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.12354,0.263158,0.206968,2226,1956,275,76,20
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.09417,0.223404,0.130377,1115,1047,105,94,21
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.015081,0.08,0.01342,862,849,13,50,4
-claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.084806,0.192308,0.08009,283,265,24,52,10
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.084559,0.3125,0.060183,272,258,23,32,10
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.136865,0.642857,0.141178,453,426,62,42,27
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.891566,1.0,0.921753,166,40,148,22,22
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.576419,0.727273,0.642003,229,99,132,22,16
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.58871,0.652174,0.652174,248,102,146,46,30
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.638298,0.9,0.708636,141,65,90,20,18
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.148571,0.215686,0.146359,525,450,78,51,11
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.039613,0.089286,0.063961,1136,1115,45,56,5
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.378415,0.467391,0.373367,732,467,277,92,43
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.30759,0.823529,0.350768,751,598,231,68,56
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.062396,0.076389,0.059137,1795,1752,112,144,11
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.208804,0.896104,0.249383,886,765,185,77,69
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.013333,0.090909,0.017721,1200,1195,16,121,11
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.094017,0.5,0.5,585,530,55,84,42
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.440594,0.780488,0.414024,202,156,89,41,32
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.082759,0.191489,0.060966,290,277,24,47,9
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.044847,0.146341,0.031491,1048,1003,47,41,6
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.193621,0.434211,0.29528,2226,1888,431,76,33
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.232287,0.56383,0.24628,1115,984,259,94,53
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.00348,0.06,0.006524,862,859,3,50,3
-claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.084806,0.192308,0.08009,283,265,24,52,10
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.933735,1.0,0.956981,166,22,155,22,22
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.650655,0.772727,0.729665,229,81,149,22,17
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.665323,0.73913,0.73913,248,83,165,46,34
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.758865,1.0,0.805779,141,47,107,20,20
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.099048,0.196078,0.112422,525,476,52,51,10
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.007923,0.035714,0.00746,1136,1137,9,56,2
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.561475,0.706522,0.552146,732,383,411,92,65
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.303595,0.470588,0.360867,751,547,228,68,32
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.073363,0.805195,0.081157,886,827,65,77,62
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.014167,0.099174,0.018156,1200,1195,17,121,12
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.420792,0.780488,0.406707,202,165,85,41,32
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.055172,0.12766,0.037404,290,280,16,47,6
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.0,0.0,0.0,156,156,0,21,0
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.019084,0.097561,0.023882,1048,1030,20,41,4
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.0,0.0,0.0,769,769,0,21,0
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.235849,0.460526,0.298275,2226,1812,525,76,35
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.216143,0.574468,0.229146,1115,1009,241,94,54
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.024362,0.1,0.046524,862,841,21,50,5
-gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.102473,0.192308,0.094628,283,260,29,52,10
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.043668,0.318182,0.039104,229,228,10,22,7
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.032258,0.043478,0.028986,248,248,8,46,2
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.148936,0.75,0.145005,141,143,21,20,15
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.068571,0.176471,0.079334,525,493,36,51,9
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.039613,0.089286,0.063961,1136,1115,45,56,5
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.530055,0.586957,0.512787,732,360,388,92,54
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.299601,0.485294,0.354727,751,562,225,68,33
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.071866,0.0625,0.049147,1795,1703,129,144,9
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.29684,0.818182,0.321213,886,626,263,77,63
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.014167,0.099174,0.018156,1200,1195,17,121,12
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.12069,0.234043,0.085789,290,267,35,47,11
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.0,0.0,0.0,156,156,0,21,0
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.013359,0.146341,0.02187,1048,1036,14,41,6
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.0,0.0,0.0,769,769,0,21,0
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.187781,0.328947,0.253417,2226,1821,418,76,25
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.189238,0.510638,0.15765,1115,1045,211,94,48
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.00348,0.06,0.006524,862,859,3,50,3
-gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.060071,0.173077,0.05857,283,273,17,52,9
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.099338,0.642857,0.119875,453,445,45,42,27
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.043668,0.318182,0.039104,229,228,10,22,7
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.032258,0.043478,0.028986,248,248,8,46,2
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.148936,0.75,0.145005,141,143,21,20,15
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.022857,0.117647,0.043943,525,517,12,51,6
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.003521,0.017857,0.003401,1136,1132,4,56,1
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.561475,0.706522,0.552146,732,383,411,92,65
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.304927,0.470588,0.353787,751,574,229,68,32
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.29684,0.818182,0.321213,886,626,263,77,63
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.014167,0.099174,0.018156,1200,1195,17,121,12
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.02069,0.106383,0.016128,290,290,6,47,5
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.160256,0.238095,0.106706,156,131,25,21,5
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.185115,0.585366,0.301108,1048,902,194,41,24
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.084525,0.142857,0.029928,769,704,65,21,3
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.195418,0.328947,0.26043,2226,1804,435,76,25
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.181166,0.43617,0.154575,1115,1020,202,94,41
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.015081,0.08,0.01342,862,849,13,50,4
-gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.060071,0.173077,0.05857,283,273,17,52,9
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.131004,0.363636,0.084558,229,208,30,22,8
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.028226,0.043478,0.043478,248,241,7,46,2
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.191489,0.75,0.187863,141,136,27,20,15
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.057143,0.156863,0.05568,525,503,30,51,8
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.021127,0.071429,0.046104,1136,1136,24,56,4
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.47541,0.532609,0.44986,732,400,348,92,49
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.147803,0.308824,0.179788,751,676,111,68,21
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.073363,0.805195,0.081157,886,827,65,77,62
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.014167,0.099174,0.018156,1200,1195,17,121,12
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.02069,0.106383,0.016128,290,290,6,47,5
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.051282,0.095238,0.02123,156,148,8,21,2
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.110687,0.536585,0.282274,1048,980,116,41,22
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.090746,0.184211,0.163355,2226,2027,202,76,14
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.019731,0.12766,0.029136,1115,1110,22,94,12
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.0,0.0,0.0,862,862,0,50,0
-gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.155477,0.307692,0.164446,283,254,44,52,16
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.099338,0.642857,0.119875,453,445,45,42,27
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.043668,0.318182,0.039104,229,228,10,22,7
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.0,0.0,0.0,248,248,0,46,0
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.148936,0.75,0.145005,141,143,21,20,15
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.139048,0.196078,0.126751,525,455,73,51,10
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.018486,0.017857,0.017857,1136,1115,21,56,1
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.360656,0.423913,0.330618,732,485,264,92,39
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.30759,0.441176,0.272855,751,545,231,68,30
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.29684,0.818182,0.321213,886,626,263,77,63
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.014167,0.099174,0.018156,1200,1195,17,121,12
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.055172,0.12766,0.037404,290,280,16,47,6
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.070513,0.095238,0.057644,156,145,11,21,2
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.110687,0.536585,0.282274,1048,980,116,41,22
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.179245,0.407895,0.226492,2226,1888,399,76,31
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.043049,0.191489,0.092966,1115,1084,48,94,18
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.054524,0.14,0.031272,862,815,47,50,7
-gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.088339,0.211538,0.083295,283,264,25,52,11
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.740964,1.0,0.783037,166,97,123,22,22
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.052402,0.409091,0.130013,229,226,12,22,9
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.141129,0.391304,0.391304,248,213,35,46,18
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.163121,0.75,0.169702,141,133,23,20,15
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.148571,0.215686,0.146359,525,450,78,51,11
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.018486,0.017857,0.017857,1136,1115,21,56,1
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.497268,0.565217,0.483619,732,383,364,92,52
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.262317,0.426471,0.292076,751,580,197,68,29
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.29684,0.818182,0.321213,886,626,263,77,63
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.1275,0.132231,0.077448,1200,1054,153,121,16
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.055172,0.12766,0.037404,290,280,16,47,6
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.099237,0.439024,0.270567,1048,992,104,41,18
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.162174,0.289474,0.178312,2226,1870,361,76,22
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.079821,0.244681,0.130696,1115,1063,89,94,23
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.00348,0.06,0.006524,862,859,3,50,3
-gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.084806,0.192308,0.08009,283,265,24,52,10
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.10596,0.642857,0.123026,453,448,48,42,27
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.052402,0.409091,0.130013,229,226,12,22,9
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.141129,0.391304,0.391304,248,213,35,46,18
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.163121,0.75,0.169702,141,133,23,20,15
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.139048,0.196078,0.126751,525,455,73,51,10
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.021127,0.071429,0.046104,1136,1136,24,56,4
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.392077,0.467391,0.355953,732,458,287,92,43
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.231691,0.411765,0.230269,751,605,174,68,28
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.036212,0.3125,0.304398,1795,1733,65,144,45
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.29684,0.818182,0.321213,886,626,263,77,63
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.01,0.090909,0.010167,1200,1199,12,121,11
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.445545,0.780488,0.418902,202,156,90,41,32
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.055172,0.12766,0.037404,290,280,16,47,6
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.0,0.0,0.0,156,156,0,21,0
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.084924,0.487805,0.274666,1048,1007,89,41,20
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.0,0.0,0.0,769,769,0,21,0
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.113657,0.289474,0.198592,2226,1978,253,76,22
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.020628,0.170213,0.025401,1115,1127,23,94,16
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.017401,0.1,0.017293,862,847,15,50,5
-gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.060071,0.173077,0.05857,283,273,17,52,9
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.0625,0.34375,0.064647,272,266,17,32,11
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.181015,0.690476,0.208343,453,405,82,42,29
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.052402,0.409091,0.130013,229,226,12,22,9
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.141129,0.391304,0.391304,248,213,35,46,18
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.148936,0.75,0.145005,141,143,21,20,15
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.154286,0.215686,0.146359,525,447,81,51,11
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.021127,0.071429,0.046104,1136,1136,24,56,4
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.445355,0.543478,0.441822,732,423,326,92,50
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.260985,0.411765,0.291259,751,579,196,68,28
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.000557,0.006944,0.003472,1795,1795,1,144,1
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.073363,0.805195,0.081157,886,827,65,77,62
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.1275,0.132231,0.077448,1200,1054,153,121,16
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.006838,0.035714,0.027778,585,583,4,84,3
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.440594,0.756098,0.412805,202,156,89,41,31
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.055172,0.12766,0.037404,290,280,16,47,6
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.010025,156,152,4,21,1
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.110687,0.536585,0.282274,1048,980,116,41,22
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.039012,0.095238,0.014777,769,739,30,21,2
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,0.0,0.0,0.0,23,23,0,7,0
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.166667,0.328947,0.217785,2226,1860,371,76,25
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.025112,0.170213,0.025401,1115,1122,28,94,16
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.080046,0.14,0.044606,862,793,69,50,7
-gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.102473,0.211538,0.099321,283,260,29,52,11
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.339956,0.833333,0.417329,453,337,154,42,35
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.837349,1.0,0.866244,166,62,139,22,22
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.995633,0.954545,0.954545,229,1,228,22,21
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.685484,0.652174,0.622418,248,108,170,46,30
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.503546,0.75,0.48506,141,81,71,20,15
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.12,0.294118,0.189471,525,466,63,51,15
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.067782,0.160714,0.119194,1136,1091,77,56,9
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.471311,0.576087,0.471588,732,395,345,92,53
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.391478,0.544118,0.463863,751,506,294,68,37
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.381058,0.583333,0.57461,1795,1132,684,144,84
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.55079,1.0,0.530232,886,398,488,77,77
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.01,0.090909,0.010167,1200,1199,12,121,11
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,1.0,1.0,1.0,585,0,585,84,84
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,1.0,1.0,1.0,202,0,202,41,41
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,1.0,1.0,1.0,290,0,290,47,47
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.0,0.0,0.0,156,156,0,21,0
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.865458,0.902439,0.792684,1048,189,907,41,37
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.0,0.0,0.0,769,769,0,21,0
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.040359,0.269231,0.075458,223,214,9,26,7
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,1.0,1.0,1.0,23,0,23,7,7
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.421384,0.710526,0.589023,2226,1661,938,76,54
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.463677,0.446809,0.380532,1115,615,517,94,42
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.063805,0.22,0.166524,862,807,55,50,11
-qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.159011,0.307692,0.178602,283,244,45,52,16
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.339956,0.833333,0.417329,453,337,154,42,35
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.783133,1.0,0.822809,166,81,130,22,22
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.991266,0.909091,0.909091,229,2,227,22,20
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.616935,0.586957,0.5572,248,125,153,46,27
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.41844,0.75,0.40506,141,96,59,20,15
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.167619,0.352941,0.248294,525,441,88,51,18
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.135563,0.214286,0.172765,1136,1014,154,56,12
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.471311,0.576087,0.471588,732,395,345,92,53
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.442077,0.647059,0.501589,751,470,332,68,44
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.381058,0.583333,0.57461,1795,1132,684,144,84
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.55079,1.0,0.530232,886,398,488,77,77
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.011667,0.107438,0.011438,1200,1201,14,121,13
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.044444,0.083333,0.053265,585,563,26,84,7
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,1.0,1.0,1.0,202,0,202,41,41
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.203448,0.212766,0.157649,290,234,59,47,10
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.089744,0.238095,0.238095,156,142,14,21,5
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.223282,0.439024,0.439024,1048,814,234,41,18
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.061118,0.238095,0.238095,769,722,47,21,5
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.143498,0.384615,0.216484,223,191,32,26,10
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,1.0,1.0,1.0,23,0,23,7,7
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.462713,0.723684,0.611337,2226,1521,1030,76,55
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.436771,0.468085,0.360015,1115,648,487,94,44
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.063805,0.22,0.166524,862,807,55,50,11
-qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.144876,0.269231,0.155525,283,248,41,52,14
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.040441,0.3125,0.033397,272,272,11,32,10
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.339956,0.833333,0.417329,453,337,154,42,35
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.991266,0.909091,0.909091,229,2,227,22,20
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.596774,0.630435,0.456348,248,156,148,46,29
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.219858,0.75,0.201613,141,131,31,20,15
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,0.154286,0.333333,0.228686,525,448,81,51,17
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,0.111796,0.178571,0.147765,1136,1029,127,56,10
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.489071,0.543478,0.468698,732,379,358,92,50
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.47004,0.588235,0.533651,751,451,353,68,40
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.381058,0.583333,0.57461,1795,1132,684,144,84
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.55079,1.0,0.530232,886,398,488,77,77
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.01,0.090909,0.010167,1200,1199,12,121,11
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.117949,0.511905,0.511905,585,516,69,84,43
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,1.0,1.0,1.0,202,0,202,41,41
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.206897,0.234043,0.161196,290,234,60,47,11
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.025641,0.047619,0.047619,156,152,4,21,1
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.800573,0.634146,0.57876,1048,210,839,41,26
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.006502,0.047619,0.047619,769,764,5,21,1
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.09417,0.269231,0.141392,223,202,21,26,7
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,1.0,1.0,1.0,23,0,23,7,7
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.424978,0.736842,0.602647,2226,1661,946,76,56
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.460987,0.414894,0.378853,1115,610,514,94,39
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.063805,0.22,0.166524,862,807,55,50,11
-qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.144876,0.269231,0.155525,283,248,41,52,14
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,0.044118,0.34375,0.037304,272,272,12,32,11
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,0.339956,0.833333,0.417329,453,337,154,42,35
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,0.76506,1.0,0.805764,166,89,127,22,22
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,0.991266,0.909091,0.909091,229,2,227,22,20
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,0.596774,0.630435,0.456348,248,156,148,46,29
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,0.219858,0.75,0.201613,141,131,31,20,15
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,1.0,1.0,1.0,525,0,525,51,51
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,1.0,1.0,1.0,1136,0,1136,56,56
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,0.525956,0.597826,0.51514,732,357,385,92,55
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,0.462051,0.676471,0.523738,751,473,347,68,46
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,0.335376,0.236111,0.227388,1795,1214,602,144,34
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,0.761851,1.0,0.751654,886,237,675,77,77
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,0.001168,0.014388,0.014388,1713,1711,2,139,2
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,0.01,0.090909,0.010167,1200,1199,12,121,11
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,0.022222,0.071429,0.052183,585,575,13,84,6
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,0.430693,0.780488,0.422967,202,162,87,41,32
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,0.2,0.212766,0.158156,290,235,58,47,10
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,0.801282,0.714286,0.714286,156,31,125,21,15
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,0.826336,0.658537,0.658537,1048,182,866,41,27
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,0.888166,0.714286,0.714286,769,86,683,21,15
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,0.70852,0.769231,0.64304,223,65,158,26,20
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,1.0,1.0,1.0,23,0,23,7,7
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,0.446092,0.855263,0.704079,2226,1566,993,76,65
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,0.471749,0.425532,0.389491,1115,598,526,94,40
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,0.093968,0.24,0.186524,862,781,81,50,12
-qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,0.204947,0.346154,0.217063,283,231,58,52,18
+experiment,language,page,language_script,gold_word_count,gold_grapheme_count,GCER,WER,TextEdit,total_graphemes_pred,total_grapheme_edits,total_word_edits
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.891566,1.0,0.921753,40,148,22
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.489083,0.681818,0.596548,119,112,15
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.560484,0.608696,0.608696,109,139,28
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.574468,0.9,0.654762,69,81,18
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.270476,0.294118,0.196373,386,142,15
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.03081,0.089286,0.063961,1125,35,5
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.422131,0.456522,0.373529,434,309,42
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.370173,0.470588,0.426262,510,278,32
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.040111,0.034722,0.03125,1724,72,5
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.514673,0.818182,0.550103,457,456,63
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.1275,0.132231,0.077448,1054,153,16
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.094017,0.5,0.5,530,55,42
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.117241,0.212766,0.082243,267,34,10
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.044847,0.146341,0.031491,1003,47,6
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.145103,0.394737,0.256861,1988,323,30
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.081614,0.255319,0.132466,1063,91,24
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.00348,0.06,0.006524,859,3,3
+claudeopus47_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.070671,0.192308,0.064064,269,20,10
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.084559,0.3125,0.060183,258,23,10
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.136865,0.642857,0.141178,426,62,27
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.891566,1.0,0.921753,40,148,22
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.576419,0.727273,0.642003,99,132,16
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.58871,0.652174,0.652174,102,146,30
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.638298,0.9,0.708636,65,90,18
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.03619,0.137255,0.06355,510,19,7
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.024648,0.089286,0.047765,1140,28,5
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.311475,0.326087,0.234643,521,228,30
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.135819,0.294118,0.153173,690,102,20
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.109192,0.111111,0.084077,1700,196,16
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.22009,0.909091,0.26237,755,195,70
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.0,0.0,0.0,1713,0,0
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.1275,0.132231,0.077448,1054,153,16
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.003419,0.02381,0.015873,585,2,2
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.017241,0.085106,0.012582,290,5,4
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.044847,0.146341,0.031491,1003,47,6
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.036411,0.095238,0.013601,747,28,2
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.128032,0.394737,0.25844,2034,285,30
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.083408,0.255319,0.133928,1066,93,24
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.00348,0.06,0.006524,859,3,3
+claudeopus47_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.088339,0.211538,0.083295,264,25,11
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.084559,0.3125,0.060183,258,23,10
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.136865,0.642857,0.141178,426,62,27
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.891566,1.0,0.921753,40,148,22
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.576419,0.727273,0.642003,99,132,16
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.58871,0.652174,0.652174,102,146,30
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.617021,0.9,0.697619,62,87,18
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.142857,0.235294,0.152486,454,75,12
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.049296,0.107143,0.081818,1104,56,6
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.088798,0.173913,0.072587,685,65,16
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.13715,0.264706,0.150224,700,103,18
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.058496,0.0625,0.059028,1691,105,9
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.145598,0.818182,0.171461,821,129,63
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.01,0.090909,0.010167,1199,12,11
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.094017,0.5,0.5,530,55,42
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.420792,0.780488,0.406707,165,85,32
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.117241,0.212766,0.082243,267,34,10
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.044847,0.146341,0.031491,1003,47,6
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.12354,0.263158,0.206968,1956,275,20
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.09417,0.223404,0.130377,1047,105,21
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.015081,0.08,0.01342,849,13,4
+claudeopus47_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.084806,0.192308,0.08009,265,24,10
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.084559,0.3125,0.060183,258,23,10
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.136865,0.642857,0.141178,426,62,27
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.891566,1.0,0.921753,40,148,22
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.576419,0.727273,0.642003,99,132,16
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.58871,0.652174,0.652174,102,146,30
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.638298,0.9,0.708636,65,90,18
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.148571,0.215686,0.146359,450,78,11
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.039613,0.089286,0.063961,1115,45,5
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.378415,0.467391,0.373367,467,277,43
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.30759,0.823529,0.350768,598,231,56
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.062396,0.076389,0.059137,1752,112,11
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.208804,0.896104,0.249383,765,185,69
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.013333,0.090909,0.017721,1195,16,11
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.094017,0.5,0.5,530,55,42
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.440594,0.780488,0.414024,156,89,32
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.082759,0.191489,0.060966,277,24,9
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.044847,0.146341,0.031491,1003,47,6
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.193621,0.434211,0.29528,1888,431,33
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.232287,0.56383,0.24628,984,259,53
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.00348,0.06,0.006524,859,3,3
+claudeopus47_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.084806,0.192308,0.08009,265,24,10
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.933735,1.0,0.956981,22,155,22
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.650655,0.772727,0.729665,81,149,17
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.665323,0.73913,0.73913,83,165,34
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.758865,1.0,0.805779,47,107,20
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.099048,0.196078,0.112422,476,52,10
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.007923,0.035714,0.00746,1137,9,2
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.561475,0.706522,0.552146,383,411,65
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.303595,0.470588,0.360867,547,228,32
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.073363,0.805195,0.081157,827,65,62
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.014167,0.099174,0.018156,1195,17,12
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.420792,0.780488,0.406707,165,85,32
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.055172,0.12766,0.037404,280,16,6
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.0,0.0,0.0,156,0,0
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.019084,0.097561,0.023882,1030,20,4
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.0,0.0,0.0,769,0,0
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.235849,0.460526,0.298275,1812,525,35
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.216143,0.574468,0.229146,1009,241,54
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.024362,0.1,0.046524,841,21,5
+gemini31pro_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.102473,0.192308,0.094628,260,29,10
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.043668,0.318182,0.039104,228,10,7
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.032258,0.043478,0.028986,248,8,2
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.148936,0.75,0.145005,143,21,15
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.068571,0.176471,0.079334,493,36,9
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.039613,0.089286,0.063961,1115,45,5
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.530055,0.586957,0.512787,360,388,54
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.299601,0.485294,0.354727,562,225,33
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.071866,0.0625,0.049147,1703,129,9
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.29684,0.818182,0.321213,626,263,63
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.014167,0.099174,0.018156,1195,17,12
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.12069,0.234043,0.085789,267,35,11
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.0,0.0,0.0,156,0,0
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.013359,0.146341,0.02187,1036,14,6
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.0,0.0,0.0,769,0,0
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.187781,0.328947,0.253417,1821,418,25
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.189238,0.510638,0.15765,1045,211,48
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.00348,0.06,0.006524,859,3,3
+gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.060071,0.173077,0.05857,273,17,9
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.099338,0.642857,0.119875,445,45,27
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.043668,0.318182,0.039104,228,10,7
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.032258,0.043478,0.028986,248,8,2
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.148936,0.75,0.145005,143,21,15
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.022857,0.117647,0.043943,517,12,6
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.003521,0.017857,0.003401,1132,4,1
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.561475,0.706522,0.552146,383,411,65
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.304927,0.470588,0.353787,574,229,32
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.29684,0.818182,0.321213,626,263,63
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.014167,0.099174,0.018156,1195,17,12
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.02069,0.106383,0.016128,290,6,5
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.160256,0.238095,0.106706,131,25,5
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.185115,0.585366,0.301108,902,194,24
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.084525,0.142857,0.029928,704,65,3
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.195418,0.328947,0.26043,1804,435,25
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.181166,0.43617,0.154575,1020,202,41
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.015081,0.08,0.01342,849,13,4
+gemini31pro_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.060071,0.173077,0.05857,273,17,9
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.131004,0.363636,0.084558,208,30,8
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.028226,0.043478,0.043478,241,7,2
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.191489,0.75,0.187863,136,27,15
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.057143,0.156863,0.05568,503,30,8
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.021127,0.071429,0.046104,1136,24,4
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.47541,0.532609,0.44986,400,348,49
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.147803,0.308824,0.179788,676,111,21
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.073363,0.805195,0.081157,827,65,62
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.014167,0.099174,0.018156,1195,17,12
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.02069,0.106383,0.016128,290,6,5
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.051282,0.095238,0.02123,148,8,2
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.110687,0.536585,0.282274,980,116,22
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.090746,0.184211,0.163355,2027,202,14
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.019731,0.12766,0.029136,1110,22,12
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.0,0.0,0.0,862,0,0
+gemini31pro_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.155477,0.307692,0.164446,254,44,16
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.099338,0.642857,0.119875,445,45,27
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.043668,0.318182,0.039104,228,10,7
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.0,0.0,0.0,248,0,0
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.148936,0.75,0.145005,143,21,15
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.139048,0.196078,0.126751,455,73,10
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.018486,0.017857,0.017857,1115,21,1
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.360656,0.423913,0.330618,485,264,39
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.30759,0.441176,0.272855,545,231,30
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.29684,0.818182,0.321213,626,263,63
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.014167,0.099174,0.018156,1195,17,12
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.055172,0.12766,0.037404,280,16,6
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.070513,0.095238,0.057644,145,11,2
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.110687,0.536585,0.282274,980,116,22
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.179245,0.407895,0.226492,1888,399,31
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.043049,0.191489,0.092966,1084,48,18
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.054524,0.14,0.031272,815,47,7
+gpt55_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.088339,0.211538,0.083295,264,25,11
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.740964,1.0,0.783037,97,123,22
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.052402,0.409091,0.130013,226,12,9
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.141129,0.391304,0.391304,213,35,18
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.163121,0.75,0.169702,133,23,15
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.148571,0.215686,0.146359,450,78,11
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.018486,0.017857,0.017857,1115,21,1
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.497268,0.565217,0.483619,383,364,52
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.262317,0.426471,0.292076,580,197,29
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.29684,0.818182,0.321213,626,263,63
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.1275,0.132231,0.077448,1054,153,16
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.055172,0.12766,0.037404,280,16,6
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.099237,0.439024,0.270567,992,104,18
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.162174,0.289474,0.178312,1870,361,22
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.079821,0.244681,0.130696,1063,89,23
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.00348,0.06,0.006524,859,3,3
+gpt55_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.084806,0.192308,0.08009,265,24,10
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.10596,0.642857,0.123026,448,48,27
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.052402,0.409091,0.130013,226,12,9
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.141129,0.391304,0.391304,213,35,18
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.163121,0.75,0.169702,133,23,15
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.139048,0.196078,0.126751,455,73,10
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.021127,0.071429,0.046104,1136,24,4
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.392077,0.467391,0.355953,458,287,43
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.231691,0.411765,0.230269,605,174,28
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.036212,0.3125,0.304398,1733,65,45
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.29684,0.818182,0.321213,626,263,63
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.01,0.090909,0.010167,1199,12,11
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.445545,0.780488,0.418902,156,90,32
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.055172,0.12766,0.037404,280,16,6
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.0,0.0,0.0,156,0,0
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.084924,0.487805,0.274666,1007,89,20
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.0,0.0,0.0,769,0,0
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.113657,0.289474,0.198592,1978,253,22
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.020628,0.170213,0.025401,1127,23,16
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.017401,0.1,0.017293,847,15,5
+gpt55_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.060071,0.173077,0.05857,273,17,9
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.0625,0.34375,0.064647,266,17,11
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.181015,0.690476,0.208343,405,82,29
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.052402,0.409091,0.130013,226,12,9
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.141129,0.391304,0.391304,213,35,18
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.148936,0.75,0.145005,143,21,15
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.154286,0.215686,0.146359,447,81,11
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.021127,0.071429,0.046104,1136,24,4
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.445355,0.543478,0.441822,423,326,50
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.260985,0.411765,0.291259,579,196,28
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.000557,0.006944,0.003472,1795,1,1
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.073363,0.805195,0.081157,827,65,62
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.1275,0.132231,0.077448,1054,153,16
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.440594,0.756098,0.412805,156,89,31
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.055172,0.12766,0.037404,280,16,6
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.110687,0.536585,0.282274,980,116,22
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.039012,0.095238,0.014777,739,30,2
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.166667,0.328947,0.217785,1860,371,25
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.025112,0.170213,0.025401,1122,28,16
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.080046,0.14,0.044606,793,69,7
+gpt55_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.102473,0.211538,0.099321,260,29,11
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.339956,0.833333,0.417329,337,154,35
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.837349,1.0,0.866244,62,139,22
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.995633,0.954545,0.954545,1,228,21
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.685484,0.652174,0.622418,108,170,30
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.503546,0.75,0.48506,81,71,15
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.12,0.294118,0.189471,466,63,15
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.067782,0.160714,0.119194,1091,77,9
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.471311,0.576087,0.471588,395,345,53
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.391478,0.544118,0.463863,506,294,37
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.381058,0.583333,0.57461,1132,684,84
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.55079,1.0,0.530232,398,488,77
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.01,0.090909,0.010167,1199,12,11
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,1.0,1.0,1.0,0,585,84
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,1.0,1.0,1.0,0,202,41
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,1.0,1.0,1.0,0,290,47
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.0,0.0,0.0,156,0,0
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.865458,0.902439,0.792684,189,907,37
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.0,0.0,0.0,769,0,0
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,1.0,1.0,1.0,0,23,7
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.421384,0.710526,0.589023,1661,938,54
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.463677,0.446809,0.380532,615,517,42
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.063805,0.22,0.166524,807,55,11
+qwen3vl235_high_mdf_intro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.159011,0.307692,0.178602,244,45,16
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.339956,0.833333,0.417329,337,154,35
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.783133,1.0,0.822809,81,130,22
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.991266,0.909091,0.909091,2,227,20
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.616935,0.586957,0.5572,125,153,27
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.41844,0.75,0.40506,96,59,15
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.167619,0.352941,0.248294,441,88,18
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.135563,0.214286,0.172765,1014,154,12
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.471311,0.576087,0.471588,395,345,53
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.442077,0.647059,0.501589,470,332,44
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.381058,0.583333,0.57461,1132,684,84
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.55079,1.0,0.530232,398,488,77
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.011667,0.107438,0.011438,1201,14,13
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.044444,0.083333,0.053265,563,26,7
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,1.0,1.0,1.0,0,202,41
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.203448,0.212766,0.157649,234,59,10
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.089744,0.238095,0.238095,142,14,5
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.223282,0.439024,0.439024,814,234,18
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.061118,0.238095,0.238095,722,47,5
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.143498,0.384615,0.216484,191,32,10
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,1.0,1.0,1.0,0,23,7
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.462713,0.723684,0.611337,1521,1030,55
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.436771,0.468085,0.360015,648,487,44
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.063805,0.22,0.166524,807,55,11
+qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.144876,0.269231,0.155525,248,41,14
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.040441,0.3125,0.033397,272,11,10
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.339956,0.833333,0.417329,337,154,35
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.991266,0.909091,0.909091,2,227,20
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.596774,0.630435,0.456348,156,148,29
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.219858,0.75,0.201613,131,31,15
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,0.154286,0.333333,0.228686,448,81,17
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,0.111796,0.178571,0.147765,1029,127,10
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.489071,0.543478,0.468698,379,358,50
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.47004,0.588235,0.533651,451,353,40
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.381058,0.583333,0.57461,1132,684,84
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.55079,1.0,0.530232,398,488,77
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.01,0.090909,0.010167,1199,12,11
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.117949,0.511905,0.511905,516,69,43
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,1.0,1.0,1.0,0,202,41
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.206897,0.234043,0.161196,234,60,11
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.047619,152,4,1
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.800573,0.634146,0.57876,210,839,26
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.006502,0.047619,0.047619,764,5,1
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.09417,0.269231,0.141392,202,21,7
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,1.0,1.0,1.0,0,23,7
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.424978,0.736842,0.602647,1661,946,56
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.460987,0.414894,0.378853,610,514,39
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.063805,0.22,0.166524,807,55,11
+qwen3vl235_high_mdf_nointro_notoolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.144876,0.269231,0.155525,248,41,14
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.044118,0.34375,0.037304,272,12,11
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.339956,0.833333,0.417329,337,154,35
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.76506,1.0,0.805764,89,127,22
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.991266,0.909091,0.909091,2,227,20
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,English-Latin,46,248,0.596774,0.630435,0.456348,156,148,29
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.219858,0.75,0.201613,131,31,15
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,Efik-Latin,51,525,1.0,1.0,1.0,0,525,51
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Efik-English,page_13,English-Latin,56,1136,1.0,1.0,1.0,0,1136,56
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Evenki-Cyrillic,92,732,0.525956,0.597826,0.51514,357,385,55
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Evenki-Russian,page_1,Russian-Cyrillic,68,751,0.462051,0.676471,0.523738,473,347,46
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,English-Latin,144,1795,0.335376,0.236111,0.227388,1214,602,34
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Greek-English,page_38,Greek-Greek,77,886,0.761851,1.0,0.751654,237,675,77
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.01,0.090909,0.010167,1199,12,11
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,English-Latin,84,585,0.022222,0.071429,0.052183,575,13,6
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.430693,0.780488,0.422967,162,87,32
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.2,0.212766,0.158156,235,58,10
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.801282,0.714286,0.714286,31,125,15
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.826336,0.658537,0.658537,182,866,27
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.888166,0.714286,0.714286,86,683,15
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.70852,0.769231,0.64304,65,158,20
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,1.0,1.0,1.0,0,23,7
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,French-Latin,76,2226,0.446092,0.855263,0.704079,1566,993,65
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,page_74,Nahuatl-Latin,94,1115,0.471749,0.425532,0.389491,598,526,40
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,English-Latin,50,862,0.093968,0.24,0.186524,781,81,12
+qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,page_15,Tiri-Latin,52,283,0.204947,0.346154,0.217063,231,58,18
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.185897,0.142857,0.105263,127,29,3
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.164122,0.560976,0.291694,924,172,23
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,French-Latin,21,769,0.084525,0.142857,0.029928,704,65,3
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.040359,0.269231,0.075458,214,9,7
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0

@@ -415,3 +415,8 @@ qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,F
 qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Nahuatl-French,Nahuatl-Latin,94,1115,0.471749,0.425532,0.389491
 qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,English-Latin,50,862,0.093968,0.24,0.186524
 qwen3vl235_high_mdf_nointro_toolbox_from_gemini31pro_flat_alpha,Tiri-English,Tiri-Latin,52,283,0.204947,0.346154,0.217063
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Chinese-Han,21,156,0.185897,0.142857,0.105263
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,English-Latin,41,1048,0.164122,0.560976,0.291694
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,French-Latin,21,769,0.084525,0.142857,0.029928
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Na-IPA,26,223,0.040359,0.269231,0.075458
+gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha,Na-English-Chinese-French,Na-Latin,7,23,0.0,0.0,0.0

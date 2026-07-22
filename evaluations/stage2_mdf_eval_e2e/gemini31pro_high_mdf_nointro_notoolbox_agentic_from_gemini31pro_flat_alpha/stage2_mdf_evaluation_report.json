@@ -1,0 +1,230 @@
+{
+  "settings": {
+    "record_threshold": 0.6,
+    "line_threshold": 0.7,
+    "marker_sub_list_path": null
+  },
+  "pages": [
+    {
+      "page_id": "Na-English-Chinese-French/page_19",
+      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
+      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2-e2e/Na-English-Chinese-French/stage-2/gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha/page_19/page_19.mdf.txt",
+      "n_pred_records": 7,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.6,
+      "record_counts": {
+        "tp": 7,
+        "fp": 0,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 72,
+        "fp": 52,
+        "fn": 44
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 7
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.090874,
+        "FieldValue_GCER": 0.126016,
+        "FieldValue_WER": 0.216387
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.044218,
+        "Headword_GCER": 0.044118,
+        "Headword_WER": 0.285714
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.059762,
+        "Gloss_GCER": 0.112385,
+        "Gloss_WER": 0.181586
+      },
+      "language_quality": {
+        "source:na": {
+          "source_na_TextEdit": 0.111607,
+          "source_na_GCER": 0.146789,
+          "source_na_WER": 0.5
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.048996,
+          "target_en_GCER": 0.120623,
+          "target_en_WER": 0.185185
+        },
+        "target:fr": {
+          "target_fr_TextEdit": 0.054796,
+          "target_fr_GCER": 0.104839,
+          "target_fr_WER": 0.165746
+        },
+        "target:zh": {
+          "target_zh_TextEdit": 0.077149,
+          "target_zh_GCER": 0.10625,
+          "target_zh_WER": 0.285714
+        }
+      },
+      "language_script_quality": {
+        "Chinese-Han": {
+          "LangScript_Chinese-Han_TextEdit": 0.105263,
+          "LangScript_Chinese-Han_GCER": 0.185897,
+          "LangScript_Chinese-Han_WER": 0.142857
+        },
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.291694,
+          "LangScript_English-Latin_GCER": 0.164122,
+          "LangScript_English-Latin_WER": 0.560976
+        },
+        "French-Latin": {
+          "LangScript_French-Latin_TextEdit": 0.029928,
+          "LangScript_French-Latin_GCER": 0.084525,
+          "LangScript_French-Latin_WER": 0.142857
+        },
+        "Na-IPA": {
+          "LangScript_Na-IPA_TextEdit": 0.075458,
+          "LangScript_Na-IPA_GCER": 0.040359,
+          "LangScript_Na-IPA_WER": 0.269231
+        },
+        "Na-Latin": {
+          "LangScript_Na-Latin_TextEdit": 0.0,
+          "LangScript_Na-Latin_GCER": 0.0,
+          "LangScript_Na-Latin_WER": 0.0
+        }
+      },
+      "marker_confusion": {
+        "lc": {
+          "re": 7
+        },
+        "gr": {
+          "dr": 7
+        },
+        "nt": {
+          "lf": 4
+        },
+        "xr": {
+          "ur": 3
+        },
+        "np": {
+          "ps": 6
+        },
+        "xe": {
+          "ue": 3
+        },
+        "xv": {
+          "rf": 2
+        },
+        "xn": {
+          "un": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 4,
+          "pred_index": 4,
+          "similarity": 0.942,
+          "headword_gold": "ɑ˩pʰv̩˧˥",
+          "headword_pred": "ɑ˩pʰv̩˥",
+          "gold_lines": 8,
+          "pred_lines": 7,
+          "line_pairs": 7,
+          "missing_lines": 1,
+          "extra_lines": 0
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\lc awo",
+          "pred": "\\re awo",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\gr Le foyer, la pièce principale ; la maison.",
+          "pred": "\\dr Le foyer, la pièce principale ; la maison",
+          "value_sim": 0.988
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\nt Commonly used classifier: ɭɯ˧",
+          "pred": "\\lf Commonly used classifier:",
+          "value_sim": 0.926
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xr gérer la maisonnée, s’occuper de la famille (tâche de la personne qui répartit les travaux à accomplir, veille aux approvisionnements…)",
+          "pred": "\\ur tâche de la personne qui répartit les travaux à accomplir, veille aux approvisionnements…",
+          "value_sim": 0.795
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\np Tone: LM",
+          "pred": "\\ps noun Tone: LM",
+          "value_sim": 0.762
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xe to take care of the household, to look after the affairs of the family (in particular: distributing work to the various members, and ensuring that the supplies are not running low)",
+          "pred": "\\ue in particular: distributing work to the various members, and ensuring that the supplies are not running low",
+          "value_sim": 0.746
+        },
+        {
+          "headword": "ɑ˩mi#˥",
+          "gold": "\\lc omi",
+          "pred": "\\re omi",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩mi#˥",
+          "gold": "\\gr Oie (femelle)",
+          "pred": "\\dr Oie (femelle)",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩mi#˥",
+          "gold": "\\nt Commonly used classifier: mi˩",
+          "pred": "\\lf Commonly used classifier:",
+          "value_sim": 0.926
+        },
+        {
+          "headword": "ɑ˩mi#˥",
+          "gold": "\\np Tone: LM+#H",
+          "pred": "\\ps noun Tone: LM+#H",
+          "value_sim": 0.815
+        },
+        {
+          "headword": "ɑ˩pʰv̩#˥",
+          "gold": "\\lc opu",
+          "pred": "\\re opu",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩pʰv̩#˥",
+          "gold": "\\gr Jars : mâle de l’oie.",
+          "pred": "\\dr Jars : mâle de l’oie",
+          "value_sim": 0.976
+        },
+        {
+          "headword": "ɑ˩pʰv̩#˥",
+          "gold": "\\nt Commonly used classifier: mi˩",
+          "pred": "\\lf Commonly used classifier:",
+          "value_sim": 0.926
+        },
+        {
+          "headword": "ɑ˩pʰv̩#˥",
+          "gold": "\\np Tone: LM +#H",
+          "pred": "\\ps noun Tone: LM +#H",
+          "value_sim": 0.828
+        },
+        {
+          "headword": "ɑ˩pʰo˩-hĩ˩",
+          "gold": "\\gr Quelqu’un d’autre ; une personne extérieure à la famille.",
+          "pred": "\\dr Quelqu’un d’autre ; une personne extérieure à la famille",
+          "value_sim": 0.991
+        }
+      ],
+      "missing_record_samples": [],
+      "extra_record_samples": []
+    }
+  ]
+}
