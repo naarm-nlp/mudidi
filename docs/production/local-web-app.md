@@ -334,9 +334,12 @@ uv run mudidi web --data-dir path/to/private-app-data
 ```
 
 Generated dictionary files remain in the selected output directory. In Docker,
-paths under `/data` are persisted in the host's `mudidi-data/` directory. With
-`uv`, output paths refer directly to the host filesystem. The first release
-permits one inference worker at a time.
+an output such as `outputs/web-output` is written to the repository's host
+directory at `outputs/web-output`; Compose mounts `./outputs` at
+`/app/outputs`. Paths under `/data` are persisted in the host's `mudidi-data/`
+directory. Other absolute host paths are rejected because Docker cannot access
+an unmounted host directory. With `uv`, output paths refer directly to the host
+filesystem. The first release permits one inference worker at a time.
 
 ## Troubleshooting
 

@@ -80,7 +80,10 @@
               {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
             </div>
             <label for="output">Output directory</label>
-            <div class="input-row"><input id="output" name="output_directory" value="~/Documents/MUDIDI-runs" required></div>
+            <div class="input-row{% if errors_by_field.output_directory %} field-invalid{% endif %}"{% if errors_by_field.output_directory %} data-field-error="output_directory"{% endif %}>
+              <input id="output" name="output_directory" value="{{ output_directory_default }}" required{% if errors_by_field.output_directory %} aria-invalid="true" aria-describedby="output-directory-error"{% endif %}>
+            </div>
+            {% if errors_by_field.output_directory %}<small id="output-directory-error" class="field-error-message">{{ errors_by_field.output_directory }}</small>{% endif %}
             <fieldset class="choice-group pipeline-choices output-policy-choices">
               <legend>Existing output policy</legend>
               <label><input type="radio" name="output_policy" value="resume" checked required> <span>Resume compatible existing artifacts</span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>

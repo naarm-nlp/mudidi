@@ -51,6 +51,8 @@ _MAX_REQUEST_BYTES = 25 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
 _ALLOW_SAME_ORIGIN_FRAME_HEADER = "X-MUDIDI-Allow-Same-Origin-Frame"
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+_CONTAINER_OUTPUT_ROOT = Path("/app/outputs")
+_CONTAINER_DATA_ROOT = Path("/data")
 _LIVE_RUN_STATUSES = {
     RunStatus.QUEUED,
     RunStatus.RUNNING_STAGE1,
@@ -254,6 +256,9 @@ def create_app(
             ),
             "validation_errors": errors,
             "errors_by_field": {error["key"]: error["message"] for error in errors},
+            "output_directory_default": (
+                "outputs" if container_mode else "~/Documents/MUDIDI-runs"
+            ),
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -469,6 +474,10 @@ def create_app(
             elif manual_files:
                 raise ValueError("select the custom MDF manual option before uploading")
 
+            if container_mode and "output_directory" in payload:
+                payload["output_directory"] = _container_output_directory(
+                    str(payload["output_directory"])
+                )
             run_form = NewRunForm.model_validate(payload)
             config = run_form.to_inference_config()
             validate_config_paths(config)
@@ -1164,6 +1173,44 @@ def create_app(
         )
 
     return app
+
+
+def _container_output_directory(value: str) -> Path:
+    """Map dashboard output paths onto directories mounted by Compose."""
+
+    submitted = Path(value).expanduser()
+    if not submitted.is_absolute():
+        parts = submitted.parts
+        if parts and parts[0] == "outputs":
+            parts = parts[1:]
+        candidate = _CONTAINER_OUTPUT_ROOT.joinpath(*parts)
+    elif submitted.is_relative_to(_CONTAINER_OUTPUT_ROOT) or submitted.is_relative_to(
+        _CONTAINER_DATA_ROOT
+    ):
+        candidate = submitted
+    elif "outputs" in submitted.parts:
+        outputs_index = len(submitted.parts) - 1 - submitted.parts[::-1].index(
+            "outputs"
+        )
+        candidate = _CONTAINER_OUTPUT_ROOT.joinpath(
+            *submitted.parts[outputs_index + 1 :]
+        )
+    else:
+        raise FormFieldError(
+            "output_directory",
+            "Use outputs/ or /data/ for Docker output files.",
+        )
+
+    resolved = candidate.resolve()
+    if not (
+        resolved.is_relative_to(_CONTAINER_OUTPUT_ROOT)
+        or resolved.is_relative_to(_CONTAINER_DATA_ROOT)
+    ):
+        raise FormFieldError(
+            "output_directory",
+            "Use outputs/ or /data/ for Docker output files.",
+        )
+    return resolved
 
 
 def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]]:
