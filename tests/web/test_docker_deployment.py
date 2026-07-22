@@ -41,3 +41,12 @@ def test_docker_context_excludes_secrets_and_local_generated_data() -> None:
     assert "mudidi-data/" in ignored
     assert "outputs/" in ignored
     assert "dataset/" in ignored
+
+
+def test_dashboard_documentation_uses_localhost_as_the_browser_address() -> None:
+    documentation = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
+
+    for path in documentation:
+        contents = path.read_text(encoding="utf-8")
+        assert "0.0.0.0" not in contents, path
+        assert "http://127.0.0.1:8000" not in contents, path

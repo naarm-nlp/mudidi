@@ -90,6 +90,44 @@ def test_server_uses_exactly_one_uvicorn_worker(
     assert calls == [{"host": "127.0.0.1", "port": 8123, "workers": 1}]
 
 
+def test_server_opens_and_advertises_localhost(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    opened_urls: list[str] = []
+
+    class ImmediateTimer:
+        def __init__(
+            self,
+            _delay: float,
+            callback: object,
+            args: tuple[str],
+        ) -> None:
+            self.callback = callback
+            self.args = args
+
+        def start(self) -> None:
+            self.callback(*self.args)  # type: ignore[operator]
+
+    monkeypatch.setattr("mudidi.web.server.threading.Timer", ImmediateTimer)
+    monkeypatch.setattr(
+        "mudidi.web.server.webbrowser.open",
+        lambda url: opened_urls.append(url),
+    )
+    monkeypatch.setattr("uvicorn.run", lambda *_args, **_kwargs: None)
+
+    run_server(
+        host="127.0.0.1",
+        port=8123,
+        data_dir=tmp_path,
+        open_browser=True,
+    )
+
+    assert opened_urls == ["http://localhost:8123/"]
+    assert capsys.readouterr().out == "MUDIDI dashboard: http://localhost:8123/\n"
+
+
 def test_container_mode_binds_inside_container_without_opening_browser(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -110,7 +148,14 @@ def test_container_mode_binds_inside_container_without_opening_browser(
     )
 
     assert result == 0
-    assert calls == [{"host": "0.0.0.0", "port": 8000, "workers": 1}]
+    assert calls == [
+        {
+            "host": "0.0.0.0",
+            "port": 8000,
+            "workers": 1,
+            "log_level": "warning",
+        }
+    ]
 
 
 def test_container_mode_configures_the_application_for_docker_hosts(
