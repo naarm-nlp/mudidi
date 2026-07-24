@@ -222,7 +222,7 @@ are under [`examples/configs/`](examples/configs/).
 
 ## Dataset and paper
 
-The benchmark contains 30 public-domain multilingual dictionaries. The dataset is available through [Hugging Face](https://huggingface.co/datasets/DavidSamuell/mudidi).
+The benchmark contains 30 public-domain multilingual dictionaries. The dataset is available through [Hugging Face](https://huggingface.co/datasets/Davidsamuel101/MUDIDI).
 
 ```bibtex
 @misc{mudidi2026,
