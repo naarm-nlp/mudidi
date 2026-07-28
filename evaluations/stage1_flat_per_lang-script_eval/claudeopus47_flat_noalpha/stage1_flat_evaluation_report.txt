@@ -269,9 +269,9 @@ STAGE 1 OCR EVALUATION REPORT
 --- Chukchi-Russian/page_26 ---
 
   Character Recognition Quality:
-    TextEdit: 0.0240
-    GCER: 0.0193  (1.93%)
-    WER:  0.0952  (9.52%)
+    TextEdit: 0.0330
+    GCER: 0.0307  (3.07%)
+    WER:  0.1508  (15.08%)
     Spans: 33 matched, 0 missing, 0 extra
 
   Markup / Typography Preservation:
@@ -281,11 +281,6 @@ STAGE 1 OCR EVALUATION REPORT
 
   Read Order (Structure Preservation):
     ReadOrderEdit: 0.0000
-
-  Per-Language-Script Quality:
-    language-script         GCER     WER  TextEdit  gold_g
-    Chukchi-Cyrillic Extended   0.067   0.345     0.067     194
-    Russian-Cyrillic       0.000   0.024     0.000     507
 
 --- Chukchi-Russian/page_3 ---
 
@@ -1878,9 +1873,9 @@ AGGREGATE (85 pages)
 ========================================================================
 
   Character Recognition Quality:
-    TextEdit: 0.0502
+    TextEdit: 0.0503
     GCER: 0.0610
-    WER:  0.1305
+    WER:  0.1307
 
   Markup / Typography Preservation:
     Typography (bold+italic pooled) — F1: 0.7177
@@ -1900,7 +1895,7 @@ AGGREGATE (85 pages)
     Canala-Latin           0.024   0.074     0.024    1043
     Chepang-Latin          0.025   0.120     0.025    1914
     Chinese-Han            0.000   0.231     0.000     414
-    Chukchi-Cyrillic Extended   0.116   0.546     0.116     750
+    Chukchi-Cyrillic Extended   0.133   0.620     0.133     556
     Circassian-Arabic      0.477   0.889     0.466     442
     Circassian-Latin       0.052   0.239     0.052     594
     Dayi-Latin             0.000   0.000     0.000       5
@@ -1938,7 +1933,7 @@ AGGREGATE (85 pages)
     Reel-IPA               0.203   0.741     0.203     236
     Reel-Latin             0.082   0.295     0.082     969
     Ritharngu-Latin        0.039   0.216     0.039    1427
-    Russian-Cyrillic       0.041   0.252     0.041    7357
+    Russian-Cyrillic       0.044   0.268     0.044    6850
     Sanskrit-Devanagari    0.141   0.487     0.141    1034
     Sanskrit-Latin         0.000   0.000     0.000      59
     Shilluk-Latin          0.002   0.014     0.002     835

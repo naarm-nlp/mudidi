@@ -16,8 +16,8 @@ GLM-OCR-flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 GLM-OCR-flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.143678,0.619883,0.143678,0.9976,0.8563,0.9216
 GLM-OCR-flat_alpha,Chepang-English,English-Latin,899,4074,0.011046,0.05673,0.010994,0.9922,0.9968,0.9945
 GLM-OCR-flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-GLM-OCR-flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.268,0.814815,0.257033,0.7685,0.8013,0.7846
-GLM-OCR-flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.135948,0.592,0.134715,0.8692,0.8771,0.8731
+GLM-OCR-flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.226619,0.797468,0.21875,0.8073,0.8363,0.8216
+GLM-OCR-flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.139785,0.610778,0.138566,0.8663,0.8739,0.8701
 GLM-OCR-flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,1.0,1.0,1.0,0.0,0.0,0.0
 GLM-OCR-flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.666667,0.727273,0.666667,0.9659,0.3333,0.4956
 GLM-OCR-flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.208451,0.367876,0.208451,0.9965,0.7915,0.8823
@@ -118,8 +118,8 @@ GLM-OCR-flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 GLM-OCR-flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.145768,0.625731,0.145768,0.9951,0.8542,0.9193
 GLM-OCR-flat_noalpha,Chepang-English,English-Latin,899,4074,0.011046,0.05673,0.010994,0.9922,0.9968,0.9945
 GLM-OCR-flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-GLM-OCR-flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.269333,0.75,0.258974,0.7603,0.7907,0.7752
-GLM-OCR-flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.152288,0.668,0.151102,0.8534,0.8601,0.8568
+GLM-OCR-flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.258993,0.759494,0.247423,0.7715,0.8076,0.7891
+GLM-OCR-flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.162268,0.706587,0.161165,0.8447,0.8504,0.8475
 GLM-OCR-flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.995475,1.0,0.995475,0.3,0.0068,0.0133
 GLM-OCR-flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.087542,0.363636,0.087542,0.9398,0.9192,0.9294
 GLM-OCR-flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.084507,0.316062,0.084507,0.9985,0.9155,0.9552
@@ -220,8 +220,8 @@ Mathpix-OCR,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 Mathpix-OCR,Chepang-English,Chepang-Latin,342,1914,0.144723,0.652047,0.144723,0.9832,0.8553,0.9148
 Mathpix-OCR,Chepang-English,English-Latin,899,4074,0.011046,0.066741,0.010992,0.9919,0.9968,0.9944
 Mathpix-OCR,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-Mathpix-OCR,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.112,0.62037,0.112,0.888,0.888,0.888
-Mathpix-OCR,Chukchi-Russian,Russian-Cyrillic,250,1530,0.01634,0.136,0.016329,0.9837,0.9843,0.984
+Mathpix-OCR,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.091727,0.594937,0.091727,0.9083,0.9083,0.9083
+Mathpix-OCR,Chukchi-Russian,Russian-Cyrillic,167,1023,0.018573,0.161677,0.018555,0.9814,0.9824,0.9819
 Mathpix-OCR,Circassian-English-Turkish,Circassian-Arabic,99,442,0.674208,0.969697,0.674208,0.5559,0.371,0.445
 Mathpix-OCR,Circassian-English-Turkish,Circassian-Latin,88,594,0.249158,0.420455,0.249158,0.9385,0.771,0.8466
 Mathpix-OCR,Circassian-English-Turkish,English-Latin,193,710,0.032394,0.414508,0.032394,0.9815,0.969,0.9752
@@ -322,8 +322,8 @@ MinerU2.5-Pro,Canala-English,French-Latin,6,38,0.0,0.166667,0.0,1.0,1.0,1.0
 MinerU2.5-Pro,Chepang-English,Chepang-Latin,342,1914,0.180773,0.692982,0.180773,0.9544,0.8192,0.8816
 MinerU2.5-Pro,Chepang-English,English-Latin,899,4074,0.011046,0.063404,0.010994,0.9922,0.9968,0.9945
 MinerU2.5-Pro,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-MinerU2.5-Pro,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.102667,0.574074,0.102667,0.8997,0.8973,0.8985
-MinerU2.5-Pro,Chukchi-Russian,Russian-Cyrillic,250,1530,0.122222,0.704,0.122222,0.8778,0.8778,0.8778
+MinerU2.5-Pro,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.089928,0.531646,0.089928,0.9134,0.9101,0.9117
+MinerU2.5-Pro,Chukchi-Russian,Russian-Cyrillic,167,1023,0.130987,0.724551,0.130987,0.869,0.869,0.869
 MinerU2.5-Pro,Circassian-English-Turkish,Circassian-Arabic,99,442,0.81448,0.979798,0.81448,0.503,0.19,0.2759
 MinerU2.5-Pro,Circassian-English-Turkish,Circassian-Latin,88,594,0.159933,0.465909,0.159933,0.9364,0.8434,0.8875
 MinerU2.5-Pro,Circassian-English-Turkish,English-Latin,193,710,0.022535,0.290155,0.022253,0.9777,0.9901,0.9839
@@ -424,8 +424,8 @@ PaddleOCR-VL-1.5,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 PaddleOCR-VL-1.5,Chepang-English,Chepang-Latin,342,1914,0.198537,0.722222,0.198537,0.9343,0.8025,0.8634
 PaddleOCR-VL-1.5,Chepang-English,English-Latin,899,4074,0.011291,0.062291,0.011239,0.9919,0.9966,0.9942
 PaddleOCR-VL-1.5,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-PaddleOCR-VL-1.5,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.173333,0.703704,0.173333,0.8496,0.836,0.8427
-PaddleOCR-VL-1.5,Chukchi-Russian,Russian-Cyrillic,250,1530,0.156209,0.804,0.156209,0.8484,0.8451,0.8468
+PaddleOCR-VL-1.5,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.167266,0.696203,0.167266,0.8525,0.8417,0.8471
+PaddleOCR-VL-1.5,Chukchi-Russian,Russian-Cyrillic,167,1023,0.163245,0.826347,0.163245,0.8437,0.8387,0.8412
 PaddleOCR-VL-1.5,Circassian-English-Turkish,Circassian-Arabic,99,442,0.875566,0.989899,0.875566,0.3527,0.2059,0.26
 PaddleOCR-VL-1.5,Circassian-English-Turkish,Circassian-Latin,88,594,0.547138,0.818182,0.547138,0.6,0.4848,0.5363
 PaddleOCR-VL-1.5,Circassian-English-Turkish,English-Latin,193,710,0.166197,0.471503,0.166197,0.89,0.8549,0.8721
@@ -526,8 +526,8 @@ claudeopus47_flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 claudeopus47_flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.024033,0.114035,0.024033,0.9984,0.9765,0.9873
 claudeopus47_flat_alpha,Chepang-English,English-Latin,899,4074,0.008591,0.013348,0.00853,0.9922,0.9993,0.9957
 claudeopus47_flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-claudeopus47_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.081333,0.490741,0.081333,0.9211,0.9187,0.9199
-claudeopus47_flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.047712,0.296,0.047712,0.9523,0.9523,0.9523
+claudeopus47_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.084532,0.493671,0.084532,0.9171,0.9155,0.9163
+claudeopus47_flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.071359,0.431138,0.071359,0.9286,0.9286,0.9286
 claudeopus47_flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.495475,0.939394,0.465957,0.5447,0.5792,0.5614
 claudeopus47_flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.06229,0.227273,0.06229,0.9621,0.9394,0.9506
 claudeopus47_flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.008451,0.005181,0.00838,0.9916,1.0,0.9958
@@ -628,8 +628,8 @@ claudeopus47_flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1
 claudeopus47_flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.025078,0.119883,0.025078,0.9984,0.9754,0.9868
 claudeopus47_flat_noalpha,Chepang-English,English-Latin,899,4074,0.008591,0.013348,0.00853,0.9922,0.9993,0.9957
 claudeopus47_flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-claudeopus47_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.116,0.546296,0.116,0.8864,0.884,0.8852
-claudeopus47_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.010458,0.072,0.010458,0.9895,0.9895,0.9895
+claudeopus47_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.133094,0.620253,0.133094,0.8685,0.8669,0.8677
+claudeopus47_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.01564,0.095808,0.01564,0.9844,0.9844,0.9844
 claudeopus47_flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.477376,0.888889,0.465784,0.6026,0.6176,0.6101
 claudeopus47_flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.052189,0.238636,0.052189,0.9642,0.9512,0.9576
 claudeopus47_flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.039437,0.274611,0.03794,0.9621,1.0,0.9807
@@ -730,8 +730,8 @@ gemini31pro_flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 gemini31pro_flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.065308,0.274854,0.065308,0.9944,0.9347,0.9636
 gemini31pro_flat_alpha,Chepang-English,English-Latin,899,4074,0.008346,0.016685,0.008285,0.9922,0.9995,0.9958
 gemini31pro_flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.114667,0.527778,0.111834,0.8882,0.9107,0.8993
-gemini31pro_flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.037255,0.224,0.037255,0.964,0.9627,0.9634
+gemini31pro_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.071942,0.417722,0.071813,0.9282,0.9299,0.929
+gemini31pro_flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.054741,0.329341,0.054741,0.9471,0.9453,0.9462
 gemini31pro_flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.576923,0.939394,0.576923,0.4965,0.4864,0.4914
 gemini31pro_flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.055556,0.261364,0.054908,0.9468,0.9579,0.9523
 gemini31pro_flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.032394,0.290155,0.032394,0.9831,0.9831,0.9831
@@ -815,108 +815,6 @@ gemini31pro_flat_alpha,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syri
 gemini31pro_flat_alpha,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syriac-Syriac,314,1310,0.532061,0.859873,0.532061,0.5214,0.4924,0.5065
 gemini31pro_flat_alpha,Yiddish-English,English-Latin,315,1152,0.013889,0.044444,0.013805,0.9888,0.9948,0.9918
 gemini31pro_flat_alpha,Yiddish-English,Yiddish-Hebrew,85,461,0.099783,0.494118,0.099783,0.9061,0.9002,0.9032
-gemini31pro_flat_alpha_ocr,Assyrian-English,Arabic-Arabic,1,3,1.0,1.0,1.0,0.0,0.0,0.0
-gemini31pro_flat_alpha_ocr,Assyrian-English,Arabic-Latin,1,5,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Assyrian-English,Assyrian-Cuneiform,166,421,0.655582,1.03012,0.655582,0.4551,0.361,0.4026
-gemini31pro_flat_alpha_ocr,Assyrian-English,Assyrian-Latin,299,1396,0.553725,0.64214,0.553725,0.7939,0.447,0.572
-gemini31pro_flat_alpha_ocr,Assyrian-English,English-Latin,558,2361,0.002541,0.078853,0.002541,0.9992,0.9983,0.9987
-gemini31pro_flat_alpha_ocr,Assyrian-English,Greek-Greek,1,9,0.0,3.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Assyrian-English,Hebrew-Hebrew,5,18,0.166667,1.0,0.166667,0.8333,0.8333,0.8333
-gemini31pro_flat_alpha_ocr,Assyrian-English,Latin-Latin,2,12,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Assyrian-English,Old Persian-Latin,10,60,0.0,0.2,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Bengalese-English,Bengalese-Bengali,260,1281,0.074161,0.215385,0.074161,0.9376,0.9274,0.9325
-gemini31pro_flat_alpha_ocr,Bengalese-English,English-Latin,1421,6330,0.0,0.000704,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Canala-English,Canala-Latin,243,1043,0.032598,0.102881,0.032598,0.9674,0.9674,0.9674
-gemini31pro_flat_alpha_ocr,Canala-English,English-Latin,637,3017,0.0,0.00471,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Chepang-English,Chepang-Latin,342,1914,0.057994,0.239766,0.057994,0.9983,0.942,0.9694
-gemini31pro_flat_alpha_ocr,Chepang-English,English-Latin,899,4074,0.008346,0.016685,0.008285,0.9922,0.9995,0.9958
-gemini31pro_flat_alpha_ocr,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.066667,0.296296,0.06502,0.935,0.9587,0.9467
-gemini31pro_flat_alpha_ocr,Chukchi-Russian,Russian-Cyrillic,250,1530,0.009804,0.06,0.009804,0.9902,0.9902,0.9902
-gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,Circassian-Arabic,99,442,0.882353,0.929293,0.776892,0.3267,0.371,0.3475
-gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,Circassian-Latin,88,594,0.46633,0.568182,0.46633,0.5663,0.5606,0.5635
-gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,English-Latin,193,710,0.542254,0.735751,0.542254,0.5505,0.5141,0.5317
-gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,French-Latin,1,6,0.5,0.0,0.333333,0.6667,1.0,0.8
-gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,Turkish-Arabic,87,365,0.717808,0.816092,0.717808,0.3956,0.3425,0.3671
-gemini31pro_flat_alpha_ocr,Efik-English,Efik-Latin,366,1723,0.011608,0.054645,0.011608,0.9884,0.9884,0.9884
-gemini31pro_flat_alpha_ocr,Efik-English,English-Latin,895,3703,0.012422,0.007821,0.01227,0.9877,1.0,0.9938
-gemini31pro_flat_alpha_ocr,Evenki-Russian,Evenki-Cyrillic,302,1911,0.029304,0.122517,0.029304,0.9712,0.9707,0.971
-gemini31pro_flat_alpha_ocr,Evenki-Russian,Russian-Cyrillic,357,2227,0.001796,0.014006,0.001796,0.9982,0.9982,0.9982
-gemini31pro_flat_alpha_ocr,Georgian-Russian,Georgian-Georgian,59,477,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Georgian-Russian,Russian-Cyrillic,128,744,0.094086,0.515625,0.094086,0.9098,0.9086,0.9092
-gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,English-Latin,171,1927,0.0,0.005848,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,Gojri-Devanagari,13,273,0.003663,0.0,0.003663,0.9963,0.9963,0.9963
-gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,Gojri-Latin,11,465,0.0,0.090909,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,Hindi-Devanagari,181,838,0.0,0.005525,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Greek-English,English-Latin,1218,5124,0.011319,0.029557,0.011208,0.9888,0.9986,0.9937
-gemini31pro_flat_alpha_ocr,Greek-English,Greek-Greek,428,2513,0.040589,0.191589,0.040589,0.9817,0.9594,0.9704
-gemini31pro_flat_alpha_ocr,Gujarati-English,English-Latin,776,3349,0.028068,0.096649,0.027302,0.9727,1.0,0.9862
-gemini31pro_flat_alpha_ocr,Gujarati-English,Gujarati-Gujarati,134,498,0.02008,0.11194,0.02008,0.9819,0.9799,0.9809
-gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,English-Latin,1424,6221,0.000482,0.002107,0.000482,1.0,0.9995,0.9998
-gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,Iñupiatun Eskimo-Latin,362,2961,0.00743,0.049724,0.00743,0.9936,0.9926,0.9931
-gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,Latin-Latin,13,101,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English,English-Latin,1048,4080,0.0,0.002863,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Kanji,59,138,0.195652,0.372881,0.195652,0.8102,0.8043,0.8073
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Katakana,102,405,0.017284,0.068627,0.017241,0.9828,0.9852,0.984
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Latin,320,1747,0.011448,0.01875,0.011448,0.9937,0.9937,0.9937
-gemini31pro_flat_alpha_ocr,Kashmiri-English,English-Latin,263,1628,0.001843,0.0,0.001843,0.9988,0.9988,0.9988
-gemini31pro_flat_alpha_ocr,Kashmiri-English,Kashmiri-Arabic,141,551,0.319419,0.744681,0.318264,0.689,0.6915,0.6902
-gemini31pro_flat_alpha_ocr,Kashmiri-English,Kashmiri-Latin,162,989,0.008089,0.049383,0.008065,0.9919,0.9949,0.9934
-gemini31pro_flat_alpha_ocr,Khmer-English,English-Latin,706,3136,0.0,0.011331,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Khmer-English,Khmer-Khmer,167,710,0.102817,0.221557,0.102817,0.9173,0.9056,0.9114
-gemini31pro_flat_alpha_ocr,Malay-English,English-Latin,607,2578,0.001552,0.00659,0.001551,0.9984,0.9988,0.9986
-gemini31pro_flat_alpha_ocr,Malay-English,Malay-Arabic,199,887,0.104848,0.341709,0.104848,0.9106,0.9076,0.9091
-gemini31pro_flat_alpha_ocr,Malay-English,Malay-Latin,178,977,0.010235,0.061798,0.010235,0.9898,0.9898,0.9898
-gemini31pro_flat_alpha_ocr,Na-English-Chinese-French,Chinese-Han,91,414,0.0,0.032967,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Na-English-Chinese-French,English-Latin,594,2626,0.0,0.013468,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Na-English-Chinese-French,French-Latin,480,2214,0.000452,0.00625,0.000451,0.9995,1.0,0.9998
-gemini31pro_flat_alpha_ocr,Na-English-Chinese-French,Na-IPA,182,991,0.092836,0.307692,0.092836,0.9137,0.9082,0.9109
-gemini31pro_flat_alpha_ocr,Na-English-Chinese-French,Na-Latin,31,124,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Nahuatl-French,French-Latin,1379,5964,0.004192,0.017404,0.004192,0.9958,0.9958,0.9958
-gemini31pro_flat_alpha_ocr,Nahuatl-French,Nahuatl-Latin,528,4215,0.002372,0.017045,0.002372,0.9981,0.9981,0.9981
-gemini31pro_flat_alpha_ocr,Nahuatl-French,Spanish-Latin,3,15,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Punjabi-English,English-Latin,1627,5610,0.003565,0.003073,0.003554,0.9964,0.9996,0.998
-gemini31pro_flat_alpha_ocr,Punjabi-English,Punjabi-Gurmukhi,297,806,0.075682,0.158249,0.075682,0.929,0.9256,0.9273
-gemini31pro_flat_alpha_ocr,Punjabi-English,Punjabi-Latin,215,1210,0.171074,0.786047,0.171074,0.9516,0.8289,0.886
-gemini31pro_flat_alpha_ocr,Reel-English,English-Latin,319,1258,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Reel-English,Reel-IPA,27,236,0.004237,0.037037,0.004237,0.9958,0.9958,0.9958
-gemini31pro_flat_alpha_ocr,Reel-English,Reel-Latin,190,969,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Ritharngu-English,Dayi-Latin,1,5,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Ritharngu-English,English-Latin,725,3184,0.0,0.002759,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Ritharngu-English,Latin-Latin,19,157,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Ritharngu-English,Ritharngu-Latin,218,1427,0.072179,0.37156,0.072179,0.9285,0.9278,0.9281
-gemini31pro_flat_alpha_ocr,Sanskrit-English,English-Latin,786,2768,0.02276,0.021628,0.022254,0.9777,1.0,0.9887
-gemini31pro_flat_alpha_ocr,Sanskrit-English,Sanskrit-Devanagari,187,1034,0.061896,0.240642,0.061716,0.945,0.9478,0.9464
-gemini31pro_flat_alpha_ocr,Sanskrit-English,Sanskrit-Latin,12,59,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Shilluk-English,English-Latin,1039,5957,0.0,0.001925,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Shilluk-English,Shilluk-Latin,145,835,0.007186,0.041379,0.007186,0.9928,0.9928,0.9928
-gemini31pro_flat_alpha_ocr,Syriac-English,English-Latin,571,2344,0.006399,0.014011,0.006359,0.9936,1.0,0.9968
-gemini31pro_flat_alpha_ocr,Syriac-English,Greek-Greek,5,39,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Syriac-English,Hebrew-Hebrew,2,8,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Syriac-English,Persian-Arabic,26,123,0.073171,0.269231,0.072,0.944,0.9593,0.9516
-gemini31pro_flat_alpha_ocr,Syriac-English,Syriac-Syriac,158,868,0.536866,0.879747,0.536866,0.5613,0.5115,0.5353
-gemini31pro_flat_alpha_ocr,Syriac-English,Turkish-Arabic,2,7,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Telugu-English,English-Latin,786,3380,0.027219,0.030534,0.027219,0.9864,0.9864,0.9864
-gemini31pro_flat_alpha_ocr,Telugu-English,Telugu-Telugu,139,574,0.069686,0.258993,0.069444,0.9392,0.9425,0.9409
-gemini31pro_flat_alpha_ocr,Thai-Russian,Latin-Latin,14,106,0.0,0.071429,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Thai-Russian,Russian-Cyrillic,508,2856,0.065476,0.360236,0.065476,0.9349,0.9345,0.9347
-gemini31pro_flat_alpha_ocr,Thai-Russian,Thai-Cyrillic,121,952,0.304622,0.958678,0.304622,0.7268,0.7069,0.7167
-gemini31pro_flat_alpha_ocr,Thai-Russian,Thai-Thai,129,734,0.019074,0.108527,0.019022,0.9823,0.985,0.9837
-gemini31pro_flat_alpha_ocr,Tiri-English,English-Latin,645,2864,0.0,0.003101,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Tiri-English,French-Latin,3,24,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Tiri-English,Tiri-Latin,238,985,0.030457,0.12605,0.030457,0.9695,0.9695,0.9695
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Arabic-Arabic,15,68,0.014706,0.066667,0.014493,0.9855,1.0,0.9927
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,English-Latin,1191,3944,0.027383,0.0445,0.026832,0.9737,0.9937,0.9836
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Greek-Greek,3,25,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Kurdish-Arabic,3,18,0.111111,0.666667,0.111111,0.8889,0.8889,0.8889
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Kurdish-Latin,2,9,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Persian-Arabic,11,55,0.272727,0.909091,0.272727,0.7547,0.7273,0.7407
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Turkish-Arabic,20,94,0.159574,0.5,0.159574,0.8404,0.8404,0.8404
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syriac-Latin,157,913,0.054765,0.267516,0.054765,0.9632,0.9452,0.9541
-gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syriac-Syriac,314,1310,0.508397,0.83758,0.508397,0.5407,0.5176,0.5289
-gemini31pro_flat_alpha_ocr,Yiddish-English,English-Latin,315,1152,0.267361,0.225397,0.247588,0.8031,0.8672,0.8339
-gemini31pro_flat_alpha_ocr,Yiddish-English,Yiddish-Hebrew,85,461,0.691974,0.823529,0.691974,0.4712,0.3731,0.4165
 gemini31pro_flat_noalpha,Assyrian-English,Arabic-Arabic,1,3,1.0,1.0,1.0,0.0,0.0,0.0
 gemini31pro_flat_noalpha,Assyrian-English,Arabic-Latin,1,5,0.0,0.0,0.0,1.0,1.0,1.0
 gemini31pro_flat_noalpha,Assyrian-English,Assyrian-Cuneiform,166,421,0.864608,0.987952,0.864608,0.2667,0.152,0.1936
@@ -934,8 +832,8 @@ gemini31pro_flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.
 gemini31pro_flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.128004,0.52924,0.128004,0.9923,0.872,0.9283
 gemini31pro_flat_noalpha,Chepang-English,English-Latin,899,4074,0.008837,0.050056,0.008776,0.9922,0.999,0.9956
 gemini31pro_flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.085333,0.518519,0.08522,0.9148,0.916,0.9154
-gemini31pro_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.010458,0.064,0.010458,0.9895,0.9895,0.9895
+gemini31pro_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.07554,0.455696,0.07554,0.9245,0.9245,0.9245
+gemini31pro_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.014663,0.08982,0.014663,0.9853,0.9853,0.9853
 gemini31pro_flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.79638,0.929293,0.688845,0.4149,0.4796,0.4449
 gemini31pro_flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.228956,0.5,0.228956,0.8071,0.803,0.8051
 gemini31pro_flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.314085,0.544041,0.314085,0.7962,0.7648,0.7802
@@ -1017,8 +915,8 @@ gemini31pro_flat_noalpha,Vernacular Syriac-Kurdish_Turkish-English,Persian-Arabi
 gemini31pro_flat_noalpha,Vernacular Syriac-Kurdish_Turkish-English,Turkish-Arabic,20,94,0.12766,0.35,0.12766,0.8723,0.8723,0.8723
 gemini31pro_flat_noalpha,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syriac-Latin,157,913,0.07667,0.369427,0.07667,0.9347,0.9244,0.9295
 gemini31pro_flat_noalpha,Vernacular Syriac-Kurdish_Turkish-English,Vernacular Syriac-Syriac,314,1310,0.609924,0.894904,0.609924,0.4465,0.4176,0.4316
-gemini31pro_flat_noalpha,Yiddish-English,English-Latin,315,1152,0.260417,0.28254,0.242131,0.8103,0.8715,0.8398
-gemini31pro_flat_noalpha,Yiddish-English,Yiddish-Hebrew,85,461,0.611714,0.682353,0.611714,0.5945,0.4707,0.5254
+gemini31pro_flat_noalpha,Yiddish-English,English-Latin,315,1152,0.301215,0.333333,0.297599,0.8002,0.8099,0.805
+gemini31pro_flat_noalpha,Yiddish-English,Yiddish-Hebrew,85,461,0.67462,0.741176,0.67462,0.5612,0.4078,0.4724
 gemini3flash_flat_alpha,Assyrian-English,Arabic-Arabic,1,3,1.0,1.0,1.0,0.0,0.0,0.0
 gemini3flash_flat_alpha,Assyrian-English,Arabic-Latin,1,5,0.0,0.0,0.0,1.0,1.0,1.0
 gemini3flash_flat_alpha,Assyrian-English,Assyrian-Cuneiform,166,421,0.567696,0.987952,0.567696,0.5543,0.4727,0.5103
@@ -1036,8 +934,8 @@ gemini3flash_flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 gemini3flash_flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.175026,0.616959,0.175026,0.9541,0.825,0.8848
 gemini3flash_flat_alpha,Chepang-English,English-Latin,899,4074,0.008837,0.051168,0.008776,0.9922,0.999,0.9956
 gemini3flash_flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gemini3flash_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.016,0.101852,0.016,0.984,0.984,0.984
-gemini3flash_flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.009804,0.06,0.009804,0.9902,0.9902,0.9902
+gemini3flash_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.003597,0.025316,0.003597,0.9964,0.9964,0.9964
+gemini3flash_flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.014663,0.08982,0.014663,0.9853,0.9853,0.9853
 gemini3flash_flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.515837,0.89899,0.515837,0.5481,0.5158,0.5315
 gemini3flash_flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.089226,0.147727,0.089226,0.9487,0.9343,0.9415
 gemini3flash_flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.092958,0.321244,0.090784,0.934,0.9563,0.945
@@ -1138,8 +1036,8 @@ gemini3flash_flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1
 gemini3flash_flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.172936,0.652047,0.172936,0.9555,0.8307,0.8888
 gemini3flash_flat_noalpha,Chepang-English,English-Latin,899,4074,0.009573,0.053393,0.009503,0.9915,0.9988,0.9951
 gemini3flash_flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gemini3flash_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.062667,0.305556,0.062667,0.9386,0.9373,0.938
-gemini3flash_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.05098,0.3,0.05098,0.949,0.949,0.949
+gemini3flash_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.03777,0.227848,0.03777,0.9622,0.9622,0.9622
+gemini3flash_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.073314,0.431138,0.073314,0.9267,0.9267,0.9267
 gemini3flash_flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.554299,0.888889,0.538462,0.5451,0.5611,0.553
 gemini3flash_flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.109428,0.193182,0.109428,0.9332,0.9175,0.9253
 gemini3flash_flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.107042,0.326425,0.104252,0.9273,0.9521,0.9395
@@ -1240,8 +1138,8 @@ gpt55_flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 gpt55_flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.012017,0.05848,0.012017,0.9906,0.9885,0.9895
 gpt55_flat_alpha,Chepang-English,English-Latin,899,4074,0.009573,0.014461,0.009501,0.9912,0.9988,0.995
 gpt55_flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gpt55_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.149333,0.666667,0.149333,0.8638,0.8627,0.8632
-gpt55_flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.061438,0.36,0.061398,0.9386,0.9392,0.9389
+gpt55_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.142086,0.632911,0.142086,0.8705,0.8705,0.8705
+gpt55_flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.060606,0.347305,0.060547,0.9395,0.9404,0.9399
 gpt55_flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.873303,1.0,0.867416,0.2899,0.2919,0.2909
 gpt55_flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.476431,0.727273,0.476431,0.5816,0.564,0.5726
 gpt55_flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.528169,0.611399,0.528169,0.5646,0.5296,0.5465
@@ -1342,8 +1240,8 @@ gpt55_flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 gpt55_flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.008882,0.049708,0.008882,0.9937,0.9916,0.9927
 gpt55_flat_noalpha,Chepang-English,English-Latin,899,4074,0.009573,0.014461,0.009501,0.9912,0.9988,0.995
 gpt55_flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-gpt55_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.165333,0.712963,0.165333,0.8489,0.8467,0.8478
-gpt55_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.054902,0.308,0.05483,0.9452,0.9464,0.9458
+gpt55_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.149281,0.683544,0.149281,0.8646,0.8615,0.8631
+gpt55_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.080156,0.449102,0.080078,0.9199,0.9208,0.9204
 gpt55_flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.914027,0.989899,0.914027,0.4308,0.19,0.2637
 gpt55_flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.099327,0.375,0.099327,0.9103,0.9057,0.908
 gpt55_flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.009859,0.279793,0.009818,0.993,0.9972,0.9951
@@ -1444,8 +1342,8 @@ qwen3vl235_flat_alpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 qwen3vl235_flat_alpha,Chepang-English,Chepang-Latin,342,1914,0.147335,0.631579,0.147335,0.9933,0.8537,0.9182
 qwen3vl235_flat_alpha,Chepang-English,English-Latin,899,4074,0.008837,0.05228,0.008776,0.9922,0.999,0.9956
 qwen3vl235_flat_alpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-qwen3vl235_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.208,0.768519,0.208,0.8257,0.796,0.8106
-qwen3vl235_flat_alpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.067974,0.344,0.067974,0.9327,0.9327,0.9327
+qwen3vl235_flat_alpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.169065,0.696203,0.169065,0.8548,0.8363,0.8455
+qwen3vl235_flat_alpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.083089,0.449102,0.083089,0.9179,0.9179,0.9179
 qwen3vl235_flat_alpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.873303,1.0,0.873303,0.2433,0.2262,0.2345
 qwen3vl235_flat_alpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.170034,0.443182,0.170034,0.8709,0.8519,0.8613
 qwen3vl235_flat_alpha,Circassian-English-Turkish,English-Latin,193,710,0.098592,0.295337,0.093834,0.9196,0.9662,0.9423
@@ -1546,8 +1444,8 @@ qwen3vl235_flat_noalpha,Canala-English,French-Latin,6,38,0.0,0.0,0.0,1.0,1.0,1.0
 qwen3vl235_flat_noalpha,Chepang-English,Chepang-Latin,342,1914,0.14838,0.634503,0.14838,0.9921,0.8527,0.9171
 qwen3vl235_flat_noalpha,Chepang-English,English-Latin,899,4074,0.008837,0.05228,0.008776,0.9922,0.999,0.9956
 qwen3vl235_flat_noalpha,Chepang-English,Nepali-Latin,0,2,0.0,0.0,0.0,1.0,1.0,1.0
-qwen3vl235_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,108,750,0.201333,0.731481,0.201333,0.8317,0.804,0.8176
-qwen3vl235_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,250,1530,0.071895,0.336,0.071848,0.9282,0.9288,0.9285
+qwen3vl235_flat_noalpha,Chukchi-Russian,Chukchi-Cyrillic Extended,79,556,0.185252,0.708861,0.185252,0.837,0.8219,0.8294
+qwen3vl235_flat_noalpha,Chukchi-Russian,Russian-Cyrillic,167,1023,0.086999,0.437126,0.086914,0.9131,0.914,0.9135
 qwen3vl235_flat_noalpha,Circassian-English-Turkish,Circassian-Arabic,99,442,0.89819,1.0,0.89819,0.2155,0.2014,0.2082
 qwen3vl235_flat_noalpha,Circassian-English-Turkish,Circassian-Latin,88,594,0.208754,0.454545,0.202284,0.8336,0.8603,0.8467
 qwen3vl235_flat_noalpha,Circassian-English-Turkish,English-Latin,193,710,0.185915,0.352332,0.176471,0.8596,0.9056,0.882

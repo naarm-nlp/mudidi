@@ -1,9 +1,0 @@
-experiment,page_id,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits,precision,recall,f1
-gemini31pro_flat_alpha_ocr,Japanese-English/page_137,English-Latin,0.0,0.001912,0.0,1865,1865,0,523,1,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English/page_137,Japanese-Kanji,0.354839,0.655172,0.354839,62,61,22,29,19,0.6557,0.6452,0.6504
-gemini31pro_flat_alpha_ocr,Japanese-English/page_137,Japanese-Katakana,0.009091,0.037736,0.009091,220,220,2,53,2,0.9909,0.9909,0.9909
-gemini31pro_flat_alpha_ocr,Japanese-English/page_137,Japanese-Latin,0.023121,0.032468,0.023121,865,865,20,154,5,0.9873,0.9873,0.9873
-gemini31pro_flat_alpha_ocr,Japanese-English/page_351,English-Latin,0.0,0.00381,0.0,2215,2215,0,525,2,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English/page_351,Japanese-Kanji,0.065789,0.1,0.065789,76,76,5,30,3,0.9342,0.9342,0.9342
-gemini31pro_flat_alpha_ocr,Japanese-English/page_351,Japanese-Katakana,0.027027,0.102041,0.026882,185,186,5,49,5,0.9731,0.9784,0.9757
-gemini31pro_flat_alpha_ocr,Japanese-English/page_351,Japanese-Latin,0.0,0.006024,0.0,882,882,0,166,1,1.0,1.0,1.0

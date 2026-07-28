@@ -1,5 +1,0 @@
-experiment,language_script,GCER,WER,TextEdit,total_graphemes_gold,total_graphemes_pred,total_grapheme_edits,total_words_gold,total_word_edits,precision,recall,f1
-gemini31pro_flat_alpha_ocr,English-Latin,0.0,0.002863,0.0,4080,4080,0,1048,3,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-Kanji,0.195652,0.372881,0.195652,138,137,27,59,22,0.8102,0.8043,0.8073
-gemini31pro_flat_alpha_ocr,Japanese-Katakana,0.017284,0.068627,0.017241,405,406,7,102,7,0.9828,0.9852,0.984
-gemini31pro_flat_alpha_ocr,Japanese-Latin,0.011448,0.01875,0.011448,1747,1747,20,320,6,0.9937,0.9937,0.9937

@@ -75,6 +75,7 @@ examples/evaluation/*.tex
 
 # Regeneratable eval caches and one-off audit artifacts
 *eval_cache.json
+/evaluations/stage1_flat_per_lang-script_eval-archive/
 evaluations/*prototype*
 evaluations/audit_*.csv
 inputs/

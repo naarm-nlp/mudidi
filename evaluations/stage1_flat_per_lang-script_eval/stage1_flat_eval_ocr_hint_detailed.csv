@@ -11,7 +11,7 @@ gemini31pro_flat_alpha_ocr,true,true,Canala-English/page_64,0.008523,0.009646,0.
 gemini31pro_flat_alpha_ocr,true,true,Chepang-English/page_103,0.042222,0.042226,0.181373,0.915,0.0
 gemini31pro_flat_alpha_ocr,true,true,Chepang-English/page_304,0.002181,0.001126,0.006834,0.991,0.0
 gemini31pro_flat_alpha_ocr,true,true,Chepang-English/page_37,0.014361,0.019216,0.036855,0.9936,0.0
-gemini31pro_flat_alpha_ocr,true,true,Chukchi-Russian/page_26,0.041213,0.043231,0.190476,0.9512,0.0
+gemini31pro_flat_alpha_ocr,true,true,Chukchi-Russian/page_26,0.03214,0.031854,0.190476,0.9512,0.0
 gemini31pro_flat_alpha_ocr,true,true,Chukchi-Russian/page_3,0.003392,0.003521,0.026549,1.0,0.0
 gemini31pro_flat_alpha_ocr,true,true,Chukchi-Russian/page_48,0.020463,0.023692,0.143885,0.9828,0.0
 gemini31pro_flat_alpha_ocr,true,true,Circassian-English-Turkish/page_1,0.577006,0.567138,0.768473,0.1633,0.636364
@@ -84,4 +84,4 @@ gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/p
 gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.104811,0.083108,0.241563,0.5775,0.010753
 gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.151866,0.14368,0.269517,0.5321,0.022222
 gemini31pro_flat_alpha_ocr,true,true,Yiddish-English/page_1,0.424873,0.464807,0.410714,0.3232,0.164706
-gemini31pro_flat_alpha_ocr,,,__aggregate__,0.04067,0.045641,0.109878,0.7978,0.037256
+gemini31pro_flat_alpha_ocr,,,__aggregate__,0.040625,0.04559,0.109878,0.7978,0.037256

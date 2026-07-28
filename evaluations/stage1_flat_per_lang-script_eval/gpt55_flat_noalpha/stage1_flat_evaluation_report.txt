@@ -282,11 +282,6 @@ STAGE 1 OCR EVALUATION REPORT
   Read Order (Structure Preservation):
     ReadOrderEdit: 0.0000
 
-  Per-Language-Script Quality:
-    language-script         GCER     WER  TextEdit  gold_g
-    Chukchi-Cyrillic Extended   0.211   0.793     0.211     194
-    Russian-Cyrillic       0.004   0.024     0.004     507
-
 --- Chukchi-Russian/page_3 ---
 
   Character Recognition Quality:
@@ -1900,7 +1895,7 @@ AGGREGATE (85 pages)
     Canala-Latin           0.121   0.354     0.121    1043
     Chepang-Latin          0.009   0.050     0.009    1914
     Chinese-Han            0.000   0.165     0.000     414
-    Chukchi-Cyrillic Extended   0.165   0.713     0.165     750
+    Chukchi-Cyrillic Extended   0.149   0.684     0.149     556
     Circassian-Arabic      0.914   0.990     0.914     442
     Circassian-Latin       0.099   0.375     0.099     594
     Dayi-Latin             0.000   0.000     0.000       5
@@ -1938,7 +1933,7 @@ AGGREGATE (85 pages)
     Reel-IPA               0.352   0.889     0.352     236
     Reel-Latin             0.040   0.253     0.040     969
     Ritharngu-Latin        0.058   0.307     0.058    1427
-    Russian-Cyrillic       0.055   0.311     0.055    7357
+    Russian-Cyrillic       0.059   0.332     0.059    6850
     Sanskrit-Devanagari    0.527   0.754     0.527    1034
     Sanskrit-Latin         0.000   0.000     0.000      59
     Shilluk-Latin          0.025   0.131     0.025     835
