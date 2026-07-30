@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from script_check import assign_char_script_labels, script_label_for_bucket  # noqa: E402
 from script_labeler import label_page  # noqa: E402
 

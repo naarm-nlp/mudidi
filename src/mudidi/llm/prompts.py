@@ -1,7 +1,7 @@
 """
 Stage 1 prompt builders.
 
-Templates live in ``assets/PROMPT.json``; this module assembles dynamic user turns.
+Templates live in ``mudidi/assets/PROMPT.json``; this module assembles dynamic user turns.
 """
 
 from __future__ import annotations

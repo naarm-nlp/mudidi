@@ -46,7 +46,6 @@ _RUSSIAN = set("абвгдежзийклмнопрстуфхцчшщъыьэюя
 
 def _base_script(ch: str) -> str:
     """Coarse script bucket for a single character."""
-    o = ord(ch)
     if ch.isspace():
         return "space"
     if _is_ipa(ch):

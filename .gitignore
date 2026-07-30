@@ -51,7 +51,6 @@ label-studio/renders/
 # Data, archives, and model outputs
 archive/
 assets/*
-!assets/PROMPT.json
 models/outputs/
 **.workspace
 *.zip

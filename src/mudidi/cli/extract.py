@@ -1326,7 +1326,8 @@ Examples:
         default=None,
         dest="prompts_file",
         help="Path to PROMPT.json containing Stage 1 and Stage 2 LLM prompts "
-        "(default: bundled assets/PROMPT.json). Edits reload on the next LLM call.",
+        "(default: packaged mudidi/assets/PROMPT.json). "
+        "Edits reload on the next LLM call.",
     )
     parser.add_argument(
         "--benchmark",

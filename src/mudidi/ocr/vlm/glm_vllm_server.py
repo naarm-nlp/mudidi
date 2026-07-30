@@ -46,8 +46,9 @@ def glm_vllm_server_python(explicit: str | None = None) -> Path:
             return candidate
 
     raise FileNotFoundError(
-        f"Missing {DEFAULT_SERVER_VENV}. Install with:\n"
-        f"  bash examples-dev/helper/install_models_venv.sh glmocr-vllm"
+        f"Missing {DEFAULT_SERVER_VENV}. Create a compatible GLM-OCR vLLM "
+        "environment or set GLM_VLLM_SERVER_PYTHON; see "
+        "docs/benchmarking/vlm.md."
     )
 
 

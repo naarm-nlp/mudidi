@@ -1,5 +1,5 @@
 """
-Load LLM prompt templates from ``assets/PROMPT.json``.
+Load LLM prompt templates from ``mudidi/assets/PROMPT.json``.
 
 Each entry maps a prompt id to ``prompt`` text, an optional human-readable
 ``description``, and a ``variables`` list describing placeholders (Python
@@ -46,11 +46,6 @@ def package_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-def repo_root() -> Path:
-    """Repository root (``MUDIDI/``) when running from a checkout."""
-    return Path(__file__).resolve().parents[3]
-
-
 def _materialize_zip_resource_prompts() -> Path:
     """Copy wheel-bundled PROMPT.json to a stable cache path on disk."""
     global _bundled_prompts_cache
@@ -72,9 +67,6 @@ def default_prompts_path() -> Path:
     bundled = package_root() / "assets" / "PROMPT.json"
     if bundled.is_file():
         return bundled
-    checkout = repo_root() / "assets" / "PROMPT.json"
-    if checkout.is_file():
-        return checkout
     try:
         return _materialize_zip_resource_prompts()
     except (ModuleNotFoundError, FileNotFoundError, TypeError, OSError):

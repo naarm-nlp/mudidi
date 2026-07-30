@@ -46,9 +46,9 @@ def paddle_genai_server_python(explicit: str | None = None) -> Path:
             return candidate
 
     raise FileNotFoundError(
-        f"Missing {DEFAULT_SERVER_VENV}. Install with:\n"
-        f"  module load CUDA/12.2.0  # if flash-attn build is needed\n"
-        f"  bash examples-dev/helper/install_models_venv.sh paddle-vllm-server"
+        f"Missing {DEFAULT_SERVER_VENV}. Create a compatible PaddleOCR-VL "
+        "server environment or set PADDLE_VLLM_SERVER_PYTHON; see "
+        "docs/benchmarking/vlm.md."
     )
 
 
@@ -134,7 +134,8 @@ class PaddleGenaiServerManager:
         if not is_paddle_genai_vllm_available(self.server_python):
             raise RuntimeError(
                 f"Paddle GenAI vLLM plugin unavailable in {self.server_python}. "
-                "Run: bash examples-dev/helper/install_models_venv.sh paddle-vllm-server"
+                "Install the plugin in that environment; see "
+                "docs/benchmarking/vlm.md."
             )
 
         cmd = [

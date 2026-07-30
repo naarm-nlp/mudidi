@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -16,15 +17,23 @@ from export_label_studio_gold import (  # noqa: E402
     TaskData,
     TextAreaValue,
 )
-from sync_from_label_studio import (  # noqa: E402
-    apply_page_sync,
-    compare_text,
-    flat_content_from_body,
-    flat_content_from_tsv_columns,
-    gold_paths,
-    plan_page_sync,
-    tsv_content_from_columns,
+
+_SYNC_SPEC = importlib.util.spec_from_file_location(
+    "legacy_label_studio_sync",
+    _REPO_ROOT / "label-studio" / "sync_from_label_studio.py",
 )
+assert _SYNC_SPEC is not None and _SYNC_SPEC.loader is not None
+_SYNC_MODULE = importlib.util.module_from_spec(_SYNC_SPEC)
+sys.modules[_SYNC_SPEC.name] = _SYNC_MODULE
+_SYNC_SPEC.loader.exec_module(_SYNC_MODULE)
+
+apply_page_sync = _SYNC_MODULE.apply_page_sync
+compare_text = _SYNC_MODULE.compare_text
+flat_content_from_body = _SYNC_MODULE.flat_content_from_body
+flat_content_from_tsv_columns = _SYNC_MODULE.flat_content_from_tsv_columns
+gold_paths = _SYNC_MODULE.gold_paths
+plan_page_sync = _SYNC_MODULE.plan_page_sync
+tsv_content_from_columns = _SYNC_MODULE.tsv_content_from_columns
 
 
 def _annotation(from_name: str, text: str) -> Annotation:

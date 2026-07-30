@@ -63,11 +63,13 @@ def test_dependencies_match_runtime_and_documentation_contracts() -> None:
 
 def test_annotation_tests_are_part_of_the_default_suite() -> None:
     config = _project_config()
+    pytest_config = config["tool"]["pytest"]["ini_options"]
 
-    assert config["tool"]["pytest"]["ini_options"]["testpaths"] == [
+    assert pytest_config["testpaths"] == [
         "tests",
         "annotation/tests",
     ]
+    assert "--import-mode=importlib" in pytest_config["addopts"]
 
 
 def test_evaluation_provenance_is_documented() -> None:

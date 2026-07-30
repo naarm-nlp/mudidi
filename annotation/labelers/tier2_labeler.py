@@ -23,12 +23,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
 
+import yaml
+
 StageMode = Literal["all", "legend", "tagging"]
 LegendScope = Literal["dictionary", "page"]
 DICTIONARY_LEGEND_NAME = "language_legend.yaml"
 _RULES_SUFFIXES = {".txt", ".md", ".markdown", ".yaml", ".yml"}
-
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from labeler_common import (  # noqa: E402  (flat sibling import; reuse discovery)
