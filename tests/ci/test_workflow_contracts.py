@@ -33,6 +33,7 @@ def test_core_ci_runs_the_complete_locked_suite_and_package_smoke_test() -> None
     assert 'python-version: "3.11"' in workflow
     assert 'version: "0.11.28"' in workflow
     assert "uv sync --locked --extra dev --extra web" in workflow
+    assert "uv run --locked ruff check ." in workflow
     assert "uv run --locked pytest" in workflow
     assert "tests/web" not in workflow
     assert "--cov=mudidi.web" in workflow
@@ -55,7 +56,8 @@ def test_dependency_audit_is_locked_and_excludes_paddle() -> None:
 def test_docs_are_strict_without_duplicate_python_tests() -> None:
     workflow = _read(WORKFLOWS / "docs.yml")
 
-    assert "uv sync --locked --extra dev --extra docs" in workflow
+    assert "uv sync --locked --extra docs" in workflow
+    assert "uv sync --locked --extra dev --extra docs" not in workflow
     assert "pytest tests/config tests/cli" not in workflow
     assert "generate_docs_reference.py --check" in workflow
     assert "mkdocs build --strict" in workflow
