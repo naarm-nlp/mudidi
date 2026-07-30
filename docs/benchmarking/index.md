@@ -86,6 +86,10 @@ The canonical files were reconstructed from the complete repeated experiment
 slots under `outputs/benchmark`, then checked against the shell scripts. Debug,
 spot-check, partial, and agentic-only slots were excluded.
 
+The tracked result-set inventory, producer scripts, and canonical scope are
+recorded in
+[`evaluations/README.md`](https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/blob/main/evaluations/README.md).
+
 The Stage 1 output does not exactly match the current historical shell file:
 the output contains `gemini31pro_flat_alpha_ocr`, while the current script names
 a `gemini3flash_flat_alpha_typography` run that is not present as a complete

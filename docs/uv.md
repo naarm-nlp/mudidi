@@ -16,7 +16,7 @@ Optional dependency groups:
 
 ```bash
 uv sync --extra dev                  # pytest (for running tests)
-uv sync --extra docs                 # MkDocs Material + mkdocstrings
+uv sync --extra docs                 # MkDocs, mkdocstrings, and extensions
 uv sync --extra paddle               # paddlepaddle + paddleocr in main .venv (lightweight OCR only)
 ```
 
@@ -83,7 +83,7 @@ Run repository scripts through `uv run` so they see the locked environment:
 ```bash
 uv run python scripts/flatten_stage1_gold.py
 uv run python scripts/generate_dictionary_languages_yaml.py --overwrite
-uv run python scripts/ocr_to_stage1_flat.py --help
+uv run python scripts/validate_stage1_flat_experiment.py --help
 ```
 
 ## Tests
@@ -114,15 +114,12 @@ uv run --python .venv-label-studio/bin/python python label-studio/setup.py --hel
 
 ## Specialised VLM venvs
 
-Document VLMs (MinerU, GLM-OCR, PaddleOCR-VL) ship heavy, mutually incompatible dependencies. Each backend runs in its own venv. The installer script lives in the local `examples-dev/helper/` tree (gitignored); run from a dev checkout:
-
-```bash
-uv sync
-bash examples-dev/helper/install_models_venv.sh
-bash examples-dev/helper/install_models_venv.sh mineru glmocr paddle
-```
-
-Default install creates symlinks under the project root:
+Document VLMs (MinerU, GLM-OCR, PaddleOCR-VL) have heavy, mutually
+incompatible dependencies and therefore run in backend-specific environments.
+The repository does not ship a universal installer for those environments.
+Follow the upstream backend installation guidance, then use these conventional
+local environment names or set the corresponding Python override described in
+the [advanced VLM guide](benchmarking/vlm.md):
 
 | Venv | Backend |
 | --- | --- |

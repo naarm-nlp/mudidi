@@ -49,6 +49,12 @@ nav:
       - Python API: reference/python-api.md
   - Development:
       - Architecture: development/architecture.md
+      - Code maps:
+          - System architecture: CODEMAPS/architecture.md
+          - Backend, pipeline, and CLI: CODEMAPS/backend.md
+          - Data and storage: CODEMAPS/data.md
+          - Dependencies and integrations: CODEMAPS/dependencies.md
+          - Frontend and annotation UI: CODEMAPS/frontend.md
       - Web app overview: design/web-app/overview.md
       - Web app UX: design/web-app/ux.md
       - Web app architecture: design/web-app/architecture.md

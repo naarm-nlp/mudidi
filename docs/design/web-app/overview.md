@@ -1,6 +1,6 @@
 # Local Web Application Design
 
-Status: first-release implementation completed on `web/local-app-foundation`.
+Status: first-release implementation completed and merged to `main`.
 This document is the product source of truth; the implementation blueprint is in
 `plans/local-web-app-blueprint.md`.
 

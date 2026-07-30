@@ -1,10 +1,12 @@
-<!-- Generated: 2026-07-11 | Files scanned: 255 | Token estimate: ~750 -->
+<!-- Updated: 2026-07-30 -->
 
 # MUDIDI Architecture
 
 ## System Type
 
-Python library + CLI for multilingual dictionary digitization. Single-package layout (`src/mudidi/`), not a monorepo or web service.
+Python package, CLI, and local FastAPI dashboard for multilingual dictionary
+digitization. The reusable implementation lives in the single
+`src/mudidi/` package; annotation and benchmark utilities live alongside it.
 
 ## Purpose
 
@@ -35,6 +37,7 @@ Stage 1 transcript ──► Stage 2 Pass 1 (parse-rule discovery) ──► mdf
 | `mudidi benchmark evaluate stage1` | `cli/evaluate_stage1.py` | Flat transcription benchmark |
 | `mudidi benchmark evaluate stage2` | `cli/evaluate_stage2_mdf.py` | MDF record benchmark |
 | `mudidi config validate` | `config/yaml_config.py` | Offline YAML validation |
+| `mudidi web` | `web/server.py` → `web/app.py` | Local production dashboard |
 
 ## Core Layers
 
@@ -47,6 +50,11 @@ CLI (cli/)
               └─ Mathpix OCR batch (mathpix_ocr.py)
                     └─ OCR backends (ocr/) + LLM client (llm/)
                           └─ Schemas (schemas/) + Utils (utils/)
+
+Web dashboard (web/)
+  ├─► FastAPI routes + Jinja templates
+  ├─► Typed inference config + shared extraction worker
+  └─► SQLite run metadata + managed local artifacts
 ```
 
 ## Run Modes
@@ -68,6 +76,7 @@ CLI (cli/)
 | `scripts/` | Data prep, migration, audit utilities |
 | `evaluations/` | Published benchmark CSV results |
 | `dataset/MUDIDI/` | Gold pages, parquet exports |
+| `plans/` | Implemented blueprints retained as historical design records |
 
 ## Agentic Extension
 
@@ -75,7 +84,9 @@ CLI (cli/)
 
 ## Key Design Boundaries
 
-- Prompt templates: `assets/PROMPT.json` → `llm/prompt_store.py`
+- Prompt templates: `src/mudidi/assets/PROMPT.json` → `llm/prompt_store.py`
 - Domain models: `schemas/` (Pydantic)
 - Provider calls: single gateway `llm/client.py` (litellm)
 - Evaluation: separate `evaluation/stage1/` and `evaluation/stage2/` packages
+- Web metadata: local SQLite repositories under `web/`; generated run inputs
+  and outputs remain managed files

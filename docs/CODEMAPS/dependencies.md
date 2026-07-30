@@ -1,4 +1,4 @@
-<!-- Generated: 2026-07-11 | Files scanned: 255 | Token estimate: ~700 -->
+<!-- Updated: 2026-07-30 -->
 
 # External Dependencies & Integrations
 
@@ -17,9 +17,9 @@
 | `python-dotenv` | `.env` API key loading |
 | `pymupdf` | PDF render/split (fallback to pdftk) |
 | `Pillow` | Image handling for LLM vision calls |
-| `pandas` | Evaluation report DataFrames |
-| `scikit-learn`, `scipy` | Metric computations |
-| `python-Levenshtein`, `jiwer`, `sacrebleu`, `grapheme` | Text similarity & char metrics |
+| `numpy` | OCR result arrays and geometry data |
+| `scipy` | Assignment used by MDF matching |
+| `python-Levenshtein`, `jiwer`, `grapheme` | Text similarity, error rates, and grapheme metrics |
 | `pyyaml` | dictionary_languages.yaml |
 | `python-docx` | OCR hint docx parsing |
 
@@ -27,8 +27,10 @@
 
 | Extra | Packages | Purpose |
 |-------|----------|---------|
-| `dev` | pytest | Test runner |
+| `dev` | pytest, pytest-cov, Ruff, pip-audit, httpx | Tests, lint, coverage, and audit |
+| `docs` | MkDocs, mkdocstrings, PyMdown Extensions | ReadTheDocs-themed documentation |
 | `paddle` | paddlepaddle, paddleocr | PaddleOCR-VL local inference |
+| `web` | FastAPI, Uvicorn, Jinja2, cryptography, python-multipart | Local dashboard |
 
 ## LLM Providers (via litellm)
 
@@ -91,4 +93,6 @@ MUDIDI_LLM_INTEGRATION=1 uv run pytest -m integration  # live API
 
 ## Asset Bundling
 
-`assets/PROMPT.json` force-included in wheel as `mudidi/assets/PROMPT.json` via hatch build config.
+`src/mudidi/assets/PROMPT.json` is the canonical prompt file. Because it lives
+inside the package tree, Hatch includes it in the wheel as
+`mudidi/assets/PROMPT.json`.

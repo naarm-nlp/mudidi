@@ -1,4 +1,4 @@
-<!-- Generated: 2026-07-15 | Files scanned: 273 | Token estimate: ~1200 -->
+<!-- Updated: 2026-07-30 -->
 
 # Web, Pipeline, and CLI Architecture
 

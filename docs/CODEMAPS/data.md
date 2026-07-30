@@ -1,8 +1,11 @@
-<!-- Generated: 2026-07-11 | Files scanned: 255 | Token estimate: ~850 -->
+<!-- Updated: 2026-07-30 -->
 
 # Data Model & Storage
 
-> File-based storage only — no database. All artifacts are JSON, TXT, TSV, CSV, YAML, or images.
+Pipeline, dataset, and evaluation artifacts are file-based. The local web
+dashboard additionally stores run metadata, events, presets, and encrypted
+credential records in SQLite; uploaded inputs and generated outputs remain in
+managed local directories.
 
 ## Dataset Layout (`dataset/MUDIDI/`)
 
@@ -61,20 +64,20 @@ dataset/MUDIDI/
 
 | Directory | Contents |
 |-----------|----------|
-| `stage1_flat_eval/` | Global Stage 1 summary/detailed CSV |
-| `stage1_flat_per_lang-script_eval/` | Per-language/script Stage 1 metrics |
-| `stage2_mdf_eval/` | Stage 2 MDF metrics |
-| `stage2_mdf_eval_e2e/` | End-to-end Stage 2 eval |
-| `stage2_mdf_per_lang-script_eval/` | Per-language Stage 2 |
-| `stage2_mdf_stage1_lang_projection/` | Stage 1→Stage 2 projection eval |
+| `stage1_flat_per_lang_script_eval/` | Stage 1 global and per-language/script metrics |
+| `stage2_mdf_lang_script_eval/` | Stage 2 oracle/gold-Stage-1 MDF metrics |
+| `stage2_mdf_lang_script_eval_stage1-gold/` | Stage 2 comparison generated from explicitly gold Stage 1 inputs |
+| `stage2_mdf_eval_e2e_lexical_repair/` | End-to-end Stage 2 metrics after lexical repair |
+| `stage2_mdf_eval_no_typography/` | No-typography Stage 2 comparison |
 
 CSV columns include: dictionary, page, experiment, character/word quality, markup scores, and MDF field metrics. Per-language-script reports include gold word and grapheme counts.
+See `evaluations/README.md` for producer scripts and provenance boundaries.
 
 ## Config Files
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `PROMPT.json` | `assets/` (packaged) | LLM prompt templates |
+| `PROMPT.json` | `src/mudidi/assets/` | Canonical packaged LLM prompt templates |
 | `dictionary_languages.yaml` | per-run or dataset | Language pair config |
 | `mdf_parsing_guide.json` | output dir | Pass 1 discovered MDF markers |
 | `.env` | project root | API keys (GEMINI, OPENROUTER, MATHPIX, …) |
@@ -82,6 +85,13 @@ CSV columns include: dictionary, page, experiment, character/word quality, marku
 ## Stage 1 Eval Cache
 
 `evaluation/stage1/stage1_eval_cache.py` — SHA-256 content fingerprint cache to skip re-evaluation of unchanged predictions.
+
+## Web Dashboard Storage
+
+`web/runs.py` owns the SQLite schema and repository for runs, events, reviews,
+and presets. `web/credentials.py` stores encrypted provider credentials in the
+same local database. Run-owned input bundles and output artifacts are stored on
+disk so the CLI-compatible pipeline continues to operate on normal files.
 
 ## Data Relationships
 

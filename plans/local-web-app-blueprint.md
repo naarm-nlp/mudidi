@@ -1,6 +1,6 @@
 # Blueprint: MUDIDI Local Web Application
 
-Status: reviewed; critical approval-boundary findings incorporated
+Status: implemented; retained as a historical implementation plan
 Objective: ship a localhost production-inference website that reuses MUDIDI's
 typed configuration and extraction engine, requires only local files and an LLM
 API key, and enforces human approval of Stage 2 parse rules.

@@ -1,6 +1,6 @@
 # Blueprint: Web Dashboard Simplification and MDF Terminology
 
-Status: reviewed; critical upload-lifecycle and packaged-resource findings incorporated
+Status: implemented; retained as a historical implementation plan
 Objective: simplify the local production dashboard around the supported
 language-model workflow, make agentic verification explicit, replace path-like
 inputs with safe browser uploads, and distinguish the LLM-inferred **MDF parsing
@@ -130,12 +130,8 @@ Parallel opportunities:
 
 ## Workflow
 
-This repository currently uses branch `web/local-app-foundation`. The default
-workflow is one descendant branch, `web/dashboard-simplification`, with six
-atomic commits in the order below. If stacked PRs are preferred, each listed
-step branch must target the immediately preceding step branch, and be retargeted
-to `main` only after its parent merges. Do not push, publish, or merge without
-explicit user approval. Before every step:
+The workflow below records the original six-step feature-branch plan; it is not
+a current branching instruction.
 
 ```bash
 git status --short --branch
@@ -229,9 +225,10 @@ Rollback: revert the resource/upload commit; existing run data remains valid.
 `InputMaterializer` currently supports one uploaded PDF or a set of page images
 under a run-owned directory. Other form controls accept raw server paths. The
 official manual exists locally as
-`assets/Pages from ToolboxReferenceManual.pdf`, but `assets/*` and `*.pdf` are
-ignored and `pyproject.toml` only force-includes `PROMPT.json`. Therefore a wheel
-cannot currently use or serve that manual.
+`assets/Pages from ToolboxReferenceManual.pdf`, but it was ignored and absent
+from wheels. This section records the packaging constraint considered during
+implementation; the bundled MDF manual was ultimately removed from the
+dashboard scope.
 
 ### Files
 

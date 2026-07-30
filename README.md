@@ -218,7 +218,8 @@ separates two primary workflows:
 
 The site is rebuilt and deployed automatically from `main` with GitHub Pages.
 Documentation sources are under [`docs/`](docs/), and canonical configurations
-are under [`examples/configs/`](examples/configs/).
+are under [`examples/configs/`](examples/configs/). Tracked benchmark report
+provenance is documented in [`evaluations/README.md`](evaluations/README.md).
 
 ## Dataset and paper
 
