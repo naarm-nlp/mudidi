@@ -6,15 +6,15 @@ set -euo pipefail
 # Stage 2 per-language/script evaluator.
 #
 # Usage:
-#   bash examples/evaluation/run_stage2_e2e_per_lang_script_eval.sh
+#   bash examples/evaluation/archive/run_stage2_e2e_per_lang_script_eval.sh
 #   EXPERIMENT_NAME=gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha \
-#     bash examples/evaluation/run_stage2_e2e_per_lang_script_eval.sh
+#     bash examples/evaluation/archive/run_stage2_e2e_per_lang_script_eval.sh
 #
 # Optional environment overrides:
 #   PRED_ROOT, DATASET_DIR, OUTPUT_DIR, EXPERIMENT_NAME, RUN_PROJECTION
 # Extra arguments are forwarded to `mudidi benchmark evaluate stage2`.
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 E2E="1"
 RUN_PROJECTION="${RUN_PROJECTION:-0}"

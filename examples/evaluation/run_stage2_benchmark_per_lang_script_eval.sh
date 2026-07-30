@@ -32,7 +32,7 @@ if [[ "${E2E}" == "1" || "${E2E}" == "true" || "${E2E}" == "yes" ]]; then
     DEFAULT_RUN_PROJECTION=0
 else
     DEFAULT_PRED_ROOT="${PROJECT_ROOT}/outputs/benchmark/stage-2"
-    DEFAULT_OUTPUT_DIR="${PROJECT_ROOT}/evaluations/stage2_mdf_per_lang-script_eval"
+    DEFAULT_OUTPUT_DIR="${PROJECT_ROOT}/evaluations/stage2_mdf_lang_script_eval"
     DEFAULT_RUN_PROJECTION=1
 fi
 PRED_ROOT="${PRED_ROOT:-${DEFAULT_PRED_ROOT}}"

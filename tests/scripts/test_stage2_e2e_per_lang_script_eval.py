@@ -8,7 +8,13 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "examples/evaluation/run_stage2_e2e_per_lang_script_eval.sh"
+SCRIPT = (
+    ROOT
+    / "examples"
+    / "evaluation"
+    / "archive"
+    / "run_stage2_e2e_per_lang_script_eval.sh"
+)
 
 
 def test_stage2_e2e_per_lang_script_runner_has_safe_defaults() -> None:

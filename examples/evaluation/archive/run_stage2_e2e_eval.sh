@@ -4,14 +4,14 @@ set -euo pipefail
 # Evaluate end-to-end Stage 2 benchmark outputs (predicted Stage 1 → Stage 2).
 #
 # For migrated oracle Stage 2 runs (gold Stage 1), use:
-#   PRED_ROOT=outputs/benchmark/stage-2 bash examples/evaluation/run_stage2_e2e_eval.sh
+#   PRED_ROOT=outputs/benchmark/stage-2 bash examples/evaluation/archive/run_stage2_e2e_eval.sh
 #
 # Usage:
-#   bash examples/evaluation/run_stage2_e2e_eval.sh
+#   bash examples/evaluation/archive/run_stage2_e2e_eval.sh
 #   EXPERIMENT_NAME=gemini31pro_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha \
-#     bash examples/evaluation/run_stage2_e2e_eval.sh
+#     bash examples/evaluation/archive/run_stage2_e2e_eval.sh
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "${PROJECT_ROOT}"
 export PYTHONPATH="${PROJECT_ROOT}/src:${PYTHONPATH:-}"
 

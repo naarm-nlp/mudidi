@@ -15,7 +15,7 @@ EXPERIMENT_NAME="${EXPERIMENT_NAME:-gemini31pro_high_mdf_intro_toolbox_gold_noty
 BASELINE_EXPERIMENT="${BASELINE_EXPERIMENT:-gemini31pro_high_mdf_intro_toolbox}"
 PRED_ROOT="${PRED_ROOT:-outputs/benchmark/stage-2-no-typography}"
 DATASET_DIR="${DATASET_DIR:-dataset/MUDIDI/dictionaries}"
-BASELINE_SUMMARY="${BASELINE_SUMMARY:-evaluations/stage2_mdf_eval/stage2_mdf_eval_summary.csv}"
+BASELINE_SUMMARY="${BASELINE_SUMMARY:-evaluations/stage2_mdf_lang_script_eval/stage2_mdf_eval_summary.csv}"
 OUTPUT_DIR="${OUTPUT_DIR:-evaluations/stage2_mdf_eval_no_typography}"
 COMPARISON_OUTPUT="${COMPARISON_OUTPUT:-${OUTPUT_DIR}/stage2_mdf_no_typography_vs_baseline.csv}"
 

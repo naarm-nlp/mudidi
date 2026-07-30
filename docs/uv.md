@@ -70,8 +70,8 @@ Download the gated dataset to `dataset/MUDIDI/`, then use the public examples:
 
 ```bash
 bash examples/inference/run_directory_mode.sh
-bash examples/evaluation/run_stage1_eval.sh
-bash examples/evaluation/run_stage2_eval.sh
+bash examples/evaluation/run_stage1_benchmark_per_lang_script_eval.sh
+bash examples/evaluation/run_stage2_benchmark_per_lang_script_eval.sh
 ```
 
 See the repository's `examples/README.md` for PDF mode, env overrides, and the full workflow.

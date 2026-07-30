@@ -26,7 +26,7 @@ export PYTHONPATH="${PROJECT_ROOT}/src:${PYTHONPATH:-}"
 
 DATASET_DIR="${DATASET_DIR:-${PROJECT_ROOT}/dataset/MUDIDI/dictionaries}"
 PRED_ROOT="${PRED_ROOT:-${PROJECT_ROOT}/outputs/benchmark/stage-1}"
-OUTPUT_DIR="${OUTPUT_DIR:-${PROJECT_ROOT}/evaluations/stage1_flat_per_lang-script_eval}"
+OUTPUT_DIR="${OUTPUT_DIR:-${PROJECT_ROOT}/evaluations/stage1_flat_per_lang_script_eval}"
 STAGE1_OUTPUT_SUBDIR="${STAGE1_OUTPUT_SUBDIR:-stage-1}"
 LID_SPAN_ROOT="${LID_SPAN_ROOT:-${PROJECT_ROOT}/annotation/outputs}"
 SYNC_LID_SPANS="${SYNC_LID_SPANS:-1}"

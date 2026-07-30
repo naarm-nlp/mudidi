@@ -14,8 +14,8 @@ Minimal scripts and validated YAML configurations for production inference and b
 | --- | --- |
 | [`inference/run_directory_mode.sh`](inference/run_directory_mode.sh) | Stage 1 + 2 on **Evenki-Russian** snippet pages |
 | [`inference/run_pdf_mode.sh`](inference/run_pdf_mode.sh) | Stage 1 + 2 on **Carolinian-English** PDF in `inputs/` |
-| [`evaluation/run_stage1_eval.sh`](evaluation/run_stage1_eval.sh) | Flat transcription vs gold (`page_1`) |
-| [`evaluation/run_stage2_eval.sh`](evaluation/run_stage2_eval.sh) | MDF vs gold (`page_1`) |
+| [`evaluation/run_stage1_benchmark_per_lang_script_eval.sh`](evaluation/run_stage1_benchmark_per_lang_script_eval.sh) | Stage 1 benchmark with per-language/script metrics |
+| [`evaluation/run_stage2_benchmark_per_lang_script_eval.sh`](evaluation/run_stage2_benchmark_per_lang_script_eval.sh) | Stage 2 benchmark with per-language/script metrics |
 
 Run all scripts from the **repository root**.
 
@@ -23,8 +23,8 @@ Run all scripts from the **repository root**.
 
 ```bash
 bash examples/inference/run_directory_mode.sh
-bash examples/evaluation/run_stage1_eval.sh
-bash examples/evaluation/run_stage2_eval.sh
+bash examples/evaluation/run_stage1_benchmark_per_lang_script_eval.sh
+bash examples/evaluation/run_stage2_benchmark_per_lang_script_eval.sh
 ```
 
 Pass common overrides through any script, e.g. `bash examples/inference/run_directory_mode.sh --overwrite`. Advanced settings live in the referenced YAML files.

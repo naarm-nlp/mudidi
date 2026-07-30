@@ -6,11 +6,11 @@ set -euo pipefail
 # Requires: scripts/migrate_legacy_outputs.py (outputs/benchmark/stage-1/...)
 #
 # Usage:
-#   bash examples/evaluation/run_stage1_benchmark_eval.sh
-#   STAGE1_OUTPUT_SUBDIR=stage-1-ocr bash examples/evaluation/run_stage1_benchmark_eval.sh
-#   bash examples/evaluation/run_stage1_benchmark_eval.sh --include-vlm-ocr
+#   bash examples/evaluation/archive/run_stage1_benchmark_eval.sh
+#   STAGE1_OUTPUT_SUBDIR=stage-1-ocr bash examples/evaluation/archive/run_stage1_benchmark_eval.sh
+#   bash examples/evaluation/archive/run_stage1_benchmark_eval.sh --include-vlm-ocr
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "${PROJECT_ROOT}"
 export PYTHONPATH="${PROJECT_ROOT}/src:${PYTHONPATH:-}"
 
