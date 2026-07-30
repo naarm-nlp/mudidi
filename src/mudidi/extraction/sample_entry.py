@@ -178,26 +178,6 @@ def validate_configured_sample_entry(
     return errors
 
 
-def preflight_validate_sample_entries(
-    args: Any,
-    entries: list[Path],
-) -> list[tuple[str, list[str]]]:
-    """Validate all sample entries before processing any pages."""
-    if not stage1_context_inputs_apply(args):
-        return []
-
-    failures: list[tuple[str, list[str]]] = []
-    for entry_dir in entries:
-        snippets_dir = entry_dir / "snippets"
-        if not snippets_dir.is_dir():
-            continue
-        configure_sample_entry_args(args, entry_dir)
-        errors = validate_configured_sample_entry(args, entry_dir, snippets_dir)
-        if errors:
-            failures.append((entry_dir.name, errors))
-    return failures
-
-
 def report_entry_input_failures(
     entry_name: str,
     errors: list[str],

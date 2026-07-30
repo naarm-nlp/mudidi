@@ -7,7 +7,7 @@ import pytest
 from mudidi.extraction.llm_two_stage import _stage1_response_schema
 from mudidi.llm.prompt_store import configure_prompts, default_prompts_path
 from mudidi.llm.prompts import stage_1_flat_system_prompt, stage_1_system_prompt
-from mudidi.schemas.entry import (
+from mudidi.schemas.transcription import (
     FlatTranscriptionResponse,
     FlatTranscriptionResponsePlain,
     TranscriptionResponse,

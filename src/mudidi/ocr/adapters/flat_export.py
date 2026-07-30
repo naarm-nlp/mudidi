@@ -11,7 +11,6 @@ from mudidi.evaluation.stage1.flatten import (
     _metadata_lines,
     flat_output_path_for_pred,
     flatten_stage1_body_rows,
-    flatten_stage1_tsv,
     language_from_sample_path,
     write_flat_text,
 )
@@ -99,11 +98,6 @@ def page_dir_to_flat_parts(page_dir: Path, *, stem: str) -> FlatTranscriptParts:
             footer=_metadata_lines(rows, "footer"),
         )
     raise ValueError(f"Unsupported backend {backend}")
-
-
-def page_dir_to_flat_lines(page_dir: Path, *, stem: str) -> list[str]:
-    """Return spec-v2 flat lines for a page directory."""
-    return page_dir_to_flat_parts(page_dir, stem=stem).all_lines()
 
 
 def write_stage1_flat_for_page(page_dir: Path, *, stem: str) -> Path:

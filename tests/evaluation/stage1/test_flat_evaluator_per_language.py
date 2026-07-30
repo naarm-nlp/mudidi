@@ -28,7 +28,7 @@ flat_evaluator = pytest.importorskip(
 )
 FlatStage1Evaluator = flat_evaluator.FlatStage1Evaluator
 
-from mudidi.schemas.language_span import (
+from mudidi.schemas.language_span import (  # noqa: E402
     SPACE,
     LanguageSpan,
     PageLanguageMap,

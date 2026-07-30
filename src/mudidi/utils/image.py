@@ -18,20 +18,6 @@ logger = logging.getLogger(__name__)
 _MAX_LLM_IMAGE_BYTES = 4_500_000
 
 
-def encode_image_base64(image_path: str) -> str:
-    """
-    Encode an image file to a base64 string suitable for LLM API calls.
-
-    Args:
-        image_path: Path to the image file.
-
-    Returns:
-        Base64-encoded string of the image bytes.
-    """
-    raw, _ = _read_bytes_for_llm(Path(image_path))
-    return base64.b64encode(raw).decode("utf-8")
-
-
 def image_data_url(image_path: str, mime_type: str = "image/png") -> str:
     """
     Build a data URL from an image file.

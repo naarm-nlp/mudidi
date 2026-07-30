@@ -65,7 +65,7 @@ from mudidi.schemas.field_map import FieldMapPrompt
 from mudidi.utils.stage1_input import read_stage1_transcript_text
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile
-from mudidi.schemas.entry import (
+from mudidi.schemas.transcription import (
     FlatTranscriptionResponse,
     FlatTranscriptionResponsePlain,
     TranscriptionResponse,

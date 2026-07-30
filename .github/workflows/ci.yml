@@ -26,6 +26,8 @@ jobs:
           version: "0.11.28"
       - name: Install locked dependencies
         run: uv sync --locked --extra dev --extra web
+      - name: Lint Python source and tests
+        run: uv run --locked ruff check src tests
       - name: Run complete offline suite with web coverage
         run: >-
           uv run --locked pytest

@@ -175,9 +175,3 @@ def markdown_transcript_from_page_dir(page_dir: Path, *, stem: str) -> FlatTrans
         source.name,
     )
     return FlatTranscriptParts(header=[], body=body, footer=[])
-
-
-def markdown_transcript_from_path(path: Path) -> FlatTranscriptParts:
-    """Build flat parts from a standalone markdown file."""
-    text = path.read_text(encoding="utf-8", errors="replace")
-    return FlatTranscriptParts(header=[], body=markdown_text_to_flat_lines(text), footer=[])

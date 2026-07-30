@@ -26,10 +26,9 @@ dataset/MUDIDI/
 
 | Schema | File | Purpose |
 |--------|------|---------|
-| `DictionaryEntry` | `entry.py` | Stage 2 JSON row (main/subentry/sense) |
-| `DictionaryPage` | `entry.py` | Page container with `mdf_text`, entries |
-| `TranscriptionResponse` | `entry.py` | Stage 1 structured line output |
-| `FlatTranscriptionResponse` | `entry.py` | Flat-mode Stage 1 output |
+| `ExtractionResult` | `extraction_result.py` | Direct MDF text with page provenance |
+| `TranscriptionResponse` | `transcription.py` | Stage 1 structured line output |
+| `FlatTranscriptionResponse` | `transcription.py` | Flat-mode Stage 1 output |
 | `FieldMapPrompt` | `field_map.py` | MDF field mapping for Pass 2 |
 | `DictionaryMarkerCheatsheet` | `field_cheatsheet.py` | Pass 1 marker discovery result |
 | `DictionaryLanguagesConfig` | `dictionary_languages.py` | Source/target language YAML |

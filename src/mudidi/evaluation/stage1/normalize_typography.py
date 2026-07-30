@@ -120,7 +120,6 @@ def normalize_cuneiform_spacing(text: str) -> str:
         text = _CUNEIFORM_SPACE_CUNEIFORM.sub(r"\1", text)
     return text
 
-
 def _strip_combining_marks(text: str) -> str:
     """NFD and drop Mn category so repeat detection works on Hebrew OCR spam."""
     decomposed = unicodedata.normalize("NFD", text)
@@ -348,29 +347,3 @@ def normalize_line(line: str) -> str:
     if is_junk_ocr_line(text):
         return ""
     return text
-
-
-def renormalize_flat_line(line: str) -> str:
-    """Re-run typography normalization on one existing flat line."""
-    normalized = normalize_line(line)
-    if normalized:
-        return normalized
-    stripped = line.strip()
-    if not stripped:
-        return ""
-    return normalize_cuneiform_spacing(normalize_unicode(stripped))
-
-
-def renormalize_flat_lines(lines: list[str]) -> list[str]:
-    """Re-normalize flat lines in place, preserving one output line per input line."""
-    return [renormalize_flat_line(line) for line in lines]
-
-
-def normalize_lines(lines: list[str]) -> list[str]:
-    """Apply :func:`normalize_line` to each line; drop junk/empty lines."""
-    out: list[str] = []
-    for line in lines:
-        normalized = normalize_line(line)
-        if normalized:
-            out.append(normalized)
-    return out

@@ -161,17 +161,6 @@ def align_lines_quick_match(
     return AlignmentResult(pairs=pairs, pred_rows=pred_rows, gold_rows=gold_rows)
 
 
-def align_rows(
-    pred_rows: List[Row],
-    gold_rows: List[Row],
-    *,
-    threshold: float = 0.6,
-) -> AlignmentResult:
-    """Line-level quick_match alignment (``threshold`` kept for API compatibility)."""
-    del threshold
-    return align_lines_quick_match(pred_rows, gold_rows)
-
-
 def align_page_collapsed(
     pred_rows: List[Row],
     gold_rows: List[Row],

@@ -419,22 +419,3 @@ def evaluate_per_language(
         lang_map,
         page_id=page_id,
     )
-
-
-def format_report(
-    report: PageLanguageReport,
-    *,
-    skip: Sequence[str] = (SPACE, META),
-) -> str:
-    """Render a per-language metrics table (skipping ``space``/``meta`` by default)."""
-    header = f"{'language':<14}{'GCER':>8}{'WER':>8}{'TextEdit':>10}{'gold_g':>8}"
-    lines = [report.page_id, header] if report.page_id else [header]
-    for language in sorted(report.per_language):
-        if language in skip:
-            continue
-        metrics = report.per_language[language]
-        lines.append(
-            f"{language:<14}{metrics.gcer:>8.3f}{metrics.wer:>8.3f}"
-            f"{metrics.text_edit:>10.3f}{metrics.total_graphemes_gold:>8}"
-        )
-    return "\n".join(lines)

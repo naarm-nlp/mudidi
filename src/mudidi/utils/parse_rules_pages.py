@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
@@ -18,15 +17,6 @@ def _stem_to_page_label(stem: str) -> str:
     if match:
         return match.group(1)
     return stem
-
-
-@dataclass(frozen=True)
-class ParseRulesSample:
-    """One page used for Pass 1 parse-rules discovery."""
-
-    stem: str
-    image_path: Path
-    transcription: str
 
 
 def _part_to_stems(part: str) -> list[str]:

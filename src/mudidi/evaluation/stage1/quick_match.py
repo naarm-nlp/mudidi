@@ -282,7 +282,6 @@ def process_matches(
     row_ind: Sequence[int],
     cost_list: Sequence[float],
     norm_gold: Sequence[str],
-    norm_pred: Sequence[str],
 ) -> tuple[MatchDict, List[int], List[LineIndex]]:
     """Accept Hungarian pairs; reject weak matches (NED > 0.7)."""
     matches: MatchDict = {}
@@ -303,10 +302,8 @@ def process_matches(
 
         if isinstance(pred_key, list):
             pred_range = list(range(pred_key[0], pred_key[-1] + 1))
-            pred_line = " ".join(norm_pred[i] for i in pred_range)
         else:
             pred_range = [pred_key]
-            pred_line = norm_pred[pred_key]
 
         if edit > REJECT_MATCH_NED:
             unmatched_gold.append(gt_idx)
@@ -594,7 +591,7 @@ def quick_match_lines(
         cost_matrix, norm_gold, norm_pred
     )
     matches, unmatched_gold, _unmatched_pred = process_matches(
-        matched_cols, row_ind, cost_list, norm_gold, norm_pred
+        matched_cols, row_ind, cost_list, norm_gold
     )
     fuzzy = fuzzy_match_unmatched(unmatched_gold, norm_gold, norm_pred)
     final = merge_matches(matches, fuzzy)

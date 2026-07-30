@@ -3,7 +3,7 @@ Unified OCR output types produced by all OCR backends.
 Every backend returns an OCRPageResult; downstream modules only depend on this schema.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 import numpy as np
 
@@ -78,7 +78,7 @@ class OCRBlock:
         return {
             "block_id": self.block_id,
             "bbox": self.bbox.to_dict(),
-            "lines": [l.to_dict() for l in self.lines],
+            "lines": [line.to_dict() for line in self.lines],
             "label": self.label,
             "content": self.content,
         }

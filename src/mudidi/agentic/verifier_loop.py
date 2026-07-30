@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 import json
 from pathlib import Path
 import re

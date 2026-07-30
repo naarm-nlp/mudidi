@@ -193,11 +193,6 @@ def gold_parse_rules_path(entry_dir: Path) -> Path:
     return find_parse_rules_path(gold_dir)
 
 
-def gold_cheatsheet_path(entry_dir: Path) -> Path:
-    """Deprecated alias for :func:`gold_parse_rules_path`."""
-    return gold_parse_rules_path(entry_dir)
-
-
 def load_gold_parse_rules(entry_dir: Path) -> DictionaryMarkerCheatsheet:
     """Load gold Pass-1 parse rules for a dictionary entry."""
     path = gold_parse_rules_path(entry_dir)
@@ -208,11 +203,6 @@ def load_gold_parse_rules(entry_dir: Path) -> DictionaryMarkerCheatsheet:
         )
     logger.info("Loading gold parse rules: %s", path)
     return DictionaryMarkerCheatsheet.model_validate_json(path.read_text(encoding="utf-8"))
-
-
-def load_gold_cheatsheet(entry_dir: Path) -> DictionaryMarkerCheatsheet:
-    """Deprecated alias for :func:`load_gold_parse_rules`."""
-    return load_gold_parse_rules(entry_dir)
 
 
 def load_or_discover_parse_rules(
@@ -257,16 +247,3 @@ def load_or_discover_parse_rules(
     )
     logger.info("Saved parse rules → %s", cache_path)
     return sheet, usage
-
-
-def load_or_discover_cheatsheet(
-    cache_path: Path,
-    *,
-    force_refresh: bool = False,
-    **discover_kwargs,
-) -> DictionaryMarkerCheatsheet:
-    """Deprecated alias for :func:`load_or_discover_parse_rules`."""
-    sheet, _ = load_or_discover_parse_rules(
-        cache_path, force_refresh=force_refresh, **discover_kwargs
-    )
-    return sheet

@@ -11,7 +11,6 @@ from mudidi.utils.stage1_input import (
     Stage1InputPreference,
     Stage1Source,
     stage1_transcript_for_stage2,
-    stage1_gold_dir,
 )
 
 logger = logging.getLogger(__name__)

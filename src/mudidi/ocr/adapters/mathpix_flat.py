@@ -7,7 +7,6 @@ from pathlib import Path
 
 from mudidi.evaluation.stage1.normalize_typography import normalize_line
 from mudidi.ocr.adapters.layout_to_transcript_v1 import FlatTranscriptParts
-from mudidi.ocr.adapters.markdown_to_flat import find_markdown_source
 from mudidi.ocr.adapters.mathpix_lines import mathpix_transcript_from_lines_json
 
 logger = logging.getLogger(__name__)
@@ -24,16 +23,6 @@ def mathpix_docx_path(page_dir: Path) -> Path:
 def mathpix_lines_path(page_dir: Path) -> Path:
     """Return the canonical Mathpix lines.json artifact path under a page directory."""
     return page_dir / _MATHPIX_LINES_NAME
-
-
-def mathpix_page_is_complete(page_dir: Path, *, stem: str) -> bool:
-    """True when markdown source and flat output both exist with content."""
-    flat = page_dir / f"{stem}_stage1_flat.txt"
-    if not flat.is_file():
-        return False
-    if not flat.read_text(encoding="utf-8", errors="replace").strip():
-        return False
-    return find_markdown_source(page_dir, stem=stem) is not None
 
 
 def _cell_lines(text: str) -> list[str]:
