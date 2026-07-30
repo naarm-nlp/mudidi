@@ -11,7 +11,7 @@ Stage 1 — Transcription  (low/minimal reasoning, structured output)
 Stage 2 — Direct MDF  (two-pass within Stage 2)
   Pass 1 : Discover an MDF parsing guide from intro + sample page.
   Pass 2 : Transcribe page into Toolbox MDF text using the field map.
-  Output : MDF text on ``DictionaryPage.mdf_text``.
+  Output : MDF text on ``ExtractionResult.mdf_text``.
 
 Reasoning budget rationale
 --------------------------
@@ -66,13 +66,12 @@ from mudidi.utils.stage1_input import read_stage1_transcript_text
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.entry import (
-    DictionaryEntry,
-    DictionaryPage,
     FlatTranscriptionResponse,
     FlatTranscriptionResponsePlain,
     TranscriptionResponse,
     TranscriptionResponsePlain,
 )
+from mudidi.schemas.extraction_result import ExtractionResult
 from mudidi.schemas.ocr_result import OCRPageResult
 from mudidi.llm import client as llm
 from mudidi.config.run_config import PromptMode
@@ -570,7 +569,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         run_stage: str = "all",
         page_context: PageContext | None = None,
         **kwargs,
-    ) -> DictionaryPage:
+    ) -> ExtractionResult:
         """
         Run the two-stage pipeline.
 
@@ -597,7 +596,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage2_usage: Dict[str, Any] = {}
         stage1_agentic_usage: Dict[str, Any] = {}
         stage2_agentic_usage: Dict[str, Any] = {}
-        entries: List[DictionaryEntry] = []
         mdf_text = ""
         discovery_usage: Dict[str, Any] = {}
 
@@ -747,8 +745,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     discovery=discovery_usage or None,
                 )
 
-        return DictionaryPage(
-            entries=entries,
+        return ExtractionResult(
             page_number=page_number,
             source_file=image_path,
             mdf_text=mdf_text,

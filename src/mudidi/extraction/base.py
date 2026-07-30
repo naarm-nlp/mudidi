@@ -1,10 +1,7 @@
-"""
-Abstract base class for all extraction strategies.
-Every strategy must implement extract() and return a DictionaryPage.
-"""
+"""Abstract base class for all extraction strategies."""
 
 from abc import ABC, abstractmethod
-from mudidi.schemas.entry import DictionaryPage
+from mudidi.schemas.extraction_result import ExtractionResult
 from mudidi.schemas.ocr_result import OCRPageResult
 
 
@@ -13,7 +10,7 @@ class ExtractionStrategy(ABC):
     Plugin interface for extraction strategies.
 
     An extraction strategy receives OCR output + the source image and
-    produces a structured DictionaryPage.
+    produces direct MDF text with page provenance.
 
     To add a new strategy:
     1. Create a new file in extraction/ (e.g. extraction/my_strategy.py).
@@ -28,9 +25,9 @@ class ExtractionStrategy(ABC):
         image_path: str,
         page_number: int = 1,
         **kwargs,
-    ) -> DictionaryPage:
+    ) -> ExtractionResult:
         """
-        Extract structured dictionary entries from OCR output + source image.
+        Extract direct MDF text from OCR output and the source image.
 
         Args:
             ocr_result: Unified OCR output from any OCRBackend.
@@ -39,7 +36,7 @@ class ExtractionStrategy(ABC):
             **kwargs: Strategy-specific keyword arguments.
 
         Returns:
-            DictionaryPage containing all extracted entries.
+            Direct MDF extraction result for the page.
         """
         ...
 
