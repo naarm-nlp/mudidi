@@ -53,15 +53,12 @@ def _required_stage1_artifact(path: Path, label: str) -> Path:
     return path
 
 
-def _stage1_metrics(tsv_path: Path) -> dict[str, Any]:
-    rows = _body_rows(tsv_path)
-    page_name = tsv_path.parent.name
-    flat_path = _required_stage1_artifact(
-        tsv_path.parent / f"{page_name}_stage1_GOLD_flat.txt",
-        "flat file",
-    )
+def _stage1_metrics(flat_path: Path) -> dict[str, Any]:
+    page_name = flat_path.parent.name
+    tsv_path = flat_path.parent / f"{page_name}_stage1_GOLD.tsv"
+    rows = _body_rows(tsv_path) if tsv_path.is_file() else None
     lang_map_path = _required_stage1_artifact(
-        tsv_path.parent / f"{page_name}_lang.json",
+        flat_path.parent / f"{page_name}_lang.json",
         "language map",
     )
     raw_flat = flat_path.read_text(encoding="utf-8")
@@ -73,8 +70,12 @@ def _stage1_metrics(tsv_path: Path) -> dict[str, Any]:
     except ValueError as exc:
         raise ValueError(f"Invalid Stage 1 language map {lang_map_path}: {exc}") from exc
     return {
-        "rows": len(rows),
-        "columns": len({row["column_id"].strip() for row in rows}),
+        "rows": len(rows) if rows is not None else None,
+        "columns": (
+            len({row["column_id"].strip() for row in rows})
+            if rows is not None
+            else None
+        ),
         "gold_grapheme_count": sum(language_script_graphemes.values()),
         "language_script_graphemes": language_script_graphemes,
         "bold_tag_count": raw_flat.count("<b>"),
@@ -99,7 +100,6 @@ def _empty_page(dictionary: str, page: str) -> dict[str, Any]:
     return {
         "dictionary": dictionary,
         "page": page,
-        "has_pdf": False,
         "has_stage1_gold": False,
         "has_stage2_mdf": False,
         "rows": None,
@@ -125,10 +125,8 @@ def _dictionary_statistics(dictionary: str, pages: list[dict[str, Any]]) -> dict
         tag_counts.update(page["tag_counts"])
     return {
         "dictionary": dictionary,
-        "page_count": len(pages),
-        "pages_with_pdf": sum(page["has_pdf"] for page in pages),
-        "pages_with_stage1_gold": sum(page["has_stage1_gold"] for page in pages),
-        "pages_with_stage2_mdf": sum(page["has_stage2_mdf"] for page in pages),
+        "stage1_page_count": sum(page["has_stage1_gold"] for page in pages),
+        "stage2_page_count": sum(page["has_stage2_mdf"] for page in pages),
         "rows": _sum_available(pages, "rows"),
         "columns": _sum_available(pages, "columns"),
         "gold_grapheme_count": _sum_available(pages, "gold_grapheme_count"),
@@ -156,23 +154,16 @@ def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
     for dictionary_dir in dictionary_dirs:
         pages: dict[str, dict[str, Any]] = {}
 
-        for pdf_path in sorted((dictionary_dir / "Dictionary pages").glob("page_*.pdf")):
-            page = pages.setdefault(
-                pdf_path.stem,
-                _empty_page(dictionary_dir.name, pdf_path.stem),
-            )
-            page["has_pdf"] = True
-
-        for tsv_path in sorted(
-            (dictionary_dir / "Stage 1 Gold OCR").glob("*/*_stage1_GOLD.tsv")
+        for flat_path in sorted(
+            (dictionary_dir / "Stage 1 Gold OCR").glob("*/*_stage1_GOLD_flat.txt")
         ):
-            page_name = tsv_path.parent.name
+            page_name = flat_path.parent.name
             page = pages.setdefault(
                 page_name,
                 _empty_page(dictionary_dir.name, page_name),
             )
             page["has_stage1_gold"] = True
-            page.update(_stage1_metrics(tsv_path))
+            page.update(_stage1_metrics(flat_path))
 
         for mdf_path in sorted((dictionary_dir / "Stage 2 MDF file").glob("*/*.mdf.txt")):
             page_name = mdf_path.parent.name
@@ -193,10 +184,12 @@ def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
         )
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "definitions": {
-            "page": "A page identifier discovered from a PDF, Stage 1 TSV, or Stage 2 MDF artifact.",
-            "rows": "Number of Stage 1 TSV body rows; header and footer rows are excluded.",
+            "page": "A page identifier discovered from a Stage 1 gold flat file or Stage 2 MDF file.",
+            "stage1_page_count": "Number of pages with a *_stage1_GOLD_flat.txt file.",
+            "stage2_page_count": "Number of pages with a *.mdf.txt file.",
+            "rows": "Number of Stage 1 TSV body rows; header and footer rows are excluded. Null when the page has no TSV.",
             "columns": "Number of distinct non-metadata Stage 1 TSV column_id values, summed across pages for dictionary totals.",
             "gold_grapheme_count": "Stage 1 gold graphemes after evaluation normalization, with Unicode punctuation, whitespace, meta, and space labels excluded.",
             "language_script_graphemes": "Gold grapheme counts grouped by validated Stage 1 language-script label.",
@@ -208,11 +201,10 @@ def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
         },
         "summary": {
             "dictionary_count": len(dictionary_statistics),
-            "page_count": len(page_statistics),
-            "pages_with_stage1_gold": sum(
+            "stage1_page_count": sum(
                 page["has_stage1_gold"] for page in page_statistics
             ),
-            "pages_with_stage2_mdf": sum(
+            "stage2_page_count": sum(
                 page["has_stage2_mdf"] for page in page_statistics
             ),
         },
@@ -285,10 +277,8 @@ def write_dataset_statistics(statistics: dict[str, Any], output_dir: Path) -> li
         _summary_csv_rows(statistics),
         [
             "language",
-            "page_count",
-            "pages_with_pdf",
-            "pages_with_stage1_gold",
-            "pages_with_stage2_mdf",
+            "stage1_page_count",
+            "stage2_page_count",
             "rows",
             "columns",
             "gold_grapheme_count",
