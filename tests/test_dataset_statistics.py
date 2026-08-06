@@ -78,7 +78,7 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
 
     statistics = build_dataset_statistics(dictionaries)
 
-    assert statistics["schema_version"] == 3
+    assert statistics["schema_version"] == 4
     assert statistics["summary"] == {
         "dictionary_count": 1,
         "stage1_page_count": 1,
@@ -239,6 +239,31 @@ def test_flat_only_stage1_page_keeps_text_metrics_without_rows_or_columns(
     assert statistics["pages"][0]["rows"] is None
     assert statistics["pages"][0]["columns"] is None
     assert statistics["pages"][0]["gold_grapheme_count"] == 9
+
+
+def test_dictionary_columns_are_layout_width_not_sum_across_pages(
+    tmp_path: Path,
+) -> None:
+    dictionaries, _flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
+    page_dir = dictionaries / "Example-English" / "Stage 1 Gold OCR" / "page_2"
+    page_dir.mkdir()
+    raw_flat = "beta"
+    (page_dir / "page_2_stage1_GOLD_flat.txt").write_text(raw_flat, encoding="utf-8")
+    (page_dir / "page_2_stage1_GOLD.tsv").write_text(
+        "column_id\tline_number\ttext\nleft\t1\tbeta\nright\t1\t\n",
+        encoding="utf-8",
+    )
+    PageLanguageMap(
+        dictionary="Example-English",
+        page=2,
+        source_text_sha=sha256_of(raw_flat),
+        labeled_via="label-studio",
+        spans=[LanguageSpan(start=0, end=len(raw_flat), language="English-Latin")],
+    ).save(page_dir / "page_2_lang.json")
+
+    statistics = build_dataset_statistics(dictionaries)
+
+    assert statistics["dictionaries"][0]["columns"] == 2
 
 
 def test_orphan_stage1_tsv_is_not_counted_as_a_stage1_page(tmp_path: Path) -> None:
