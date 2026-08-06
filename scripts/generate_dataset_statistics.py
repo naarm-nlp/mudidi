@@ -41,8 +41,9 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         "Wrote statistics for "
-        f"{statistics['summary']['dictionary_count']} dictionaries and "
-        f"{statistics['summary']['page_count']} pages: "
+        f"{statistics['summary']['dictionary_count']} dictionaries, "
+        f"{statistics['summary']['stage1_page_count']} Stage 1 pages, and "
+        f"{statistics['summary']['stage2_page_count']} Stage 2 pages: "
         + ", ".join(str(path) for path in paths)
     )
     return 0
