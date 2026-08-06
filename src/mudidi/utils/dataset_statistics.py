@@ -57,6 +57,11 @@ def _stage1_metrics(flat_path: Path) -> dict[str, Any]:
     page_name = flat_path.parent.name
     tsv_path = flat_path.parent / f"{page_name}_stage1_GOLD.tsv"
     rows = _body_rows(tsv_path) if tsv_path.is_file() else None
+    column_ids = (
+        sorted({row["column_id"].strip() for row in rows})
+        if rows is not None
+        else []
+    )
     lang_map_path = _required_stage1_artifact(
         flat_path.parent / f"{page_name}_lang.json",
         "language map",
@@ -71,11 +76,8 @@ def _stage1_metrics(flat_path: Path) -> dict[str, Any]:
         raise ValueError(f"Invalid Stage 1 language map {lang_map_path}: {exc}") from exc
     return {
         "rows": len(rows) if rows is not None else None,
-        "columns": (
-            len({row["column_id"].strip() for row in rows})
-            if rows is not None
-            else None
-        ),
+        "columns": len(column_ids) if rows is not None else None,
+        "_column_ids": column_ids,
         "gold_grapheme_count": sum(language_script_graphemes.values()),
         "language_script_graphemes": language_script_graphemes,
         "bold_tag_count": raw_flat.count("<b>"),
@@ -104,6 +106,7 @@ def _empty_page(dictionary: str, page: str) -> dict[str, Any]:
         "has_stage2_mdf": False,
         "rows": None,
         "columns": None,
+        "_column_ids": [],
         "gold_grapheme_count": None,
         "language_script_graphemes": {},
         "bold_tag_count": None,
@@ -121,14 +124,16 @@ def _sum_available(rows: Iterable[dict[str, Any]], key: str) -> int | None:
 
 def _dictionary_statistics(dictionary: str, pages: list[dict[str, Any]]) -> dict[str, Any]:
     tag_counts: Counter[str] = Counter()
+    column_ids: set[str] = set()
     for page in pages:
         tag_counts.update(page["tag_counts"])
+        column_ids.update(page["_column_ids"])
     return {
         "dictionary": dictionary,
         "stage1_page_count": sum(page["has_stage1_gold"] for page in pages),
         "stage2_page_count": sum(page["has_stage2_mdf"] for page in pages),
         "rows": _sum_available(pages, "rows"),
-        "columns": _sum_available(pages, "columns"),
+        "columns": len(column_ids) if column_ids else None,
         "gold_grapheme_count": _sum_available(pages, "gold_grapheme_count"),
         "bold_tag_count": _sum_available(pages, "bold_tag_count"),
         "italic_tag_count": _sum_available(pages, "italic_tag_count"),
@@ -178,19 +183,26 @@ def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
             pages.values(),
             key=lambda page: _page_sort_key(page["page"]),
         )
-        page_statistics.extend(dictionary_pages)
+        page_statistics.extend(
+            {
+                key: value
+                for key, value in page.items()
+                if key != "_column_ids"
+            }
+            for page in dictionary_pages
+        )
         dictionary_statistics.append(
             _dictionary_statistics(dictionary_dir.name, dictionary_pages)
         )
 
     return {
-        "schema_version": 3,
+        "schema_version": 4,
         "definitions": {
             "page": "A page identifier discovered from a Stage 1 gold flat file or Stage 2 MDF file.",
             "stage1_page_count": "Number of pages with a *_stage1_GOLD_flat.txt file.",
             "stage2_page_count": "Number of pages with a *.mdf.txt file.",
             "rows": "Number of Stage 1 TSV body rows; header and footer rows are excluded. Null when the page has no TSV.",
-            "columns": "Number of distinct non-metadata Stage 1 TSV column_id values, summed across pages for dictionary totals.",
+            "columns": "Number of distinct non-metadata Stage 1 TSV column_id values on a page or across a dictionary.",
             "gold_grapheme_count": "Stage 1 gold graphemes after evaluation normalization, with Unicode punctuation, whitespace, meta, and space labels excluded.",
             "language_script_graphemes": "Gold grapheme counts grouped by validated Stage 1 language-script label.",
             "bold_tag_count": "Exact opening <b> tag occurrences in raw Stage 1 gold flat text.",
