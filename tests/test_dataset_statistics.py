@@ -76,20 +76,17 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
 
     statistics = build_dataset_statistics(dictionaries)
 
-    assert statistics["schema_version"] == 2
+    assert statistics["schema_version"] == 3
     assert statistics["summary"] == {
         "dictionary_count": 1,
-        "page_count": 2,
-        "pages_with_stage1_gold": 1,
-        "pages_with_stage2_mdf": 1,
+        "stage1_page_count": 1,
+        "stage2_page_count": 1,
     }
     assert statistics["dictionaries"] == [
         {
             "dictionary": "Example-English",
-            "page_count": 2,
-            "pages_with_pdf": 1,
-            "pages_with_stage1_gold": 1,
-            "pages_with_stage2_mdf": 1,
+            "stage1_page_count": 1,
+            "stage2_page_count": 1,
             "rows": 2,
             "columns": 2,
             "gold_grapheme_count": 9,
@@ -104,7 +101,6 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
         {
             "dictionary": "Example-English",
             "page": "page_1",
-            "has_pdf": False,
             "has_stage1_gold": True,
             "has_stage2_mdf": True,
             "rows": 2,
@@ -119,22 +115,6 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
             "tags": 4,
             "unique_tags": 3,
             "tag_counts": {"ge": 1, "lx": 2, "ps": 1},
-        },
-        {
-            "dictionary": "Example-English",
-            "page": "page_2",
-            "has_pdf": True,
-            "has_stage1_gold": False,
-            "has_stage2_mdf": False,
-            "rows": None,
-            "columns": None,
-            "gold_grapheme_count": None,
-            "language_script_graphemes": {},
-            "bold_tag_count": None,
-            "italic_tag_count": None,
-            "tags": None,
-            "unique_tags": None,
-            "tag_counts": {},
         },
     ]
     assert "characters" not in statistics["definitions"]
@@ -197,21 +177,57 @@ def test_write_dataset_statistics_creates_detailed_and_summary_csvs(
         summary_rows = list(summary_reader)
     assert "page" not in summary_fields
     assert "language_script" not in summary_fields
+    assert summary_fields == [
+        "language",
+        "stage1_page_count",
+        "stage2_page_count",
+        "rows",
+        "columns",
+        "gold_grapheme_count",
+        "bold_tag_count",
+        "italic_tag_count",
+        "tags",
+        "unique_tags",
+        "tag_counts",
+    ]
     assert summary_rows[0]["language"] == "Example-English"
     assert summary_rows[0]["gold_grapheme_count"] == "9"
     assert summary_rows[0]["bold_tag_count"] == "1"
     assert summary_rows[0]["italic_tag_count"] == "1"
 
 
-@pytest.mark.parametrize("missing_artifact", ["flat", "language_map"])
-def test_stage1_statistics_require_flat_and_language_map(
+def test_flat_only_stage1_page_keeps_text_metrics_without_rows_or_columns(
     tmp_path: Path,
-    missing_artifact: str,
 ) -> None:
-    dictionaries, flat_path, lang_map_path = _write_dataset_fixture(tmp_path)
-    {"flat": flat_path, "language_map": lang_map_path}[missing_artifact].unlink()
+    dictionaries, flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
+    flat_path.with_name("page_1_stage1_GOLD.tsv").unlink()
 
-    with pytest.raises(ValueError, match=missing_artifact.replace("_", " ")):
+    statistics = build_dataset_statistics(dictionaries)
+
+    assert statistics["summary"]["stage1_page_count"] == 1
+    assert statistics["dictionaries"][0]["rows"] is None
+    assert statistics["dictionaries"][0]["columns"] is None
+    assert statistics["dictionaries"][0]["gold_grapheme_count"] == 9
+    assert statistics["pages"][0]["rows"] is None
+    assert statistics["pages"][0]["columns"] is None
+    assert statistics["pages"][0]["gold_grapheme_count"] == 9
+
+
+def test_orphan_stage1_tsv_is_not_counted_as_a_stage1_page(tmp_path: Path) -> None:
+    dictionaries, flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
+    flat_path.unlink()
+
+    statistics = build_dataset_statistics(dictionaries)
+
+    assert statistics["summary"]["stage1_page_count"] == 0
+    assert statistics["dictionaries"][0]["stage1_page_count"] == 0
+
+
+def test_stage1_statistics_require_language_map(tmp_path: Path) -> None:
+    dictionaries, _flat_path, lang_map_path = _write_dataset_fixture(tmp_path)
+    lang_map_path.unlink()
+
+    with pytest.raises(ValueError, match="language map"):
         build_dataset_statistics(dictionaries)
 
 
