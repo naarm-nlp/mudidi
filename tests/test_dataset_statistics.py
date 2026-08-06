@@ -241,7 +241,7 @@ def test_flat_only_stage1_page_keeps_text_metrics_without_rows_or_columns(
     assert statistics["pages"][0]["gold_grapheme_count"] == 9
 
 
-def test_dictionary_columns_are_layout_width_not_sum_across_pages(
+def test_dictionary_columns_are_unique_non_metadata_column_ids(
     tmp_path: Path,
 ) -> None:
     dictionaries, _flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
@@ -250,7 +250,7 @@ def test_dictionary_columns_are_layout_width_not_sum_across_pages(
     raw_flat = "beta"
     (page_dir / "page_2_stage1_GOLD_flat.txt").write_text(raw_flat, encoding="utf-8")
     (page_dir / "page_2_stage1_GOLD.tsv").write_text(
-        "column_id\tline_number\ttext\nleft\t1\tbeta\nright\t1\t\n",
+        "column_id\tline_number\ttext\ncenter\t1\tbeta\nright\t1\t\n",
         encoding="utf-8",
     )
     PageLanguageMap(
@@ -263,7 +263,7 @@ def test_dictionary_columns_are_layout_width_not_sum_across_pages(
 
     statistics = build_dataset_statistics(dictionaries)
 
-    assert statistics["dictionaries"][0]["columns"] == 2
+    assert statistics["dictionaries"][0]["columns"] == 3
 
 
 def test_orphan_stage1_tsv_is_not_counted_as_a_stage1_page(tmp_path: Path) -> None:
