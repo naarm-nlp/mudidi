@@ -177,6 +177,9 @@ def test_write_dataset_statistics_creates_detailed_and_summary_csvs(
         summary_reader = csv.DictReader(handle)
         summary_fields = summary_reader.fieldnames or []
         summary_rows = list(summary_reader)
+    assert b"\r\n" not in (
+        output_dir / "dictionary_statistics_summary.csv"
+    ).read_bytes()
     assert "page" not in summary_fields
     assert "language_script" not in summary_fields
     assert summary_fields == [
