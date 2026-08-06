@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import csv
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -194,6 +196,32 @@ def test_write_dataset_statistics_creates_detailed_and_summary_csvs(
     assert summary_rows[0]["gold_grapheme_count"] == "9"
     assert summary_rows[0]["bold_tag_count"] == "1"
     assert summary_rows[0]["italic_tag_count"] == "1"
+
+
+def test_statistics_cli_reports_both_stage_page_counts(
+    tmp_path: Path,
+) -> None:
+    dictionaries, _flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
+    output_dir = tmp_path / "output"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).parents[1] / "scripts/generate_dataset_statistics.py"),
+            "--dictionaries-dir",
+            str(dictionaries),
+            "--output-dir",
+            str(output_dir),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.startswith(
+        "Wrote statistics for 1 dictionaries, 1 Stage 1 pages, and 1 Stage 2 pages:"
+    )
 
 
 def test_flat_only_stage1_page_keeps_text_metrics_without_rows_or_columns(
