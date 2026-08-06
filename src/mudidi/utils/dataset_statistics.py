@@ -65,10 +65,13 @@ def _stage1_metrics(tsv_path: Path) -> dict[str, Any]:
         "language map",
     )
     raw_flat = flat_path.read_text(encoding="utf-8")
-    language_script_graphemes = gold_grapheme_counts_by_language_script(
-        raw_flat,
-        PageLanguageMap.load(lang_map_path),
-    )
+    try:
+        language_script_graphemes = gold_grapheme_counts_by_language_script(
+            raw_flat,
+            PageLanguageMap.load(lang_map_path),
+        )
+    except ValueError as exc:
+        raise ValueError(f"Invalid Stage 1 language map {lang_map_path}: {exc}") from exc
     return {
         "rows": len(rows),
         "columns": len({row["column_id"].strip() for row in rows}),
