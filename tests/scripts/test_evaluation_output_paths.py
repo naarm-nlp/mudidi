@@ -8,6 +8,7 @@ EVALUATION_SCRIPTS = REPO_ROOT / "examples" / "evaluation"
 ARCHIVED_SCRIPTS = EVALUATION_SCRIPTS / "archive"
 
 CURRENT_RESULT_RUNNERS = {
+    "run_statistics.sh",
     "run_stage1_benchmark_per_lang_script_eval.sh",
     "run_stage2_benchmark_per_lang_script_eval.sh",
     "run_stage2_e2e_lexical_repair.sh",

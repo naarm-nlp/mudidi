@@ -1,0 +1,2269 @@
+{
+  "schema_version": 3,
+  "definitions": {
+    "page": "A page identifier discovered from a Stage 1 gold flat file or Stage 2 MDF file.",
+    "stage1_page_count": "Number of pages with a *_stage1_GOLD_flat.txt file.",
+    "stage2_page_count": "Number of pages with a *.mdf.txt file.",
+    "rows": "Number of Stage 1 TSV body rows; header and footer rows are excluded. Null when the page has no TSV.",
+    "columns": "Number of distinct non-metadata Stage 1 TSV column_id values, summed across pages for dictionary totals.",
+    "gold_grapheme_count": "Stage 1 gold graphemes after evaluation normalization, with Unicode punctuation, whitespace, meta, and space labels excluded.",
+    "language_script_graphemes": "Gold grapheme counts grouped by validated Stage 1 language-script label.",
+    "bold_tag_count": "Exact opening <b> tag occurrences in raw Stage 1 gold flat text.",
+    "italic_tag_count": "Exact opening <i> tag occurrences in raw Stage 1 gold flat text.",
+    "tags": "Total Stage 2 MDF field-marker occurrences, summed across pages for dictionary totals.",
+    "unique_tags": "Distinct Stage 2 MDF field markers; dictionary totals are distinct across all of its pages.",
+    "null_metric": "The source artifact for that metric is unavailable for the page or dictionary."
+  },
+  "summary": {
+    "dictionary_count": 31,
+    "stage1_page_count": 85,
+    "stage2_page_count": 10
+  },
+  "dictionaries": [
+    {
+      "dictionary": "Assyrian-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 99,
+      "columns": 3,
+      "gold_grapheme_count": 4285,
+      "bold_tag_count": 60,
+      "italic_tag_count": 47,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Bengalese-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 294,
+      "columns": 6,
+      "gold_grapheme_count": 7611,
+      "bold_tag_count": 241,
+      "italic_tag_count": 248,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Canala-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 254,
+      "columns": 6,
+      "gold_grapheme_count": 4098,
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chepang-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 254,
+      "columns": 6,
+      "gold_grapheme_count": 5990,
+      "bold_tag_count": 196,
+      "italic_tag_count": 141,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chukchi-Russian",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 100,
+      "columns": 3,
+      "gold_grapheme_count": 2280,
+      "bold_tag_count": 94,
+      "italic_tag_count": 20,
+      "tags": 80,
+      "unique_tags": 6,
+      "tag_counts": {
+        "gn": 35,
+        "hm": 2,
+        "lx": 28,
+        "se": 4,
+        "sn": 4,
+        "un": 7
+      }
+    },
+    {
+      "dictionary": "Circassian-English-Turkish",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 219,
+      "columns": 9,
+      "gold_grapheme_count": 2117,
+      "bold_tag_count": 50,
+      "italic_tag_count": 55,
+      "tags": 110,
+      "unique_tags": 7,
+      "tag_counts": {
+        "de": 8,
+        "ge": 20,
+        "gn": 20,
+        "lx": 20,
+        "ph": 20,
+        "ps": 20,
+        "va": 2
+      }
+    },
+    {
+      "dictionary": "Coptic-English-Greek",
+      "stage1_page_count": 0,
+      "stage2_page_count": 0,
+      "rows": null,
+      "columns": null,
+      "gold_grapheme_count": null,
+      "bold_tag_count": null,
+      "italic_tag_count": null,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Efik-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 296,
+      "columns": 6,
+      "gold_grapheme_count": 5426,
+      "bold_tag_count": 96,
+      "italic_tag_count": 227,
+      "tags": 145,
+      "unique_tags": 11,
+      "tag_counts": {
+        "cf": 8,
+        "ge": 24,
+        "hm": 3,
+        "lx": 22,
+        "ps": 22,
+        "sn": 10,
+        "sy": 1,
+        "ue": 9,
+        "va": 1,
+        "xe": 23,
+        "xv": 22
+      }
+    },
+    {
+      "dictionary": "Evenki-Russian",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 291,
+      "columns": 6,
+      "gold_grapheme_count": 4138,
+      "bold_tag_count": 242,
+      "italic_tag_count": 274,
+      "tags": 214,
+      "unique_tags": 15,
+      "tag_counts": {
+        "3s": 1,
+        "cf": 36,
+        "dl": 33,
+        "eg": 11,
+        "et": 18,
+        "gn": 39,
+        "lf": 1,
+        "ln": 1,
+        "lx": 28,
+        "pn": 2,
+        "sn": 20,
+        "un": 13,
+        "va": 3,
+        "xn": 4,
+        "xv": 4
+      }
+    },
+    {
+      "dictionary": "Georgian-Russian",
+      "stage1_page_count": 1,
+      "stage2_page_count": 0,
+      "rows": 84,
+      "columns": 2,
+      "gold_grapheme_count": 1221,
+      "bold_tag_count": 53,
+      "italic_tag_count": 15,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gojri-English-Hindi",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 88,
+      "columns": 3,
+      "gold_grapheme_count": 3503,
+      "bold_tag_count": 79,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Greek-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 330,
+      "columns": 6,
+      "gold_grapheme_count": 7637,
+      "bold_tag_count": 198,
+      "italic_tag_count": 89,
+      "tags": 246,
+      "unique_tags": 8,
+      "tag_counts": {
+        "cf": 1,
+        "ge": 81,
+        "lx": 59,
+        "ps": 59,
+        "se": 11,
+        "sn": 25,
+        "ue": 4,
+        "uv": 6
+      }
+    },
+    {
+      "dictionary": "Gujarati-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 210,
+      "columns": 6,
+      "gold_grapheme_count": 3847,
+      "bold_tag_count": 125,
+      "italic_tag_count": 106,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Iñupiatun Eskimo-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 324,
+      "columns": 6,
+      "gold_grapheme_count": 9283,
+      "bold_tag_count": 321,
+      "italic_tag_count": 280,
+      "tags": 273,
+      "unique_tags": 11,
+      "tag_counts": {
+        "cf": 9,
+        "de": 69,
+        "lt": 1,
+        "lx": 62,
+        "ps": 62,
+        "sn": 13,
+        "sy": 21,
+        "ue": 2,
+        "va": 24,
+        "xe": 5,
+        "xv": 5
+      }
+    },
+    {
+      "dictionary": "Japanese-English",
+      "stage1_page_count": 2,
+      "stage2_page_count": 0,
+      "rows": 260,
+      "columns": 4,
+      "gold_grapheme_count": 6370,
+      "bold_tag_count": 243,
+      "italic_tag_count": 111,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Kashmiri-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 189,
+      "columns": 6,
+      "gold_grapheme_count": 3168,
+      "bold_tag_count": 110,
+      "italic_tag_count": 37,
+      "tags": 172,
+      "unique_tags": 7,
+      "tag_counts": {
+        "ge": 41,
+        "lx": 41,
+        "pd": 20,
+        "pl": 5,
+        "ps": 23,
+        "se": 1,
+        "va": 41
+      }
+    },
+    {
+      "dictionary": "Khmer-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 244,
+      "columns": 6,
+      "gold_grapheme_count": 3846,
+      "bold_tag_count": 119,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Malay-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 214,
+      "columns": 6,
+      "gold_grapheme_count": 4442,
+      "bold_tag_count": 135,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Na-English-Chinese-French",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 255,
+      "columns": 6,
+      "gold_grapheme_count": 6369,
+      "bold_tag_count": 39,
+      "italic_tag_count": 0,
+      "tags": 116,
+      "unique_tags": 13,
+      "tag_counts": {
+        "ge": 7,
+        "gn": 7,
+        "gr": 7,
+        "lc": 7,
+        "lx": 7,
+        "np": 7,
+        "nt": 4,
+        "ph": 7,
+        "ps": 7,
+        "xe": 14,
+        "xn": 14,
+        "xr": 14,
+        "xv": 14
+      }
+    },
+    {
+      "dictionary": "Nahuatl-French",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 300,
+      "columns": 6,
+      "gold_grapheme_count": 10194,
+      "bold_tag_count": 102,
+      "italic_tag_count": 252,
+      "tags": 172,
+      "unique_tags": 17,
+      "tag_counts": {
+        "cf": 1,
+        "dn": 6,
+        "et": 1,
+        "gn": 25,
+        "if": 7,
+        "lt": 2,
+        "lx": 30,
+        "mr": 27,
+        "pd": 10,
+        "pl": 1,
+        "ps": 22,
+        "sn": 2,
+        "so": 5,
+        "un": 1,
+        "va": 1,
+        "xn": 15,
+        "xv": 16
+      }
+    },
+    {
+      "dictionary": "Punjabi-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 422,
+      "columns": 9,
+      "gold_grapheme_count": 7626,
+      "bold_tag_count": 253,
+      "italic_tag_count": 191,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Reel-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 136,
+      "columns": 6,
+      "gold_grapheme_count": 2463,
+      "bold_tag_count": 198,
+      "italic_tag_count": 38,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Ritharngu-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 248,
+      "columns": 6,
+      "gold_grapheme_count": 4773,
+      "bold_tag_count": 203,
+      "italic_tag_count": 179,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Sanskrit-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 228,
+      "columns": 6,
+      "gold_grapheme_count": 3861,
+      "bold_tag_count": 293,
+      "italic_tag_count": 184,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Shilluk-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 150,
+      "columns": 3,
+      "gold_grapheme_count": 6792,
+      "bold_tag_count": 153,
+      "italic_tag_count": 98,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Syriac-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 167,
+      "columns": 6,
+      "gold_grapheme_count": 3389,
+      "bold_tag_count": 159,
+      "italic_tag_count": 72,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Telugu-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 206,
+      "columns": 6,
+      "gold_grapheme_count": 3954,
+      "bold_tag_count": 126,
+      "italic_tag_count": 111,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Thai-Russian",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 192,
+      "columns": 6,
+      "gold_grapheme_count": 4648,
+      "bold_tag_count": 127,
+      "italic_tag_count": 91,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Tiri-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 1,
+      "rows": 244,
+      "columns": 6,
+      "gold_grapheme_count": 3873,
+      "bold_tag_count": 147,
+      "italic_tag_count": 0,
+      "tags": 102,
+      "unique_tags": 7,
+      "tag_counts": {
+        "cf": 7,
+        "ge": 41,
+        "hm": 6,
+        "lx": 36,
+        "nt": 3,
+        "se": 8,
+        "xv": 1
+      }
+    },
+    {
+      "dictionary": "Vernacular Syriac-Kurdish_Turkish-English",
+      "stage1_page_count": 3,
+      "stage2_page_count": 0,
+      "rows": 263,
+      "columns": 6,
+      "gold_grapheme_count": 6436,
+      "bold_tag_count": 314,
+      "italic_tag_count": 210,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Yiddish-English",
+      "stage1_page_count": 1,
+      "stage2_page_count": 0,
+      "rows": 82,
+      "columns": 2,
+      "gold_grapheme_count": 1613,
+      "bold_tag_count": 61,
+      "italic_tag_count": 49,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    }
+  ],
+  "pages": [
+    {
+      "dictionary": "Assyrian-English",
+      "page": "page_39",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 30,
+      "columns": 1,
+      "gold_grapheme_count": 1059,
+      "language_script_graphemes": {
+        "Assyrian-Cuneiform": 151,
+        "Assyrian-Latin": 397,
+        "English-Latin": 494,
+        "Greek-Greek": 9,
+        "Hebrew-Hebrew": 8
+      },
+      "bold_tag_count": 24,
+      "italic_tag_count": 12,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Assyrian-English",
+      "page": "page_352",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 34,
+      "columns": 1,
+      "gold_grapheme_count": 1657,
+      "language_script_graphemes": {
+        "Arabic-Arabic": 3,
+        "Arabic-Latin": 5,
+        "Assyrian-Cuneiform": 131,
+        "Assyrian-Latin": 498,
+        "English-Latin": 998,
+        "Hebrew-Hebrew": 10,
+        "Latin-Latin": 12
+      },
+      "bold_tag_count": 22,
+      "italic_tag_count": 19,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Assyrian-English",
+      "page": "page_842",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 35,
+      "columns": 1,
+      "gold_grapheme_count": 1569,
+      "language_script_graphemes": {
+        "Assyrian-Cuneiform": 139,
+        "Assyrian-Latin": 501,
+        "English-Latin": 869,
+        "Old Persian-Latin": 60
+      },
+      "bold_tag_count": 14,
+      "italic_tag_count": 16,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Bengalese-English",
+      "page": "page_54",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 98,
+      "columns": 2,
+      "gold_grapheme_count": 2601,
+      "language_script_graphemes": {
+        "Bengalese-Bengali": 509,
+        "English-Latin": 2092
+      },
+      "bold_tag_count": 91,
+      "italic_tag_count": 89,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Bengalese-English",
+      "page": "page_105",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 98,
+      "columns": 2,
+      "gold_grapheme_count": 2484,
+      "language_script_graphemes": {
+        "Bengalese-Bengali": 485,
+        "English-Latin": 1999
+      },
+      "bold_tag_count": 89,
+      "italic_tag_count": 96,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Bengalese-English",
+      "page": "page_217",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 98,
+      "columns": 2,
+      "gold_grapheme_count": 2526,
+      "language_script_graphemes": {
+        "Bengalese-Bengali": 287,
+        "English-Latin": 2239
+      },
+      "bold_tag_count": 61,
+      "italic_tag_count": 63,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Canala-English",
+      "page": "page_12",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 85,
+      "columns": 2,
+      "gold_grapheme_count": 1448,
+      "language_script_graphemes": {
+        "Canala-Latin": 348,
+        "English-Latin": 1062,
+        "French-Latin": 38
+      },
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Canala-English",
+      "page": "page_30",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 84,
+      "columns": 2,
+      "gold_grapheme_count": 1205,
+      "language_script_graphemes": {
+        "Canala-Latin": 300,
+        "English-Latin": 905
+      },
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Canala-English",
+      "page": "page_64",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 85,
+      "columns": 2,
+      "gold_grapheme_count": 1445,
+      "language_script_graphemes": {
+        "Canala-Latin": 395,
+        "English-Latin": 1050
+      },
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chepang-English",
+      "page": "page_37",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 85,
+      "columns": 2,
+      "gold_grapheme_count": 2000,
+      "language_script_graphemes": {
+        "Chepang-Latin": 666,
+        "English-Latin": 1332,
+        "Nepali-Latin": 2
+      },
+      "bold_tag_count": 63,
+      "italic_tag_count": 39,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chepang-English",
+      "page": "page_103",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 84,
+      "columns": 2,
+      "gold_grapheme_count": 1965,
+      "language_script_graphemes": {
+        "Chepang-Latin": 662,
+        "English-Latin": 1303
+      },
+      "bold_tag_count": 70,
+      "italic_tag_count": 52,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chepang-English",
+      "page": "page_304",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 85,
+      "columns": 2,
+      "gold_grapheme_count": 2025,
+      "language_script_graphemes": {
+        "Chepang-Latin": 586,
+        "English-Latin": 1439
+      },
+      "bold_tag_count": 63,
+      "italic_tag_count": 50,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chukchi-Russian",
+      "page": "page_3",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 33,
+      "columns": 1,
+      "gold_grapheme_count": 728,
+      "language_script_graphemes": {
+        "Chukchi-Cyrillic Extended": 275,
+        "Russian-Cyrillic": 453
+      },
+      "bold_tag_count": 34,
+      "italic_tag_count": 7,
+      "tags": 80,
+      "unique_tags": 6,
+      "tag_counts": {
+        "gn": 35,
+        "hm": 2,
+        "lx": 28,
+        "se": 4,
+        "sn": 4,
+        "un": 7
+      }
+    },
+    {
+      "dictionary": "Chukchi-Russian",
+      "page": "page_26",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 33,
+      "columns": 1,
+      "gold_grapheme_count": 701,
+      "language_script_graphemes": {
+        "Chukchi-Cyrillic Extended": 194,
+        "Russian-Cyrillic": 507
+      },
+      "bold_tag_count": 27,
+      "italic_tag_count": 6,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Chukchi-Russian",
+      "page": "page_48",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 34,
+      "columns": 1,
+      "gold_grapheme_count": 851,
+      "language_script_graphemes": {
+        "Chukchi-Cyrillic Extended": 281,
+        "Russian-Cyrillic": 570
+      },
+      "bold_tag_count": 33,
+      "italic_tag_count": 7,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Circassian-English-Turkish",
+      "page": "page_1",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 79,
+      "columns": 3,
+      "gold_grapheme_count": 810,
+      "language_script_graphemes": {
+        "Circassian-Arabic": 166,
+        "Circassian-Latin": 227,
+        "English-Latin": 276,
+        "Turkish-Arabic": 141
+      },
+      "bold_tag_count": 44,
+      "italic_tag_count": 21,
+      "tags": 110,
+      "unique_tags": 7,
+      "tag_counts": {
+        "de": 8,
+        "ge": 20,
+        "gn": 20,
+        "lx": 20,
+        "ph": 20,
+        "ps": 20,
+        "va": 2
+      }
+    },
+    {
+      "dictionary": "Circassian-English-Turkish",
+      "page": "page_2",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 71,
+      "columns": 3,
+      "gold_grapheme_count": 655,
+      "language_script_graphemes": {
+        "Circassian-Arabic": 152,
+        "Circassian-Latin": 201,
+        "English-Latin": 193,
+        "Turkish-Arabic": 109
+      },
+      "bold_tag_count": 3,
+      "italic_tag_count": 17,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Circassian-English-Turkish",
+      "page": "page_3",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 69,
+      "columns": 3,
+      "gold_grapheme_count": 652,
+      "language_script_graphemes": {
+        "Circassian-Arabic": 124,
+        "Circassian-Latin": 166,
+        "English-Latin": 241,
+        "French-Latin": 6,
+        "Turkish-Arabic": 115
+      },
+      "bold_tag_count": 3,
+      "italic_tag_count": 17,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Efik-English",
+      "page": "page_13",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 92,
+      "columns": 2,
+      "gold_grapheme_count": 1630,
+      "language_script_graphemes": {
+        "Efik-Latin": 505,
+        "English-Latin": 1125
+      },
+      "bold_tag_count": 23,
+      "italic_tag_count": 78,
+      "tags": 145,
+      "unique_tags": 11,
+      "tag_counts": {
+        "cf": 8,
+        "ge": 24,
+        "hm": 3,
+        "lx": 22,
+        "ps": 22,
+        "sn": 10,
+        "sy": 1,
+        "ue": 9,
+        "va": 1,
+        "xe": 23,
+        "xv": 22
+      }
+    },
+    {
+      "dictionary": "Efik-English",
+      "page": "page_25",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 102,
+      "columns": 2,
+      "gold_grapheme_count": 1958,
+      "language_script_graphemes": {
+        "Efik-Latin": 615,
+        "English-Latin": 1343
+      },
+      "bold_tag_count": 41,
+      "italic_tag_count": 81,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Efik-English",
+      "page": "page_32",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 102,
+      "columns": 2,
+      "gold_grapheme_count": 1838,
+      "language_script_graphemes": {
+        "Efik-Latin": 603,
+        "English-Latin": 1235
+      },
+      "bold_tag_count": 32,
+      "italic_tag_count": 68,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Evenki-Russian",
+      "page": "page_1",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 104,
+      "columns": 2,
+      "gold_grapheme_count": 1364,
+      "language_script_graphemes": {
+        "Evenki-Cyrillic": 641,
+        "Russian-Cyrillic": 723
+      },
+      "bold_tag_count": 83,
+      "italic_tag_count": 105,
+      "tags": 214,
+      "unique_tags": 15,
+      "tag_counts": {
+        "3s": 1,
+        "cf": 36,
+        "dl": 33,
+        "eg": 11,
+        "et": 18,
+        "gn": 39,
+        "lf": 1,
+        "ln": 1,
+        "lx": 28,
+        "pn": 2,
+        "sn": 20,
+        "un": 13,
+        "va": 3,
+        "xn": 4,
+        "xv": 4
+      }
+    },
+    {
+      "dictionary": "Evenki-Russian",
+      "page": "page_2",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 83,
+      "columns": 2,
+      "gold_grapheme_count": 1329,
+      "language_script_graphemes": {
+        "Evenki-Cyrillic": 675,
+        "Russian-Cyrillic": 654
+      },
+      "bold_tag_count": 79,
+      "italic_tag_count": 58,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Evenki-Russian",
+      "page": "page_3",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 104,
+      "columns": 2,
+      "gold_grapheme_count": 1445,
+      "language_script_graphemes": {
+        "Evenki-Cyrillic": 595,
+        "Russian-Cyrillic": 850
+      },
+      "bold_tag_count": 80,
+      "italic_tag_count": 111,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Georgian-Russian",
+      "page": "page_116",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 84,
+      "columns": 2,
+      "gold_grapheme_count": 1221,
+      "language_script_graphemes": {
+        "Georgian-Georgian": 477,
+        "Russian-Cyrillic": 744
+      },
+      "bold_tag_count": 53,
+      "italic_tag_count": 15,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gojri-English-Hindi",
+      "page": "page_32",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 29,
+      "columns": 1,
+      "gold_grapheme_count": 1133,
+      "language_script_graphemes": {
+        "English-Latin": 651,
+        "Gojri-Devanagari": 105,
+        "Gojri-Latin": 173,
+        "Hindi-Devanagari": 204
+      },
+      "bold_tag_count": 29,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gojri-English-Hindi",
+      "page": "page_76",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 29,
+      "columns": 1,
+      "gold_grapheme_count": 1133,
+      "language_script_graphemes": {
+        "English-Latin": 610,
+        "Gojri-Devanagari": 72,
+        "Gojri-Latin": 143,
+        "Hindi-Devanagari": 308
+      },
+      "bold_tag_count": 24,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gojri-English-Hindi",
+      "page": "page_275",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 30,
+      "columns": 1,
+      "gold_grapheme_count": 1237,
+      "language_script_graphemes": {
+        "English-Latin": 666,
+        "Gojri-Devanagari": 96,
+        "Gojri-Latin": 149,
+        "Hindi-Devanagari": 326
+      },
+      "bold_tag_count": 26,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Greek-English",
+      "page": "page_38",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 110,
+      "columns": 2,
+      "gold_grapheme_count": 2708,
+      "language_script_graphemes": {
+        "English-Latin": 1813,
+        "Greek-Greek": 895
+      },
+      "bold_tag_count": 73,
+      "italic_tag_count": 10,
+      "tags": 246,
+      "unique_tags": 8,
+      "tag_counts": {
+        "cf": 1,
+        "ge": 81,
+        "lx": 59,
+        "ps": 59,
+        "se": 11,
+        "sn": 25,
+        "ue": 4,
+        "uv": 6
+      }
+    },
+    {
+      "dictionary": "Greek-English",
+      "page": "page_302",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 110,
+      "columns": 2,
+      "gold_grapheme_count": 2474,
+      "language_script_graphemes": {
+        "English-Latin": 1548,
+        "Greek-Greek": 926
+      },
+      "bold_tag_count": 75,
+      "italic_tag_count": 70,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Greek-English",
+      "page": "page_451",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 110,
+      "columns": 2,
+      "gold_grapheme_count": 2455,
+      "language_script_graphemes": {
+        "English-Latin": 1763,
+        "Greek-Greek": 692
+      },
+      "bold_tag_count": 50,
+      "italic_tag_count": 9,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gujarati-English",
+      "page": "page_50",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 70,
+      "columns": 2,
+      "gold_grapheme_count": 1292,
+      "language_script_graphemes": {
+        "English-Latin": 1115,
+        "Gujarati-Gujarati": 177
+      },
+      "bold_tag_count": 45,
+      "italic_tag_count": 39,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gujarati-English",
+      "page": "page_500",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 70,
+      "columns": 2,
+      "gold_grapheme_count": 1335,
+      "language_script_graphemes": {
+        "English-Latin": 1182,
+        "Gujarati-Gujarati": 153
+      },
+      "bold_tag_count": 33,
+      "italic_tag_count": 27,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Gujarati-English",
+      "page": "page_866",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 70,
+      "columns": 2,
+      "gold_grapheme_count": 1220,
+      "language_script_graphemes": {
+        "English-Latin": 1052,
+        "Gujarati-Gujarati": 168
+      },
+      "bold_tag_count": 47,
+      "italic_tag_count": 40,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Iñupiatun Eskimo-English",
+      "page": "page_42",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 108,
+      "columns": 2,
+      "gold_grapheme_count": 3205,
+      "language_script_graphemes": {
+        "English-Latin": 1988,
+        "Iñupiatun Eskimo-Latin": 1217
+      },
+      "bold_tag_count": 125,
+      "italic_tag_count": 117,
+      "tags": 273,
+      "unique_tags": 11,
+      "tag_counts": {
+        "cf": 9,
+        "de": 69,
+        "lt": 1,
+        "lx": 62,
+        "ps": 62,
+        "sn": 13,
+        "sy": 21,
+        "ue": 2,
+        "va": 24,
+        "xe": 5,
+        "xv": 5
+      }
+    },
+    {
+      "dictionary": "Iñupiatun Eskimo-English",
+      "page": "page_201",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 108,
+      "columns": 2,
+      "gold_grapheme_count": 3014,
+      "language_script_graphemes": {
+        "English-Latin": 2034,
+        "Iñupiatun Eskimo-Latin": 879,
+        "Latin-Latin": 101
+      },
+      "bold_tag_count": 102,
+      "italic_tag_count": 88,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Iñupiatun Eskimo-English",
+      "page": "page_206",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 108,
+      "columns": 2,
+      "gold_grapheme_count": 3064,
+      "language_script_graphemes": {
+        "English-Latin": 2199,
+        "Iñupiatun Eskimo-Latin": 865
+      },
+      "bold_tag_count": 94,
+      "italic_tag_count": 75,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Japanese-English",
+      "page": "page_137",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 130,
+      "columns": 2,
+      "gold_grapheme_count": 3012,
+      "language_script_graphemes": {
+        "English-Latin": 1865,
+        "Japanese-Kanji": 62,
+        "Japanese-Katakana": 220,
+        "Japanese-Latin": 865
+      },
+      "bold_tag_count": 109,
+      "italic_tag_count": 49,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Japanese-English",
+      "page": "page_351",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 130,
+      "columns": 2,
+      "gold_grapheme_count": 3358,
+      "language_script_graphemes": {
+        "English-Latin": 2215,
+        "Japanese-Kanji": 76,
+        "Japanese-Katakana": 185,
+        "Japanese-Latin": 882
+      },
+      "bold_tag_count": 134,
+      "italic_tag_count": 62,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Kashmiri-English",
+      "page": "page_14",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 62,
+      "columns": 2,
+      "gold_grapheme_count": 1082,
+      "language_script_graphemes": {
+        "English-Latin": 590,
+        "Kashmiri-Arabic": 202,
+        "Kashmiri-Latin": 290
+      },
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": 172,
+      "unique_tags": 7,
+      "tag_counts": {
+        "ge": 41,
+        "lx": 41,
+        "pd": 20,
+        "pl": 5,
+        "ps": 23,
+        "se": 1,
+        "va": 41
+      }
+    },
+    {
+      "dictionary": "Kashmiri-English",
+      "page": "page_39",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 66,
+      "columns": 2,
+      "gold_grapheme_count": 1054,
+      "language_script_graphemes": {
+        "English-Latin": 562,
+        "Kashmiri-Arabic": 157,
+        "Kashmiri-Latin": 335
+      },
+      "bold_tag_count": 69,
+      "italic_tag_count": 20,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Kashmiri-English",
+      "page": "page_71",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 61,
+      "columns": 2,
+      "gold_grapheme_count": 1032,
+      "language_script_graphemes": {
+        "English-Latin": 476,
+        "Kashmiri-Arabic": 192,
+        "Kashmiri-Latin": 364
+      },
+      "bold_tag_count": 41,
+      "italic_tag_count": 17,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Khmer-English",
+      "page": "page_8",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 69,
+      "columns": 2,
+      "gold_grapheme_count": 965,
+      "language_script_graphemes": {
+        "English-Latin": 817,
+        "Khmer-Khmer": 148
+      },
+      "bold_tag_count": 0,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Khmer-English",
+      "page": "page_116",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 87,
+      "columns": 2,
+      "gold_grapheme_count": 1474,
+      "language_script_graphemes": {
+        "English-Latin": 1136,
+        "Khmer-Khmer": 338
+      },
+      "bold_tag_count": 62,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Khmer-English",
+      "page": "page_143",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 88,
+      "columns": 2,
+      "gold_grapheme_count": 1407,
+      "language_script_graphemes": {
+        "English-Latin": 1183,
+        "Khmer-Khmer": 224
+      },
+      "bold_tag_count": 57,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Malay-English",
+      "page": "page_250",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 71,
+      "columns": 2,
+      "gold_grapheme_count": 1473,
+      "language_script_graphemes": {
+        "English-Latin": 834,
+        "Malay-Arabic": 288,
+        "Malay-Latin": 351
+      },
+      "bold_tag_count": 44,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Malay-English",
+      "page": "page_315",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 71,
+      "columns": 2,
+      "gold_grapheme_count": 1414,
+      "language_script_graphemes": {
+        "English-Latin": 762,
+        "Malay-Arabic": 318,
+        "Malay-Latin": 334
+      },
+      "bold_tag_count": 54,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Malay-English",
+      "page": "page_404",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 72,
+      "columns": 2,
+      "gold_grapheme_count": 1555,
+      "language_script_graphemes": {
+        "English-Latin": 982,
+        "Malay-Arabic": 281,
+        "Malay-Latin": 292
+      },
+      "bold_tag_count": 37,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Na-English-Chinese-French",
+      "page": "page_19",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 87,
+      "columns": 2,
+      "gold_grapheme_count": 2220,
+      "language_script_graphemes": {
+        "Chinese-Han": 156,
+        "English-Latin": 1018,
+        "French-Latin": 768,
+        "Na-IPA": 255,
+        "Na-Latin": 23
+      },
+      "bold_tag_count": 8,
+      "italic_tag_count": 0,
+      "tags": 116,
+      "unique_tags": 13,
+      "tag_counts": {
+        "ge": 7,
+        "gn": 7,
+        "gr": 7,
+        "lc": 7,
+        "lx": 7,
+        "np": 7,
+        "nt": 4,
+        "ph": 7,
+        "ps": 7,
+        "xe": 14,
+        "xn": 14,
+        "xr": 14,
+        "xv": 14
+      }
+    },
+    {
+      "dictionary": "Na-English-Chinese-French",
+      "page": "page_186",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 85,
+      "columns": 2,
+      "gold_grapheme_count": 2063,
+      "language_script_graphemes": {
+        "Chinese-Han": 128,
+        "English-Latin": 862,
+        "French-Latin": 708,
+        "Na-IPA": 324,
+        "Na-Latin": 41
+      },
+      "bold_tag_count": 19,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Na-English-Chinese-French",
+      "page": "page_321",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 83,
+      "columns": 2,
+      "gold_grapheme_count": 2086,
+      "language_script_graphemes": {
+        "Chinese-Han": 130,
+        "English-Latin": 746,
+        "French-Latin": 738,
+        "Na-IPA": 412,
+        "Na-Latin": 60
+      },
+      "bold_tag_count": 12,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Nahuatl-French",
+      "page": "page_74",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 100,
+      "columns": 2,
+      "gold_grapheme_count": 3451,
+      "language_script_graphemes": {
+        "French-Latin": 2203,
+        "Nahuatl-Latin": 1248
+      },
+      "bold_tag_count": 32,
+      "italic_tag_count": 73,
+      "tags": 172,
+      "unique_tags": 17,
+      "tag_counts": {
+        "cf": 1,
+        "dn": 6,
+        "et": 1,
+        "gn": 25,
+        "if": 7,
+        "lt": 2,
+        "lx": 30,
+        "mr": 27,
+        "pd": 10,
+        "pl": 1,
+        "ps": 22,
+        "sn": 2,
+        "so": 5,
+        "un": 1,
+        "va": 1,
+        "xn": 15,
+        "xv": 16
+      }
+    },
+    {
+      "dictionary": "Nahuatl-French",
+      "page": "page_75",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 100,
+      "columns": 2,
+      "gold_grapheme_count": 3208,
+      "language_script_graphemes": {
+        "French-Latin": 1728,
+        "Nahuatl-Latin": 1465,
+        "Spanish-Latin": 15
+      },
+      "bold_tag_count": 39,
+      "italic_tag_count": 85,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Nahuatl-French",
+      "page": "page_244",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 100,
+      "columns": 2,
+      "gold_grapheme_count": 3535,
+      "language_script_graphemes": {
+        "French-Latin": 2033,
+        "Nahuatl-Latin": 1502
+      },
+      "bold_tag_count": 31,
+      "italic_tag_count": 94,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Punjabi-English",
+      "page": "page_28",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 140,
+      "columns": 3,
+      "gold_grapheme_count": 2549,
+      "language_script_graphemes": {
+        "English-Latin": 1852,
+        "Punjabi-Gurmukhi": 315,
+        "Punjabi-Latin": 382
+      },
+      "bold_tag_count": 93,
+      "italic_tag_count": 57,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Punjabi-English",
+      "page": "page_114",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 141,
+      "columns": 3,
+      "gold_grapheme_count": 2551,
+      "language_script_graphemes": {
+        "English-Latin": 1796,
+        "Punjabi-Gurmukhi": 281,
+        "Punjabi-Latin": 474
+      },
+      "bold_tag_count": 90,
+      "italic_tag_count": 73,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Punjabi-English",
+      "page": "page_300",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 141,
+      "columns": 3,
+      "gold_grapheme_count": 2526,
+      "language_script_graphemes": {
+        "English-Latin": 1962,
+        "Punjabi-Gurmukhi": 210,
+        "Punjabi-Latin": 354
+      },
+      "bold_tag_count": 70,
+      "italic_tag_count": 61,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Reel-English",
+      "page": "page_17",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 45,
+      "columns": 2,
+      "gold_grapheme_count": 765,
+      "language_script_graphemes": {
+        "English-Latin": 337,
+        "Reel-IPA": 99,
+        "Reel-Latin": 329
+      },
+      "bold_tag_count": 62,
+      "italic_tag_count": 15,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Reel-English",
+      "page": "page_47",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 46,
+      "columns": 2,
+      "gold_grapheme_count": 839,
+      "language_script_graphemes": {
+        "English-Latin": 418,
+        "Reel-IPA": 69,
+        "Reel-Latin": 352
+      },
+      "bold_tag_count": 73,
+      "italic_tag_count": 10,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Reel-English",
+      "page": "page_89",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 45,
+      "columns": 2,
+      "gold_grapheme_count": 859,
+      "language_script_graphemes": {
+        "English-Latin": 503,
+        "Reel-IPA": 68,
+        "Reel-Latin": 288
+      },
+      "bold_tag_count": 63,
+      "italic_tag_count": 13,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Ritharngu-English",
+      "page": "page_185",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 79,
+      "columns": 2,
+      "gold_grapheme_count": 1521,
+      "language_script_graphemes": {
+        "English-Latin": 1054,
+        "Latin-Latin": 73,
+        "Ritharngu-Latin": 394
+      },
+      "bold_tag_count": 65,
+      "italic_tag_count": 62,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Ritharngu-English",
+      "page": "page_205",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 83,
+      "columns": 2,
+      "gold_grapheme_count": 1594,
+      "language_script_graphemes": {
+        "English-Latin": 941,
+        "Latin-Latin": 84,
+        "Ritharngu-Latin": 569
+      },
+      "bold_tag_count": 73,
+      "italic_tag_count": 67,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Ritharngu-English",
+      "page": "page_232",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 86,
+      "columns": 2,
+      "gold_grapheme_count": 1658,
+      "language_script_graphemes": {
+        "Dayi-Latin": 5,
+        "English-Latin": 1189,
+        "Ritharngu-Latin": 464
+      },
+      "bold_tag_count": 65,
+      "italic_tag_count": 50,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Sanskrit-English",
+      "page": "page_9",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 76,
+      "columns": 2,
+      "gold_grapheme_count": 1196,
+      "language_script_graphemes": {
+        "English-Latin": 836,
+        "Sanskrit-Devanagari": 360
+      },
+      "bold_tag_count": 104,
+      "italic_tag_count": 55,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Sanskrit-English",
+      "page": "page_559",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 76,
+      "columns": 2,
+      "gold_grapheme_count": 1369,
+      "language_script_graphemes": {
+        "English-Latin": 1036,
+        "Sanskrit-Devanagari": 296,
+        "Sanskrit-Latin": 37
+      },
+      "bold_tag_count": 53,
+      "italic_tag_count": 65,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Sanskrit-English",
+      "page": "page_880",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 76,
+      "columns": 2,
+      "gold_grapheme_count": 1296,
+      "language_script_graphemes": {
+        "English-Latin": 896,
+        "Sanskrit-Devanagari": 378,
+        "Sanskrit-Latin": 22
+      },
+      "bold_tag_count": 136,
+      "italic_tag_count": 64,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Shilluk-English",
+      "page": "page_3",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 47,
+      "columns": 1,
+      "gold_grapheme_count": 1989,
+      "language_script_graphemes": {
+        "English-Latin": 1707,
+        "Shilluk-Latin": 282
+      },
+      "bold_tag_count": 55,
+      "italic_tag_count": 14,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Shilluk-English",
+      "page": "page_7",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 51,
+      "columns": 1,
+      "gold_grapheme_count": 2353,
+      "language_script_graphemes": {
+        "English-Latin": 2025,
+        "Shilluk-Latin": 328
+      },
+      "bold_tag_count": 51,
+      "italic_tag_count": 55,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Shilluk-English",
+      "page": "page_28",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 52,
+      "columns": 1,
+      "gold_grapheme_count": 2450,
+      "language_script_graphemes": {
+        "English-Latin": 2225,
+        "Shilluk-Latin": 225
+      },
+      "bold_tag_count": 47,
+      "italic_tag_count": 29,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Syriac-English",
+      "page": "page_33",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 56,
+      "columns": 2,
+      "gold_grapheme_count": 1073,
+      "language_script_graphemes": {
+        "English-Latin": 797,
+        "Persian-Arabic": 63,
+        "Syriac-Syriac": 206,
+        "Turkish-Arabic": 7
+      },
+      "bold_tag_count": 34,
+      "italic_tag_count": 22,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Syriac-English",
+      "page": "page_55",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 55,
+      "columns": 2,
+      "gold_grapheme_count": 1104,
+      "language_script_graphemes": {
+        "English-Latin": 741,
+        "Greek-Greek": 14,
+        "Persian-Arabic": 31,
+        "Syriac-Syriac": 318
+      },
+      "bold_tag_count": 62,
+      "italic_tag_count": 23,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Syriac-English",
+      "page": "page_75",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 56,
+      "columns": 2,
+      "gold_grapheme_count": 1212,
+      "language_script_graphemes": {
+        "English-Latin": 806,
+        "Greek-Greek": 25,
+        "Hebrew-Hebrew": 8,
+        "Persian-Arabic": 29,
+        "Syriac-Syriac": 344
+      },
+      "bold_tag_count": 63,
+      "italic_tag_count": 27,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Telugu-English",
+      "page": "page_80",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 66,
+      "columns": 2,
+      "gold_grapheme_count": 1197,
+      "language_script_graphemes": {
+        "English-Latin": 1030,
+        "Telugu-Telugu": 167
+      },
+      "bold_tag_count": 42,
+      "italic_tag_count": 36,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Telugu-English",
+      "page": "page_151",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 70,
+      "columns": 2,
+      "gold_grapheme_count": 1439,
+      "language_script_graphemes": {
+        "English-Latin": 1237,
+        "Telugu-Telugu": 202
+      },
+      "bold_tag_count": 40,
+      "italic_tag_count": 38,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Telugu-English",
+      "page": "page_646",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 70,
+      "columns": 2,
+      "gold_grapheme_count": 1318,
+      "language_script_graphemes": {
+        "English-Latin": 1113,
+        "Telugu-Telugu": 205
+      },
+      "bold_tag_count": 44,
+      "italic_tag_count": 37,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Thai-Russian",
+      "page": "page_67",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 64,
+      "columns": 2,
+      "gold_grapheme_count": 1564,
+      "language_script_graphemes": {
+        "Latin-Latin": 12,
+        "Russian-Cyrillic": 1009,
+        "Thai-Cyrillic": 295,
+        "Thai-Thai": 248
+      },
+      "bold_tag_count": 40,
+      "italic_tag_count": 29,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Thai-Russian",
+      "page": "page_591",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 64,
+      "columns": 2,
+      "gold_grapheme_count": 1481,
+      "language_script_graphemes": {
+        "Latin-Latin": 79,
+        "Russian-Cyrillic": 898,
+        "Thai-Cyrillic": 283,
+        "Thai-Thai": 221
+      },
+      "bold_tag_count": 40,
+      "italic_tag_count": 41,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Thai-Russian",
+      "page": "page_756",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 64,
+      "columns": 2,
+      "gold_grapheme_count": 1603,
+      "language_script_graphemes": {
+        "Latin-Latin": 15,
+        "Russian-Cyrillic": 949,
+        "Thai-Cyrillic": 374,
+        "Thai-Thai": 265
+      },
+      "bold_tag_count": 47,
+      "italic_tag_count": 21,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Tiri-English",
+      "page": "page_15",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": true,
+      "rows": 74,
+      "columns": 2,
+      "gold_grapheme_count": 1161,
+      "language_script_graphemes": {
+        "English-Latin": 853,
+        "French-Latin": 10,
+        "Tiri-Latin": 298
+      },
+      "bold_tag_count": 45,
+      "italic_tag_count": 0,
+      "tags": 102,
+      "unique_tags": 7,
+      "tag_counts": {
+        "cf": 7,
+        "ge": 41,
+        "hm": 6,
+        "lx": 36,
+        "nt": 3,
+        "se": 8,
+        "xv": 1
+      }
+    },
+    {
+      "dictionary": "Tiri-English",
+      "page": "page_56",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 86,
+      "columns": 2,
+      "gold_grapheme_count": 1342,
+      "language_script_graphemes": {
+        "English-Latin": 985,
+        "Tiri-Latin": 357
+      },
+      "bold_tag_count": 51,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Tiri-English",
+      "page": "page_66",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 84,
+      "columns": 2,
+      "gold_grapheme_count": 1370,
+      "language_script_graphemes": {
+        "English-Latin": 1026,
+        "French-Latin": 14,
+        "Tiri-Latin": 330
+      },
+      "bold_tag_count": 51,
+      "italic_tag_count": 0,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Vernacular Syriac-Kurdish_Turkish-English",
+      "page": "page_26",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 88,
+      "columns": 2,
+      "gold_grapheme_count": 2061,
+      "language_script_graphemes": {
+        "Arabic-Arabic": 38,
+        "English-Latin": 1204,
+        "Kurdish-Latin": 9,
+        "Persian-Arabic": 22,
+        "Turkish-Arabic": 50,
+        "Vernacular Syriac-Latin": 317,
+        "Vernacular Syriac-Syriac": 421
+      },
+      "bold_tag_count": 101,
+      "italic_tag_count": 56,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Vernacular Syriac-Kurdish_Turkish-English",
+      "page": "page_41",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 87,
+      "columns": 2,
+      "gold_grapheme_count": 2120,
+      "language_script_graphemes": {
+        "Arabic-Arabic": 30,
+        "English-Latin": 1213,
+        "Greek-Greek": 25,
+        "Kurdish-Arabic": 14,
+        "Persian-Arabic": 33,
+        "Turkish-Arabic": 36,
+        "Vernacular Syriac-Latin": 309,
+        "Vernacular Syriac-Syriac": 460
+      },
+      "bold_tag_count": 86,
+      "italic_tag_count": 69,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Vernacular Syriac-Kurdish_Turkish-English",
+      "page": "page_228",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 88,
+      "columns": 2,
+      "gold_grapheme_count": 2255,
+      "language_script_graphemes": {
+        "English-Latin": 1527,
+        "Kurdish-Arabic": 4,
+        "Turkish-Arabic": 8,
+        "Vernacular Syriac-Latin": 287,
+        "Vernacular Syriac-Syriac": 429
+      },
+      "bold_tag_count": 127,
+      "italic_tag_count": 85,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    },
+    {
+      "dictionary": "Yiddish-English",
+      "page": "page_1",
+      "has_stage1_gold": true,
+      "has_stage2_mdf": false,
+      "rows": 82,
+      "columns": 2,
+      "gold_grapheme_count": 1613,
+      "language_script_graphemes": {
+        "English-Latin": 1152,
+        "Yiddish-Hebrew": 461
+      },
+      "bold_tag_count": 61,
+      "italic_tag_count": 49,
+      "tags": null,
+      "unique_tags": null,
+      "tag_counts": {}
+    }
+  ]
+}

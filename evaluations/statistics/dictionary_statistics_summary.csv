@@ -1,0 +1,32 @@
+language,stage1_page_count,stage2_page_count,rows,columns,gold_grapheme_count,bold_tag_count,italic_tag_count,tags,unique_tags,tag_counts
+Assyrian-English,3,0,99,3,4285,60,47,,,{}
+Bengalese-English,3,0,294,6,7611,241,248,,,{}
+Canala-English,3,0,254,6,4098,0,0,,,{}
+Chepang-English,3,0,254,6,5990,196,141,,,{}
+Chukchi-Russian,3,1,100,3,2280,94,20,80,6,"{""gn"": 35, ""hm"": 2, ""lx"": 28, ""se"": 4, ""sn"": 4, ""un"": 7}"
+Circassian-English-Turkish,3,1,219,9,2117,50,55,110,7,"{""de"": 8, ""ge"": 20, ""gn"": 20, ""lx"": 20, ""ph"": 20, ""ps"": 20, ""va"": 2}"
+Coptic-English-Greek,0,0,,,,,,,,{}
+Efik-English,3,1,296,6,5426,96,227,145,11,"{""cf"": 8, ""ge"": 24, ""hm"": 3, ""lx"": 22, ""ps"": 22, ""sn"": 10, ""sy"": 1, ""ue"": 9, ""va"": 1, ""xe"": 23, ""xv"": 22}"
+Evenki-Russian,3,1,291,6,4138,242,274,214,15,"{""3s"": 1, ""cf"": 36, ""dl"": 33, ""eg"": 11, ""et"": 18, ""gn"": 39, ""lf"": 1, ""ln"": 1, ""lx"": 28, ""pn"": 2, ""sn"": 20, ""un"": 13, ""va"": 3, ""xn"": 4, ""xv"": 4}"
+Georgian-Russian,1,0,84,2,1221,53,15,,,{}
+Gojri-English-Hindi,3,0,88,3,3503,79,0,,,{}
+Greek-English,3,1,330,6,7637,198,89,246,8,"{""cf"": 1, ""ge"": 81, ""lx"": 59, ""ps"": 59, ""se"": 11, ""sn"": 25, ""ue"": 4, ""uv"": 6}"
+Gujarati-English,3,0,210,6,3847,125,106,,,{}
+Iñupiatun Eskimo-English,3,1,324,6,9283,321,280,273,11,"{""cf"": 9, ""de"": 69, ""lt"": 1, ""lx"": 62, ""ps"": 62, ""sn"": 13, ""sy"": 21, ""ue"": 2, ""va"": 24, ""xe"": 5, ""xv"": 5}"
+Japanese-English,2,0,260,4,6370,243,111,,,{}
+Kashmiri-English,3,1,189,6,3168,110,37,172,7,"{""ge"": 41, ""lx"": 41, ""pd"": 20, ""pl"": 5, ""ps"": 23, ""se"": 1, ""va"": 41}"
+Khmer-English,3,0,244,6,3846,119,0,,,{}
+Malay-English,3,0,214,6,4442,135,0,,,{}
+Na-English-Chinese-French,3,1,255,6,6369,39,0,116,13,"{""ge"": 7, ""gn"": 7, ""gr"": 7, ""lc"": 7, ""lx"": 7, ""np"": 7, ""nt"": 4, ""ph"": 7, ""ps"": 7, ""xe"": 14, ""xn"": 14, ""xr"": 14, ""xv"": 14}"
+Nahuatl-French,3,1,300,6,10194,102,252,172,17,"{""cf"": 1, ""dn"": 6, ""et"": 1, ""gn"": 25, ""if"": 7, ""lt"": 2, ""lx"": 30, ""mr"": 27, ""pd"": 10, ""pl"": 1, ""ps"": 22, ""sn"": 2, ""so"": 5, ""un"": 1, ""va"": 1, ""xn"": 15, ""xv"": 16}"
+Punjabi-English,3,0,422,9,7626,253,191,,,{}
+Reel-English,3,0,136,6,2463,198,38,,,{}
+Ritharngu-English,3,0,248,6,4773,203,179,,,{}
+Sanskrit-English,3,0,228,6,3861,293,184,,,{}
+Shilluk-English,3,0,150,3,6792,153,98,,,{}
+Syriac-English,3,0,167,6,3389,159,72,,,{}
+Telugu-English,3,0,206,6,3954,126,111,,,{}
+Thai-Russian,3,0,192,6,4648,127,91,,,{}
+Tiri-English,3,1,244,6,3873,147,0,102,7,"{""cf"": 7, ""ge"": 41, ""hm"": 6, ""lx"": 36, ""nt"": 3, ""se"": 8, ""xv"": 1}"
+Vernacular Syriac-Kurdish_Turkish-English,3,0,263,6,6436,314,210,,,{}
+Yiddish-English,1,0,82,2,1613,61,49,,,{}
