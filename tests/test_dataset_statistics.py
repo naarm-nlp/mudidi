@@ -16,8 +16,8 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
         "column_id\tline_number\ttext\n"
         "header\t\tExample dictionary\n"
         "left\t1\t<b>alpha</b> one\n"
-        "left\t2\ttwo\n"
-        "right\t1\tthree-four\n",
+        "left\t2\te\u0301\n"
+        "right\t1\t\u4f60\u559c\u6b22\u8bcd\u5178\n",
         encoding="utf-8",
     )
     mdf_dir = dictionary / "Stage 2 MDF file" / "page_1"
@@ -47,7 +47,7 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
             "pages_with_stage2_mdf": 1,
             "rows": 3,
             "columns": 2,
-            "tokens": 4,
+            "characters": 14,
             "tags": 4,
             "unique_tags": 3,
             "tag_counts": {"ge": 1, "lx": 2, "ps": 1},
@@ -62,7 +62,7 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
             "has_stage2_mdf": True,
             "rows": 3,
             "columns": 2,
-            "tokens": 4,
+            "characters": 14,
             "tags": 4,
             "unique_tags": 3,
             "tag_counts": {"ge": 1, "lx": 2, "ps": 1},
@@ -75,7 +75,7 @@ def test_build_dataset_statistics_reports_page_and_dictionary_totals(
             "has_stage2_mdf": False,
             "rows": None,
             "columns": None,
-            "tokens": None,
+            "characters": None,
             "tags": None,
             "unique_tags": None,
             "tag_counts": {},

@@ -9,12 +9,13 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+import grapheme
+
 from mudidi.evaluation.stage2.mdf_parser import parse_mdf
 from mudidi.evaluation.stage1.tag_parser import strip_tags
 
 
 _METADATA_COLUMNS = frozenset({"header", "footer"})
-_TOKEN_RE = re.compile(r"[\w'-]+", flags=re.UNICODE)
 _PAGE_NUMBER_RE = re.compile(r"(\d+)$")
 
 
@@ -42,8 +43,12 @@ def _stage1_metrics(tsv_path: Path) -> dict[str, int]:
     return {
         "rows": len(rows),
         "columns": len({row["column_id"].strip() for row in rows}),
-        "tokens": sum(
-            len(_TOKEN_RE.findall(strip_tags(row.get("text") or ""))) for row in rows
+        "characters": sum(
+            sum(
+                not cluster.isspace()
+                for cluster in grapheme.graphemes(strip_tags(row.get("text") or ""))
+            )
+            for row in rows
         ),
     }
 
@@ -70,7 +75,7 @@ def _empty_page(dictionary: str, page: str) -> dict[str, Any]:
         "has_stage2_mdf": False,
         "rows": None,
         "columns": None,
-        "tokens": None,
+        "characters": None,
         "tags": None,
         "unique_tags": None,
         "tag_counts": {},
@@ -94,7 +99,7 @@ def _dictionary_statistics(dictionary: str, pages: list[dict[str, Any]]) -> dict
         "pages_with_stage2_mdf": sum(page["has_stage2_mdf"] for page in pages),
         "rows": _sum_available(pages, "rows"),
         "columns": _sum_available(pages, "columns"),
-        "tokens": _sum_available(pages, "tokens"),
+        "characters": _sum_available(pages, "characters"),
         "tags": _sum_available(pages, "tags"),
         "unique_tags": len(tag_counts) if tag_counts else None,
         "tag_counts": dict(sorted(tag_counts.items())),
@@ -102,7 +107,7 @@ def _dictionary_statistics(dictionary: str, pages: list[dict[str, Any]]) -> dict
 
 
 def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
-    """Collect layout, token, and MDF-tag counts from a dictionary dataset."""
+    """Collect layout, character, and MDF-tag counts from a dictionary dataset."""
     if not dictionaries_dir.is_dir():
         raise ValueError(f"Dictionary dataset directory not found: {dictionaries_dir}")
 
@@ -142,7 +147,7 @@ def build_dataset_statistics(dictionaries_dir: Path) -> dict[str, Any]:
             "page": "A page identifier discovered from a PDF, Stage 1 TSV, or Stage 2 MDF artifact.",
             "rows": "Number of Stage 1 TSV body rows; header and footer rows are excluded.",
             "columns": "Number of distinct non-metadata Stage 1 TSV column_id values, summed across pages for dictionary totals.",
-            "tokens": "Total Stage 1 body-text tokens after inline HTML markup removal, using the Unicode pattern [\\w'-]+.",
+            "characters": "Total non-whitespace Unicode grapheme clusters in Stage 1 body text after inline HTML markup removal.",
             "tags": "Total Stage 2 MDF field-marker occurrences, summed across pages for dictionary totals.",
             "unique_tags": "Distinct Stage 2 MDF field markers; dictionary totals are distinct across all of its pages.",
             "null_metric": "The source artifact for that metric is unavailable for the page or dictionary.",
@@ -190,7 +195,7 @@ def write_dataset_statistics(statistics: dict[str, Any], output_dir: Path) -> li
                 "pages_with_stage2_mdf",
                 "rows",
                 "columns",
-                "tokens",
+                "characters",
                 "tags",
                 "unique_tags",
                 "tag_counts",
@@ -207,7 +212,7 @@ def write_dataset_statistics(statistics: dict[str, Any], output_dir: Path) -> li
                 "has_stage2_mdf",
                 "rows",
                 "columns",
-                "tokens",
+                "characters",
                 "tags",
                 "unique_tags",
                 "tag_counts",
