@@ -64,7 +64,7 @@ language-projection files are not used.
 | `stage1_page_count` | Pages containing a `*_stage1_GOLD_flat.txt` file |
 | `stage2_page_count` | Pages containing a `*.mdf.txt` file |
 | `rows` | Stage 1 TSV body rows, excluding `header` and `footer` rows, summed across pages with an available TSV |
-| `columns` | Distinct non-metadata Stage 1 TSV `column_id` values per page, summed across pages with an available TSV |
+| `columns` | Distinct non-metadata Stage 1 TSV `column_id` values across the dictionary, such as `single`, `left`, `center`, and `right` |
 | `gold_grapheme_count` | Sum of all detailed language-script grapheme counts for the dictionary |
 | `bold_tag_count` | Exact opening `<b>` occurrences in raw Stage 1 gold flat text, summed across pages |
 | `italic_tag_count` | Exact opening `<i>` occurrences in raw Stage 1 gold flat text, summed across pages |
