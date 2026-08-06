@@ -216,8 +216,13 @@ def test_stage1_statistics_require_flat_and_language_map(
 
 
 def test_stage1_statistics_reject_stale_language_map(tmp_path: Path) -> None:
-    dictionaries, flat_path, _lang_map_path = _write_dataset_fixture(tmp_path)
+    dictionaries, flat_path, lang_map_path = _write_dataset_fixture(tmp_path)
     flat_path.write_text(flat_path.read_text(encoding="utf-8") + " stale", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="source_text_sha"):
+    with pytest.raises(ValueError) as exc_info:
         build_dataset_statistics(dictionaries)
+
+    assert str(exc_info.value) == (
+        f"Invalid Stage 1 language map {lang_map_path}: "
+        "source_text_sha does not match the provided gold text"
+    )
