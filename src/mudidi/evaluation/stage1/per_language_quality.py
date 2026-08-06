@@ -60,6 +60,7 @@ from __future__ import annotations
 
 import dataclasses
 import unicodedata
+from collections import Counter
 from pathlib import Path
 from typing import Callable, Dict, List, Sequence, Tuple
 
@@ -67,7 +68,6 @@ import grapheme
 import jiwer
 import Levenshtein
 
-from mudidi.evaluation.stage1.flatten import load_flat_lines
 from mudidi.evaluation.stage1.language_projection import (
     grapheme_languages,
     project_clean_languages,
@@ -97,10 +97,15 @@ def _bump(counter: Dict[str, int], key: str, amount: int = 1) -> None:
     counter[key] = counter.get(key, 0) + amount
 
 
+def _collapsed_clean_text(raw_text: str) -> str:
+    """Collapse raw flat text using the Stage 1 page-alignment semantics."""
+    collapsed = " ".join(line for line in raw_text.splitlines() if line)
+    return normalize_line_text(strip_tags(collapsed))
+
+
 def collapsed_clean_text(path: str | Path) -> str:
     """Reproduce ``align_page_collapsed`` gold/pred span text for one flat page."""
-    collapsed = " ".join(line for line in load_flat_lines(path) if line)
-    return normalize_line_text(strip_tags(collapsed))
+    return _collapsed_clean_text(Path(path).read_text(encoding="utf-8"))
 
 
 def lang_map_path_for_gold(gold_path: str | Path) -> Path:
@@ -173,6 +178,46 @@ def _filter_text_with_langs(
             kept_chars.append(ch)
             kept_langs.append(lang)
     return "".join(kept_chars), kept_langs
+
+
+def _gold_graphemes_and_languages(
+    gold_clean: str,
+    raw_gold: str,
+    lang_map: PageLanguageMap,
+) -> Tuple[List[str], List[str]]:
+    """Project evaluation-scored gold graphemes onto language-script labels."""
+    raw_char_lang = lang_map.language_char_map(raw_gold)
+    gold_cased = casefold_letters_for_eval(gold_clean)
+    clean_lang = project_clean_languages(raw_gold, raw_char_lang, gold_cased)
+    gold_chars, clean_lang_chars = _filter_text_with_langs(
+        gold_cased,
+        clean_lang,
+        _is_scoring_noise,
+    )
+    gold_graphemes = list(grapheme.graphemes(gold_chars))
+    return gold_graphemes, grapheme_languages(gold_chars, clean_lang_chars)
+
+
+def gold_grapheme_counts_by_language_script(
+    raw_gold: str,
+    lang_map: PageLanguageMap,
+) -> Dict[str, int]:
+    """Count scored gold graphemes by real language-script for one flat page.
+
+    The preprocessing is identical to Stage 1 per-language GCER: inline markup is
+    stripped, non-empty lines are collapsed, text is normalized and case-folded,
+    Unicode whitespace and punctuation are removed, and ``space``/``meta`` labels
+    are excluded from the returned counts.
+    """
+    _graphemes, languages = _gold_graphemes_and_languages(
+        _collapsed_clean_text(raw_gold),
+        raw_gold,
+        lang_map,
+    )
+    counts = Counter(
+        language for language in languages if language not in (SPACE, META)
+    )
+    return dict(sorted(counts.items()))
 
 
 def _drop_reserved_buckets(report: PageLanguageReport) -> PageLanguageReport:
@@ -361,27 +406,22 @@ def compute_per_language_quality(
     Raises:
         SpanMapError: if the span map does not bind to / fully cover ``raw_gold``.
     """
-    # ``language_char_map`` validates the gold binding (sha + full coverage) and
-    # raises SpanMapError on mismatch, so a separate ``validate_against`` pass would
-    # only re-hash the whole page for nothing.
-    raw_char_lang = lang_map.language_char_map(raw_gold)
     source_language = _source_language(lang_map)
 
     gc = casefold_letters_for_eval(gold_clean)
     pc = casefold_letters_for_eval(pred_clean)
-    clean_lang = project_clean_languages(raw_gold, raw_char_lang, gc)
 
     # -- Grapheme (character-level) scoring: punctuation + whitespace physically
     # stripped from both sides before diffing (safe -- symmetric/content-derivable).
-    gc_chars, clean_lang_chars = _filter_text_with_langs(gc, clean_lang, _is_scoring_noise)
+    gg, gold_langs = _gold_graphemes_and_languages(gold_clean, raw_gold, lang_map)
     pc_chars = _filter_text(pc, _is_scoring_noise)
-    gg = list(grapheme.graphemes(gc_chars))
     pg = list(grapheme.graphemes(pc_chars))
-    gold_langs = grapheme_languages(gc_chars, clean_lang_chars)
 
     # -- Word-level scoring: punctuation stripped, whitespace kept as the delimiter
     # ``word_languages``/jiwer split words on (stripping it would collapse every
     # line into a single "word", destroying WER).
+    raw_char_lang = lang_map.language_char_map(raw_gold)
+    clean_lang = project_clean_languages(raw_gold, raw_char_lang, gc)
     gc_words, clean_lang_words = _filter_text_with_langs(gc, clean_lang, _is_scoring_punct)
     pc_words = _filter_text(pc, _is_scoring_punct)
     word_langs = word_languages(gc_words, clean_lang_words, source_language=source_language)
