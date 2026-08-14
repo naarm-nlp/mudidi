@@ -11,7 +11,6 @@ the files here are derived CSV reports and small provenance artifacts.
 | `statistics/` | Descriptive statistics for the canonical MUDIDI dictionaries, pages, Stage 1 gold text, language-script annotations, typography markup, and Stage 2 MDF fields | `examples/evaluation/run_statistics.sh` |
 | `stage1_flat_per_lang_script_eval/` | Current Stage 1 flat-transcription reports, including global and per-language/script metrics | `examples/evaluation/run_stage1_benchmark_per_lang_script_eval.sh` |
 | `stage2_mdf_lang_script_eval/` | Current Stage 2 MDF evaluation using oracle/gold Stage 1 inputs, with projection-based per-language/script reports | `examples/evaluation/run_stage2_benchmark_per_lang_script_eval.sh` |
-| `stage2_mdf_lang_script_eval_stage1-gold/` | Earlier gold-Stage-1 comparison snapshot in the legacy single-summary schema | retained for historical comparison |
 | `stage2_mdf_eval_e2e_lexical_repair/` | End-to-end Stage 2 predictions after lexical repair, plus repair audit | `examples/evaluation/run_stage2_e2e_lexical_repair.sh` |
 | `stage2_mdf_eval_no_typography/` | Focused Stage 2 no-typography experiment and baseline comparison | `examples/evaluation/run_stage2_no_typography_eval.sh` |
 
