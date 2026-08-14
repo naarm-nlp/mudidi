@@ -73,6 +73,38 @@ def test_pass2_prompt_cache_off_uses_single_user_turn(tmp_path: Path) -> None:
     assert user_content[1]["type"] == "image_url"
 
 
+def test_pass2_benchmark_prompt_does_not_claim_transcript_is_gold(
+    tmp_path: Path,
+) -> None:
+    """Benchmark mode also serves E2E runs backed by predicted Stage 1 OCR."""
+    page = tmp_path / "page_1.png"
+    page.write_bytes(b"fake-image")
+
+    messages = build_direct_mdf_messages(
+        transcription="predicted Stage 1 text",
+        image_path=str(page),
+        field_map=_field_map(),
+        model="gemini/gemini-3.1-pro-preview",
+        prompt_cache="off",
+        media_reference="inline",
+        mode="benchmark",
+    )
+
+    prompt_text = "\n".join(
+        str(part.get("text", ""))
+        for message in messages
+        for part in (
+            message["content"]
+            if isinstance(message["content"], list)
+            else [{"text": message["content"]}]
+        )
+        if isinstance(part, dict)
+    )
+    assert "human gold-label OCR" not in prompt_text
+    assert "Gold-label OCR transcription" not in prompt_text
+    assert "Stage-1 OCR transcription" in prompt_text
+
+
 def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     page = tmp_path / "page_2.png"
     previous = tmp_path / "page_1.png"
