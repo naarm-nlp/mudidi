@@ -35,7 +35,7 @@ def pass_1_system_prompt() -> str:
     """Pass 1 field-discovery system prompt."""
     store = get_prompt_store()
     return store.format(
-        "stage_2_pass_1",
+        "stage_2_pass_1_system",
         mdf_marker_reference=store.get("mdf_marker_reference"),
     )
 
@@ -76,7 +76,7 @@ def discover_field_cheatsheet(
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
     user_text = get_prompt_store().format(
-        "stage_2_pass_2",
+        "stage_2_pass_1_user_single",
         transcription=transcription.strip(),
         config_hint=_config_hint(languages_config, dictionary_profile),
     )
@@ -132,7 +132,7 @@ def discover_field_cheatsheet_multi(
         [(stem, transcription) for stem, transcription, _ in samples]
     )
     user_text = get_prompt_store().format(
-        "stage_2_pass_2_multi",
+        "stage_2_pass_1_user_multi",
         config_hint=_config_hint(languages_config, dictionary_profile),
         sample_pages_block=sample_pages_block,
     )
