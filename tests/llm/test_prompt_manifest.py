@@ -19,26 +19,28 @@ from mudidi.llm.prompt_store import (
 
 
 EXPECTED_PROMPT_SHA256 = {
+    "stage_1_system_benchmark": "461a4dd48f6cdced298e32e9f448994aba1fd41238b8e8bf707505fba2e79a7c",
+    "stage_1_system_inference": "2f84adac1fbd07adc4b55d101f3203219a8bd5fadc05471e31d9d2b1a35093a9",
     "stage_1_column_system": "f421cf7c6d4d44f412a0584920752cb0ccc9fb241a7b3c227868fedc4aee82fa",
-    "stage_1_typography_instruction": "7476af1dff1cd501782363e1d081a4318eaad4c6a6416fb84199a2e76ab6bb18",
     "stage_1_user_alphabet": "db00fb25b0c84b1d15cae70cccadf1101039591b954677897c2f225b7eea8447",
     "stage_1_user_ocr_reference": "901c167bb7676517cebb84e78c5c6a41f2922d1db79f590df4b10a4abe361fd1",
     "stage_1_user_closing": "3589b298538ddf5c23c8ea521621ee564f264b615ee6e030929a37a5c03d3aed",
-    "page_boundary_rules": "6e8d90339bd3bb15b84e797812e248017577aaa793a249b6cd25e5968d4cbafe",
-    "mdf_marker_reference": "11f28f590b121fc6c3327664154dc2a3b14c9b25ce4ef11bd5eacebfab348661",
+    "stage_1_neighbor_context": "f7daa871de07dd43379f02c0436c8896e9eb949c26b2823bc5b8ae61df85b4a0",
+    "stage_1_typography_instruction": "7476af1dff1cd501782363e1d081a4318eaad4c6a6416fb84199a2e76ab6bb18",
     "stage_2_pass_1_system": "d062fe1c778846c57e27346233b1d3c9fb013af915f5fd2f735de36b092969f9",
     "stage_2_pass_1_user_single": "764f6b056f085f089bb25291efc0cfc87a1b630ac07443a438476143bc57226e",
     "stage_2_pass_1_user_multi": "742e52de744dd3634e6903582b088612c13ceec05dfcbed763319a87fe175b71",
-    "stage_2_toolbox_pdf_section": "5ed75f53400d17145dde8ac19d214220009d4ed49e883801676b10fe6695ca07",
-    "stage_2_toolbox_text_section": "dcb9c6237878e9bcf50893355d5f9d3734d0b842d84b3b03b4db5f293faaab67",
-    "stage_1_system_benchmark": "2f84adac1fbd07adc4b55d101f3203219a8bd5fadc05471e31d9d2b1a35093a9",
-    "stage_1_system_inference": "2f84adac1fbd07adc4b55d101f3203219a8bd5fadc05471e31d9d2b1a35093a9",
     "stage_2_pass_2_system_benchmark": "2897d430cd34c110c2842e6a7476495d9cfdfd6b70e8f4b22aa3640af25b03ef",
     "stage_2_pass_2_system_inference": "6fec6cd690c11e66804633a023409afe17fd79f575509d15e9f08f49f2960925",
     "stage_2_pass_2_user_benchmark": "49ccc67e97caaecf3cbd97163af46bb458190cfea7a8988c5fc7c9fdc7ab2044",
     "stage_2_pass_2_user_inference": "239fa63c0b1898cd76edbcf23bcca2fb303a27abde94379682eea7d79772eec9",
-    "stage_1_neighbor_context": "f7daa871de07dd43379f02c0436c8896e9eb949c26b2823bc5b8ae61df85b4a0",
+    "page_boundary_rules": "6e8d90339bd3bb15b84e797812e248017577aaa793a249b6cd25e5968d4cbafe",
+    "mdf_marker_reference": "11f28f590b121fc6c3327664154dc2a3b14c9b25ce4ef11bd5eacebfab348661",
+    "stage_2_toolbox_pdf_section": "5ed75f53400d17145dde8ac19d214220009d4ed49e883801676b10fe6695ca07",
+    "stage_2_toolbox_text_section": "dcb9c6237878e9bcf50893355d5f9d3734d0b842d84b3b03b4db5f293faaab67",
 }
+
+EXPECTED_PROMPT_ORDER = list(EXPECTED_PROMPT_SHA256)
 
 
 def _write_manifest(path: Path, entries: dict[str, dict[str, object]]) -> None:
@@ -56,6 +58,12 @@ def test_default_prompt_source_is_manifest_with_external_templates() -> None:
         assert "file" in entry
         assert "prompt" not in entry
         assert (manifest_path.parent / entry["file"]).is_file()
+
+
+def test_manifest_groups_primary_stage_prompts_before_supporting_blocks() -> None:
+    manifest = json.loads(default_prompts_path().read_text(encoding="utf-8"))
+
+    assert list(manifest) == EXPECTED_PROMPT_ORDER
 
 
 def test_manifest_templates_preserve_existing_prompt_text() -> None:
