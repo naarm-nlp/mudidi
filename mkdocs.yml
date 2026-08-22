@@ -41,11 +41,13 @@ nav:
   - Benchmarking & Evaluation:
       - Overview: benchmarking/index.md
       - Advanced VLM backends: benchmarking/vlm.md
+      - Historical Stage 1 prompt comparison: benchmarking/stage-1-prompt-feca069-vs-a0a209f.md
   - Concepts:
       - Pipeline: concepts/pipeline.md
   - Reference:
       - CLI: reference/cli.md
       - YAML configuration: reference/config.md
+      - Prompt templates: reference/prompts.md
       - Python API: reference/python-api.md
   - Development:
       - Architecture: development/architecture.md
