@@ -3,7 +3,7 @@
 ## Scope and provenance
 
 This note compares only the flat-OCR Stage 1 system prompts corresponding to
-`feca069` and `a0a209f`. The relevant current `PROMPT.json` keys are
+`feca069` and `a0a209f`. The relevant current prompt-manifest keys are
 `stage_1_system_benchmark` and `stage_1_system_inference`; unrelated Stage 1
 column-mode, user-turn, and context prompts are omitted.
 
@@ -70,7 +70,7 @@ top-to-bottom page order.
 ## Prompt snapshot for `feca069`
 
 The benchmark and inference keys are shown separately to match the current
-`PROMPT.json` structure. At this point they used the same system-prompt text.
+prompt identifiers. At this point they used the same system-prompt text.
 
 ```json
 {

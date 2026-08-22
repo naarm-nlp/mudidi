@@ -1,0 +1,2 @@
+Optional previous/next page images may help resolve ambiguous characters or hyphenation at the top or bottom margin.
+Transcribe every line visible on the CURRENT page image. Do not skip lines because they look like continuations from another page — Stage 2 handles entry boundaries later.

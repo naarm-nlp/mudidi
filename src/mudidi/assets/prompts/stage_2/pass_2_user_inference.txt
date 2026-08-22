@@ -1,0 +1,28 @@
+Dictionary page extraction.
+
+Inputs:
+1. Stage-1 OCR transcription (bold = <b>…</b>, italic = <i>…</i>) or column TSV
+   (column_id, line_number, text). Treat this as authoritative for all characters.
+2. Photo of the dictionary page (image below) — layout and field-boundary reference only.
+{toolbox_section}
+
+{field_block}
+
+Parse every dictionary entry on the page into MDF text using the field map above.
+Copy headword and gloss characters verbatim from the transcription except for the
+structural normalisations listed in the system prompt.
+
+<transcription>
+{transcription}
+</transcription>
+{guides_block}
+
+{current_page_context}
+
+{page_image_order}
+
+{page_boundary_rules}
+
+{previous_page_context}
+
+{next_page_context}

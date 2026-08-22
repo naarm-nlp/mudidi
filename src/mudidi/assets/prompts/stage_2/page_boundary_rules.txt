@@ -1,0 +1,9 @@
+Page boundary rules (entry ownership):
+- Assign each main dictionary entry (\lx headword block) to the page where that headword first appears.
+- INCLUDE in the current page MDF:
+  • Every entry whose \lx starts on this page — include ALL sub-fields (\se, \va, \sn, examples, inflection lists) even when those sub-fields print at the top of the next page. Copy characters verbatim from the <next_page> transcript and image into the parent entry on THIS page.
+  • Example: if \lx ala starts on page_53 and sub-forms like —alas nuwebi print at the top of page_54, page_53's MDF must include those sub-entries; page_54 must not emit them as orphan blocks.
+- EXCLUDE from the current page MDF:
+  • Lines at the top that continue an entry whose \lx started on the previous page (check <previous_page> transcript and image). Do not emit them as standalone \se/\ge records or new \lx entries.
+  • Em-dash sub-forms (e.g. —alas nuwebi) under a parent headword from the previous page belong in the previous page's entry block, not here.
+- Neighbor page images arrive before the CURRENT page image. Use them for layout and for cross-page entry completion as described above.

@@ -1,0 +1,122 @@
+MDF marker vocabulary (SIL Toolbox — assign ONLY markers whose content appears on
+THIS dictionary's intro + sample page; pick gloss/usage/definition tier to match target
+languages: e=English, n=national, r=regional, v=vernacular):
+
+── Entry structure (section boundaries; \se, \ps, \sn order affects MDF printing) ──
+  lx   Lexeme / headword. Record marker; one per lexical entry; primary sort key.
+       Use \lc instead when a more readable citation form should print.
+  hm   Homonym number. Marks unrelated homographs; digits 1, 2, 3 immediately after \lx
+       (no punctuation). Cross-refs may include homonym, e.g. \cf lemma2.
+  lc   Lexical citation. Substitute printed headword when \lx alone is not reader-friendly
+       (e.g. root form in database, inflected form in print). Replaces \lx in output.
+  se   Subentry. Like \lx but inside the record — polymorphemic form or phrase derived
+       from the main lexeme; may have its own senses, glosses, and examples.
+  sn   Sense number. Marks start of each sense when one entry has multiple meanings;
+       use 1, 2, 3 (no punctuation). Include \sn 1 when multiple senses exist.
+  mn   Main entry form. Points a minimal/minor entry back to its full main entry
+       ("See main entry: …").
+
+── Glosses (short translation; used for interlinearizing and as gloss when no definition) ──
+  ge   Gloss (English). Short English equivalent; prints if no \de; used for reversal
+       if no \re. Multiple glosses: separate fields or one field with " ; " separator.
+  gn   Gloss (national). Short national-language equivalent; prints if no \dn; used for
+       reversal if no \rn. Same semicolon / multi-field conventions as \ge.
+  gr   Gloss (regional). Clarifies national gloss in a regional language; prints if no \dr.
+  gv   Gloss (vernacular). Vernacular gloss, mainly monolingual lexicons.
+
+── Definitions (longer explication of semantic domain; suppresses gloss in print) ──
+  de   Definition (English). Fully expresses meaning in English; if present, \ge is omitted
+       from formatted dictionary output.
+  dn   Definition (national). Full national-language definition of each sense.
+  dr   Definition (regional). Regional-language definition (often early project data).
+  dv   Definition (vernacular). Vernacular definition, mainly monolingual lexicons.
+  lt   Literal meaning. Elucidates parts of an idiom or complex phrase ("Lit: …").
+
+── Reversal / finderlist (normally does NOT print in the dictionary body) ──
+  re   Reversal form (English). English index form for reversing the lexicon; \re * excludes
+       entry from reversed index. Multiple forms: separate \re lines or " ; " in one field.
+  rn   Reversal form (national). National-language index form; same conventions as \re.
+  rr   Reversal form (regional). Regional reversal form; rarely used in MDF output.
+
+── Word-level glosses (morpheme-level interlinear, not full-sentence translation) ──
+  we   Word gloss (English).
+  wn   Word gloss (national).
+  wr   Word gloss (regional).
+
+── Grammar & inflectional form ──
+  ps   Part of speech. Classifies the vernacular lexeme (not the translation language).
+       Use Toolbox range sets for consistent labels. Must precede \pn if both present.
+  pn   Part of speech (national). National-language POS label; follows \ps; replaces \ps
+       in output when formatting for a national audience.
+  ph   Phonetic / phonemic form. Pronunciation when orthography hides phonetic detail;
+       typically printed in square brackets.
+  pl   Plural form. Vernacular plural of the lexeme ("Pl: …" in output).
+  sg   Singular form. Vernacular singular noun form.
+  pd   Paradigm set. Inflectional paradigm table for the lexeme.
+  rd   Reduplication form(s). Reduplicated variant for later analysis ("Redup: …").
+  mr   Morphemic representation. Underlying morpheme breakdown ("Morph: …").
+
+── Examples (bundled: \rf + \xv + \xe/\xn/\xr per example) ──
+  xv   Example sentence (vernacular). Short, natural usage illustrating the sense; crucial
+       for verbs and sense disambiguation. Starts an example bundle if \rf is absent.
+  xe   Example translation (English). Free translation of \xv.
+  xn   Example translation (national). Free translation of \xv.
+  xr   Example translation (regional). Free translation of \xv.
+  xg   Interlinear gloss line. Morpheme-aligned gloss tier for interlinearizing.
+  rf   Reference to source. Notebook/text reference for the following example sentence.
+
+── Semantics & lexical relations ──
+  sd   Semantic domain. English catalog label for semantic compartment (Louw-Nida style);
+       does not normally print.
+  is   Index of semantics. Semantic-domain index for related entries; does not print.
+  th   Thesaurus. Vernacular-based thesaurus domain label; does not normally print.
+  sy   Synonym. Simple synonym link (prefer \lf + \lv + \le/\ln for glossed relations).
+  an   Antonym. Simple antonym link.
+  lf   Lexical function label. Relationship code (e.g. Syn, Ant, Gen) in a lexical network.
+  lv   Vernacular lexeme referenced by \lf.
+  le   Gloss of \lv (English).
+  ln   Gloss of \lv (national).
+  lr   Gloss of \lv (regional).
+  cf   Cross-reference. Links related entries (\cf target + optional \ce/\cn/\cr gloss).
+  ce   Cross-reference gloss (English). Bundled with \cf.
+  cn   Cross-reference gloss (national). Bundled with \cf.
+  cr   Cross-reference gloss (regional). Bundled with \cf.
+
+── Etymology & encyclopedic ──
+  et   Etymology. Proto-form or source form (include leading * if desired in print).
+  eg   Etymology gloss. Gloss of the etymology form.
+  es   Etymology source. Source reference; normally hidden in print.
+  ec   Etymology comment. Analyst comment on etymology; normally hidden in print.
+  ee   Encyclopedic information (English).
+  en   Encyclopedic information (national).
+  er   Encyclopedic information (regional).
+  ev   Encyclopedic information (vernacular). Mainly monolingual lexicons.
+  bw   Borrowed word. Loan-source form.
+
+── Variants, usage, restrictions ──
+  va   Variant forms. Dialect or orthographic variant of \lx or \se; heads \ve/\vn/\vr
+       comment bundle ("Variant: …").
+  ve   Variant comment (English).
+  vn   Variant comment (national).
+  vr   Variant comment (regional).
+  ue   Usage (English). Common usage, register, or restrictions so non-native speakers use
+       the lexeme correctly ("Usage: …").
+  un   Usage (national). National-language usage or restriction note; closely related to
+       \dn/\on but for usage context, not full definitions.
+  ur   Usage (regional). Regional usage note.
+  uv   Usage (vernacular). Vernacular usage note; mainly monolingual lexicons.
+  oe   Restriction / "only" (English). Limits when or how the lexeme applies ("Restrict:").
+  on   Restriction (national).
+  or   Restriction (regional).
+  ov   Restriction (vernacular).
+
+── Other (uncommon on printed body pages) ──
+  sc   Scientific name. Latin biological name; MDF italicizes/underlines automatically.
+  so   Source of data. Informant name/village; normally does not print.
+  st   Status. Editorial completeness flag (e.g. OK, check); normally does not print.
+  dt   Datestamp. Last-edited date; normally does not print.
+  bb   Bibliographical reference. Further reading pointer.
+  pc   Picture / graphic link.
+  tb   Table. Preformatted tabular text (line breaks and tabs preserved).
+  na, nd, ng, np, nq, ns, nt   Compiler notes by domain (anthropology, discourse, grammar,
+       phonology, questions, sociolinguistics, general); bracketed if printed.

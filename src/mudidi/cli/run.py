@@ -262,7 +262,8 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
         dest="prompts_file",
-        help="Path to PROMPT.json (default: bundled assets).",
+        help="Path to a prompt manifest or legacy inline prompts JSON file "
+        "(default: bundled assets).",
     )
     register_model_arguments(parser)
 

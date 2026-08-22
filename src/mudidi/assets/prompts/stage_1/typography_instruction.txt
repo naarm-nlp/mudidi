@@ -1,0 +1,4 @@
+Typography annotation:
+- Wrap bold text in <b>...</b> and italic text in <i>...</i> when confident.
+- Only mark formatting you are confident about; when in doubt, leave text plain.
+- These tags may appear anywhere within a line, e.g. "<b>headword</b> translation".

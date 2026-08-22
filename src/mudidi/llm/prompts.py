@@ -1,7 +1,7 @@
 """
 Stage 1 prompt builders.
 
-Templates live in ``mudidi/assets/PROMPT.json``; this module assembles dynamic user turns.
+Templates live under ``mudidi/assets/prompts``; this module assembles dynamic user turns.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from mudidi.utils.page_context import PageContext
 
 
 def page_boundary_rules_prompt() -> str:
-    """Page-boundary instructions from ``page_boundary_rules`` in PROMPT.json (Stage 2 only)."""
+    """Return the Stage 2 ``page_boundary_rules`` prompt template."""
     return get_prompt_store().get("page_boundary_rules")
 
 

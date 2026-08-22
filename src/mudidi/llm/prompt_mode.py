@@ -18,7 +18,7 @@ def prompt_id_for_mode(base_id: str, mode: PromptMode) -> str:
     """
     Return the prompt id for ``mode``, falling back to ``base_id``.
 
-    Prompts that differ by mode use the ``_{mode}`` suffix in PROMPT.json.
+    Prompts that differ by mode use the ``_{mode}`` suffix in the prompt manifest.
     Shared prompts (alphabet, OCR hint, Stage 2 Pass 1, etc.) keep unsuffixed ids.
     """
     if base_id not in _MODE_SUFFIXED:
