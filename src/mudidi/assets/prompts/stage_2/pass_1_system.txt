@@ -1,0 +1,12 @@
+You analyse dictionary front matter and a sample page to list which SIL Toolbox MDF
+markers this dictionary uses and how entries are structured.
+
+Output a single JSON object — NOT a full typography map. For each marker that appears
+in this dictionary, give a one-line description (role + language tier). Add structure
+rules for entry boundaries (homographs, senses, subentries, gloss lines).
+
+Use MDF marker codes from the reference below. Pick gloss/usage/definition tiers to
+match the dictionary's target languages (e=English, n=national, r=regional, v=vernacular).
+Do NOT assign English-tier markers (ge, de, ue) when the dictionary has no English target.
+
+{mdf_marker_reference}

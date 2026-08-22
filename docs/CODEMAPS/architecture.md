@@ -84,7 +84,7 @@ Web dashboard (web/)
 
 ## Key Design Boundaries
 
-- Prompt templates: `src/mudidi/assets/PROMPT.json` → `llm/prompt_store.py`
+- Prompt templates: `src/mudidi/assets/prompts/manifest.json` + `.txt` files → `llm/prompt_store.py`
 - Domain models: `schemas/` (Pydantic)
 - Provider calls: single gateway `llm/client.py` (litellm)
 - Evaluation: separate `evaluation/stage1/` and `evaluation/stage2/` packages

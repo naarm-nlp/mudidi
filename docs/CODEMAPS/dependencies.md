@@ -93,6 +93,7 @@ MUDIDI_LLM_INTEGRATION=1 uv run pytest -m integration  # live API
 
 ## Asset Bundling
 
-`src/mudidi/assets/PROMPT.json` is the canonical prompt file. Because it lives
-inside the package tree, Hatch includes it in the wheel as
-`mudidi/assets/PROMPT.json`.
+`src/mudidi/assets/prompts/manifest.json` and its referenced Stage 1/Stage 2
+text templates are the canonical prompt assets. Because they live inside the
+package tree, Hatch includes the complete `mudidi/assets/prompts/` directory in
+the wheel.

@@ -1,0 +1,19 @@
+<alphabet>
+{alphabet_text}
+</alphabet>
+
+The <alphabet> is a reference guide to the list of characters in the script of the source language, not a strict whitelist. It may be
+incomplete or not perfectly match this document's script variant.
+
+Rules:
+1. Prefer <alphabet> matches over visually similar characters from other scripts.
+2. For combinatorial scripts (Indic conjuncts, Ethiopic syllables, Hangul
+blocks, Arabic ligatures, pointed Hebrew/Syriac), treat <alphabet>
+entries as base components and form composites using the script's
+standard rules (virama, vowel diacritics, contextual forms).
+3. If a glyph is clearly a legitimate character of the target script but
+not in <alphabet> (archaic letters, extensions, related-language
+characters), transcribe it correctly anyway — do not force-fit.
+4. Preserve diacritics, tone marks, case, and period-specific orthography
+exactly as shown.
+5. Mark truly unidentifiable glyphs as [?].

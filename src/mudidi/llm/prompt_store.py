@@ -1,11 +1,9 @@
-"""
-Load LLM prompt templates from ``mudidi/assets/PROMPT.json``.
+"""Load LLM prompt templates from a manifest or legacy inline JSON file.
 
-Each entry maps a prompt id to ``prompt`` text, an optional human-readable
-``description``, and a ``variables`` list describing placeholders (Python
-``str.format`` keys and optional XML wrapper tags). Edit the JSON file to
-customize prompts at inference time; the store reloads when the file
-modification time changes.
+The bundled manifest maps each prompt id to a readable text-template file,
+an optional description, and placeholder metadata. User-supplied legacy JSON
+files with inline ``prompt`` values remain supported. The store reloads when
+the manifest or any referenced template file changes.
 """
 
 from __future__ import annotations
@@ -14,7 +12,7 @@ import json
 import logging
 import tempfile
 from importlib import resources
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
@@ -41,30 +39,49 @@ class PromptDefinition(BaseModel):
     variables: list[PromptVariable] = Field(default_factory=list)
 
 
+class PromptSourceDefinition(BaseModel):
+    """Manifest entry pointing to external text or containing legacy inline text."""
+
+    description: str = ""
+    file: str | None = None
+    prompt: str | None = None
+    variables: list[PromptVariable] = Field(default_factory=list)
+
+
 def package_root() -> Path:
     """Installed package root (``mudidi/``)."""
     return Path(__file__).resolve().parents[1]
 
 
 def _materialize_zip_resource_prompts() -> Path:
-    """Copy wheel-bundled PROMPT.json to a stable cache path on disk."""
+    """Copy wheel-bundled prompt manifest and templates to a stable cache path."""
     global _bundled_prompts_cache
     if _bundled_prompts_cache is not None and _bundled_prompts_cache.is_file():
         return _bundled_prompts_cache
 
-    ref = resources.files("mudidi").joinpath("assets/PROMPT.json")
-    text = ref.read_text(encoding="utf-8")
-    cache_dir = Path(tempfile.gettempdir()) / "mudidi"
+    source_dir = resources.files("mudidi").joinpath("assets/prompts")
+    manifest_ref = source_dir.joinpath("manifest.json")
+    manifest_text = manifest_ref.read_text(encoding="utf-8")
+    sources = _parse_prompt_sources(manifest_text)
+    cache_dir = Path(tempfile.gettempdir()) / "mudidi" / "prompts"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_path = cache_dir / "PROMPT.json"
-    cache_path.write_text(text, encoding="utf-8")
+    for source in sources.values():
+        if source.file is None:
+            continue
+        relative = _validated_relative_template_path(source.file)
+        target = cache_dir.joinpath(*relative.parts)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        template_ref = source_dir.joinpath(*relative.parts)
+        target.write_text(template_ref.read_text(encoding="utf-8"), encoding="utf-8")
+    cache_path = cache_dir / "manifest.json"
+    cache_path.write_text(manifest_text, encoding="utf-8")
     _bundled_prompts_cache = cache_path
     return cache_path
 
 
 def default_prompts_path() -> Path:
-    """Default path to bundled ``PROMPT.json``."""
-    bundled = package_root() / "assets" / "PROMPT.json"
+    """Default path to the bundled prompt manifest."""
+    bundled = package_root() / "assets" / "prompts" / "manifest.json"
     if bundled.is_file():
         return bundled
     try:
@@ -88,27 +105,89 @@ def _prompts_file_path() -> Path:
     return default_prompts_path()
 
 
-def parse_prompt_file(text: str) -> Dict[str, PromptDefinition]:
-    """
-    Parse a prompts JSON document.
-
-    Time: O(n) in file length.
-    """
+def _parse_prompt_sources(text: str) -> Dict[str, PromptSourceDefinition]:
+    """Parse and validate prompt-source metadata."""
     raw = json.loads(text)
     if not isinstance(raw, dict):
         raise ValueError("Prompts file must be a JSON object keyed by prompt id.")
-    return {
-        str(key): PromptDefinition.model_validate(value)
+    sources = {
+        str(key): PromptSourceDefinition.model_validate(value)
         for key, value in raw.items()
     }
+    for prompt_id, source in sources.items():
+        if (source.file is None) == (source.prompt is None):
+            raise ValueError(
+                f"Prompt {prompt_id!r} must define exactly one of 'file' or 'prompt'."
+            )
+    return sources
+
+
+def _validated_relative_template_path(file_name: str) -> PurePosixPath:
+    """Return a safe manifest-relative POSIX path."""
+    relative = PurePosixPath(file_name)
+    if not file_name or relative.is_absolute() or ".." in relative.parts:
+        raise ValueError(
+            f"Prompt template path must remain inside its manifest directory: {file_name!r}"
+        )
+    return relative
+
+
+def _resolve_template_path(base_dir: Path, file_name: str) -> Path:
+    """Resolve a template path without permitting symlink or parent traversal."""
+    relative = _validated_relative_template_path(file_name)
+    root = base_dir.resolve()
+    path = root.joinpath(*relative.parts).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError(
+            f"Prompt template path must remain inside its manifest directory: {file_name!r}"
+        )
+    return path
+
+
+def _template_text(path: Path) -> str:
+    """Read a template, ignoring its conventional final file newline."""
+    return path.read_text(encoding="utf-8").removesuffix("\n")
+
+
+def _materialize_prompt_definitions(
+    sources: Dict[str, PromptSourceDefinition],
+    base_dir: Path,
+) -> Dict[str, PromptDefinition]:
+    """Load external templates and return runtime prompt definitions."""
+    prompts: Dict[str, PromptDefinition] = {}
+    for prompt_id, source in sources.items():
+        prompt = source.prompt
+        if source.file is not None:
+            prompt = _template_text(_resolve_template_path(base_dir, source.file))
+        assert prompt is not None
+        prompts[prompt_id] = PromptDefinition(
+            description=source.description,
+            prompt=prompt,
+            variables=source.variables,
+        )
+    return prompts
+
+
+def parse_prompt_file(
+    text: str, *, base_dir: Path | None = None
+) -> Dict[str, PromptDefinition]:
+    """
+    Parse a prompt manifest or legacy inline prompts JSON document.
+
+    Time: O(n) in file length.
+    """
+    sources = _parse_prompt_sources(text)
+    if base_dir is None and any(source.file is not None for source in sources.values()):
+        raise ValueError("base_dir is required when prompt entries reference files.")
+    return _materialize_prompt_definitions(sources, base_dir or Path.cwd())
 
 
 class PromptStore:
-    """Cached reader for ``PROMPT.json`` with mtime-based invalidation."""
+    """Cached prompt reader with manifest and template mtime invalidation."""
 
     def __init__(self, path: Optional[Path] = None) -> None:
         self._path = path or _prompts_file_path()
-        self._signature: Optional[tuple[float, int]] = None
+        self._signature: Optional[tuple[tuple[str, int, int], ...]] = None
         self._prompts: Dict[str, PromptDefinition] = {}
 
     def set_path(self, path: Path) -> None:
@@ -128,11 +207,21 @@ class PromptStore:
                 "Create it or pass --prompts-file to mudidi run."
             )
         stat = self._path.stat()
-        signature = (stat.st_mtime, stat.st_size)
+        text = self._path.read_text(encoding="utf-8")
+        sources = _parse_prompt_sources(text)
+        signature_parts = [(str(self._path), stat.st_mtime_ns, stat.st_size)]
+        for source in sources.values():
+            if source.file is None:
+                continue
+            template_path = _resolve_template_path(self._path.parent, source.file)
+            template_stat = template_path.stat()
+            signature_parts.append(
+                (str(template_path), template_stat.st_mtime_ns, template_stat.st_size)
+            )
+        signature = tuple(sorted(signature_parts))
         if signature == self._signature and self._prompts:
             return
-        text = self._path.read_text(encoding="utf-8")
-        self._prompts = parse_prompt_file(text)
+        self._prompts = _materialize_prompt_definitions(sources, self._path.parent)
         self._signature = signature
         logger.debug("Loaded %d prompts from %s", len(self._prompts), self._path)
 

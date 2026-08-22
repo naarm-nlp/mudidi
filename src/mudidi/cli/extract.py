@@ -1325,9 +1325,9 @@ Examples:
         type=Path,
         default=None,
         dest="prompts_file",
-        help="Path to PROMPT.json containing Stage 1 and Stage 2 LLM prompts "
-        "(default: packaged mudidi/assets/PROMPT.json). "
-        "Edits reload on the next LLM call.",
+        help="Path to a prompt manifest or legacy inline prompts JSON file "
+        "(default: packaged mudidi/assets/prompts/manifest.json). "
+        "Manifest and template edits reload on the next LLM call.",
     )
     parser.add_argument(
         "--benchmark",

@@ -77,7 +77,9 @@ See `evaluations/README.md` for producer scripts and provenance boundaries.
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `PROMPT.json` | `src/mudidi/assets/` | Canonical packaged LLM prompt templates |
+| `prompts/manifest.json` | `src/mudidi/assets/` | Prompt metadata and external template paths |
+| `prompts/stage_1/*.txt` | `src/mudidi/assets/` | Readable Stage 1 prompt templates |
+| `prompts/stage_2/*.txt` | `src/mudidi/assets/` | Readable Stage 2 prompt templates |
 | `dictionary_languages.yaml` | per-run or dataset | Language pair config |
 | `mdf_parsing_guide.json` | output dir | Pass 1 discovered MDF markers |
 | `.env` | project root | API keys (GEMINI, OPENROUTER, MATHPIX, …) |

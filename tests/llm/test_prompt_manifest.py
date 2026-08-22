@@ -8,7 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from mudidi.llm.prompt_store import PromptStore, default_prompts_path, get_prompt_store
+from mudidi.llm import prompt_store as prompt_store_module
+from mudidi.llm.prompt_store import (
+    PromptStore,
+    configure_prompts,
+    default_prompts_path,
+    get_prompt_store,
+    parse_prompt_file,
+)
 
 
 EXPECTED_PROMPT_SHA256 = {
@@ -141,3 +148,122 @@ def test_prompt_entry_requires_exactly_one_text_source(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="exactly one of 'file' or 'prompt'"):
         PromptStore(manifest_path).get("ambiguous")
+
+
+@pytest.mark.parametrize("file_name", ["", "/absolute/prompt.txt"])
+def test_prompt_manifest_rejects_invalid_template_paths(
+    tmp_path: Path,
+    file_name: str,
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    _write_manifest(
+        manifest_path,
+        {
+            "invalid": {
+                "description": "Invalid path",
+                "file": file_name,
+                "variables": [],
+            }
+        },
+    )
+
+    with pytest.raises(ValueError, match="must remain inside"):
+        PromptStore(manifest_path).get("invalid")
+
+
+def test_parse_prompt_file_requires_base_directory_for_manifest_entries() -> None:
+    text = json.dumps(
+        {
+            "external": {
+                "description": "External prompt",
+                "file": "prompt.txt",
+                "variables": [],
+            }
+        }
+    )
+
+    with pytest.raises(ValueError, match="base_dir is required"):
+        parse_prompt_file(text)
+
+
+def test_prompt_store_formats_variables_and_reports_unknown_ids(tmp_path: Path) -> None:
+    prompts_path = tmp_path / "PROMPT.json"
+    _write_manifest(
+        prompts_path,
+        {
+            "greeting": {
+                "description": "Greeting",
+                "prompt": "Hello, {name}!",
+                "variables": [
+                    {
+                        "name": "name",
+                        "tag": None,
+                        "description": "Person to greet",
+                    }
+                ],
+            }
+        },
+    )
+    store = PromptStore(prompts_path)
+
+    assert store.format("greeting", name="Ada") == "Hello, Ada!"
+    assert store.format("greeting") == "Hello, {name}!"
+    assert store.variables("greeting")[0].name == "name"
+    with pytest.raises(KeyError, match="Available: greeting"):
+        store.get("missing")
+
+
+def test_prompt_store_set_path_and_missing_file_errors(tmp_path: Path) -> None:
+    first_path = tmp_path / "first.json"
+    second_path = tmp_path / "second.json"
+    _write_manifest(
+        first_path,
+        {"first": {"description": "", "prompt": "one", "variables": []}},
+    )
+    _write_manifest(
+        second_path,
+        {"second": {"description": "", "prompt": "two", "variables": []}},
+    )
+    store = PromptStore(first_path)
+    assert store.get("first") == "one"
+
+    store.set_path(second_path)
+
+    assert store.path == second_path
+    assert store.prompt_ids() == ["second"]
+    with pytest.raises(FileNotFoundError, match="Prompts file not found"):
+        PromptStore(tmp_path / "missing.json").prompt_ids()
+
+
+def test_configure_prompts_supports_legacy_inline_override(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts_path = tmp_path / "custom.json"
+    _write_manifest(
+        prompts_path,
+        {"custom": {"description": "", "prompt": "custom", "variables": []}},
+    )
+    monkeypatch.setattr(prompt_store_module, "_configured_path", None)
+    monkeypatch.setattr(prompt_store_module, "_store", None)
+
+    configure_prompts(prompts_path)
+
+    assert get_prompt_store().path == prompts_path.resolve()
+    assert get_prompt_store().get("custom") == "custom"
+
+
+def test_zip_resource_materialization_copies_manifest_and_templates(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(prompt_store_module, "_bundled_prompts_cache", None)
+    monkeypatch.setattr(
+        prompt_store_module.tempfile, "gettempdir", lambda: str(tmp_path)
+    )
+
+    manifest_path = prompt_store_module._materialize_zip_resource_prompts()
+
+    assert manifest_path == tmp_path / "mudidi" / "prompts" / "manifest.json"
+    assert PromptStore(manifest_path).get("stage_1_user_closing")
+    assert prompt_store_module._materialize_zip_resource_prompts() == manifest_path
