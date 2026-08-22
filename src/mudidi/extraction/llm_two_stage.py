@@ -526,7 +526,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.prompt_cache = prompt_cache
         self.media_reference = media_reference
         self.prompt_cache_key = prompt_cache_key
-        self.stage1_typography = stage1_typography
+        # The original benchmark prompt always requested bold/italic markup.
+        # Keep inference configurable while preserving that historical contract.
+        self.stage1_typography = prompt_mode == "benchmark" or stage1_typography
         self.stage1_agentic = stage1_agentic
         self.stage2_agentic = stage2_agentic
         self.agentic_loop_config = AgenticLoopConfig(
