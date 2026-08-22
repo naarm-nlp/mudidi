@@ -54,7 +54,7 @@ def direct_mdf_system_prompt(
 ) -> str:
     """Pass 2 direct MDF system prompt."""
     store = get_prompt_store()
-    prompt_id = prompt_id_for_mode("stage_2_direct_mdf_system", mode)
+    prompt_id = prompt_id_for_mode("stage_2_pass_2_system", mode)
     if mode == "inference":
         return store.format(
             prompt_id,
@@ -148,7 +148,7 @@ def _render_direct_mdf_user_parts(
 ) -> tuple[str, str]:
     """Render the existing Pass 2 user template, split at transcription."""
     guides_block = f"\n\nUSER DEFINED GUIDELINES\n{guides}" if guides.strip() else ""
-    user_prompt_id = prompt_id_for_mode("stage_2_direct_mdf_user", mode)
+    user_prompt_id = prompt_id_for_mode("stage_2_pass_2_user", mode)
     neighbor_kwargs = _neighbor_format_kwargs(mode, page_context)
     if mode == "inference":
         # Boundary rules are already in the inference system prompt. Keeping

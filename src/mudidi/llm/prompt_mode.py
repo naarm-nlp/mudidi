@@ -8,8 +8,8 @@ from mudidi.llm.prompt_store import get_prompt_store
 _MODE_SUFFIXED = frozenset(
     {
         "stage_1_system",
-        "stage_2_direct_mdf_system",
-        "stage_2_direct_mdf_user",
+        "stage_2_pass_2_system",
+        "stage_2_pass_2_user",
     }
 )
 
@@ -19,7 +19,7 @@ def prompt_id_for_mode(base_id: str, mode: PromptMode) -> str:
     Return the prompt id for ``mode``, falling back to ``base_id``.
 
     Prompts that differ by mode use the ``_{mode}`` suffix in PROMPT.json.
-    Shared prompts (alphabet, OCR hint, stage 2 pass 1/2, etc.) keep unsuffixed ids.
+    Shared prompts (alphabet, OCR hint, Stage 2 Pass 1, etc.) keep unsuffixed ids.
     """
     if base_id not in _MODE_SUFFIXED:
         return base_id
