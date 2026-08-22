@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from mudidi.schemas.dictionary_profile import DictionaryProfile, ProfileLanguage
 
 
-def test_dictionary_profile_formats_stage_prompts_from_five_answers() -> None:
+def test_dictionary_profile_formats_pass1_context_from_five_answers() -> None:
     profile = DictionaryProfile(
         headword=ProfileLanguage(language="Chukchi", script="Cyrillic"),
         targets=[ProfileLanguage(language="Russian", script="Cyrillic")],
@@ -17,12 +17,11 @@ def test_dictionary_profile_formats_stage_prompts_from_five_answers() -> None:
         other_information_types="dialect labels, semantic domains",
     )
 
-    stage1 = profile.stage1_context_hint()
     pass1 = profile.pass1_config_hint()
 
-    assert "Chukchi" in stage1
-    assert "Cyrillic" in stage1
-    assert "two columns" in stage1
+    assert "Chukchi" in pass1
+    assert "Cyrillic" in pass1
+    assert "two columns" in pass1
     assert "Russian" in pass1
     assert "part_of_speech" in pass1
     assert "dialect labels" in pass1

@@ -779,6 +779,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             ocr_hint=ocr_hint,
             guides=self.stage1_guides,
             dictionary_profile=self.dictionary_profile,
+            mode=self.prompt_mode,
         )
 
         content: list = [{"type": "text", "text": user_text}]

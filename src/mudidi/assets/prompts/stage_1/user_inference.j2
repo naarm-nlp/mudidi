@@ -28,8 +28,15 @@ exactly as shown.
 The OCR reference above may contain errors but can help you identify ambiguous character shapes.
 
 {% endif %}
-{% if dictionary_profile_context %}
-{{ dictionary_profile_context }}
+{% if dictionary_profile %}
+<dictionary_profile>
+This profile is context only. Transcribe what is visible; do not invent, translate, or normalize text to match it.
+Headwords: {{ dictionary_profile.headword.language }} ({{ dictionary_profile.headword.script }})
+Translations/glosses/definitions: {% for target in dictionary_profile.targets %}{{ target.language }} ({{ target.script }}){% if not loop.last %}, {% endif %}{% endfor %}
+Page arrangement: {{ dictionary_profile.page_layout }}
+Expected entry information: {{ dictionary_profile.information_types | join(', ') }}{% if dictionary_profile.other_information_types %}
+Other entry information: {{ dictionary_profile.other_information_types }}{% endif %}
+</dictionary_profile>
 
 {% endif %}
 Now transcribe every line of text from the dictionary page image exactly as it appears. Preserve all diacritics and special characters.
