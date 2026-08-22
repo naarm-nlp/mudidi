@@ -28,9 +28,10 @@ def _dependency_names(dependencies: list[str]) -> set[str]:
 
 
 def test_packaged_prompt_is_the_only_canonical_prompt_asset() -> None:
-    canonical = ROOT / "src" / "mudidi" / "assets" / "PROMPT.json"
+    canonical = ROOT / "src" / "mudidi" / "assets" / "prompts" / "manifest.json"
 
     assert canonical.is_file()
+    assert not (ROOT / "src" / "mudidi" / "assets" / "PROMPT.json").exists()
     assert not (ROOT / "assets" / "PROMPT.json").exists()
     assert default_prompts_path().resolve() == canonical.resolve()
 
