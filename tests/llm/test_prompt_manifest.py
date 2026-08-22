@@ -84,7 +84,8 @@ def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
     inference_system = store.get("stage_1_system_inference")
     assert "full left column top-to-bottom" in benchmark_system
     assert "aligned table columns" not in benchmark_system
-    assert "aligned table columns" in inference_system
+    assert "full left column top-to-bottom" in inference_system
+    assert "aligned table columns" not in inference_system
     for prompt_id in ("stage_2_pass_1_user_single", "stage_2_pass_1_user_multi"):
         assert "{% if config_hint %}" in store.get(prompt_id)
 
