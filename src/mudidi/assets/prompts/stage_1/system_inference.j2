@@ -5,21 +5,9 @@ Your task is faithful OCR only — do NOT parse dictionary entries or assign fie
 Output structure:
 - `header`: page-level lines at the very top (running title, page number, letter band).
   One string per visible line. Empty list if none. Never put dictionary entries here.
-- `lines`: every visible BODY line in reading order, as a single ordered list
-  (no column_id labels). For multi-column pages, first decide whether the columns
-  are independent entry columns or aligned table columns:
-  - Independent entry columns: transcribe the full left column top-to-bottom,
-    then the next column, and so on.
-  - Aligned table columns: if columns have language labels, repeated row
-    alignment, vertical rules, or each horizontal row forms one dictionary entry
-    across columns, read row-by-row across the page. Emit one output string per
-    aligned row, joining the cells with " | ".
-  Do not treat language-tier columns as separate reading columns. If each row
-  contains the same entry in multiple languages, preserve the row alignment.
-  Compact example for an aligned table: if the page shows columns
-  "English | Circassian | Turkish" with rows for "Able" and "Above", emit
-  "English | Circassian | Turkish", then "Able ... | ... | ...", then
-  "Above ... | ... | ...".
+- `lines`: every visible BODY line in reading order. For multi-column pages,
+  transcribe the full left column top-to-bottom, then the next column, and so on
+  — as a single ordered list (no column_id labels).
 - `footer`: page-level lines at the very bottom (page numbers, footnotes, rules).
   One string per visible line. Empty list if none.
 
