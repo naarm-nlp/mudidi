@@ -80,12 +80,26 @@ def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
     assert "dictionary_profile" not in store.get("stage_1_user_benchmark")
     assert "{% if dictionary_profile %}" in store.get("stage_1_user_inference")
     assert "This profile is context only." in store.get("stage_1_user_inference")
+    for prompt_id in ("stage_2_pass_1_user_single", "stage_2_pass_1_user_multi"):
+        assert "{% if config_hint %}" in store.get(prompt_id)
+
+    pass2_benchmark = store.get("stage_2_pass_2_user_benchmark")
+    pass2_inference = store.get("stage_2_pass_2_user_inference")
     assert "{% if toolbox_reference_mode == 'pdf' %}" in store.get(
         "stage_2_pass_2_user_benchmark"
     )
     assert "{% elif toolbox_reference_mode == 'text_fallback' %}" in store.get(
         "stage_2_pass_2_user_benchmark"
     )
+    assert "{% if guides %}" in pass2_benchmark
+    for variable in (
+        "guides",
+        "current_page_context",
+        "page_image_order",
+        "previous_page_context",
+        "next_page_context",
+    ):
+        assert f"{{% if {variable} %}}" in pass2_inference
 
 
 def test_prompt_layout_includes_human_request_assembly_maps() -> None:
