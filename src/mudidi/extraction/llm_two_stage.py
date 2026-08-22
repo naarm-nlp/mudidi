@@ -440,8 +440,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         alphabet_path:      Path to the alphabet file (.txt / .png / .jpg).
                             If an image, it is sent as a vision input to Stage 1.
                             If text, it is embedded in the prompt.
-        intro_text:         Introduction/preface plain text (reserved; not sent to Pass 2).
-        intro_image_paths:  Intro page images for Stage 2 Pass 1 only (field discovery).
+        intro_image_paths:  Intro page image/PDF paths for Stage 2 Pass 1 only
+                            (field discovery).
                             Loaded once, shared across the dictionary run.
     """
 
@@ -451,7 +451,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage2_pass1_model: Optional[str] = None,
         stage2_pass2_model: Optional[str] = None,
         alphabet_path: Optional[str] = None,
-        intro_text: str = "",
         intro_image_paths: Optional[List[str]] = None,
         stage1_reasoning_effort: str = "low",
         stage2_reasoning_effort: str = "low",
@@ -494,7 +493,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.stage2_pass1_model = stage2_pass1_model or transcribe_model
         self.stage2_pass2_model = stage2_pass2_model or transcribe_model
         self.alphabet_path = alphabet_path
-        self.intro_text = intro_text
         self.intro_image_paths = intro_image_paths or []
         self.stage1_reasoning_effort = stage1_reasoning_effort
         self.stage2_reasoning_effort = stage2_reasoning_effort
@@ -927,6 +925,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
+                        media_reference=self.media_reference,
                     )
                     multi_samples = None
                     print(
@@ -940,6 +939,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
+                        media_reference=self.media_reference,
                     )
                     multi_samples = [
                         (stem, sample_text, Path(sample_image))

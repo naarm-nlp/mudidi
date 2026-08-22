@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from mudidi.ocr.mathpix import MathpixBackend
 from mudidi.ocr.vlm.prompts import find_ocr_hint_file
@@ -316,7 +316,8 @@ _STRATEGY_CHOICES = list(_STRATEGIES.keys()) + ["vlm_ocr", "mathpix_ocr"]
 
 _IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 _PDF_EXTS = {".pdf"}
-_TEXT_EXTS = {".txt", ".md", ".docx"}
+
+
 def _render_pdf_pages(pdf_path: Path, cache_dir: Path, dpi: int = 200) -> List[Path]:
     """Render each page of ``pdf_path`` to a PNG under ``cache_dir``."""
     return render_pdf_pages(pdf_path, cache_dir, dpi=dpi)
@@ -398,7 +399,7 @@ def _collect_intro_from_pdf(
     *,
     render_pdfs: bool,
     overwrite: bool = False,
-) -> Tuple[str, List[str]]:
+) -> List[str]:
     """Extract introduction pages from ``source_pdf`` and return vision inputs."""
     try:
         page_numbers = parse_page_spec(intro_pages_spec)
@@ -420,7 +421,7 @@ def _collect_intro_from_pdf(
             image_paths.extend(str(p) for p in _render_pdf_pages(pdf, pdf_cache_dir))
         else:
             image_paths.append(str(pdf))
-    return "", image_paths
+    return image_paths
 
 
 def _collect_intro(
@@ -428,10 +429,9 @@ def _collect_intro(
     pdf_cache_dir: Path,
     *,
     render_pdfs: bool,
-) -> Tuple[str, List[str]]:
+) -> List[str]:
     """
-    Load intro context from a file or directory. Supports images, PDFs,
-    and text files.
+    Load intro pages from a file or directory of images and PDFs.
 
     When ``render_pdfs`` is True, PDF intro pages are rendered to PNG via
     ``pdf_cache_dir``; otherwise they are passed through as PDF paths for
@@ -446,12 +446,14 @@ def _collect_intro(
     if intro_path.is_file():
         suffix = intro_path.suffix.lower()
         if suffix in _IMAGE_EXTS:
-            return "", [str(intro_path)]
+            return [str(intro_path)]
         if suffix in _PDF_EXTS:
-            return "", _as_vision_inputs(intro_path)
-        return _read_text_file(intro_path), []
+            return _as_vision_inputs(intro_path)
+        raise ValueError(
+            "--intro supports only image and PDF files; text introductions are not supported"
+        )
 
-    text_parts, image_paths = [], []
+    image_paths = []
     for f in sorted(intro_path.iterdir()):
         if f.name.startswith((".", "~")):
             continue
@@ -460,10 +462,13 @@ def _collect_intro(
             image_paths.append(str(f))
         elif suffix in _PDF_EXTS:
             image_paths.extend(_as_vision_inputs(f))
-        elif suffix in _TEXT_EXTS:
-            text_parts.append(_read_text_file(f))
+        elif suffix in {".txt", ".md", ".docx"}:
+            raise ValueError(
+                "--intro directories may contain only image and PDF files; "
+                "text introductions are not supported"
+            )
 
-    return "\n\n".join(text_parts), image_paths
+    return image_paths
 
 
 def _read_text_file(path: Path) -> str:
@@ -735,9 +740,7 @@ def _build_stage2_manifest(
             "experiment_name": args.experiment_name,
             "stage1_gold_dir": str(gold_dir),
         },
-        # Intro is path-only regardless of format (image / pdf / txt / md /
-        # docx) per the user's explicit choice — embedding intro PDFs/images
-        # would balloon the manifest, and intro text rarely changes mid-sweep.
+        # Intro is path-only (image / PDF) per the user's explicit choice.
         "intro": {
             "used": bool(args.intro),
             "source_path": args.intro,
@@ -767,7 +770,6 @@ def _build_stage2_manifest(
 
 def _build_strategy(
     args,
-    intro_text: str,
     intro_image_paths: List[str],
     dictionary_languages=None,
     dictionary_profile=None,
@@ -781,7 +783,6 @@ def _build_strategy(
             stage2_pass1_model=args.stage_models.stage_2_pass_1,
             stage2_pass2_model=args.stage_models.stage_2_pass_2,
             alphabet_path=args.alphabet or None,
-            intro_text=intro_text,
             intro_image_paths=intro_image_paths,
             stage1_reasoning_effort=getattr(args, "stage1_reasoning_effort", "low"),
             stage2_reasoning_effort=getattr(args, "stage2_reasoning_effort", "low"),
@@ -1152,8 +1153,8 @@ Examples:
     )
     parser.add_argument(
         "--intro",
-        help="Dictionary introduction/preface — a file (.txt/.md/.docx) or a directory "
-        "of images/PDFs. Not used when --pages is a PDF (use --intro-pages instead).",
+        help="Dictionary introduction pages — an image, PDF, or directory of images/PDFs. "
+        "Not used when --pages is a PDF (use --intro-pages instead).",
     )
     parser.add_argument(
         "--intro-pages",
@@ -2055,11 +2056,11 @@ def _run_single_entry(args, parser) -> int:
             parser.error(f"--ocr-text must be a directory: {ocr_dir}")
 
     # ── Intro (loaded once for all pages) ─────────────────────────────────────
-    intro_text, intro_image_paths = "", []
+    intro_image_paths: List[str] = []
     is_source_pdf = input_path.is_file() and input_path.suffix.lower() in _PDF_EXTS
     if is_source_pdf and getattr(args, "intro_pages", None):
         try:
-            intro_text, intro_image_paths = _collect_intro_from_pdf(
+            intro_image_paths = _collect_intro_from_pdf(
                 input_path,
                 args.intro_pages,
                 intro_cache_dir,
@@ -2072,18 +2073,21 @@ def _run_single_entry(args, parser) -> int:
             print(exc)
             return 1
         print(
-            f"Intro: {len(intro_text)} chars of text, {len(intro_image_paths)} images loaded."
+            f"Intro: {len(intro_image_paths)} page attachments loaded."
         )
     elif args.intro:
         intro_path = Path(args.intro)
         if not intro_path.exists():
             print(f"Warning: --intro path not found: {args.intro}")
         else:
-            intro_text, intro_image_paths = _collect_intro(
-                intro_path, intro_cache_dir, render_pdfs=render_pdfs
-            )
+            try:
+                intro_image_paths = _collect_intro(
+                    intro_path, intro_cache_dir, render_pdfs=render_pdfs
+                )
+            except ValueError as exc:
+                parser.error(str(exc))
             print(
-                f"Intro: {len(intro_text)} chars of text, {len(intro_image_paths)} images loaded."
+                f"Intro: {len(intro_image_paths)} page attachments loaded."
             )
 
     dictionary_languages = None
@@ -2111,7 +2115,6 @@ def _run_single_entry(args, parser) -> int:
     parse_rules_samples: Optional[List[tuple[str, str, str]]] = None
     strategy = _build_strategy(
         args,
-        intro_text,
         intro_image_paths,
         dictionary_languages,
         dictionary_profile,

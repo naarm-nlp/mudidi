@@ -13,13 +13,14 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from mudidi.config.prompt_cache import MediaReferenceMode
 from mudidi.llm.client import complete_with_usage
 from mudidi.llm.prompt_store import get_prompt_store
 from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
-from mudidi.utils.image import image_data_url, mime_type_for_path
+from mudidi.utils.image import file_content_part, image_data_url, mime_type_for_path
 from mudidi.utils.parse_rules_pages import format_sample_pages_block
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,25 @@ def _config_hint(
     return languages_config.pass1_config_hint()
 
 
+def _page_content_part(
+    path: Path,
+    *,
+    media_reference: MediaReferenceMode = "auto",
+) -> dict:
+    """Build a valid multimodal content part for an image or PDF page."""
+    mime_type = mime_type_for_path(str(path))
+    if mime_type == "application/pdf":
+        return file_content_part(
+            str(path),
+            mime_type=mime_type,
+            media_reference=media_reference,
+        )
+    return {
+        "type": "image_url",
+        "image_url": {"url": image_data_url(str(path), mime_type)},
+    }
+
+
 def discover_field_cheatsheet(
     *,
     transcription: str,
@@ -73,6 +93,7 @@ def discover_field_cheatsheet(
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
+    media_reference: MediaReferenceMode = "auto",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
     user_text = get_prompt_store().format(
@@ -82,22 +103,8 @@ def discover_field_cheatsheet(
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
     for intro_img in intro_images:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image_data_url(str(intro_img), mime_type_for_path(str(intro_img)))
-                },
-            }
-        )
-    content.append(
-        {
-            "type": "image_url",
-            "image_url": {
-                "url": image_data_url(str(sample_image), mime_type_for_path(str(sample_image)))
-            },
-        }
-    )
+        content.append(_page_content_part(intro_img, media_reference=media_reference))
+    content.append(_page_content_part(sample_image, media_reference=media_reference))
     messages = [
         {"role": "system", "content": pass_1_system_prompt()},
         {"role": "user", "content": content},
@@ -123,6 +130,7 @@ def discover_field_cheatsheet_multi(
     temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
+    media_reference: MediaReferenceMode = "auto",
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules from several sample pages in one call."""
     if len(samples) < 2:
@@ -138,26 +146,9 @@ def discover_field_cheatsheet_multi(
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
     for intro_img in intro_images:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image_data_url(str(intro_img), mime_type_for_path(str(intro_img)))
-                },
-            }
-        )
+        content.append(_page_content_part(intro_img, media_reference=media_reference))
     for stem, _transcription, sample_image in samples:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image_data_url(
-                        str(sample_image),
-                        mime_type_for_path(str(sample_image)),
-                    ),
-                },
-            }
-        )
+        content.append(_page_content_part(sample_image, media_reference=media_reference))
     messages = [
         {"role": "system", "content": pass_1_system_prompt()},
         {"role": "user", "content": content},
