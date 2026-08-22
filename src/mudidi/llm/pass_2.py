@@ -11,7 +11,7 @@ import re
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from mudidi.config.prompt_cache import MediaReferenceMode, PromptCacheMode
 from mudidi.config.run_config import PromptMode
@@ -77,12 +77,10 @@ def _toolbox_content_parts(
     *,
     model: str,
     media_reference: MediaReferenceMode = "auto",
-) -> tuple[str, list[dict]]:
-    """Build prompt section and optional vision parts for the Toolbox MDF manual."""
-    store = get_prompt_store()
+) -> tuple[Literal["pdf", "text_fallback"], list[dict]]:
+    """Build Toolbox manual attachments and select its visible prompt section."""
     if media_reference != "inline" and model_supports_pdf_input(model):
-        section = store.get("stage_2_toolbox_pdf_section")
-        return section, [
+        return "pdf", [
             file_content_part(
                 str(toolbox_pdf),
                 mime_type="application/pdf",
@@ -92,18 +90,13 @@ def _toolbox_content_parts(
 
     if needs_pdf_rasterization(model):
         logger.info(
-            "Toolbox PDF %s attached as text reference for model %s",
-            toolbox_pdf.name,
+            "Using the bundled Toolbox text fallback for model %s (PDF %s needs rasterization)",
             model,
+            toolbox_pdf.name,
         )
-        section = store.format(
-            "stage_2_toolbox_text_section",
-            mdf_marker_reference=store.get("mdf_marker_reference"),
-        )
-        return section, []
+        return "text_fallback", []
 
-    section = store.get("stage_2_toolbox_pdf_section")
-    return section, [
+    return "pdf", [
         file_content_part(
             str(toolbox_pdf),
             mime_type="application/pdf",
@@ -118,14 +111,12 @@ def _neighbor_format_kwargs(
 ) -> dict[str, str]:
     if mode != "inference" or page_context is None:
         return {
-            "page_boundary_rules": "",
             "current_page_context": "",
             "previous_page_context": "",
             "next_page_context": "",
             "page_image_order": "",
         }
     return {
-        "page_boundary_rules": page_boundary_rules_prompt(),
         "current_page_context": format_current_page_block(page_context),
         "previous_page_context": format_neighbor_text_block(
             page_context.previous, label="previous_page"
@@ -141,26 +132,21 @@ def _render_direct_mdf_user_parts(
     *,
     transcription: str,
     field_map: FieldMapPrompt,
-    toolbox_section: str,
+    toolbox_reference_mode: Literal["none", "pdf", "text_fallback"],
     guides: str,
     mode: PromptMode,
     page_context: PageContext | None,
 ) -> tuple[str, str]:
     """Render the existing Pass 2 user template, split at transcription."""
-    guides_block = f"\n\nUSER DEFINED GUIDELINES\n{guides}" if guides.strip() else ""
     user_prompt_id = prompt_id_for_mode("stage_2_pass_2_user", mode)
     neighbor_kwargs = _neighbor_format_kwargs(mode, page_context)
-    if mode == "inference":
-        # Boundary rules are already in the inference system prompt. Keeping
-        # this user-turn placeholder empty avoids re-sending constant text in
-        # the dynamic per-page message.
-        neighbor_kwargs = {**neighbor_kwargs, "page_boundary_rules": ""}
     rendered = get_prompt_store().format(
         user_prompt_id,
         transcription=_TRANSCRIPTION_SPLIT_MARKER,
         field_block=field_map.format_prompt_block(),
-        guides_block=guides_block,
-        toolbox_section=toolbox_section,
+        toolbox_reference_mode=toolbox_reference_mode,
+        mdf_marker_reference=get_prompt_store().get("mdf_marker_reference"),
+        guides=guides,
         **neighbor_kwargs,
     )
     before, marker, after = rendered.partition(_TRANSCRIPTION_SPLIT_MARKER)
@@ -227,10 +213,10 @@ def _build_direct_mdf_prompt(
     media_reference: MediaReferenceMode = "auto",
 ) -> DirectMdfPrompt:
     """Build LLM messages and cache-key source text for Pass 2 extraction."""
-    toolbox_section = ""
+    toolbox_reference_mode: Literal["none", "pdf", "text_fallback"] = "none"
     toolbox_parts: list[dict] = []
     if toolbox_pdf and toolbox_pdf.is_file():
-        toolbox_section, toolbox_parts = _toolbox_content_parts(
+        toolbox_reference_mode, toolbox_parts = _toolbox_content_parts(
             toolbox_pdf,
             model=model,
             media_reference=media_reference,
@@ -238,7 +224,7 @@ def _build_direct_mdf_prompt(
     static_text, dynamic_text = _render_direct_mdf_user_parts(
         transcription=transcription,
         field_map=field_map,
-        toolbox_section=toolbox_section,
+        toolbox_reference_mode=toolbox_reference_mode,
         guides=guides,
         mode=mode,
         page_context=page_context,

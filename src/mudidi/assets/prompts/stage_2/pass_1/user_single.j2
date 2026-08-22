@@ -3,22 +3,22 @@ Study this dictionary and return a MDF parsing guide JSON object.
 Inputs:
 1. Introduction pages (images below).
 2. One sample dictionary page (image + flat transcription).
-{config_hint}
+{{ config_hint }}
 
 Return JSON with this shape:
-{{
+{
   "markers": [
-    {{"marker": "lx", "description": "headword / lexeme (vernacular lemma)"}},
-    {{"marker": "gn", "description": "Russian gloss / translation"}},
-    {{"marker": "un", "description": "usage note (parenthetical Russian expansion)"}}
+    {"marker": "lx", "description": "headword / lexeme (vernacular lemma)"},
+    {"marker": "gn", "description": "Russian gloss / translation"},
+    {"marker": "un", "description": "usage note (parenthetical Russian expansion)"}
   ],
   "rules": [
     "Separate homograph mains: two \\lx blocks with same lemma, each with \\hm N.",
     "Numbered senses: one \\lx, then \\sn 1, \\gn …, \\sn 2, \\gn …",
     "Run-on sub-entries: \\se sub-lemma then \\gn … inside the same record block."
   ],
-  "abbreviations": {{"мн.": "plural"}}
-}}
+  "abbreviations": {"мн.": "plural"}
+}
 
 Include ONLY markers that appear on the sample page or are defined in the intro.
 Omit markers not used. Keep descriptions short (one line each). Rules should cover
@@ -26,5 +26,5 @@ entry structure and gloss-line conventions (semicolons, hyphen rejoining).
 Return JSON only — no markdown fences.
 
 <sample_transcription>
-{transcription}
+{{ transcription }}
 </sample_transcription>

@@ -1,7 +1,8 @@
 """
 Stage 1 prompt builders.
 
-Templates live under ``mudidi/assets/prompts``; this module assembles dynamic user turns.
+Templates live under ``mudidi/assets/prompts``. Complete messages are rendered from
+their template files so their optional sections remain visible beside their text.
 """
 
 from __future__ import annotations
@@ -28,11 +29,10 @@ def stage_1_system_prompt(
     typography: bool = False,
 ) -> str:
     """Stage 1 column-mode system prompt."""
-    store = get_prompt_store()
-    prompt = store.get("stage_1_column_system")
-    if mode == "benchmark" or typography:
-        prompt = "\n\n".join([prompt, store.get("stage_1_typography_instruction")])
-    return prompt
+    return get_prompt_store().format(
+        "stage_1_column_system",
+        typography=mode == "benchmark" or typography,
+    )
 
 
 def stage_1_flat_system_prompt(
@@ -43,12 +43,11 @@ def stage_1_flat_system_prompt(
 ) -> str:
     """Stage 1 flat-mode system prompt."""
     del page_context
-    store = get_prompt_store()
     prompt_id = prompt_id_for_mode("stage_1_system", mode)
-    prompt = store.get(prompt_id)
-    if mode == "inference" and typography:
-        prompt = "\n\n".join([prompt, store.get("stage_1_typography_instruction")])
-    return prompt
+    return get_prompt_store().format(
+        prompt_id,
+        typography=mode == "benchmark" or typography,
+    )
 
 
 def stage_1_user(
@@ -65,15 +64,12 @@ def stage_1_user(
         ocr_hint: Optional existing OCR output as a character-shape reference.
         guides: Optional user-defined guidelines appended verbatim at the end.
     """
-    store = get_prompt_store()
-    parts: list[str] = []
-    if alphabet_text:
-        parts.append(store.format("stage_1_user_alphabet", alphabet_text=alphabet_text))
-    if ocr_hint:
-        parts.append(store.format("stage_1_user_ocr_reference", ocr_hint=ocr_hint))
-    if dictionary_profile is not None:
-        parts.append(dictionary_profile.stage1_context_hint())
-    parts.append(store.get("stage_1_user_closing"))
-    if guides:
-        parts.append(f"USER DEFINED GUIDELINES\n{guides}")
-    return "\n\n".join(parts)
+    return get_prompt_store().format(
+        "stage_1_user",
+        alphabet_text=alphabet_text,
+        ocr_hint=ocr_hint,
+        dictionary_profile_context=(
+            dictionary_profile.stage1_context_hint() if dictionary_profile is not None else ""
+        ),
+        guides=guides,
+    )

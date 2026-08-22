@@ -13,14 +13,23 @@ import logging
 import tempfile
 from importlib import resources
 from pathlib import Path, PurePosixPath
-from typing import Dict, Optional
+from typing import Dict, Literal, Optional
 
+from jinja2 import StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 _configured_path: Optional[Path] = None
 _bundled_prompts_cache: Optional[Path] = None
+_jinja_environment = SandboxedEnvironment(
+    autoescape=False,
+    undefined=StrictUndefined,
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=True,
+)
 
 
 class PromptVariable(BaseModel):
@@ -37,6 +46,7 @@ class PromptDefinition(BaseModel):
     description: str = ""
     prompt: str
     variables: list[PromptVariable] = Field(default_factory=list)
+    template_engine: Literal["format", "jinja"] = "format"
 
 
 class PromptSourceDefinition(BaseModel):
@@ -164,6 +174,9 @@ def _materialize_prompt_definitions(
             description=source.description,
             prompt=prompt,
             variables=source.variables,
+            template_engine=(
+                "jinja" if source.file is not None and source.file.endswith(".j2") else "format"
+            ),
         )
     return prompts
 
@@ -251,10 +264,13 @@ class PromptStore:
         return self.get_definition(prompt_id).variables
 
     def format(self, prompt_id: str, **kwargs: object) -> str:
-        """Return prompt text with ``str.format`` placeholders filled."""
-        template = self.get(prompt_id)
+        """Render a prompt with its declared template syntax."""
+        definition = self.get_definition(prompt_id)
+        template = definition.prompt
         if not kwargs:
             return template
+        if definition.template_engine == "jinja":
+            return _jinja_environment.from_string(template).render(**kwargs).removesuffix("\n")
         return template.format(**kwargs)
 
 

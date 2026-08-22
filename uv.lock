@@ -1772,6 +1772,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "grapheme" },
+    { name = "jinja2" },
     { name = "jiwer" },
     { name = "litellm" },
     { name = "numpy" },
@@ -1805,7 +1806,6 @@ paddle = [
 web = [
     { name = "cryptography" },
     { name = "fastapi" },
-    { name = "jinja2" },
     { name = "python-multipart" },
     { name = "uvicorn" },
 ]
@@ -1816,7 +1816,7 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.115" },
     { name = "grapheme" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
-    { name = "jinja2", marker = "extra == 'web'", specifier = ">=3.1" },
+    { name = "jinja2", specifier = ">=3.1" },
     { name = "jiwer" },
     { name = "litellm", specifier = ">=1.87.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6" },

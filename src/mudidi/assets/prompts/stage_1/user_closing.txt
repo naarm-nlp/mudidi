@@ -1,1 +1,0 @@
-Now transcribe every line of text from the dictionary page image exactly as it appears. Preserve all diacritics and special characters.
