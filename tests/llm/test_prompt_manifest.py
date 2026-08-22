@@ -328,5 +328,6 @@ def test_zip_resource_materialization_copies_manifest_and_templates(
     manifest_path = prompt_store_module._materialize_zip_resource_prompts()
 
     assert manifest_path == tmp_path / "mudidi" / "prompts" / "manifest.json"
-    assert PromptStore(manifest_path).get("stage_1_user")
+    assert PromptStore(manifest_path).get("stage_1_user_benchmark")
+    assert PromptStore(manifest_path).get("stage_1_user_inference")
     assert prompt_store_module._materialize_zip_resource_prompts() == manifest_path

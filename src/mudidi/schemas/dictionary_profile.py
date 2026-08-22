@@ -79,27 +79,6 @@ class DictionaryProfile(_StrictModel):
             )
         return self
 
-    def stage1_context_hint(self) -> str:
-        """Return non-authoritative transcription context for Stage 1."""
-
-        targets = ", ".join(f"{item.language} ({item.script})" for item in self.targets)
-        other = (
-            f"\nOther entry information: {self.other_information_types}"
-            if self.other_information_types
-            else ""
-        )
-        return (
-            "<dictionary_profile>\n"
-            "This profile is context only. Transcribe what is visible; do not invent, "
-            "translate, or normalize text to match it.\n"
-            f"Headwords: {self.headword.language} ({self.headword.script})\n"
-            f"Translations/glosses/definitions: {targets}\n"
-            f"Page arrangement: {self.page_layout}\n"
-            f"Expected entry information: {', '.join(self.information_types)}"
-            f"{other}\n"
-            "</dictionary_profile>"
-        )
-
     def pass1_config_hint(self) -> str:
         """Return compact structural context for parse-rule discovery."""
 

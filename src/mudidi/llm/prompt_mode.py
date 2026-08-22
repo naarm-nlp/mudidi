@@ -8,6 +8,7 @@ from mudidi.llm.prompt_store import get_prompt_store
 _MODE_SUFFIXED = frozenset(
     {
         "stage_1_system",
+        "stage_1_user",
         "stage_2_pass_2_system",
         "stage_2_pass_2_user",
     }

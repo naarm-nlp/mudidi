@@ -55,6 +55,8 @@ def stage_1_user(
     ocr_hint: str = "",
     guides: str = "",
     dictionary_profile: "DictionaryProfile | None" = None,
+    *,
+    mode: PromptMode = "inference",
 ) -> str:
     """
     Build the user-turn prompt for Stage 1 transcription.
@@ -63,13 +65,14 @@ def stage_1_user(
         alphabet_text: The alphabet/legend for the script (text form).
         ocr_hint: Optional existing OCR output as a character-shape reference.
         guides: Optional user-defined guidelines appended verbatim at the end.
+        dictionary_profile: Optional inference-only dictionary metadata.
+        mode: Benchmark reproduces the historical user prompt; inference may
+            include ``dictionary_profile``.
     """
     return get_prompt_store().format(
-        "stage_1_user",
+        prompt_id_for_mode("stage_1_user", mode),
         alphabet_text=alphabet_text,
         ocr_hint=ocr_hint,
-        dictionary_profile_context=(
-            dictionary_profile.stage1_context_hint() if dictionary_profile is not None else ""
-        ),
+        dictionary_profile=dictionary_profile if mode == "inference" else None,
         guides=guides,
     )

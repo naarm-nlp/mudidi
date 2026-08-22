@@ -18,13 +18,22 @@
       {"name": "typography", "description": "Whether to request confident bold and italic tags."}
     ]
   },
-  "stage_1_user": {
-    "description": "Complete Stage 1 user message, including all optional reference and guide sections.",
-    "file": "stage_1/user.j2",
+  "stage_1_user_benchmark": {
+    "description": "Complete historical Stage 1 benchmark user message, without inference-only Dictionary Profile context.",
+    "file": "stage_1/user_benchmark.j2",
     "variables": [
       {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
       {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
-      {"name": "dictionary_profile_context", "description": "Optional dictionary-profile hint."},
+      {"name": "guides", "description": "Optional user-defined guidelines."}
+    ]
+  },
+  "stage_1_user_inference": {
+    "description": "Complete Stage 1 inference user message, including optional Dictionary Profile context.",
+    "file": "stage_1/user_inference.j2",
+    "variables": [
+      {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
+      {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
+      {"name": "dictionary_profile", "tag": "<dictionary_profile>", "description": "Optional dictionary metadata supplied by the dashboard or YAML configuration."},
       {"name": "guides", "description": "Optional user-defined guidelines."}
     ]
   },
