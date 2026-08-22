@@ -166,8 +166,8 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--stage1-typography",
         action="store_true",
         dest="stage1_typography",
-        help="Ask Stage 1 to annotate confident bold and italic text with <b>/<i> "
-        "tags. By default Stage 1 emits plain OCR text.",
+        help="Inference mode: annotate confident bold and italic text with <b>/<i> "
+        "tags. Historical benchmark mode always enables typography.",
     )
     parser.add_argument(
         "--batch-size",

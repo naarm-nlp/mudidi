@@ -645,7 +645,8 @@ def _build_stage1_manifest(
         "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "strategy": args.strategy,
         "stage1_mode": getattr(args, "stage1_mode", "column"),
-        "stage1_typography": bool(getattr(args, "stage1_typography", False)),
+        "stage1_typography": getattr(args, "prompt_mode", "benchmark") == "benchmark"
+        or bool(getattr(args, "stage1_typography", False)),
         "flat_spec_version": FLAT_SPEC_VERSION,
         "git_sha": _git_short_sha(),
         "model": args.stage_models.stage_1,
@@ -1200,8 +1201,8 @@ Examples:
         "--stage1-typography",
         action="store_true",
         dest="stage1_typography",
-        help="Ask Stage 1 to annotate confident bold and italic text with <b>/<i> "
-        "tags. By default Stage 1 emits plain OCR text.",
+        help="Inference mode: annotate confident bold and italic text with <b>/<i> "
+        "tags. Historical benchmark mode always enables typography.",
     )
     parser.add_argument(
         "--batch-size",

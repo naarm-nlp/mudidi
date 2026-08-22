@@ -1,12 +1,17 @@
 {
+  "stage_1_system_benchmark": {
+    "description": "Stage 1 system prompt for flat-mode OCR in benchmark mode (--benchmark). Reproduces the original experiment behavior by always requesting confident bold and italic typography tags. One ordered lines list per page (header, lines, footer).",
+    "file": "stage_1/system_benchmark.txt",
+    "variables": []
+  },
+  "stage_1_system_inference": {
+    "description": "Stage 1 system prompt for flat-mode OCR in production inference (mudidi run). Uses the same pure-OCR structure as benchmark mode, with typography available as an inference opt-in block.",
+    "file": "stage_1/system_inference.txt",
+    "variables": []
+  },
   "stage_1_column_system": {
     "description": "Legacy Stage 1 system prompt for column-mode OCR (--stage1-mode column). Outputs structured JSON with per-column column_id lines. Used for benchmark evaluation and silver-standard pre-annotation (e.g. Label Studio column TSV gold), not the default for new dictionary inference.",
     "file": "stage_1/column_system.txt",
-    "variables": []
-  },
-  "stage_1_typography_instruction": {
-    "description": "Optional Stage 1 typography annotation block appended only when typography output is enabled.",
-    "file": "stage_1/typography_instruction.txt",
     "variables": []
   },
   "stage_1_user_alphabet": {
@@ -36,14 +41,14 @@
     "file": "stage_1/user_closing.txt",
     "variables": []
   },
-  "page_boundary_rules": {
-    "description": "Cross-page entry ownership for Stage 2 inference. Assigns \\lx blocks to the page where the headword starts; overflow sub-fields attach to that page.",
-    "file": "stage_2/page_boundary_rules.txt",
+  "stage_1_neighbor_context": {
+    "description": "Stage 1 inference only. Optional prev/next page images may help with characters or hyphenation at the margin — not for skipping visible lines.",
+    "file": "stage_1/neighbor_context.txt",
     "variables": []
   },
-  "mdf_marker_reference": {
-    "description": "Reference vocabulary of SIL Toolbox MDF markers. Injected into Stage 2 Pass 1 system prompt and into Pass 2 when the Toolbox manual is attached as text instead of PDF images.",
-    "file": "stage_2/mdf_marker_reference.txt",
+  "stage_1_typography_instruction": {
+    "description": "Reusable Stage 1 typography annotation block for inference opt-in and the legacy column-mode benchmark prompt. The flat benchmark prompt includes these instructions directly.",
+    "file": "stage_1/typography_instruction.txt",
     "variables": []
   },
   "stage_2_pass_1_system": {
@@ -88,32 +93,6 @@
         "description": "One <sample_transcription page=\"STEM\">…</sample_transcription> block per sample page."
       }
     ]
-  },
-  "stage_2_toolbox_pdf_section": {
-    "description": "User-turn label line when the Toolbox MDF Reference Manual PDF is attached as images during Stage 2 Pass 2 (models that accept PDF vision input).",
-    "file": "stage_2/toolbox_pdf_section.txt",
-    "variables": []
-  },
-  "stage_2_toolbox_text_section": {
-    "description": "User-turn Toolbox excerpt as inline text when the model cannot ingest PDF images directly. Injects mdf_marker_reference content instead of attaching the manual PDF.",
-    "file": "stage_2/toolbox_text_section.txt",
-    "variables": [
-      {
-        "name": "mdf_marker_reference",
-        "tag": null,
-        "description": "MDF marker vocabulary text when the Toolbox manual is attached as text instead of PDF images."
-      }
-    ]
-  },
-  "stage_1_system_benchmark": {
-    "description": "Stage 1 system prompt for flat-mode OCR in benchmark mode (--benchmark). One ordered lines list per page (header, lines, footer). Used when comparing model output to human gold transcripts on the evaluation dataset.",
-    "file": "stage_1/system_benchmark.txt",
-    "variables": []
-  },
-  "stage_1_system_inference": {
-    "description": "Stage 1 system prompt for flat-mode OCR in production inference (mudidi run). Same pure-OCR instructions as benchmark; current-page labeling is in the user turn.",
-    "file": "stage_1/system_inference.txt",
-    "variables": []
   },
   "stage_2_pass_2_system_benchmark": {
     "description": "Stage 2 Pass 2 system prompt in benchmark mode. Supports either gold or predicted Stage 1 transcripts for MDF evaluation.",
@@ -208,9 +187,30 @@
       }
     ]
   },
-  "stage_1_neighbor_context": {
-    "description": "Stage 1 inference only. Optional prev/next page images may help with characters or hyphenation at the margin — not for skipping visible lines.",
-    "file": "stage_1/neighbor_context.txt",
+  "page_boundary_rules": {
+    "description": "Cross-page entry ownership for Stage 2 inference. Assigns \\lx blocks to the page where the headword starts; overflow sub-fields attach to that page.",
+    "file": "stage_2/page_boundary_rules.txt",
     "variables": []
+  },
+  "mdf_marker_reference": {
+    "description": "Reference vocabulary of SIL Toolbox MDF markers. Injected into Stage 2 Pass 1 system prompt and into Pass 2 when the Toolbox manual is attached as text instead of PDF images.",
+    "file": "stage_2/mdf_marker_reference.txt",
+    "variables": []
+  },
+  "stage_2_toolbox_pdf_section": {
+    "description": "User-turn label line when the Toolbox MDF Reference Manual PDF is attached as images during Stage 2 Pass 2 (models that accept PDF vision input).",
+    "file": "stage_2/toolbox_pdf_section.txt",
+    "variables": []
+  },
+  "stage_2_toolbox_text_section": {
+    "description": "User-turn Toolbox excerpt as inline text when the model cannot ingest PDF images directly. Injects mdf_marker_reference content instead of attaching the manual PDF.",
+    "file": "stage_2/toolbox_text_section.txt",
+    "variables": [
+      {
+        "name": "mdf_marker_reference",
+        "tag": null,
+        "description": "MDF marker vocabulary text when the Toolbox manual is attached as text instead of PDF images."
+      }
+    ]
   }
 }

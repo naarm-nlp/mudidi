@@ -28,10 +28,9 @@ def stage_1_system_prompt(
     typography: bool = False,
 ) -> str:
     """Stage 1 column-mode system prompt."""
-    del mode
     store = get_prompt_store()
     prompt = store.get("stage_1_column_system")
-    if typography:
+    if mode == "benchmark" or typography:
         prompt = "\n\n".join([prompt, store.get("stage_1_typography_instruction")])
     return prompt
 
@@ -47,7 +46,7 @@ def stage_1_flat_system_prompt(
     store = get_prompt_store()
     prompt_id = prompt_id_for_mode("stage_1_system", mode)
     prompt = store.get(prompt_id)
-    if typography:
+    if mode == "inference" and typography:
         prompt = "\n\n".join([prompt, store.get("stage_1_typography_instruction")])
     return prompt
 
