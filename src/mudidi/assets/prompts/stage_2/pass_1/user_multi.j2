@@ -3,20 +3,20 @@ Study this dictionary and return a MDF parsing guide JSON object.
 Inputs:
 1. Introduction pages (images below).
 2. Several sample dictionary pages (transcriptions below; matching page images follow in the same order).
-{config_hint}
+{{ config_hint }}
 
 Return JSON with this shape:
-{{
+{
   "markers": [
-    {{"marker": "lx", "description": "headword / lexeme (vernacular lemma)"}},
-    {{"marker": "gn", "description": "Russian gloss / translation"}}
+    {"marker": "lx", "description": "headword / lexeme (vernacular lemma)"},
+    {"marker": "gn", "description": "Russian gloss / translation"}
   ],
   "rules": [
     "Separate homograph mains: two \\lx blocks with same lemma, each with \\hm N.",
     "If samples differ by section (e.g. main body vs appendix), state which rule applies where."
   ],
-  "abbreviations": {{"мн.": "plural"}}
-}}
+  "abbreviations": {"мн.": "plural"}
+}
 
 Include markers that appear on ANY sample page or are defined in the intro.
 Omit markers not used. Keep descriptions short (one line each). Rules should cover
@@ -24,4 +24,4 @@ entry structure and gloss-line conventions across all samples. When samples show
 different layouts, add section-specific rules rather than forcing one template.
 Return JSON only — no markdown fences.
 
-{sample_pages_block}
+{{ sample_pages_block }}

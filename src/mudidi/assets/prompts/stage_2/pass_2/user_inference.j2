@@ -1,0 +1,44 @@
+Dictionary page extraction.
+
+Inputs:
+1. Stage-1 OCR transcription (bold = <b>…</b>, italic = <i>…</i>) or column TSV
+   (column_id, line_number, text). Treat this as authoritative for all characters.
+2. Photo of the dictionary page (image below) — layout and field-boundary reference only.
+{% if toolbox_reference_mode == 'pdf' %}
+4. Attached SIL Toolbox MDF Reference Manual (PDF) — marker reference.
+{% elif toolbox_reference_mode == 'text_fallback' %}
+4. SIL Toolbox MDF Reference Manual (text excerpt) — marker reference:
+
+{{ mdf_marker_reference }}
+{% endif %}
+
+{{ field_block }}
+
+Parse every dictionary entry on the page into MDF text using the field map above.
+Copy headword and gloss characters verbatim from the transcription except for the
+structural normalisations listed in the system prompt.
+
+<transcription>
+{{ transcription }}
+</transcription>
+{% if guides %}
+
+USER DEFINED GUIDELINES
+{{ guides }}
+{% endif %}
+
+{% if current_page_context %}
+{{ current_page_context }}
+{% endif %}
+
+{% if page_image_order %}
+{{ page_image_order }}
+{% endif %}
+
+{% if previous_page_context %}
+{{ previous_page_context }}
+{% endif %}
+
+{% if next_page_context %}
+{{ next_page_context }}
+{% endif %}

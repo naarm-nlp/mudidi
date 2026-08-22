@@ -1,216 +1,102 @@
 {
   "stage_1_system_benchmark": {
-    "description": "Stage 1 system prompt for flat-mode OCR in benchmark mode (--benchmark). Reproduces the original experiment behavior by always requesting confident bold and italic typography tags. One ordered lines list per page (header, lines, footer).",
+    "description": "Stage 1 flat-mode benchmark system message. Typography annotation is always enabled to reproduce the original experiment.",
     "file": "stage_1/system_benchmark.txt",
     "variables": []
   },
   "stage_1_system_inference": {
-    "description": "Stage 1 system prompt for flat-mode OCR in production inference (mudidi run). Uses the same pure-OCR structure as benchmark mode, with typography available as an inference opt-in block.",
-    "file": "stage_1/system_inference.txt",
-    "variables": []
+    "description": "Stage 1 flat-mode inference system message, with an optional typography block.",
+    "file": "stage_1/system_inference.j2",
+    "variables": [
+      {"name": "typography", "description": "Whether to request confident bold and italic tags."}
+    ]
   },
   "stage_1_column_system": {
-    "description": "Legacy Stage 1 system prompt for column-mode OCR (--stage1-mode column). Outputs structured JSON with per-column column_id lines. Used for benchmark evaluation and silver-standard pre-annotation (e.g. Label Studio column TSV gold), not the default for new dictionary inference.",
-    "file": "stage_1/column_system.txt",
-    "variables": []
-  },
-  "stage_1_user_alphabet": {
-    "description": "User-turn block appended when an alphabet file is provided. Gives the model script-specific character and diacritic guidance for the source language.",
-    "file": "stage_1/user_alphabet.txt",
+    "description": "Legacy Stage 1 column-mode system message, with an optional typography block.",
+    "file": "stage_1/legacy/column_system.j2",
     "variables": [
-      {
-        "name": "alphabet_text",
-        "tag": "<alphabet>",
-        "description": "Alphabet or character legend for the source-language script; inserted between <alphabet> tags."
-      }
+      {"name": "typography", "description": "Whether to request confident bold and italic tags."}
     ]
   },
-  "stage_1_user_ocr_reference": {
-    "description": "User-turn block appended when OCR hint text is available (e.g. Mathpix). Character-shape reference only; the page image always takes precedence.",
-    "file": "stage_1/user_ocr_reference.txt",
+  "stage_1_user": {
+    "description": "Complete Stage 1 user message, including all optional reference and guide sections.",
+    "file": "stage_1/user.j2",
     "variables": [
-      {
-        "name": "ocr_hint",
-        "tag": "<ocr_reference>",
-        "description": "Optional OCR reference text from Mathpix or another engine; wrapped in <ocr_reference> tags for character-shape hints."
-      }
+      {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
+      {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
+      {"name": "dictionary_profile_context", "description": "Optional dictionary-profile hint."},
+      {"name": "guides", "description": "Optional user-defined guidelines."}
     ]
-  },
-  "stage_1_user_closing": {
-    "description": "Final user-turn instruction appended after alphabet and OCR blocks, before page images. Shared by benchmark and inference Stage 1 runs.",
-    "file": "stage_1/user_closing.txt",
-    "variables": []
-  },
-  "stage_1_neighbor_context": {
-    "description": "Stage 1 inference only. Optional prev/next page images may help with characters or hyphenation at the margin — not for skipping visible lines.",
-    "file": "stage_1/neighbor_context.txt",
-    "variables": []
-  },
-  "stage_1_typography_instruction": {
-    "description": "Reusable Stage 1 typography annotation block for inference opt-in and the legacy column-mode benchmark prompt. The flat benchmark prompt includes these instructions directly.",
-    "file": "stage_1/typography_instruction.txt",
-    "variables": []
   },
   "stage_2_pass_1_system": {
-    "description": "Stage 2 Pass 1 system prompt (shared by benchmark and inference). Instructs the model to discover which MDF markers this dictionary uses and how entries are structured.",
-    "file": "stage_2/pass_1_system.txt",
+    "description": "Stage 2 Pass 1 system message for MDF marker and entry-structure discovery.",
+    "file": "stage_2/pass_1/system.j2",
     "variables": [
-      {
-        "name": "mdf_marker_reference",
-        "tag": null,
-        "description": "Full SIL Toolbox MDF marker vocabulary reference injected from the mdf_marker_reference prompt."
-      }
+      {"name": "mdf_marker_reference", "description": "SIL Toolbox MDF marker reference text."}
     ]
   },
   "stage_2_pass_1_user_single": {
-    "description": "Stage 2 Pass 1 user prompt when one sample page is selected (--parse-rules-page). Produces mdf_parsing_guide.json from introduction images plus one sample page transcription.",
-    "file": "stage_2/pass_1_user_single.txt",
+    "description": "Stage 2 Pass 1 user message for a single sample dictionary page.",
+    "file": "stage_2/pass_1/user_single.j2",
     "variables": [
-      {
-        "name": "transcription",
-        "tag": "<sample_transcription>",
-        "description": "Flat Stage 1 transcription of the sample dictionary page."
-      },
-      {
-        "name": "config_hint",
-        "tag": null,
-        "description": "Optional language-role and page-layout context from DictionaryProfile or legacy benchmark metadata."
-      }
+      {"name": "config_hint", "description": "Optional language-role and layout context."},
+      {"name": "transcription", "tag": "<sample_transcription>", "description": "Stage 1 transcription of the sample page."}
     ]
   },
   "stage_2_pass_1_user_multi": {
-    "description": "Stage 2 Pass 1 user prompt when two or more sample pages are provided. Merges marker and layout conventions from heterogeneous sections into one mdf_parsing_guide.json.",
-    "file": "stage_2/pass_1_user_multi.txt",
+    "description": "Stage 2 Pass 1 user message for multiple sample dictionary pages.",
+    "file": "stage_2/pass_1/user_multi.j2",
     "variables": [
-      {
-        "name": "config_hint",
-        "tag": null,
-        "description": "Optional language-role and page-layout context from DictionaryProfile or legacy benchmark metadata."
-      },
-      {
-        "name": "sample_pages_block",
-        "tag": null,
-        "description": "One <sample_transcription page=\"STEM\">…</sample_transcription> block per sample page."
-      }
+      {"name": "config_hint", "description": "Optional language-role and layout context."},
+      {"name": "sample_pages_block", "description": "Tagged transcriptions for all sample pages."}
     ]
   },
+  "mdf_marker_reference": {
+    "description": "SIL Toolbox MDF marker reference, primarily used by Pass 1 and by Pass 2's text fallback.",
+    "file": "stage_2/pass_1/mdf_marker_reference.txt",
+    "variables": []
+  },
   "stage_2_pass_2_system_benchmark": {
-    "description": "Stage 2 Pass 2 system prompt in benchmark mode. Supports either gold or predicted Stage 1 transcripts for MDF evaluation.",
-    "file": "stage_2/pass_2_system_benchmark.txt",
+    "description": "Stage 2 Pass 2 benchmark system message for direct MDF extraction.",
+    "file": "stage_2/pass_2/system_benchmark.txt",
     "variables": []
   },
   "stage_2_pass_2_system_inference": {
-    "description": "Stage 2 Pass 2 system prompt in production inference. Uses predicted Stage 1 transcript and includes editable page-boundary rules.",
-    "file": "stage_2/pass_2_system_inference.txt",
+    "description": "Stage 2 Pass 2 inference system message, including cross-page entry-boundary rules.",
+    "file": "stage_2/pass_2/system_inference.j2",
     "variables": [
-      {
-        "name": "page_boundary_rules",
-        "tag": null,
-        "description": "Injected from the page_boundary_rules prompt (inference mode only)."
-      }
+      {"name": "page_boundary_rules", "description": "Cross-page entry ownership rules."}
     ]
   },
   "stage_2_pass_2_user_benchmark": {
-    "description": "Stage 2 Pass 2 user prompt in benchmark mode. Wraps a gold or predicted Stage 1 transcript, parse-rules field block, and optional toolbox section.",
-    "file": "stage_2/pass_2_user_benchmark.txt",
+    "description": "Complete Stage 2 Pass 2 benchmark user message.",
+    "file": "stage_2/pass_2/user_benchmark.j2",
     "variables": [
-      {
-        "name": "transcription",
-        "tag": "<transcription>",
-        "description": "Gold-label or predicted Stage 1 transcript for the page; authoritative for vernacular and gloss characters."
-      },
-      {
-        "name": "field_block",
-        "tag": null,
-        "description": "Formatted MDF parsing guide block from Pass 1 (mdf_parsing_guide.json)."
-      },
-      {
-        "name": "guides_block",
-        "tag": null,
-        "description": "Optional user-defined guidelines appended to the user turn."
-      },
-      {
-        "name": "toolbox_section",
-        "tag": null,
-        "description": "Toolbox MDF manual section (PDF attachment note or text excerpt)."
-      }
+      {"name": "transcription", "tag": "<transcription>", "description": "Authoritative Stage 1 text."},
+      {"name": "field_block", "description": "Formatted field map from Pass 1."},
+      {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
+      {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
+      {"name": "guides", "description": "Optional user-defined guidelines."}
     ]
   },
   "stage_2_pass_2_user_inference": {
-    "description": "Stage 2 Pass 2 user prompt in production inference. Includes neighbor-page context, page-boundary rules, Stage 1 predictions, and parse-rules field block.",
-    "file": "stage_2/pass_2_user_inference.txt",
+    "description": "Complete Stage 2 Pass 2 inference user message with optional neighboring-page context.",
+    "file": "stage_2/pass_2/user_inference.j2",
     "variables": [
-      {
-        "name": "transcription",
-        "tag": "<transcription>",
-        "description": "Gold-label or predicted Stage 1 transcript for the page; authoritative for vernacular and gloss characters."
-      },
-      {
-        "name": "field_block",
-        "tag": null,
-        "description": "Formatted MDF parsing guide block from Pass 1 (mdf_parsing_guide.json)."
-      },
-      {
-        "name": "guides_block",
-        "tag": null,
-        "description": "Optional user-defined guidelines appended to the user turn."
-      },
-      {
-        "name": "toolbox_section",
-        "tag": null,
-        "description": "Toolbox MDF manual section (PDF attachment note or text excerpt)."
-      },
-      {
-        "name": "previous_page_context",
-        "tag": "<previous_page>",
-        "description": "Optional previous page context (image sent separately when available)."
-      },
-      {
-        "name": "next_page_context",
-        "tag": "<next_page>",
-        "description": "Optional next page context (image sent separately when available)."
-      },
-      {
-        "name": "page_boundary_rules",
-        "tag": null,
-        "description": "Injected from the page_boundary_rules prompt (inference mode only)."
-      },
-      {
-        "name": "current_page_context",
-        "tag": "<current_page>",
-        "description": "Stem of the page being converted to MDF."
-      },
-      {
-        "name": "page_image_order",
-        "tag": null,
-        "description": "Ordered list of which page image is previous, next, and current."
-      }
+      {"name": "transcription", "tag": "<transcription>", "description": "Authoritative Stage 1 text."},
+      {"name": "field_block", "description": "Formatted field map from Pass 1."},
+      {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
+      {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "current_page_context", "tag": "<current_page>", "description": "Current page identity."},
+      {"name": "previous_page_context", "tag": "<previous_page>", "description": "Optional previous-page text context."},
+      {"name": "next_page_context", "tag": "<next_page>", "description": "Optional next-page text context."},
+      {"name": "page_image_order", "description": "Neighboring image order note."}
     ]
   },
   "page_boundary_rules": {
-    "description": "Cross-page entry ownership for Stage 2 inference. Assigns \\lx blocks to the page where the headword starts; overflow sub-fields attach to that page.",
-    "file": "stage_2/page_boundary_rules.txt",
+    "description": "Cross-page entry ownership rules for Stage 2 Pass 2 inference.",
+    "file": "stage_2/pass_2/page_boundary_rules.txt",
     "variables": []
-  },
-  "mdf_marker_reference": {
-    "description": "Reference vocabulary of SIL Toolbox MDF markers. Injected into Stage 2 Pass 1 system prompt and into Pass 2 when the Toolbox manual is attached as text instead of PDF images.",
-    "file": "stage_2/mdf_marker_reference.txt",
-    "variables": []
-  },
-  "stage_2_toolbox_pdf_section": {
-    "description": "User-turn label line when the Toolbox MDF Reference Manual PDF is attached as images during Stage 2 Pass 2 (models that accept PDF vision input).",
-    "file": "stage_2/toolbox_pdf_section.txt",
-    "variables": []
-  },
-  "stage_2_toolbox_text_section": {
-    "description": "User-turn Toolbox excerpt as inline text when the model cannot ingest PDF images directly. Injects mdf_marker_reference content instead of attaching the manual PDF.",
-    "file": "stage_2/toolbox_text_section.txt",
-    "variables": [
-      {
-        "name": "mdf_marker_reference",
-        "tag": null,
-        "description": "MDF marker vocabulary text when the Toolbox manual is attached as text instead of PDF images."
-      }
-    ]
   }
 }

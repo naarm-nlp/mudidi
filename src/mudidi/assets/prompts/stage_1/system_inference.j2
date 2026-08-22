@@ -32,3 +32,10 @@ Rules for every line in header, lines, and footer:
 - Do NOT skip lines, including continuations and cross-references.
 - Hyphenated wraps: when a word breaks across two printed lines with a trailing hyphen,
   emit TWO separate strings (e.g. "intelligi-" then "ble, adj. clear").
+{% if typography %}
+
+Typography annotation:
+- Wrap bold text in <b>...</b> and italic text in <i>...</i> when confident.
+- Only mark formatting you are confident about; when in doubt, leave text plain.
+- These tags may appear anywhere within a line, e.g. "<b>headword</b> translation".
+{% endif %}

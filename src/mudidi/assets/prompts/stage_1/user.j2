@@ -1,5 +1,6 @@
+{% if alphabet_text %}
 <alphabet>
-{alphabet_text}
+{{ alphabet_text }}
 </alphabet>
 
 The <alphabet> is a reference guide to the list of characters in the script of the source language, not a strict whitelist. It may be
@@ -17,3 +18,23 @@ characters), transcribe it correctly anyway — do not force-fit.
 4. Preserve diacritics, tone marks, case, and period-specific orthography
 exactly as shown.
 5. Mark truly unidentifiable glyphs as [?].
+
+{% endif %}
+{% if ocr_hint %}
+<ocr_reference>
+{{ ocr_hint }}
+</ocr_reference>
+
+The OCR reference above may contain errors but can help you identify ambiguous character shapes.
+
+{% endif %}
+{% if dictionary_profile_context %}
+{{ dictionary_profile_context }}
+
+{% endif %}
+Now transcribe every line of text from the dictionary page image exactly as it appears. Preserve all diacritics and special characters.
+{% if guides %}
+
+USER DEFINED GUIDELINES
+{{ guides }}
+{% endif %}

@@ -1,5 +1,0 @@
-<ocr_reference>
-{ocr_hint}
-</ocr_reference>
-
-The OCR reference above may contain errors but can help you identify ambiguous character shapes.

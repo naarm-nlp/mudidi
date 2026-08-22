@@ -1,3 +1,0 @@
-4. SIL Toolbox MDF Reference Manual (text excerpt) — marker reference:
-
-{mdf_marker_reference}
