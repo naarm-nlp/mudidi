@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -18,29 +17,31 @@ from mudidi.llm.prompt_store import (
 )
 
 
-EXPECTED_PROMPT_SHA256 = {
-    "stage_1_system_benchmark": "461a4dd48f6cdced298e32e9f448994aba1fd41238b8e8bf707505fba2e79a7c",
-    "stage_1_system_inference": "2f84adac1fbd07adc4b55d101f3203219a8bd5fadc05471e31d9d2b1a35093a9",
-    "stage_1_column_system": "f421cf7c6d4d44f412a0584920752cb0ccc9fb241a7b3c227868fedc4aee82fa",
-    "stage_1_user_alphabet": "db00fb25b0c84b1d15cae70cccadf1101039591b954677897c2f225b7eea8447",
-    "stage_1_user_ocr_reference": "901c167bb7676517cebb84e78c5c6a41f2922d1db79f590df4b10a4abe361fd1",
-    "stage_1_user_closing": "3589b298538ddf5c23c8ea521621ee564f264b615ee6e030929a37a5c03d3aed",
-    "stage_1_neighbor_context": "f7daa871de07dd43379f02c0436c8896e9eb949c26b2823bc5b8ae61df85b4a0",
-    "stage_1_typography_instruction": "7476af1dff1cd501782363e1d081a4318eaad4c6a6416fb84199a2e76ab6bb18",
-    "stage_2_pass_1_system": "d062fe1c778846c57e27346233b1d3c9fb013af915f5fd2f735de36b092969f9",
-    "stage_2_pass_1_user_single": "764f6b056f085f089bb25291efc0cfc87a1b630ac07443a438476143bc57226e",
-    "stage_2_pass_1_user_multi": "742e52de744dd3634e6903582b088612c13ceec05dfcbed763319a87fe175b71",
-    "stage_2_pass_2_system_benchmark": "2897d430cd34c110c2842e6a7476495d9cfdfd6b70e8f4b22aa3640af25b03ef",
-    "stage_2_pass_2_system_inference": "6fec6cd690c11e66804633a023409afe17fd79f575509d15e9f08f49f2960925",
-    "stage_2_pass_2_user_benchmark": "49ccc67e97caaecf3cbd97163af46bb458190cfea7a8988c5fc7c9fdc7ab2044",
-    "stage_2_pass_2_user_inference": "239fa63c0b1898cd76edbcf23bcca2fb303a27abde94379682eea7d79772eec9",
-    "page_boundary_rules": "6e8d90339bd3bb15b84e797812e248017577aaa793a249b6cd25e5968d4cbafe",
-    "mdf_marker_reference": "11f28f590b121fc6c3327664154dc2a3b14c9b25ce4ef11bd5eacebfab348661",
-    "stage_2_toolbox_pdf_section": "5ed75f53400d17145dde8ac19d214220009d4ed49e883801676b10fe6695ca07",
-    "stage_2_toolbox_text_section": "dcb9c6237878e9bcf50893355d5f9d3734d0b842d84b3b03b4db5f293faaab67",
+EXPECTED_PROMPT_FILES = {
+    "stage_1_system_benchmark": "stage_1/system_benchmark.txt",
+    "stage_1_system_inference": "stage_1/system_inference.j2",
+    "stage_1_column_system": "stage_1/legacy/column_system.j2",
+    "stage_1_user": "stage_1/user.j2",
+    "stage_2_pass_1_system": "stage_2/pass_1/system.j2",
+    "stage_2_pass_1_user_single": "stage_2/pass_1/user_single.j2",
+    "stage_2_pass_1_user_multi": "stage_2/pass_1/user_multi.j2",
+    "mdf_marker_reference": "stage_2/pass_1/mdf_marker_reference.txt",
+    "stage_2_pass_2_system_benchmark": "stage_2/pass_2/system_benchmark.txt",
+    "stage_2_pass_2_system_inference": "stage_2/pass_2/system_inference.j2",
+    "stage_2_pass_2_user_benchmark": "stage_2/pass_2/user_benchmark.j2",
+    "stage_2_pass_2_user_inference": "stage_2/pass_2/user_inference.j2",
+    "page_boundary_rules": "stage_2/pass_2/page_boundary_rules.txt",
 }
 
-EXPECTED_PROMPT_ORDER = list(EXPECTED_PROMPT_SHA256)
+RETIRED_COMPONENT_PROMPT_IDS = {
+    "stage_1_neighbor_context",
+    "stage_1_typography_instruction",
+    "stage_1_user_alphabet",
+    "stage_1_user_closing",
+    "stage_1_user_ocr_reference",
+    "stage_2_toolbox_pdf_section",
+    "stage_2_toolbox_text_section",
+}
 
 
 def _write_manifest(path: Path, entries: dict[str, dict[str, object]]) -> None:
@@ -53,7 +54,10 @@ def test_default_prompt_source_is_manifest_with_external_templates() -> None:
 
     assert manifest_path.name == "manifest.json"
     assert manifest_path.parent.name == "prompts"
-    assert set(manifest) == set(EXPECTED_PROMPT_SHA256)
+    assert manifest == {
+        prompt_id: {**manifest[prompt_id], "file": expected_file}
+        for prompt_id, expected_file in EXPECTED_PROMPT_FILES.items()
+    }
     for entry in manifest.values():
         assert "file" in entry
         assert "prompt" not in entry
@@ -63,18 +67,40 @@ def test_default_prompt_source_is_manifest_with_external_templates() -> None:
 def test_manifest_groups_primary_stage_prompts_before_supporting_blocks() -> None:
     manifest = json.loads(default_prompts_path().read_text(encoding="utf-8"))
 
-    assert list(manifest) == EXPECTED_PROMPT_ORDER
+    assert list(manifest) == list(EXPECTED_PROMPT_FILES)
+    assert RETIRED_COMPONENT_PROMPT_IDS.isdisjoint(manifest)
 
 
-def test_manifest_templates_preserve_existing_prompt_text() -> None:
+def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
     store = get_prompt_store()
 
-    actual = {
-        prompt_id: hashlib.sha256(store.get(prompt_id).encode()).hexdigest()
-        for prompt_id in store.prompt_ids()
-    }
+    assert "{% if alphabet_text %}" in store.get("stage_1_user")
+    assert "{% if ocr_hint %}" in store.get("stage_1_user")
+    assert "{% if toolbox_reference_mode == 'pdf' %}" in store.get(
+        "stage_2_pass_2_user_benchmark"
+    )
+    assert "{% elif toolbox_reference_mode == 'text_fallback' %}" in store.get(
+        "stage_2_pass_2_user_benchmark"
+    )
 
-    assert actual == EXPECTED_PROMPT_SHA256
+
+def test_prompt_layout_includes_human_request_assembly_maps() -> None:
+    prompt_root = default_prompts_path().parent
+
+    stage1_readme = (prompt_root / "stage_1" / "README.md").read_text(encoding="utf-8")
+    pass1_readme = (
+        prompt_root / "stage_2" / "pass_1" / "README.md"
+    ).read_text(encoding="utf-8")
+    pass2_readme = (
+        prompt_root / "stage_2" / "pass_2" / "README.md"
+    ).read_text(encoding="utf-8")
+
+    assert "system_benchmark.txt" in stage1_readme
+    assert "user.j2" in stage1_readme
+    assert "system.j2" in pass1_readme
+    assert "user_single.j2" in pass1_readme
+    assert "system_benchmark.txt" in pass2_readme
+    assert "user_benchmark.j2" in pass2_readme
 
 
 def test_prompt_store_loads_and_reloads_external_template(tmp_path: Path) -> None:
@@ -99,6 +125,30 @@ def test_prompt_store_loads_and_reloads_external_template(tmp_path: Path) -> Non
     template.write_text("second prompt with a different size\n", encoding="utf-8")
 
     assert store.get("example") == "second prompt with a different size"
+
+
+def test_prompt_store_renders_jinja_conditionals_for_j2_templates(tmp_path: Path) -> None:
+    template = tmp_path / "stage_1" / "user.j2"
+    template.parent.mkdir()
+    template.write_text(
+        "{% if alphabet_text %}alphabet={{ alphabet_text }}\\n{% endif %}closing",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manifest.json"
+    _write_manifest(
+        manifest_path,
+        {
+            "example": {
+                "description": "Jinja example",
+                "file": "stage_1/user.j2",
+                "variables": [],
+            }
+        },
+    )
+    store = PromptStore(manifest_path)
+
+    assert store.format("example", alphabet_text="abc") == "alphabet=abc\\nclosing"
+    assert store.format("example", alphabet_text="") == "closing"
 
 
 def test_prompt_manifest_rejects_template_outside_its_directory(tmp_path: Path) -> None:
@@ -273,5 +323,5 @@ def test_zip_resource_materialization_copies_manifest_and_templates(
     manifest_path = prompt_store_module._materialize_zip_resource_prompts()
 
     assert manifest_path == tmp_path / "mudidi" / "prompts" / "manifest.json"
-    assert PromptStore(manifest_path).get("stage_1_user_closing")
+    assert PromptStore(manifest_path).get("stage_1_user")
     assert prompt_store_module._materialize_zip_resource_prompts() == manifest_path
