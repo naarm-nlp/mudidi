@@ -12,8 +12,8 @@ def test_stage1_user_includes_optional_profile_as_non_authoritative_context() ->
         information_types=["translation", "part_of_speech"],
     )
 
-    prompt = stage_1_user(dictionary_profile=profile)
+    prompt = stage_1_user(mode="inference", dictionary_profile=profile)
 
     assert "<dictionary_profile>" in prompt
     assert "Evenki" in prompt
-    assert "context only" in prompt
+    assert "This profile is context only." in prompt
