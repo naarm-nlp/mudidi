@@ -21,7 +21,8 @@ EXPECTED_PROMPT_FILES = {
     "stage_1_system_benchmark": "stage_1/system_benchmark.txt",
     "stage_1_system_inference": "stage_1/system_inference.j2",
     "stage_1_column_system": "stage_1/legacy/column_system.j2",
-    "stage_1_user": "stage_1/user.j2",
+    "stage_1_user_benchmark": "stage_1/user_benchmark.j2",
+    "stage_1_user_inference": "stage_1/user_inference.j2",
     "stage_2_pass_1_system": "stage_2/pass_1/system.j2",
     "stage_2_pass_1_user_single": "stage_2/pass_1/user_single.j2",
     "stage_2_pass_1_user_multi": "stage_2/pass_1/user_multi.j2",
@@ -74,8 +75,11 @@ def test_manifest_groups_primary_stage_prompts_before_supporting_blocks() -> Non
 def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
     store = get_prompt_store()
 
-    assert "{% if alphabet_text %}" in store.get("stage_1_user")
-    assert "{% if ocr_hint %}" in store.get("stage_1_user")
+    assert "{% if alphabet_text %}" in store.get("stage_1_user_benchmark")
+    assert "{% if ocr_hint %}" in store.get("stage_1_user_benchmark")
+    assert "dictionary_profile" not in store.get("stage_1_user_benchmark")
+    assert "{% if dictionary_profile %}" in store.get("stage_1_user_inference")
+    assert "This profile is context only." in store.get("stage_1_user_inference")
     assert "{% if toolbox_reference_mode == 'pdf' %}" in store.get(
         "stage_2_pass_2_user_benchmark"
     )
@@ -96,7 +100,8 @@ def test_prompt_layout_includes_human_request_assembly_maps() -> None:
     ).read_text(encoding="utf-8")
 
     assert "system_benchmark.txt" in stage1_readme
-    assert "user.j2" in stage1_readme
+    assert "user_benchmark.j2" in stage1_readme
+    assert "user_inference.j2" in stage1_readme
     assert "system.j2" in pass1_readme
     assert "user_single.j2" in pass1_readme
     assert "system_benchmark.txt" in pass2_readme
