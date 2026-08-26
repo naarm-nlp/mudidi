@@ -18,7 +18,6 @@ Paths are resolved relative to the YAML file. API credentials belong in `.env`.
 ## Important validation rules
 
 - `inference` requires `input.pages`, cannot use `stage1_source: gold`, and uses the optional `input.dictionary_profile` instead of the benchmark-only `dictionary_languages` file.
-- `input.introduction` accepts an image, PDF, or directory containing images/PDFs; text introductions are not supported. When `input.pages` is a PDF, use `input.introduction_pages` instead.
 - `benchmark_run` requires one of `dataset_dir`, `samples_dir`, or `pages`.
 - `vlm_ocr` and `mathpix_ocr` are Stage 1-only strategies.
 - Evaluation uses either `predicted` + `gold` or `dataset_dir` + `pred_root`.
@@ -39,7 +38,7 @@ input:  # InputConfig; required
   samples_dir: null  # path | null; default: null
   stage1_predictions_root: null  # path | null; default: null
   dictionary_pages: null  # string | null; default: null
-  introduction: null  # image/PDF path or directory | null; default: null
+  introduction: null  # path | null; default: null
   introduction_pages: null  # string | null; default: null
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
@@ -149,7 +148,7 @@ input:  # InputConfig; required
   samples_dir: null  # path | null; default: null
   stage1_predictions_root: null  # path | null; default: null
   dictionary_pages: null  # string | null; default: null
-  introduction: null  # image/PDF path or directory | null; default: null
+  introduction: null  # path | null; default: null
   introduction_pages: null  # string | null; default: null
   alphabet: null  # path | null; default: null
   ocr_text: null  # path | null; default: null
@@ -263,7 +262,7 @@ base:  # BenchmarkRunConfig; required
     samples_dir: null  # path | null; default: null
     stage1_predictions_root: null  # path | null; default: null
     dictionary_pages: null  # string | null; default: null
-    introduction: null  # image/PDF path or directory | null; default: null
+    introduction: null  # path | null; default: null
     introduction_pages: null  # string | null; default: null
     alphabet: null  # path | null; default: null
     ocr_text: null  # path | null; default: null
