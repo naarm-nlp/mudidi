@@ -21,6 +21,21 @@ def test_docs_use_builtin_readthedocs_navigation() -> None:
     assert "extra_javascript" not in config
 
 
+def test_docs_point_to_the_naarm_repository_and_pages_site() -> None:
+    config = yaml.safe_load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
+    deployment_guide = (ROOT / "docs" / "development" / "pages.md").read_text(
+        encoding="utf-8"
+    )
+
+    site_url = "https://naarm-nlp.github.io/mudidi/"
+    repository_url = "https://github.com/naarm-nlp/mudidi"
+
+    assert config["site_url"] == site_url
+    assert config["repo_url"] == repository_url
+    assert config["repo_name"] == "naarm-nlp/mudidi"
+    assert site_url in deployment_guide
+
+
 def test_all_code_maps_are_in_navigation() -> None:
     config = yaml.safe_load((ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
     navigation = str(config["nav"])
