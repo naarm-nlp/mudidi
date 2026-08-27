@@ -3478,6 +3478,112 @@
     }
   },
   {
+    "page_id": "Japanese-English/page_419",
+    "character_quality": {
+      "TextEdit": 0.015803,
+      "GCER": 0.015596,
+      "WER": 0.079051,
+      "total_graphemes_gold": 4296,
+      "total_graphemes_pred": 4283,
+      "total_grapheme_edits": 67,
+      "total_words_gold": 759,
+      "total_word_edits": 60,
+      "matched_spans": 135,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 50
+      },
+      "italic": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 118
+      },
+      "typography": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 168
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 135
+    },
+    "per_language_script": {
+      "blended_gcer": 0.014515,
+      "blended_grapheme_edits": 47,
+      "blended_graphemes_gold": 3238,
+      "per_language": {
+        "English-Latin": {
+          "gold_word_count": 453,
+          "gold_grapheme_count": 2011,
+          "GCER": 0.000995,
+          "WER": 0.01766,
+          "TextEdit": 0.000995,
+          "total_graphemes_pred": 2009,
+          "total_grapheme_edits": 2,
+          "total_word_edits": 8,
+          "precision": 1.0,
+          "recall": 0.999,
+          "f1": 0.9995
+        },
+        "Japanese-Kanji": {
+          "gold_word_count": 28,
+          "gold_grapheme_count": 62,
+          "GCER": 0.306452,
+          "WER": 0.535714,
+          "TextEdit": 0.306452,
+          "total_graphemes_pred": 62,
+          "total_grapheme_edits": 19,
+          "total_word_edits": 15,
+          "precision": 0.6935,
+          "recall": 0.6935,
+          "f1": 0.6935
+        },
+        "Japanese-Katakana": {
+          "gold_word_count": 45,
+          "gold_grapheme_count": 170,
+          "GCER": 0.029412,
+          "WER": 0.111111,
+          "TextEdit": 0.029412,
+          "total_graphemes_pred": 170,
+          "total_grapheme_edits": 5,
+          "total_word_edits": 5,
+          "precision": 0.9706,
+          "recall": 0.9706,
+          "f1": 0.9706
+        },
+        "Japanese-Latin": {
+          "gold_word_count": 197,
+          "gold_grapheme_count": 995,
+          "GCER": 0.021106,
+          "WER": 0.101523,
+          "TextEdit": 0.021106,
+          "total_graphemes_pred": 986,
+          "total_grapheme_edits": 21,
+          "total_word_edits": 20,
+          "precision": 0.9888,
+          "recall": 0.9799,
+          "f1": 0.9844
+        }
+      }
+    }
+  },
+  {
     "page_id": "Kashmiri-English/page_14",
     "character_quality": {
       "TextEdit": 0.150338,
@@ -7888,9 +7994,9 @@
   {
     "page_id": "__aggregate__",
     "character_quality": {
-      "TextEdit": 0.09795,
-      "GCER": 0.110618,
-      "WER": 0.209607
+      "TextEdit": 0.096199,
+      "GCER": 0.108586,
+      "WER": 0.206653
     },
     "markup_quality": {
       "bold": {
@@ -7910,7 +8016,7 @@
       }
     },
     "read_order": {
-      "ReadOrderEdit": 0.129165
+      "ReadOrderEdit": 0.127663
     }
   }
 ]

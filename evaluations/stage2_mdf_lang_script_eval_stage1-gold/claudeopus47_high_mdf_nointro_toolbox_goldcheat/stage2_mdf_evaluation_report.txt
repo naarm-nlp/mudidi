@@ -1,0 +1,17 @@
+========================================================================
+STAGE 2 MDF EVALUATION REPORT
+========================================================================
+record_threshold=0.6  line_threshold=0.7
+
+--- Evenki-Russian/page_1 ---
+  Records: matched=28 missing=0 extra=0 (pred=28)
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9077
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0581
+  Headword GCER:   0.0052
+  Gloss GCER:     0.1226
+  source GCER:       0.0046
+  target GCER:       0.1226
+  lang-script Evenki-Cyrillic GCER: 0.1687
+  lang-script Russian-Cyrillic GCER: 0.2319

@@ -1,0 +1,216 @@
+{
+  "settings": {
+    "record_threshold": 0.6,
+    "line_threshold": 0.7,
+    "marker_sub_list_path": null
+  },
+  "pages": [
+    {
+      "page_id": "Iñupiatun Eskimo-English/page_42",
+      "gold_path": "dataset/mudidi/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_42/page_42.mdf.txt",
+      "n_pred_records": 62,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.996324,
+      "record_counts": {
+        "tp": 62,
+        "fp": 0,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 271,
+        "fp": 0,
+        "fn": 2
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 62
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.003333,
+        "FieldValue_GCER": 0.002963,
+        "FieldValue_WER": 0.006861
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.01362,
+        "Headword_GCER": 0.014706,
+        "Headword_WER": 0.031746
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.0,
+        "Gloss_GCER": 0.0,
+        "Gloss_WER": 0.0
+      },
+      "language_quality": {
+        "source": {
+          "source_TextEdit": 0.005706,
+          "source_GCER": 0.00907,
+          "source_WER": 0.013333
+        },
+        "target": {
+          "target_TextEdit": 0.0,
+          "target_GCER": 0.0,
+          "target_WER": 0.0
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.014388,
+          "LangScript_English-Latin_GCER": 0.001168,
+          "LangScript_English-Latin_WER": 0.014388
+        },
+        "Iñupiatun Eskimo-Latin": {
+          "LangScript_Iñupiatun Eskimo-Latin_TextEdit": 0.002755,
+          "LangScript_Iñupiatun Eskimo-Latin_GCER": 0.001667,
+          "LangScript_Iñupiatun Eskimo-Latin_WER": 0.016529
+        }
+      },
+      "marker_confusion": {},
+      "record_samples": [],
+      "marker_error_samples": [],
+      "missing_record_samples": [],
+      "extra_record_samples": []
+    },
+    {
+      "page_id": "Kashmiri-English/page_14",
+      "gold_path": "dataset/mudidi/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Kashmiri-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_14/page_14.mdf.txt",
+      "n_pred_records": 41,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.954023,
+      "record_counts": {
+        "tp": 41,
+        "fp": 0,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 166,
+        "fp": 10,
+        "fn": 6
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 41
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.003061,
+        "FieldValue_GCER": 0.004163,
+        "FieldValue_WER": 0.027559
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.0,
+        "Headword_GCER": 0.0,
+        "Headword_WER": 0.0
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.003009,
+        "Gloss_GCER": 0.004983,
+        "Gloss_WER": 0.060606
+      },
+      "language_quality": {
+        "source": {
+          "source_TextEdit": 0.0,
+          "source_GCER": 0.0,
+          "source_WER": 0.0
+        },
+        "target": {
+          "target_TextEdit": 0.003009,
+          "target_GCER": 0.004983,
+          "target_WER": 0.060606
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.015873,
+          "LangScript_English-Latin_GCER": 0.003419,
+          "LangScript_English-Latin_WER": 0.02381
+        },
+        "Kashmiri-Arabic": {
+          "LangScript_Kashmiri-Arabic_TextEdit": 0.0,
+          "LangScript_Kashmiri-Arabic_GCER": 0.0,
+          "LangScript_Kashmiri-Arabic_WER": 0.0
+        },
+        "Kashmiri-Latin": {
+          "LangScript_Kashmiri-Latin_TextEdit": 0.0,
+          "LangScript_Kashmiri-Latin_GCER": 0.0,
+          "LangScript_Kashmiri-Latin_WER": 0.0
+        }
+      },
+      "marker_confusion": {
+        "pl": {
+          "se": 5
+        }
+      },
+      "record_samples": [],
+      "marker_error_samples": [
+        {
+          "headword": "aDIkAj kath",
+          "gold": "\\pl aDIkaji kathi",
+          "pred": "\\se aDIkaji kathi",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "atshlratsh",
+          "gold": "\\pl atshlratshl",
+          "pred": "\\se atshlratshl",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "achidA:r",
+          "gold": "\\pl Achida:ri",
+          "pred": "\\se Achida:ri",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aDIkol",
+          "gold": "\\pl aDIkAl'",
+          "pred": "\\se aDIkAl'",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aDIkol",
+          "gold": "\\pl aDIkaji",
+          "pred": "\\se aDIkaji",
+          "value_sim": 1.0
+        }
+      ],
+      "missing_record_samples": [],
+      "extra_record_samples": []
+    }
+  ],
+  "aggregate": {
+    "Record_Accuracy": 1.0,
+    "MDF_Fields_F1": 0.979821,
+    "record_counts": {
+      "tp": 103,
+      "fp": 0,
+      "fn": 0
+    },
+    "marker_counts": {
+      "tp": 437,
+      "fp": 10,
+      "fn": 8
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0
+    },
+    "Field_Value_GCER": 0.003278,
+    "Field_Value_WER": 0.013142,
+    "Headword_GCER": 0.009913,
+    "Gloss_GCER": 0.001187,
+    "source_GCER": 0.005521,
+    "source_WER": 0.007067,
+    "target_GCER": 0.001187,
+    "target_WER": 0.013187,
+    "LangScript_English-Latin_GCER": 0.001741,
+    "LangScript_English-Latin_WER": 0.017937,
+    "LangScript_Iñupiatun Eskimo-Latin_GCER": 0.001667,
+    "LangScript_Iñupiatun Eskimo-Latin_WER": 0.016529,
+    "LangScript_Kashmiri-Arabic_GCER": 0.0,
+    "LangScript_Kashmiri-Arabic_WER": 0.0,
+    "LangScript_Kashmiri-Latin_GCER": 0.0,
+    "LangScript_Kashmiri-Latin_WER": 0.0
+  }
+}

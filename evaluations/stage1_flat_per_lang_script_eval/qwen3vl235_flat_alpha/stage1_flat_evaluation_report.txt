@@ -846,6 +846,29 @@ STAGE 1 OCR EVALUATION REPORT
     Japanese-Katakana      0.038   0.122     0.038     185
     Japanese-Latin         0.012   0.060     0.012     882
 
+--- Japanese-English/page_419 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0240
+    GCER: 0.0505  (5.05%)
+    WER:  0.0988  (9.88%)
+    Spans: 134 matched, 0 missing, 1 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=0 FN=168)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=50)
+    Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=118)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.3478
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    English-Latin          0.001   0.018     0.001    2011
+    Japanese-Kanji         0.306   0.500     0.306      62
+    Japanese-Katakana      0.029   0.111     0.029     170
+    Japanese-Latin         0.139   0.178     0.124     995
+
 --- Kashmiri-English/page_14 ---
 
   Character Recognition Quality:
@@ -1869,21 +1892,21 @@ STAGE 1 OCR EVALUATION REPORT
     Yiddish-Hebrew         0.685   0.906     0.685     461
 
 ========================================================================
-AGGREGATE (85 pages)
+AGGREGATE (86 pages)
 ========================================================================
 
   Character Recognition Quality:
-    TextEdit: 0.0985
-    GCER: 0.1208
-    WER:  0.2220
+    TextEdit: 0.0969
+    GCER: 0.1193
+    WER:  0.2193
 
   Markup / Typography Preservation:
     Typography (bold+italic pooled) — F1: 0.0008
     Bold   — P: 0.0000  R: 0.0000  F1: 0.0000
-    Italic — P: 1.0000  R: 0.0009  F1: 0.0017
+    Italic — P: 1.0000  R: 0.0008  F1: 0.0017
 
   Read Order (Structure Preservation):
-    ReadOrderEdit: 0.1537
+    ReadOrderEdit: 0.1560
 
   Per-Language-Script Quality (aggregate):
     language-script         GCER     WER  TextEdit  gold_g
@@ -1900,7 +1923,7 @@ AGGREGATE (85 pages)
     Circassian-Latin       0.170   0.443     0.170     594
     Dayi-Latin             0.000   0.000     0.000       5
     Efik-Latin             0.024   0.115     0.024    1723
-    English-Latin          0.064   0.103     0.061   83325
+    English-Latin          0.062   0.101     0.060   85336
     Evenki-Cyrillic        0.128   0.560     0.128    1911
     French-Latin           0.004   0.025     0.004    8246
     Georgian-Georgian      0.143   0.475     0.139     477
@@ -1911,9 +1934,9 @@ AGGREGATE (85 pages)
     Hebrew-Hebrew          0.692   1.000     0.692      26
     Hindi-Devanagari       0.021   0.083     0.021     838
     Iñupiatun Eskimo-Latin   0.025   0.155     0.025    2961
-    Japanese-Kanji         0.094   0.169     0.094     138
-    Japanese-Katakana      0.030   0.098     0.030     405
-    Japanese-Latin         0.117   0.128     0.107    1747
+    Japanese-Kanji         0.160   0.276     0.160     200
+    Japanese-Katakana      0.030   0.102     0.030     575
+    Japanese-Latin         0.125   0.147     0.113    2742
     Kashmiri-Arabic        0.701   0.972     0.701     551
     Kashmiri-Latin         0.560   0.623     0.502     989
     Khmer-Khmer            0.820   0.868     0.820     710

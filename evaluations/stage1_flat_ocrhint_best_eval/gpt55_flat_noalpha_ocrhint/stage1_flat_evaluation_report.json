@@ -1,0 +1,171 @@
+[
+  {
+    "page_id": "Chepang-English/page_103",
+    "character_quality": {
+      "TextEdit": 0.006273,
+      "GCER": 0.006709,
+      "WER": 0.017157,
+      "total_graphemes_gold": 2534,
+      "total_graphemes_pred": 2535,
+      "total_grapheme_edits": 17,
+      "total_words_gold": 408,
+      "total_word_edits": 7,
+      "matched_spans": 85,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9043,
+        "recall": 0.9541,
+        "f1": 0.9286,
+        "tp": 104,
+        "fp": 11,
+        "fn": 5
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 60,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9371,
+        "recall": 0.9704,
+        "f1": 0.9535,
+        "tp": 164,
+        "fp": 11,
+        "fn": 5
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 85
+    }
+  },
+  {
+    "page_id": "Chepang-English/page_304",
+    "character_quality": {
+      "TextEdit": 0.001806,
+      "GCER": 0.000751,
+      "WER": 0.004556,
+      "total_graphemes_gold": 2664,
+      "total_graphemes_pred": 2664,
+      "total_grapheme_edits": 2,
+      "total_words_gold": 439,
+      "total_word_edits": 2,
+      "matched_spans": 86,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9725,
+        "recall": 1.0,
+        "f1": 0.986,
+        "tp": 106,
+        "fp": 3,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 60,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9822,
+        "recall": 1.0,
+        "f1": 0.991,
+        "tp": 166,
+        "fp": 3,
+        "fn": 0
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 86
+    }
+  },
+  {
+    "page_id": "Chepang-English/page_37",
+    "character_quality": {
+      "TextEdit": 0.012947,
+      "GCER": 0.016863,
+      "WER": 0.022113,
+      "total_graphemes_gold": 2550,
+      "total_graphemes_pred": 2590,
+      "total_grapheme_edits": 43,
+      "total_words_gold": 407,
+      "total_word_edits": 9,
+      "matched_spans": 86,
+      "missing_spans": 0,
+      "extra_spans": 1
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 0.9913,
+        "f1": 0.9956,
+        "tp": 114,
+        "fp": 0,
+        "fn": 1
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 42,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 1.0,
+        "recall": 0.9936,
+        "f1": 0.9968,
+        "tp": 156,
+        "fp": 0,
+        "fn": 1
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 86
+    }
+  },
+  {
+    "page_id": "__aggregate__",
+    "character_quality": {
+      "TextEdit": 0.007034,
+      "GCER": 0.008002,
+      "WER": 0.014354
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9586,
+        "recall": 0.9818,
+        "f1": 0.9701
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "typography": {
+        "precision": 0.972,
+        "recall": 0.9878,
+        "f1": 0.9798
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0
+    }
+  }
+]

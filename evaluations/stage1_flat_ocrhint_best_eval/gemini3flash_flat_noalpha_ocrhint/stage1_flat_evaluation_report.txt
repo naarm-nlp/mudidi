@@ -1,0 +1,164 @@
+========================================================================
+STAGE 1 OCR EVALUATION REPORT
+========================================================================
+
+--- Assyrian-English/page_352 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.3014
+    GCER: 0.2563  (25.63%)
+    WER:  0.4612  (46.12%)
+    Spans: 36 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.7190  (TP=87 FP=2 FN=66)
+    Bold   — P: 1.0000  R: 0.0435  F1: 0.0833  (TP=3 FP=0 FN=66)
+    Italic — P: 0.9767  R: 1.0000  F1: 0.9882  (TP=84 FP=2 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0556
+
+--- Assyrian-English/page_39 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.3924
+    GCER: 0.3553  (35.53%)
+    WER:  0.4889  (48.89%)
+    Spans: 29 matched, 2 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.3852  (TP=47 FP=110 FN=40)
+    Bold   — P: 0.0517  R: 0.1304  F1: 0.0741  (TP=6 FP=110 FN=40)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=41 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0645
+
+--- Assyrian-English/page_842 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.2976
+    GCER: 0.3014  (30.14%)
+    WER:  0.3555  (35.55%)
+    Spans: 29 matched, 7 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.6093  (TP=85 FP=52 FN=57)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=50 FN=55)
+    Italic — P: 0.9770  R: 0.9770  F1: 0.9770  (TP=85 FP=2 FN=2)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.1944
+
+--- Gujarati-English/page_50 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0254
+    GCER: 0.0284  (2.84%)
+    WER:  0.2378  (23.78%)
+    Spans: 71 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.8300  (TP=83 FP=4 FN=30)
+    Bold   — P: 0.9583  R: 0.9787  F1: 0.9684  (TP=46 FP=2 FN=1)
+    Italic — P: 0.9487  R: 0.5606  F1: 0.7048  (TP=37 FP=2 FN=29)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Gujarati-English/page_500 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0025
+    GCER: 0.0028  (0.28%)
+    WER:  0.0237  (2.37%)
+    Spans: 71 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9818  (TP=81 FP=1 FN=2)
+    Bold   — P: 1.0000  R: 0.9737  F1: 0.9867  (TP=37 FP=0 FN=1)
+    Italic — P: 0.9778  R: 0.9778  F1: 0.9778  (TP=44 FP=1 FN=1)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Gujarati-English/page_866 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0011
+    GCER: 0.0012  (0.12%)
+    WER:  0.0101  (1.01%)
+    Spans: 71 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9831  (TP=87 FP=2 FN=1)
+    Bold   — P: 0.9592  R: 0.9792  F1: 0.9691  (TP=47 FP=2 FN=1)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=40 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Telugu-English/page_151 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0485
+    GCER: 0.0348  (3.48%)
+    WER:  0.1004  (10.04%)
+    Spans: 71 matched, 3 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9333  (TP=77 FP=4 FN=7)
+    Bold   — P: 0.9231  R: 0.8372  F1: 0.8780  (TP=36 FP=3 FN=7)
+    Italic — P: 0.9762  R: 1.0000  F1: 0.9880  (TP=41 FP=1 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0405
+
+--- Telugu-English/page_646 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0056
+    GCER: 0.0067  (0.67%)
+    WER:  0.0315  (3.15%)
+    Spans: 71 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.6759  (TP=49 FP=4 FN=43)
+    Bold   — P: 0.9375  R: 1.0000  F1: 0.9677  (TP=45 FP=3 FN=0)
+    Italic — P: 0.8000  R: 0.0851  F1: 0.1538  (TP=4 FP=1 FN=43)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Telugu-English/page_80 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0165
+    GCER: 0.0167  (1.67%)
+    WER:  0.0723  (7.23%)
+    Spans: 67 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.8366  (TP=64 FP=0 FN=25)
+    Bold   — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=42 FP=0 FN=0)
+    Italic — P: 1.0000  R: 0.4681  F1: 0.6377  (TP=22 FP=0 FN=25)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+========================================================================
+AGGREGATE (9 pages)
+========================================================================
+
+  Character Recognition Quality:
+    TextEdit: 0.0774
+    GCER: 0.1193
+    WER:  0.2064
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.7458
+    Bold   — P: 0.6065  R: 0.6051  F1: 0.6058
+    Italic — P: 0.9779  R: 0.7992  F1: 0.8796
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0395
