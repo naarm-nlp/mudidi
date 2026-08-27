@@ -223,7 +223,7 @@ provenance is documented in [`evaluations/README.md`](evaluations/README.md).
 
 ## Dataset and paper
 
-The benchmark contains 30 public-domain multilingual dictionaries. The dataset is available through [Hugging Face](https://huggingface.co/datasets/Davidsamuel101/MUDIDI).
+The benchmark contains 30 public-domain multilingual dictionaries. The gold-annotation dataset is available on [Hugging Face](https://huggingface.co/datasets/Davidsamuel101/MUDIDI), and the model outputs are available on [Zenodo](https://zenodo.org/records/22119491).
 
 ```bibtex
 @misc{mudidi2026,
