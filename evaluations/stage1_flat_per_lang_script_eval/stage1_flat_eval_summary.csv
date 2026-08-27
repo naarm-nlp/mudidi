@@ -12,7 +12,7 @@ GLM-OCR-flat_alpha,Gojri-English-Hindi,true,false,3,0.243746,0.222476,0.667546,0
 GLM-OCR-flat_alpha,Greek-English,true,false,3,0.140886,0.134702,0.335938,0.0,0.639972
 GLM-OCR-flat_alpha,Gujarati-English,true,false,3,0.922436,0.890424,0.935939,0.0,0.488263
 GLM-OCR-flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.114286,0.118565,0.146896,0.0,0.630351
-GLM-OCR-flat_alpha,Japanese-English,true,false,2,0.126812,0.092762,0.194132,0.0,0.571956
+GLM-OCR-flat_alpha,Japanese-English,true,false,3,0.127395,0.089881,0.206692,0.0,0.568105
 GLM-OCR-flat_alpha,Kashmiri-English,true,false,3,0.600393,0.668825,0.754296,0.0,0.679758
 GLM-OCR-flat_alpha,Khmer-English,true,false,3,0.438392,0.396343,0.43292,0.0,0.489775
 GLM-OCR-flat_alpha,Malay-English,true,false,3,0.652313,4.114326,4.503382,0.0,0.590669
@@ -42,7 +42,7 @@ GLM-OCR-flat_noalpha,Gojri-English-Hindi,false,false,3,0.159551,0.134765,0.62796
 GLM-OCR-flat_noalpha,Greek-English,false,false,3,0.137282,0.134523,0.334736,0.0,0.635197
 GLM-OCR-flat_noalpha,Gujarati-English,false,false,3,0.38723,0.325943,0.465142,0.0,0.406715
 GLM-OCR-flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.294797,0.239295,0.269252,0.0,0.645558
-GLM-OCR-flat_noalpha,Japanese-English,false,false,2,0.121568,0.084329,0.189763,0.0,0.548672
+GLM-OCR-flat_noalpha,Japanese-English,false,false,3,0.12552,0.084463,0.201186,0.0,0.552582
 GLM-OCR-flat_noalpha,Kashmiri-English,false,false,3,0.444053,0.496646,0.585198,0.0,0.566716
 GLM-OCR-flat_noalpha,Khmer-English,false,false,3,0.4294,0.38106,0.419391,0.0,0.486452
 GLM-OCR-flat_noalpha,Malay-English,false,false,3,0.425458,0.409083,0.479227,0.0,0.387061
@@ -72,7 +72,7 @@ Mathpix-OCR,Gojri-English-Hindi,false,false,3,0.260844,0.004487,0.026385,0.0,0.0
 Mathpix-OCR,Greek-English,false,false,3,0.133691,0.138537,0.316707,0.0,0.619538
 Mathpix-OCR,Gujarati-English,false,false,3,0.098713,0.077969,0.240479,0.0,0.257936
 Mathpix-OCR,Iñupiatun Eskimo-English,false,false,3,0.103838,0.124564,0.136918,0.0,0.67099
-Mathpix-OCR,Japanese-English,false,false,2,0.300713,0.220581,0.670412,0.0,0.465288
+Mathpix-OCR,Japanese-English,false,false,3,0.35671,0.266253,0.696315,0.0,0.469496
 Mathpix-OCR,Kashmiri-English,false,false,3,0.534235,0.585428,0.778912,0.0,0.752508
 Mathpix-OCR,Khmer-English,false,false,3,0.75178,0.701508,0.811024,0.0,0.815615
 Mathpix-OCR,Malay-English,false,false,3,0.394257,0.374736,0.536232,0.0,0.386085
@@ -102,7 +102,7 @@ MinerU2.5-Pro,Gojri-English-Hindi,true,false,3,0.01347,0.013702,0.14248,0.0,0.0
 MinerU2.5-Pro,Greek-English,true,false,3,0.10484,0.110994,0.251803,0.0,0.572093
 MinerU2.5-Pro,Gujarati-English,true,false,3,0.287098,0.242125,0.400435,0.0,0.274884
 MinerU2.5-Pro,Iñupiatun Eskimo-English,true,false,3,0.083127,0.076853,0.117517,0.0,0.427868
-MinerU2.5-Pro,Japanese-English,true,false,2,0.073024,0.072073,0.167915,0.0,0.644555
+MinerU2.5-Pro,Japanese-English,true,false,3,0.073487,0.066677,0.166031,0.0,0.600046
 MinerU2.5-Pro,Kashmiri-English,true,false,3,0.945213,1.044977,1.102431,0.0,0.046428
 MinerU2.5-Pro,Khmer-English,true,false,3,0.407416,1.690827,2.172492,0.0,0.467193
 MinerU2.5-Pro,Malay-English,true,false,3,0.195356,0.196369,0.405797,0.0,0.21939
@@ -132,7 +132,7 @@ PaddleOCR-VL-1.5,Gojri-English-Hindi,true,false,3,0.09647,0.071722,0.353562,0.0,
 PaddleOCR-VL-1.5,Greek-English,true,false,3,0.127614,0.125709,0.292142,0.0,0.592913
 PaddleOCR-VL-1.5,Gujarati-English,true,false,3,0.35529,0.318528,0.521739,0.0,0.42139
 PaddleOCR-VL-1.5,Iñupiatun Eskimo-English,true,false,3,0.086839,0.079291,0.131375,0.0,0.578232
-PaddleOCR-VL-1.5,Japanese-English,true,false,2,0.15998,0.114162,0.226592,0.0,0.528619
+PaddleOCR-VL-1.5,Japanese-English,true,false,3,0.155679,0.11005,0.226599,0.0,0.464088
 PaddleOCR-VL-1.5,Kashmiri-English,true,false,3,0.743074,0.862853,0.963668,0.0,0.259274
 PaddleOCR-VL-1.5,Khmer-English,true,false,3,0.498758,0.531728,0.550676,0.0,0.292485
 PaddleOCR-VL-1.5,Malay-English,true,false,3,0.384313,0.38167,0.573913,0.0,0.34537
@@ -162,7 +162,7 @@ claudeopus47_flat_alpha,Gojri-English-Hindi,true,false,3,0.001234,0.001142,0.015
 claudeopus47_flat_alpha,Greek-English,true,false,3,0.052208,0.073453,0.142257,0.0,0.418646
 claudeopus47_flat_alpha,Gujarati-English,true,false,3,0.020581,0.026939,0.137894,0.5408,0.0
 claudeopus47_flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.034826,0.053824,0.043598,0.9514,0.31704
-claudeopus47_flat_alpha,Japanese-English,true,false,2,0.03518,0.032125,0.060549,0.7116,0.264073
+claudeopus47_flat_alpha,Japanese-English,true,false,3,0.031391,0.028515,0.062685,0.7752,0.180987
 claudeopus47_flat_alpha,Kashmiri-English,true,false,3,0.048295,0.065536,0.238983,0.3547,0.014925
 claudeopus47_flat_alpha,Khmer-English,true,false,3,0.091598,0.094122,0.146232,0.0,0.543158
 claudeopus47_flat_alpha,Malay-English,true,false,3,0.032544,0.050428,0.135266,0.0,0.0
@@ -192,7 +192,7 @@ claudeopus47_flat_noalpha,Gojri-English-Hindi,false,false,3,0.001027,0.000914,0.
 claudeopus47_flat_noalpha,Greek-English,false,false,3,0.019481,0.02708,0.070102,0.3065,0.0
 claudeopus47_flat_noalpha,Gujarati-English,false,false,3,0.024807,0.036944,0.144408,0.6235,0.0
 claudeopus47_flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.001429,0.001259,0.005519,0.9931,0.0
-claudeopus47_flat_noalpha,Japanese-English,false,false,2,0.091481,0.072642,0.098627,0.7286,0.606102
+claudeopus47_flat_noalpha,Japanese-English,false,false,3,0.08917,0.065556,0.102499,0.7756,0.57627
 claudeopus47_flat_noalpha,Kashmiri-English,false,false,3,0.126635,0.15974,0.288396,0.3529,0.430135
 claudeopus47_flat_noalpha,Khmer-English,false,false,3,0.067317,0.072682,0.130337,0.0,0.214756
 claudeopus47_flat_noalpha,Malay-English,false,false,3,0.026044,0.04526,0.10628,0.0,0.0
@@ -222,7 +222,7 @@ gemini31pro_flat_alpha,Gojri-English-Hindi,true,false,3,0.00304,0.003198,0.02902
 gemini31pro_flat_alpha,Greek-English,true,false,3,0.013417,0.019774,0.062912,0.6071,0.0
 gemini31pro_flat_alpha,Gujarati-English,true,false,3,0.024796,0.03656,0.148751,0.8707,0.0
 gemini31pro_flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.002749,0.002266,0.012693,0.9954,0.0
-gemini31pro_flat_alpha,Japanese-English,true,false,2,0.013711,0.01132,0.03743,0.7361,0.0
+gemini31pro_flat_alpha,Japanese-English,true,false,3,0.016915,0.013869,0.043184,0.8014,0.004938
 gemini31pro_flat_alpha,Kashmiri-English,true,false,3,0.13503,0.257869,0.452542,0.1979,0.875929
 gemini31pro_flat_alpha,Khmer-English,true,false,3,0.057555,0.098732,0.158249,0.0,0.023947
 gemini31pro_flat_alpha,Malay-English,true,false,3,0.033945,0.043478,0.169082,0.0,0.0
@@ -252,7 +252,7 @@ gemini31pro_flat_noalpha,Gojri-English-Hindi,false,false,3,0.00298,0.002969,0.03
 gemini31pro_flat_noalpha,Greek-English,false,false,3,0.010174,0.031171,0.049131,0.533,0.0
 gemini31pro_flat_noalpha,Gujarati-English,false,false,3,0.021513,0.033288,0.108578,0.8593,0.0
 gemini31pro_flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.002446,0.002098,0.010486,0.8084,0.0
-gemini31pro_flat_noalpha,Japanese-English,false,false,2,0.010854,0.011675,0.027449,0.7601,0.007519
+gemini31pro_flat_noalpha,Japanese-English,false,false,3,0.011073,0.011188,0.036833,0.8041,0.005013
 gemini31pro_flat_noalpha,Kashmiri-English,false,false,3,0.045635,0.051294,0.223729,0.1739,0.0
 gemini31pro_flat_noalpha,Khmer-English,false,false,3,0.015448,0.016417,0.049383,0.0,0.170289
 gemini31pro_flat_noalpha,Malay-English,false,false,3,0.039838,0.045795,0.194203,0.0,0.0
@@ -282,7 +282,7 @@ gemini3flash_flat_alpha,Gojri-English-Hindi,true,false,3,0.00457,0.004568,0.0395
 gemini3flash_flat_alpha,Greek-English,true,false,3,0.002728,0.002922,0.018574,0.8713,0.0
 gemini3flash_flat_alpha,Gujarati-English,true,false,3,0.024802,0.031942,0.180239,0.8252,0.0
 gemini3flash_flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.007457,0.004784,0.018764,0.9002,0.0
-gemini3flash_flat_alpha,Japanese-English,true,false,2,0.018759,0.012872,0.033063,0.886,0.011029
+gemini3flash_flat_alpha,Japanese-English,true,false,3,0.021009,0.01545,0.038103,0.9138,0.012291
 gemini3flash_flat_alpha,Kashmiri-English,true,false,3,0.052013,0.062252,0.235593,0.4303,0.0
 gemini3flash_flat_alpha,Khmer-English,true,false,3,0.065786,0.062966,0.1646,0.6077,0.167925
 gemini3flash_flat_alpha,Malay-English,true,false,3,0.046572,0.058615,0.173913,0.6402,0.312057
@@ -312,7 +312,7 @@ gemini3flash_flat_noalpha,Gojri-English-Hindi,false,false,3,0.00653,0.006624,0.0
 gemini3flash_flat_noalpha,Greek-English,false,false,3,0.003153,0.003214,0.019772,0.789,0.0
 gemini3flash_flat_noalpha,Gujarati-English,false,false,3,0.016259,0.016548,0.11835,0.7726,0.0
 gemini3flash_flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.003369,0.003106,0.016004,0.9923,0.0
-gemini3flash_flat_noalpha,Japanese-English,false,false,2,0.017014,0.010608,0.024953,0.8151,0.018548
+gemini3flash_flat_noalpha,Japanese-English,false,false,3,0.019811,0.013874,0.034293,0.8605,0.017304
 gemini3flash_flat_noalpha,Kashmiri-English,false,false,3,0.111091,0.146766,0.307823,0.836,0.341765
 gemini3flash_flat_noalpha,Khmer-English,false,false,3,0.05774,0.067983,0.114478,0.5902,0.025433
 gemini3flash_flat_noalpha,Malay-English,false,false,3,0.129259,0.241803,0.185507,0.7608,0.0
@@ -342,7 +342,7 @@ gpt55_flat_alpha,Gojri-English-Hindi,true,false,3,0.012893,0.013248,0.124011,0.0
 gpt55_flat_alpha,Greek-English,true,false,3,0.006174,0.007403,0.04314,0.3027,0.0
 gpt55_flat_alpha,Gujarati-English,true,false,3,0.033667,0.026361,0.162866,0.0,0.0
 gpt55_flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.008203,0.007638,0.035872,0.9977,0.0
-gpt55_flat_alpha,Japanese-English,true,false,2,0.023648,0.017878,0.05053,0.7529,0.018548
+gpt55_flat_alpha,Japanese-English,true,false,3,0.024402,0.019864,0.056308,0.7955,0.017304
 gpt55_flat_alpha,Kashmiri-English,true,false,3,0.052295,0.057822,0.267797,0.1639,0.0
 gpt55_flat_alpha,Khmer-English,true,false,3,0.049897,0.043442,0.094276,0.0,0.010989
 gpt55_flat_alpha,Malay-English,true,false,3,0.061547,0.057021,0.219324,0.0,0.0
@@ -372,7 +372,7 @@ gpt55_flat_noalpha,Gojri-English-Hindi,false,false,3,0.011586,0.011878,0.113456,
 gpt55_flat_noalpha,Greek-English,false,false,3,0.018057,0.025034,0.080887,0.0,0.0
 gpt55_flat_noalpha,Gujarati-English,false,false,3,0.033706,0.028286,0.160695,0.2508,0.0
 gpt55_flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.007653,0.007218,0.03532,0.9977,0.0
-gpt55_flat_noalpha,Japanese-English,false,false,2,0.02409,0.018594,0.056145,0.7487,0.018548
+gpt55_flat_noalpha,Japanese-English,false,false,3,0.025044,0.020574,0.061389,0.7955,0.017304
 gpt55_flat_noalpha,Kashmiri-English,false,false,3,0.113988,0.137794,0.29661,0.1639,0.0
 gpt55_flat_noalpha,Khmer-English,false,false,3,0.046861,0.04571,0.087542,0.0,0.018396
 gpt55_flat_noalpha,Malay-English,false,false,3,0.056938,0.059872,0.226087,0.0,0.0
@@ -402,7 +402,7 @@ qwen3vl235_flat_alpha,Gojri-English-Hindi,true,false,3,0.009384,0.009593,0.12928
 qwen3vl235_flat_alpha,Greek-English,true,false,3,0.019648,0.029807,0.09287,0.0,0.0
 qwen3vl235_flat_alpha,Gujarati-English,true,false,3,0.092175,0.131799,0.251087,0.0,0.246537
 qwen3vl235_flat_alpha,Iñupiatun Eskimo-English,true,false,3,0.006527,0.006631,0.032561,0.0123,0.0
-qwen3vl235_flat_alpha,Japanese-English,true,false,2,0.01174,0.031339,0.044292,0.0,0.007519
+qwen3vl235_flat_alpha,Japanese-English,true,false,3,0.015851,0.037828,0.061812,0.0,0.120955
 qwen3vl235_flat_alpha,Kashmiri-English,true,false,3,0.21753,0.309259,0.459829,0.0,0.703054
 qwen3vl235_flat_alpha,Khmer-English,true,false,3,0.302981,0.306392,0.336333,0.0,0.423256
 qwen3vl235_flat_alpha,Malay-English,true,false,3,0.156754,0.175031,0.361353,0.0,0.62297
@@ -432,7 +432,7 @@ qwen3vl235_flat_noalpha,Gojri-English-Hindi,false,false,3,0.009166,0.009365,0.12
 qwen3vl235_flat_noalpha,Greek-English,false,false,3,0.019626,0.02971,0.09287,0.0,0.0
 qwen3vl235_flat_noalpha,Gujarati-English,false,false,3,0.079434,0.131317,0.240217,0.0,0.11215
 qwen3vl235_flat_noalpha,Iñupiatun Eskimo-English,false,false,3,0.006919,0.006967,0.034216,0.0,0.0
-qwen3vl235_flat_noalpha,Japanese-English,false,false,2,0.014384,0.016325,0.049283,0.0,0.007519
+qwen3vl235_flat_noalpha,Japanese-English,false,false,3,0.014859,0.016078,0.058848,0.0,0.005013
 qwen3vl235_flat_noalpha,Kashmiri-English,false,false,3,0.19333,0.341548,0.510204,0.0,0.699054
 qwen3vl235_flat_noalpha,Khmer-English,false,false,3,0.212503,0.199876,0.238202,0.0,0.277857
 qwen3vl235_flat_noalpha,Malay-English,false,false,3,0.144165,0.156542,0.323671,0.0,0.622876

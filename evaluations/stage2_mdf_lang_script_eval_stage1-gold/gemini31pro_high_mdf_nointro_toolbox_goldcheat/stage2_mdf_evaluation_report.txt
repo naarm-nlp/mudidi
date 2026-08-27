@@ -1,0 +1,43 @@
+========================================================================
+STAGE 2 MDF EVALUATION REPORT
+========================================================================
+record_threshold=0.6  line_threshold=0.7
+
+--- Na-English-Chinese-French/page_19 ---
+  Records: matched=7 missing=0 extra=0 (pred=7)
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9397
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0133
+  Headword GCER:   0.0000
+  Gloss GCER:     0.0090
+  source GCER:       0.0986
+  target GCER:       0.0090
+  lang-script Chinese-Han GCER: 0.0000
+  lang-script English-Latin GCER: 0.0000
+  lang-script French-Latin GCER: 0.0013
+  lang-script Na-IPA GCER: 0.0000
+  lang-script Na-Latin GCER: 0.0000
+
+--- Tiri-English/page_15 ---
+  Records: matched=36 missing=0 extra=2 (pred=38)
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9275
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0258
+  Headword GCER:   0.0000
+  Gloss GCER:     0.0313
+  source GCER:       0.0000
+  target GCER:       0.0313
+  lang-script English-Latin GCER: 0.0570
+  lang-script Tiri-Latin GCER: 0.0444
+
+========================================================================
+AGGREGATE (2 pages)
+========================================================================
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9339
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0173
+  Headword GCER:   0.0000
+  Gloss GCER:     0.0156

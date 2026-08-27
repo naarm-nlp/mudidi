@@ -1,0 +1,68 @@
+========================================================================
+STAGE 1 OCR EVALUATION REPORT
+========================================================================
+
+--- Chepang-English/page_103 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0063
+    GCER: 0.0067  (0.67%)
+    WER:  0.0172  (1.72%)
+    Spans: 85 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9535  (TP=164 FP=11 FN=5)
+    Bold   — P: 0.9043  R: 0.9541  F1: 0.9286  (TP=104 FP=11 FN=5)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=60 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Chepang-English/page_304 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0018
+    GCER: 0.0008  (0.08%)
+    WER:  0.0046  (0.46%)
+    Spans: 86 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9910  (TP=166 FP=3 FN=0)
+    Bold   — P: 0.9725  R: 1.0000  F1: 0.9860  (TP=106 FP=3 FN=0)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=60 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+--- Chepang-English/page_37 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0129
+    GCER: 0.0169  (1.69%)
+    WER:  0.0221  (2.21%)
+    Spans: 86 matched, 0 missing, 1 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9968  (TP=156 FP=0 FN=1)
+    Bold   — P: 1.0000  R: 0.9913  F1: 0.9956  (TP=114 FP=0 FN=1)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=42 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+========================================================================
+AGGREGATE (3 pages)
+========================================================================
+
+  Character Recognition Quality:
+    TextEdit: 0.0070
+    GCER: 0.0080
+    WER:  0.0144
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9798
+    Bold   — P: 0.9586  R: 0.9818  F1: 0.9701
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000

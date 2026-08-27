@@ -1,0 +1,41 @@
+========================================================================
+STAGE 2 MDF EVALUATION REPORT
+========================================================================
+record_threshold=0.6  line_threshold=0.7
+
+--- Iñupiatun Eskimo-English/page_42 ---
+  Records: matched=62 missing=0 extra=0 (pred=62)
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9963
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0030
+  Headword GCER:   0.0147
+  Gloss GCER:     0.0000
+  source GCER:       0.0091
+  target GCER:       0.0000
+  lang-script English-Latin GCER: 0.0012
+  lang-script Iñupiatun Eskimo-Latin GCER: 0.0017
+
+--- Kashmiri-English/page_14 ---
+  Records: matched=41 missing=0 extra=0 (pred=41)
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9540
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0042
+  Headword GCER:   0.0000
+  Gloss GCER:     0.0050
+  source GCER:       0.0000
+  target GCER:       0.0050
+  lang-script English-Latin GCER: 0.0034
+  lang-script Kashmiri-Arabic GCER: 0.0000
+  lang-script Kashmiri-Latin GCER: 0.0000
+
+========================================================================
+AGGREGATE (2 pages)
+========================================================================
+  Record Accuracy: 1.0000
+  MDF Fields F1:   0.9798
+  ReadOrderEdit:   0.0000
+  Field Value GCER:0.0033
+  Headword GCER:   0.0099
+  Gloss GCER:     0.0012

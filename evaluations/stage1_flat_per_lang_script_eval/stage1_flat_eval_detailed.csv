@@ -38,6 +38,7 @@ GLM-OCR-flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.144998,0.1406
 GLM-OCR-flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.14494,0.16587,0.197452,0.0,0.765591
 GLM-OCR-flat_alpha,true,false,Japanese-English/page_137,0.114283,0.096623,0.191195,0.0,0.685579
 GLM-OCR-flat_alpha,true,false,Japanese-English/page_351,0.139341,0.089266,0.197026,0.0,0.458333
+GLM-OCR-flat_alpha,true,false,Japanese-English/page_419,0.128507,0.084249,0.233202,0.0,0.560403
 GLM-OCR-flat_alpha,true,false,Kashmiri-English/page_14,0.723733,0.720721,0.798165,0.0,0.752066
 GLM-OCR-flat_alpha,true,false,Kashmiri-English/page_39,0.463597,0.524298,0.656085,0.0,0.520408
 GLM-OCR-flat_alpha,true,false,Kashmiri-English/page_71,0.692337,0.764789,0.805714,0.0,0.766798
@@ -84,7 +85,7 @@ GLM-OCR-flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_228
 GLM-OCR-flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.611213,3.915379,3.598579,0.0,0.587302
 GLM-OCR-flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,1.0,2.369366,0.998141,0.0,0.977778
 GLM-OCR-flat_alpha,true,false,Yiddish-English/page_1,0.990991,0.987611,0.986607,0.0,0.976471
-GLM-OCR-flat_alpha,,,__aggregate__,0.539236,0.875618,0.995599,0.0,0.485175
+GLM-OCR-flat_alpha,,,__aggregate__,0.533717,0.858542,0.978314,0.0,0.48605
 GLM-OCR-flat_noalpha,false,false,Assyrian-English/page_352,0.632972,0.382689,0.441103,0.0,0.361111
 GLM-OCR-flat_noalpha,false,false,Assyrian-English/page_39,0.642838,0.660331,0.718519,0.0,0.354839
 GLM-OCR-flat_noalpha,false,false,Assyrian-English/page_842,0.69684,0.490063,0.554987,0.0,0.361111
@@ -124,6 +125,7 @@ GLM-OCR-flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.601728,0.5
 GLM-OCR-flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.141721,0.164754,0.192675,0.0,0.765591
 GLM-OCR-flat_noalpha,false,false,Japanese-English/page_137,0.1164,0.097363,0.194969,0.0,0.685579
 GLM-OCR-flat_noalpha,false,false,Japanese-English/page_351,0.126735,0.072528,0.184634,0.0,0.411765
+GLM-OCR-flat_noalpha,false,false,Japanese-English/page_419,0.13293,0.084726,0.225296,0.0,0.560403
 GLM-OCR-flat_noalpha,false,false,Kashmiri-English/page_14,0.287259,0.281055,0.428571,0.0,0.392157
 GLM-OCR-flat_noalpha,false,false,Kashmiri-English/page_39,0.430919,0.520876,0.62963,0.0,0.540816
 GLM-OCR-flat_noalpha,false,false,Kashmiri-English/page_71,0.633782,0.690359,0.731429,0.0,0.767176
@@ -170,7 +172,7 @@ GLM-OCR-flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_
 GLM-OCR-flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.614656,3.895267,3.575488,0.0,0.582011
 GLM-OCR-flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.61672,0.664759,0.69145,0.0,0.488
 GLM-OCR-flat_noalpha,false,false,Yiddish-English/page_1,0.640453,0.791103,0.607143,0.2714,0.778098
-GLM-OCR-flat_noalpha,,,__aggregate__,0.374316,0.428337,0.535175,0.0159,0.42496
+GLM-OCR-flat_noalpha,,,__aggregate__,0.370618,0.420942,0.528144,0.0157,0.426535
 Mathpix-OCR,false,false,Assyrian-English/page_352,0.661054,0.44967,0.491228,0.0,0.388889
 Mathpix-OCR,false,false,Assyrian-English/page_39,0.835659,0.837224,0.881481,0.0,0.741935
 Mathpix-OCR,false,false,Assyrian-English/page_842,0.615575,0.34055,0.41688,0.0,0.305556
@@ -210,6 +212,7 @@ Mathpix-OCR,false,false,Iñupiatun Eskimo-English/page_206,0.114158,0.119097,0.1
 Mathpix-OCR,false,false,Iñupiatun Eskimo-English/page_42,0.151321,0.204589,0.218153,0.0,0.771967
 Mathpix-OCR,false,false,Japanese-English/page_137,0.286663,0.228416,0.649057,0.0,0.553691
 Mathpix-OCR,false,false,Japanese-English/page_351,0.314763,0.213488,0.69145,0.0,0.376884
+Mathpix-OCR,false,false,Japanese-English/page_419,0.453362,0.355668,0.750988,0.0,0.477912
 Mathpix-OCR,false,false,Kashmiri-English/page_14,0.433262,0.455882,0.59276,0.0,0.898551
 Mathpix-OCR,false,false,Kashmiri-English/page_39,0.548831,0.688525,0.84492,0.0,0.470085
 Mathpix-OCR,false,false,Kashmiri-English/page_71,0.617638,0.609687,0.938889,0.0,0.888889
@@ -256,7 +259,7 @@ Mathpix-OCR,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_228,0.552
 Mathpix-OCR,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.509719,0.480376,0.552398,0.0,0.615023
 Mathpix-OCR,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.68631,0.760054,0.920074,0.0,0.422222
 Mathpix-OCR,false,false,Yiddish-English/page_1,0.315079,0.306149,0.404018,0.0,0.673152
-Mathpix-OCR,,,__aggregate__,0.315778,0.254276,0.427239,0.0,0.425635
+Mathpix-OCR,,,__aggregate__,0.318282,0.256451,0.434583,0.0,0.426243
 MinerU2.5-Pro,true,false,Assyrian-English/page_352,0.506845,2.070863,2.626566,0.0,0.333333
 MinerU2.5-Pro,true,false,Assyrian-English/page_39,0.686964,1.630061,2.392593,0.0,0.612903
 MinerU2.5-Pro,true,false,Assyrian-English/page_842,0.623603,0.965221,1.450128,0.0,0.388889
@@ -296,6 +299,7 @@ MinerU2.5-Pro,true,false,Iñupiatun Eskimo-English/page_206,0.093325,0.07892,0.1
 MinerU2.5-Pro,true,false,Iñupiatun Eskimo-English/page_42,0.102882,0.103713,0.143312,0.0,0.652866
 MinerU2.5-Pro,true,false,Japanese-English/page_137,0.095645,0.092748,0.176101,0.0,0.690307
 MinerU2.5-Pro,true,false,Japanese-English/page_351,0.050039,0.05336,0.159851,0.0,0.598802
+MinerU2.5-Pro,true,false,Japanese-English/page_419,0.074364,0.056128,0.162055,0.0,0.511029
 MinerU2.5-Pro,true,false,Kashmiri-English/page_14,0.964486,1.165517,1.151376,0.0,0.078125
 MinerU2.5-Pro,true,false,Kashmiri-English/page_39,0.894036,0.881333,0.961749,0.0,0.029412
 MinerU2.5-Pro,true,false,Kashmiri-English/page_71,0.958714,1.094406,1.188571,0.0,0.031746
@@ -342,7 +346,7 @@ MinerU2.5-Pro,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_228,0.63
 MinerU2.5-Pro,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.551287,0.755705,0.815275,0.0,0.517045
 MinerU2.5-Pro,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.555032,8.043683,0.840149,0.0,0.48062
 MinerU2.5-Pro,false,false,Yiddish-English/page_1,0.553324,0.635408,0.723214,0.0,0.717314
-MinerU2.5-Pro,,,__aggregate__,0.269719,0.531795,0.679396,0.001,0.335774
+MinerU2.5-Pro,,,__aggregate__,0.266683,0.52156,0.667663,0.001,0.337812
 PaddleOCR-VL-1.5,true,false,Assyrian-English/page_352,0.861731,0.62544,0.659148,0.0,0.414634
 PaddleOCR-VL-1.5,true,false,Assyrian-English/page_39,0.751006,0.734644,0.796296,0.0,0.580645
 PaddleOCR-VL-1.5,true,false,Assyrian-English/page_842,0.844842,0.633771,0.695652,0.0,0.583333
@@ -382,6 +386,7 @@ PaddleOCR-VL-1.5,true,false,Iñupiatun Eskimo-English/page_206,0.105399,0.089134
 PaddleOCR-VL-1.5,true,false,Iñupiatun Eskimo-English/page_42,0.093257,0.090473,0.154459,0.0,0.459596
 PaddleOCR-VL-1.5,true,false,Japanese-English/page_137,0.17495,0.120059,0.232704,0.0,0.594427
 PaddleOCR-VL-1.5,true,false,Japanese-English/page_351,0.144329,0.108827,0.22057,0.0,0.46281
+PaddleOCR-VL-1.5,true,false,Japanese-English/page_419,0.148235,0.101999,0.226614,0.0,0.335025
 PaddleOCR-VL-1.5,true,false,Kashmiri-English/page_14,0.55738,0.607994,0.669683,0.0,0.703125
 PaddleOCR-VL-1.5,true,false,Kashmiri-English/page_39,0.952654,0.993302,1.192308,0.0,0.058824
 PaddleOCR-VL-1.5,true,false,Kashmiri-English/page_71,0.951307,0.980474,1.097143,0.0,0.015873
@@ -428,7 +433,7 @@ PaddleOCR-VL-1.5,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_228,0
 PaddleOCR-VL-1.5,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.522119,0.509269,0.619893,0.0,0.548913
 PaddleOCR-VL-1.5,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.648876,0.69577,0.767658,0.0,0.588889
 PaddleOCR-VL-1.5,false,false,Yiddish-English/page_1,0.491885,0.493621,0.515625,0.0,0.760656
-PaddleOCR-VL-1.5,,,__aggregate__,0.331022,0.390642,0.480927,0.0,0.403111
+PaddleOCR-VL-1.5,,,__aggregate__,0.327923,0.384438,0.475161,0.0,0.40232
 claudeopus47_flat_alpha,true,false,Assyrian-English/page_352,0.315366,0.287671,0.340852,0.7143,0.194444
 claudeopus47_flat_alpha,true,false,Assyrian-English/page_39,0.414055,0.403811,0.440741,0.6202,0.193548
 claudeopus47_flat_alpha,true,false,Assyrian-English/page_842,0.296965,0.277727,0.347826,0.7197,0.166667
@@ -468,6 +473,7 @@ claudeopus47_flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.001271,0
 claudeopus47_flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.096234,0.121799,0.092357,0.9084,0.767296
 claudeopus47_flat_alpha,true,false,Japanese-English/page_137,0.009072,0.006774,0.027673,0.7165,0.015038
 claudeopus47_flat_alpha,true,false,Japanese-English/page_351,0.092182,0.054675,0.092937,0.707,0.513109
+claudeopus47_flat_alpha,true,false,Japanese-English/page_419,0.025949,0.021405,0.067194,0.9167,0.014815
 claudeopus47_flat_alpha,true,false,Kashmiri-English/page_14,0.073563,0.102296,0.280543,0.0,0.044776
 claudeopus47_flat_alpha,true,false,Kashmiri-English/page_39,0.025427,0.032877,0.164021,0.3684,0.0
 claudeopus47_flat_alpha,true,false,Kashmiri-English/page_71,0.052248,0.061878,0.266667,0.3704,0.0
@@ -514,7 +520,7 @@ claudeopus47_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/pag
 claudeopus47_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.123614,0.106721,0.285968,0.5485,0.043011
 claudeopus47_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.264489,0.237203,0.377323,0.5099,0.497076
 claudeopus47_flat_alpha,true,false,Yiddish-English/page_1,0.468856,0.504648,0.569196,0.3471,0.211765
-claudeopus47_flat_alpha,,,__aggregate__,0.056754,0.066963,0.144927,0.7344,0.110256
+claudeopus47_flat_alpha,,,__aggregate__,0.056074,0.065989,0.143168,0.7383,0.109147
 claudeopus47_flat_noalpha,false,false,Assyrian-English/page_352,0.310368,0.284578,0.323308,0.7113,0.194444
 claudeopus47_flat_noalpha,false,false,Assyrian-English/page_39,0.410375,0.398279,0.462963,0.6202,0.16129
 claudeopus47_flat_noalpha,false,false,Assyrian-English/page_842,0.296078,0.287727,0.352941,0.7342,0.25
@@ -554,6 +560,7 @@ claudeopus47_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.00173
 claudeopus47_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.001544,0.001452,0.006369,0.9962,0.0
 claudeopus47_flat_noalpha,false,false,Japanese-English/page_137,0.090623,0.092255,0.103145,0.731,0.699095
 claudeopus47_flat_noalpha,false,false,Japanese-English/page_351,0.092382,0.054898,0.094176,0.7264,0.513109
+claudeopus47_flat_noalpha,false,false,Japanese-English/page_419,0.084511,0.051716,0.110672,0.8774,0.516605
 claudeopus47_flat_noalpha,false,false,Kashmiri-English/page_14,0.136312,0.172103,0.373272,0.0,0.378641
 claudeopus47_flat_noalpha,false,false,Kashmiri-English/page_39,0.100436,0.134247,0.201058,0.3684,0.911765
 claudeopus47_flat_noalpha,false,false,Kashmiri-English/page_71,0.148859,0.173542,0.277778,0.3704,0.0
@@ -600,7 +607,7 @@ claudeopus47_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/
 claudeopus47_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.149001,0.138129,0.264654,0.5503,0.405229
 claudeopus47_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.238195,0.210368,0.342007,0.5133,0.50289
 claudeopus47_flat_noalpha,false,false,Yiddish-English/page_1,0.064678,0.072598,0.171875,0.3232,0.011765
-claudeopus47_flat_noalpha,,,__aggregate__,0.050296,0.061006,0.130703,0.7177,0.088976
+claudeopus47_flat_noalpha,,,__aggregate__,0.05063,0.060804,0.130249,0.7212,0.093949
 gemini31pro_flat_alpha,true,false,Assyrian-English/page_352,0.310948,0.264693,0.330827,0.63,0.0
 gemini31pro_flat_alpha,true,false,Assyrian-English/page_39,0.390522,0.373079,0.448148,0.5844,0.064516
 gemini31pro_flat_alpha,true,false,Assyrian-English/page_842,0.29393,0.261364,0.40665,0.4793,0.166667
@@ -640,6 +647,7 @@ gemini31pro_flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.00297,0.0
 gemini31pro_flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.003835,0.002903,0.017516,1.0,0.0
 gemini31pro_flat_alpha,true,false,Japanese-English/page_137,0.020573,0.01757,0.044025,0.7232,0.0
 gemini31pro_flat_alpha,true,false,Japanese-English/page_351,0.006849,0.005672,0.030941,0.7488,0.0
+gemini31pro_flat_alpha,true,false,Japanese-English/page_419,0.02337,0.018846,0.055336,0.9538,0.014815
 gemini31pro_flat_alpha,true,false,Kashmiri-English/page_14,0.152319,0.311579,0.452489,0.0,0.890625
 gemini31pro_flat_alpha,true,false,Kashmiri-English/page_39,0.0654,0.077397,0.26455,0.3248,0.911765
 gemini31pro_flat_alpha,true,false,Kashmiri-English/page_71,0.19254,0.391026,0.65,0.0,0.825397
@@ -686,7 +694,7 @@ gemini31pro_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page
 gemini31pro_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.12137,0.096284,0.261101,0.7488,0.032258
 gemini31pro_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.157037,0.148085,0.29368,0.6574,0.022222
 gemini31pro_flat_alpha,true,false,Yiddish-English/page_1,0.041591,0.044267,0.149554,0.9433,0.011765
-gemini31pro_flat_alpha,,,__aggregate__,0.040273,0.046229,0.121612,0.804,0.040265
+gemini31pro_flat_alpha,,,__aggregate__,0.039941,0.045642,0.120113,0.8066,0.039969
 gemini31pro_flat_noalpha,false,false,Assyrian-English/page_352,0.300824,0.235528,0.350877,0.6127,0.138889
 gemini31pro_flat_noalpha,false,false,Assyrian-English/page_39,0.391807,0.377382,0.451852,0.497,0.129032
 gemini31pro_flat_noalpha,false,false,Assyrian-English/page_842,0.295142,0.287727,0.332481,0.7167,0.083333
@@ -726,6 +734,7 @@ gemini31pro_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.002452
 gemini31pro_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.003433,0.002903,0.015924,0.9962,0.0
 gemini31pro_flat_noalpha,false,false,Japanese-English/page_137,0.017865,0.021576,0.041509,0.7783,0.015038
 gemini31pro_flat_noalpha,false,false,Japanese-English/page_351,0.003947,0.002722,0.013614,0.742,0.0
+gemini31pro_flat_noalpha,false,false,Japanese-English/page_419,0.011513,0.010237,0.056653,0.9016,0.0
 gemini31pro_flat_noalpha,false,false,Kashmiri-English/page_14,0.068853,0.069474,0.253394,0.0,0.0
 gemini31pro_flat_noalpha,false,false,Kashmiri-English/page_39,0.020774,0.026712,0.148148,0.0213,0.0
 gemini31pro_flat_noalpha,false,false,Kashmiri-English/page_71,0.048515,0.058405,0.266667,0.3797,0.0
@@ -772,7 +781,7 @@ gemini31pro_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/p
 gemini31pro_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.148768,0.150287,0.301954,0.6791,0.406452
 gemini31pro_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.097498,0.090108,0.211896,0.7346,0.234783
 gemini31pro_flat_noalpha,false,false,Yiddish-English/page_1,0.482617,0.522355,0.537946,0.425,0.258824
-gemini31pro_flat_noalpha,,,__aggregate__,0.044257,0.05124,0.12088,0.7728,0.032024
+gemini31pro_flat_noalpha,,,__aggregate__,0.043613,0.05036,0.119428,0.7753,0.031652
 gemini3flash_flat_alpha,true,false,Assyrian-English/page_352,0.315712,0.272647,0.333333,0.7167,0.0
 gemini3flash_flat_alpha,true,false,Assyrian-English/page_39,0.392239,0.384757,0.5,0.4098,0.064516
 gemini3flash_flat_alpha,true,false,Assyrian-English/page_842,0.307677,0.293636,0.421995,0.6014,0.083333
@@ -812,6 +821,7 @@ gemini3flash_flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.016117,0
 gemini3flash_flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.004681,0.004839,0.022293,0.875,0.0
 gemini3flash_flat_alpha,true,false,Japanese-English/page_137,0.006125,0.006526,0.026415,0.7775,0.0
 gemini3flash_flat_alpha,true,false,Japanese-English/page_351,0.031114,0.018611,0.039604,0.9856,0.022059
+gemini3flash_flat_alpha,true,false,Japanese-English/page_419,0.025491,0.020484,0.048748,0.991,0.014815
 gemini3flash_flat_alpha,true,false,Kashmiri-English/page_14,0.051023,0.064561,0.199095,0.0,0.0
 gemini3flash_flat_alpha,true,false,Kashmiri-English/page_39,0.044973,0.050685,0.243386,0.7111,0.0
 gemini3flash_flat_alpha,true,false,Kashmiri-English/page_71,0.060617,0.071937,0.272222,0.2857,0.0
@@ -858,7 +868,7 @@ gemini3flash_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/pag
 gemini3flash_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.115907,0.097635,0.287744,0.8354,0.032258
 gemini3flash_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.146958,0.144019,0.288104,0.4161,0.0
 gemini3flash_flat_alpha,true,false,Yiddish-English/page_1,0.43299,0.469234,0.5,0.4524,0.976471
-gemini3flash_flat_alpha,,,__aggregate__,0.045548,0.05016,0.12157,0.806,0.055831
+gemini3flash_flat_alpha,,,__aggregate__,0.045141,0.049525,0.119923,0.809,0.055354
 gemini3flash_flat_noalpha,false,false,Assyrian-English/page_352,0.301735,0.252762,0.41604,0.4632,0.111111
 gemini3flash_flat_noalpha,false,false,Assyrian-English/page_39,0.384519,0.357714,0.507407,0.3673,0.064516
 gemini3flash_flat_noalpha,false,false,Assyrian-English/page_842,0.299209,0.263636,0.370844,0.6796,0.055556
@@ -898,6 +908,7 @@ gemini3flash_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.00333
 gemini3flash_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.003984,0.003871,0.022293,1.0,0.0
 gemini3flash_flat_noalpha,false,false,Japanese-English/page_137,0.004332,0.004016,0.015094,0.7417,0.015038
 gemini3flash_flat_noalpha,false,false,Japanese-English/page_351,0.029416,0.016568,0.034653,0.8683,0.022059
+gemini3flash_flat_noalpha,false,false,Japanese-English/page_419,0.025386,0.020251,0.054018,0.9853,0.014815
 gemini3flash_flat_noalpha,false,false,Kashmiri-English/page_14,0.161694,0.135266,0.3379,0.0,0.907648
 gemini3flash_flat_noalpha,false,false,Kashmiri-English/page_39,0.14008,0.242466,0.328042,0.7609,0.117647
 gemini3flash_flat_noalpha,false,false,Kashmiri-English/page_71,0.048819,0.059117,0.25,0.9449,0.0
@@ -944,7 +955,7 @@ gemini3flash_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/
 gemini3flash_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.146088,0.14387,0.26643,0.6593,0.406452
 gemini3flash_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.079276,0.072518,0.180297,0.5125,0.0
 gemini3flash_flat_noalpha,false,false,Yiddish-English/page_1,0.490638,0.540505,0.506696,0.3578,0.235294
-gemini3flash_flat_noalpha,,,__aggregate__,0.05055,0.058219,0.118083,0.8116,0.031579
+gemini3flash_flat_noalpha,,,__aggregate__,0.050046,0.057405,0.116634,0.8145,0.031384
 gpt55_flat_alpha,true,false,Assyrian-English/page_352,0.327306,0.302254,0.37594,0.6867,0.222222
 gpt55_flat_alpha,true,false,Assyrian-English/page_39,0.417329,0.431469,0.466667,0.6617,0.129032
 gpt55_flat_alpha,true,false,Assyrian-English/page_842,0.310723,0.306818,0.419437,0.7342,0.138889
@@ -984,6 +995,7 @@ gpt55_flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.010376,0.009588
 gpt55_flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.010138,0.009194,0.046178,1.0,0.0
 gpt55_flat_alpha,true,false,Japanese-English/page_137,0.016775,0.016064,0.055346,0.7398,0.015038
 gpt55_flat_alpha,true,false,Japanese-English/page_351,0.03037,0.019519,0.045792,0.7657,0.022059
+gpt55_flat_alpha,true,false,Japanese-English/page_419,0.025903,0.023743,0.068511,0.8865,0.014815
 gpt55_flat_alpha,true,false,Kashmiri-English/page_14,0.070609,0.072281,0.257919,0.0,0.0
 gpt55_flat_alpha,true,false,Kashmiri-English/page_39,0.033244,0.039726,0.227513,0.0,0.0
 gpt55_flat_alpha,true,false,Kashmiri-English/page_71,0.053962,0.061966,0.322222,0.3704,0.0
@@ -1030,7 +1042,7 @@ gpt55_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_228,0
 gpt55_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.157681,0.147635,0.312611,0.5648,0.021505
 gpt55_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.099045,0.089122,0.232342,0.5304,0.0
 gpt55_flat_alpha,true,false,Yiddish-English/page_1,0.120852,0.143426,0.238839,0.6091,0.011765
-gpt55_flat_alpha,,,__aggregate__,0.053087,0.057957,0.147343,0.6284,0.023947
+gpt55_flat_alpha,,,__aggregate__,0.052545,0.057224,0.14556,0.6345,0.023841
 gpt55_flat_noalpha,false,false,Assyrian-English/page_352,0.324494,0.294741,0.360902,0.6949,0.222222
 gpt55_flat_noalpha,false,false,Assyrian-English/page_39,0.410271,0.402581,0.448148,0.6617,0.096774
 gpt55_flat_noalpha,false,false,Assyrian-English/page_842,0.315216,0.32,0.41688,0.7234,0.166667
@@ -1070,6 +1082,7 @@ gpt55_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.008802,0.008
 gpt55_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.010526,0.00992,0.046178,1.0,0.0
 gpt55_flat_noalpha,false,false,Japanese-English/page_137,0.017818,0.017068,0.062893,0.7366,0.015038
 gpt55_flat_noalpha,false,false,Japanese-English/page_351,0.030224,0.019973,0.049505,0.7607,0.022059
+gpt55_flat_noalpha,false,false,Japanese-English/page_419,0.026944,0.024441,0.072464,0.8949,0.014815
 gpt55_flat_noalpha,false,false,Kashmiri-English/page_14,0.153777,0.188772,0.294118,0.0,0.0
 gpt55_flat_noalpha,false,false,Kashmiri-English/page_39,0.035812,0.042466,0.238095,0.0,0.0
 gpt55_flat_noalpha,false,false,Kashmiri-English/page_71,0.157947,0.185185,0.361111,0.3704,0.0
@@ -1116,7 +1129,7 @@ gpt55_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_22
 gpt55_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.146833,0.146959,0.309059,0.5552,0.032258
 gpt55_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.113262,0.108438,0.269517,0.5437,0.0
 gpt55_flat_noalpha,false,false,Yiddish-English/page_1,0.10963,0.122178,0.220982,0.1229,0.0
-gpt55_flat_noalpha,,,__aggregate__,0.057846,0.064221,0.149782,0.6029,0.015298
+gpt55_flat_noalpha,,,__aggregate__,0.05723,0.063368,0.148033,0.61,0.015292
 qwen3vl235_flat_alpha,true,false,Assyrian-English/page_352,0.348645,1.161661,1.270677,0.0,0.277778
 qwen3vl235_flat_alpha,true,false,Assyrian-English/page_39,0.413371,0.411186,0.459259,0.0,0.193548
 qwen3vl235_flat_alpha,true,false,Assyrian-English/page_842,0.307214,0.302273,0.383632,0.0,0.222222
@@ -1156,6 +1169,7 @@ qwen3vl235_flat_alpha,true,false,Iñupiatun Eskimo-English/page_206,0.007761,0.0
 qwen3vl235_flat_alpha,true,false,Iñupiatun Eskimo-English/page_42,0.008789,0.008226,0.047771,0.0,0.0
 qwen3vl235_flat_alpha,true,false,Japanese-English/page_137,0.018268,0.059709,0.061635,0.0,0.015038
 qwen3vl235_flat_alpha,true,false,Japanese-English/page_351,0.005403,0.005674,0.027228,0.0,0.0
+qwen3vl235_flat_alpha,true,false,Japanese-English/page_419,0.024012,0.0505,0.098814,0.0,0.347826
 qwen3vl235_flat_alpha,true,false,Kashmiri-English/page_14,0.151097,0.178845,0.378995,0.0,0.36
 qwen3vl235_flat_alpha,true,false,Kashmiri-English/page_39,0.11221,0.196575,0.380952,0.0,0.882353
 qwen3vl235_flat_alpha,true,false,Kashmiri-English/page_71,0.475792,0.556571,0.644068,0.0,0.866808
@@ -1202,7 +1216,7 @@ qwen3vl235_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_
 qwen3vl235_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.290251,0.390878,0.531083,0.0,0.032258
 qwen3vl235_flat_alpha,true,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.39221,0.383791,0.5,0.0,0.443709
 qwen3vl235_flat_alpha,true,false,Yiddish-English/page_1,0.230013,0.262809,0.339286,0.0,0.303571
-qwen3vl235_flat_alpha,,,__aggregate__,0.098522,0.120804,0.222039,0.0008,0.153747
+qwen3vl235_flat_alpha,,,__aggregate__,0.096859,0.119302,0.21925,0.0008,0.156003
 qwen3vl235_flat_noalpha,false,false,Assyrian-English/page_352,0.319058,0.296951,0.345865,0.0,0.194444
 qwen3vl235_flat_noalpha,false,false,Assyrian-English/page_39,0.378759,0.355255,0.474074,0.0,0.129032
 qwen3vl235_flat_noalpha,false,false,Assyrian-English/page_842,0.30973,0.307273,0.393862,0.0,0.25
@@ -1242,6 +1256,7 @@ qwen3vl235_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_206,0.008738,
 qwen3vl235_flat_noalpha,false,false,Iñupiatun Eskimo-English/page_42,0.008989,0.008468,0.047771,0.0,0.0
 qwen3vl235_flat_noalpha,false,false,Japanese-English/page_137,0.021271,0.02559,0.061635,0.0,0.015038
 qwen3vl235_flat_noalpha,false,false,Japanese-English/page_351,0.0077,0.007944,0.037129,0.0,0.0
+qwen3vl235_flat_noalpha,false,false,Japanese-English/page_419,0.015803,0.015596,0.079051,0.0,0.0
 qwen3vl235_flat_noalpha,false,false,Kashmiri-English/page_14,0.150338,0.178149,0.374429,0.0,0.36
 qwen3vl235_flat_noalpha,false,false,Kashmiri-English/page_39,0.109826,0.142466,0.26455,0.0,0.911765
 qwen3vl235_flat_noalpha,false,false,Kashmiri-English/page_71,0.315642,0.715812,0.933333,0.0,0.825397
@@ -1288,4 +1303,4 @@ qwen3vl235_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/pa
 qwen3vl235_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.247493,0.259122,0.39254,0.0,0.053763
 qwen3vl235_flat_noalpha,false,false,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.435257,0.41689,0.5,0.0,0.459459
 qwen3vl235_flat_noalpha,false,false,Yiddish-English/page_1,0.478175,0.511121,0.582589,0.0,0.749186
-qwen3vl235_flat_noalpha,,,__aggregate__,0.09795,0.110618,0.209607,0.0,0.129165
+qwen3vl235_flat_noalpha,,,__aggregate__,0.096199,0.108586,0.206653,0.0,0.127663

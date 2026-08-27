@@ -1,0 +1,2671 @@
+{
+  "settings": {
+    "record_threshold": 0.6,
+    "line_threshold": 0.7,
+    "marker_sub_list_path": null
+  },
+  "pages": [
+    {
+      "page_id": "Chukchi-Russian/page_3",
+      "gold_path": "dataset/mudidi/dictionaries/Chukchi-Russian/Stage 2 MDF file/page_3/page_3.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Chukchi-Russian/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_3/page_3.mdf.txt",
+      "n_pred_records": 28,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.842105,
+      "record_counts": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 64,
+        "fp": 8,
+        "fn": 16
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 28
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.05347,
+        "FieldValue_GCER": 0.07362,
+        "FieldValue_WER": 0.447917
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.025667,
+        "Headword_GCER": 0.028037,
+        "Headword_WER": 0.214286
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.089643,
+        "Gloss_GCER": 0.09973,
+        "Gloss_WER": 0.6
+      },
+      "language_quality": {
+        "source:chukchi": {
+          "source_chukchi_TextEdit": 0.032975,
+          "source_chukchi_GCER": 0.04,
+          "source_chukchi_WER": 0.285714
+        },
+        "target:ru": {
+          "target_ru_TextEdit": 0.089643,
+          "target_ru_GCER": 0.09973,
+          "target_ru_WER": 0.6
+        }
+      },
+      "language_script_quality": {
+        "Chukchi-Cyrillic Extended": {
+          "LangScript_Chukchi-Cyrillic Extended_TextEdit": 0.033397,
+          "LangScript_Chukchi-Cyrillic Extended_GCER": 0.040441,
+          "LangScript_Chukchi-Cyrillic Extended_WER": 0.3125
+        },
+        "Russian-Cyrillic": {
+          "LangScript_Russian-Cyrillic_TextEdit": 0.417329,
+          "LangScript_Russian-Cyrillic_GCER": 0.339956,
+          "LangScript_Russian-Cyrillic_WER": 0.833333
+        }
+      },
+      "marker_confusion": {
+        "un": {
+          "gn": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 9,
+          "pred_index": 9,
+          "similarity": 0.943,
+          "headword_gold": "арычгытвак",
+          "headword_pred": "арычгытвак",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 13,
+          "similarity": 0.943,
+          "headword_gold": "атчычетык",
+          "headword_pred": "атчычетык",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 3,
+          "pred_index": 3,
+          "similarity": 0.922,
+          "headword_gold": "армагты",
+          "headword_pred": "армагты",
+          "gold_lines": 6,
+          "pred_lines": 6,
+          "line_pairs": 6,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 4,
+          "pred_index": 4,
+          "similarity": 0.921,
+          "headword_gold": "аройвыԓьын",
+          "headword_pred": "аройвыльын",
+          "gold_lines": 5,
+          "pred_lines": 5,
+          "line_pairs": 5,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 20,
+          "pred_index": 20,
+          "similarity": 0.919,
+          "headword_gold": "ачарэкэгыргын",
+          "headword_pred": "ачарэкэгыргын",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 21,
+          "pred_index": 21,
+          "similarity": 0.919,
+          "headword_gold": "ачгыт",
+          "headword_pred": "ачгыт",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 18,
+          "pred_index": 18,
+          "similarity": 0.909,
+          "headword_gold": "атынватык",
+          "headword_pred": "атынватык",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 10,
+          "pred_index": 10,
+          "similarity": 0.903,
+          "headword_gold": "атӄатык",
+          "headword_pred": "атӄатык",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 2,
+          "pred_index": 2,
+          "similarity": 0.897,
+          "headword_gold": "аркычыткок",
+          "headword_pred": "аркычыткок",
+          "gold_lines": 3,
+          "pred_lines": 2,
+          "line_pairs": 1,
+          "missing_lines": 2,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 26,
+          "pred_index": 26,
+          "similarity": 0.889,
+          "headword_gold": "ачыӈык",
+          "headword_pred": "ачыӈык",
+          "gold_lines": 6,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 4,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 1,
+          "pred_index": 1,
+          "similarity": 0.887,
+          "headword_gold": "аркычеты",
+          "headword_pred": "аркычеты",
+          "gold_lines": 4,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 5,
+          "pred_index": 5,
+          "similarity": 0.879,
+          "headword_gold": "аромкатык",
+          "headword_pred": "аромкатык",
+          "gold_lines": 3,
+          "pred_lines": 2,
+          "line_pairs": 1,
+          "missing_lines": 2,
+          "extra_lines": 1
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "ачыӈ",
+          "gold": "\\un то, что взя́то взаймы́",
+          "pred": "\\gn долг (то, что взя́то взаймы́)",
+          "value_sim": 0.863
+        }
+      ],
+      "missing_record_samples": [],
+      "extra_record_samples": []
+    },
+    {
+      "page_id": "Circassian-English-Turkish/page_1",
+      "gold_path": "dataset/mudidi/dictionaries/Circassian-English-Turkish/Stage 2 MDF file/page_1/page_1.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Circassian-English-Turkish/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_1/page_1.mdf.txt",
+      "n_pred_records": 20,
+      "Record_Accuracy": 0.7,
+      "MDF_Fields_F1": 0.686567,
+      "record_counts": {
+        "tp": 14,
+        "fp": 6,
+        "fn": 6
+      },
+      "marker_counts": {
+        "tp": 46,
+        "fp": 10,
+        "fn": 32
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.3,
+        "edit_distance": 6,
+        "max_length": 20
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.164992,
+        "FieldValue_GCER": 0.264798,
+        "FieldValue_WER": 0.53125
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.542536,
+        "Headword_GCER": 0.528736,
+        "Headword_WER": 1.0
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.117686,
+        "Gloss_GCER": 0.191176,
+        "Gloss_WER": 0.542857
+      },
+      "language_quality": {
+        "source:circassian": {
+          "source_circassian_TextEdit": 0.212297,
+          "source_circassian_GCER": 0.393162,
+          "source_circassian_WER": 0.517241
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.08115,
+          "target_en_GCER": 0.221053,
+          "target_en_WER": 0.461538
+        },
+        "target:tr": {
+          "target_tr_TextEdit": 0.141174,
+          "target_tr_GCER": 0.165138,
+          "target_tr_WER": 0.590909
+        }
+      },
+      "language_script_quality": {
+        "Circassian-Arabic": {
+          "LangScript_Circassian-Arabic_TextEdit": 0.822809,
+          "LangScript_Circassian-Arabic_GCER": 0.783133,
+          "LangScript_Circassian-Arabic_WER": 1.0
+        },
+        "Circassian-Latin": {
+          "LangScript_Circassian-Latin_TextEdit": 0.909091,
+          "LangScript_Circassian-Latin_GCER": 0.991266,
+          "LangScript_Circassian-Latin_WER": 0.909091
+        },
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.5572,
+          "LangScript_English-Latin_GCER": 0.616935,
+          "LangScript_English-Latin_WER": 0.586957
+        },
+        "Turkish-Arabic": {
+          "LangScript_Turkish-Arabic_TextEdit": 0.40506,
+          "LangScript_Turkish-Arabic_GCER": 0.41844,
+          "LangScript_Turkish-Arabic_WER": 0.75
+        }
+      },
+      "marker_confusion": {},
+      "record_samples": [
+        {
+          "gold_index": 8,
+          "pred_index": 8,
+          "similarity": 0.769,
+          "headword_gold": "یِه زِگِه",
+          "headword_pred": "يَهزِگَه",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 3,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 13,
+          "similarity": 0.734,
+          "headword_gold": "سوات شِیدا",
+          "headword_pred": "سُوَاتِ شِيدَا",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 0,
+          "pred_index": 0,
+          "similarity": 0.725,
+          "headword_gold": "وِشْطِه",
+          "headword_pred": "وَشْطَهْ",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 2,
+          "missing_lines": 4,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 16,
+          "pred_index": 16,
+          "similarity": 0.722,
+          "headword_gold": "طشِیطله اُوقُودشُوق",
+          "headword_pred": "طْشِيطْلَه اُوقُودْشُوقْ",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 3,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 9,
+          "pred_index": 9,
+          "similarity": 0.694,
+          "headword_gold": "اُوشُوهن",
+          "headword_pred": "اُوشُوهَنْ",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 14,
+          "pred_index": 14,
+          "similarity": 0.685,
+          "headword_gold": "بوُطْطِه",
+          "headword_pred": "بُوطْطَهْ",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 3,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 18,
+          "pred_index": 18,
+          "similarity": 0.667,
+          "headword_gold": "فایدَا صوغا",
+          "headword_pred": "فَايْدَا صُوغَا",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 15,
+          "pred_index": 15,
+          "similarity": 0.658,
+          "headword_gold": "ناه شه",
+          "headword_pred": "نَاشْشَهْ",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 2,
+          "missing_lines": 4,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 7,
+          "pred_index": 7,
+          "similarity": 0.644,
+          "headword_gold": "قابوُلوُ صوغا",
+          "headword_pred": "قَابُولُو صُوغَا",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 17,
+          "pred_index": 17,
+          "similarity": 0.642,
+          "headword_gold": "اُوغابُزِینِیشط",
+          "headword_pred": "اُوغَابْزِينِيشْطْ",
+          "gold_lines": 6,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 3,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 4,
+          "pred_index": 4,
+          "similarity": 0.634,
+          "headword_gold": "طْصْشِی اِفمه",
+          "headword_pred": "طَصْشِىاِفْمَهْ",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 12,
+          "pred_index": 12,
+          "similarity": 0.63,
+          "headword_gold": "مویْ اوزِْزه",
+          "headword_pred": "مُوى اَوزِ زَه ـ وَاطِ وِى غُوَا",
+          "gold_lines": 7,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 4,
+          "extra_lines": 1
+        }
+      ],
+      "marker_error_samples": [],
+      "missing_record_samples": [
+        {
+          "index": 1,
+          "headword": "پْسِی شوُنِه",
+          "fingerprint_preview": "پْسِی شوُنِه рsee shooney able v.n to be able ایده بلمك"
+        },
+        {
+          "index": 2,
+          "headword": "آپْسِه",
+          "fingerprint_preview": "آپْسِه áhрsey above рreр یوقرده"
+        },
+        {
+          "index": 3,
+          "headword": "طْشِیطْلم گِه",
+          "fingerprint_preview": "طْشِیطْلم گِه tshitlem ghey about рreр صانكه — قرردن"
+        },
+        {
+          "index": 5,
+          "headword": "یِه مِپ",
+          "fingerprint_preview": "یِه مِپ تِیه پْشِه واُونِم yeeh meр; tiрshéh voonem absent a ناموجود"
+        },
+        {
+          "index": 6,
+          "headword": "ارزارار",
+          "fingerprint_preview": "ارزارار árzárár absurd a دادسز"
+        },
+        {
+          "index": 11,
+          "headword": "یِهسِن",
+          "fingerprint_preview": "یِهسِن yéhsén accustom v.a الشتمق"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 1,
+          "headword": "پِسى شُونَهْ",
+          "fingerprint_preview": "پِسى شُونَهْ to be able ايده بلمك v.n"
+        },
+        {
+          "index": 2,
+          "headword": "اَپْسَهْ",
+          "fingerprint_preview": "اَپْسَهْ above يوقرده рreр"
+        },
+        {
+          "index": 3,
+          "headword": "طْشِيِطْلَمْ گَهْ",
+          "fingerprint_preview": "طْشِيِطْلَمْ گَهْ about صانكه ـ قنردق рreр"
+        },
+        {
+          "index": 5,
+          "headword": "يَه مِپْ",
+          "fingerprint_preview": "يَه مِپْ absent نأموجود a تِيَهپِشَهْ وَاوْنَمْ or تِيَهپِشَهْ وَاوْنَمْ"
+        },
+        {
+          "index": 6,
+          "headword": "اَرْزَارَارْ",
+          "fingerprint_preview": "اَرْزَارَارْ absurd دادسر a"
+        },
+        {
+          "index": 11,
+          "headword": "يَهْسِنْ",
+          "fingerprint_preview": "يَهْسِنْ accustom الشمق v.a"
+        }
+      ]
+    },
+    {
+      "page_id": "Efik-English/page_13",
+      "gold_path": "dataset/mudidi/dictionaries/Efik-English/Stage 2 MDF file/page_13/page_13.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Efik-English/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_13/page_13.mdf.txt",
+      "n_pred_records": 19,
+      "Record_Accuracy": 0.863636,
+      "MDF_Fields_F1": 0.809524,
+      "record_counts": {
+        "tp": 19,
+        "fp": 0,
+        "fn": 3
+      },
+      "marker_counts": {
+        "tp": 102,
+        "fp": 26,
+        "fn": 22
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.136364,
+        "edit_distance": 3,
+        "max_length": 22
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.016021,
+        "FieldValue_GCER": 0.016709,
+        "FieldValue_WER": 0.029851
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.02807,
+        "Headword_GCER": 0.024194,
+        "Headword_WER": 0.157895
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.002479,
+        "Gloss_GCER": 0.004898,
+        "Gloss_WER": 0.004184
+      },
+      "language_quality": {
+        "source:efik": {
+          "source_efik_TextEdit": 0.014414,
+          "source_efik_GCER": 0.011952,
+          "source_efik_WER": 0.05
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.002479,
+          "target_en_GCER": 0.004898,
+          "target_en_WER": 0.004184
+        }
+      },
+      "language_script_quality": {
+        "Efik-Latin": {
+          "LangScript_Efik-Latin_TextEdit": 0.351593,
+          "LangScript_Efik-Latin_GCER": 0.192719,
+          "LangScript_Efik-Latin_WER": 0.4
+        },
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.128788,
+          "LangScript_English-Latin_GCER": 0.117647,
+          "LangScript_English-Latin_WER": 0.181818
+        }
+      },
+      "marker_confusion": {
+        "cf": {
+          "der": 4,
+          "un": 1
+        },
+        "ue": {
+          "oe": 2
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 12,
+          "pred_index": 10,
+          "similarity": 0.871,
+          "headword_gold": "DU-OI'",
+          "headword_pred": "Du-oi'",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 2,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 5,
+          "pred_index": 4,
+          "similarity": 0.838,
+          "headword_gold": "DÖÑ",
+          "headword_pred": "Döñ",
+          "gold_lines": 9,
+          "pred_lines": 10,
+          "line_pairs": 6,
+          "missing_lines": 3,
+          "extra_lines": 4
+        },
+        {
+          "gold_index": 1,
+          "pred_index": 0,
+          "similarity": 0.805,
+          "headword_gold": "DÏM'-E",
+          "headword_pred": "Dïm'-e",
+          "gold_lines": 10,
+          "pred_lines": 15,
+          "line_pairs": 10,
+          "missing_lines": 0,
+          "extra_lines": 5
+        },
+        {
+          "gold_index": 4,
+          "pred_index": 3,
+          "similarity": 0.769,
+          "headword_gold": "DÖB'-Ö",
+          "headword_pred": "Döb'-ö",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 1,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 17,
+          "pred_index": 14,
+          "similarity": 0.734,
+          "headword_gold": "DU-ÖT'",
+          "headword_pred": "Du-öt'",
+          "gold_lines": 6,
+          "pred_lines": 12,
+          "line_pairs": 6,
+          "missing_lines": 0,
+          "extra_lines": 6
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "DUT",
+          "gold": "\\cf Der. a. & adv., Idut-idut, and udut-udut",
+          "pred": "\\der a. & adv. Idut-idut, and udut-udut",
+          "value_sim": 0.919
+        },
+        {
+          "headword": "DU-TU'",
+          "gold": "\\cf Der. n. Ndutu",
+          "pred": "\\der n. Ndutu",
+          "value_sim": 0.762
+        },
+        {
+          "headword": "DI-ÖN",
+          "gold": "\\cf Ib., Ef., Düñ",
+          "pred": "\\un Ib., Ef., Düñ",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "DI-ÖK'-HÖ",
+          "gold": "\\ue Others, To surfeit",
+          "pred": "\\oe Others, To surfeit",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "DÖÑ",
+          "gold": "\\ue Others, They give a charge concerning it",
+          "pred": "\\oe Others, They give a charge concerning it",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "DÖÑ",
+          "gold": "\\cf Der. n., Udön̄-inua, v. ikä",
+          "pred": "\\der n. Udöñ-inua, v. ikä",
+          "value_sim": 0.809
+        },
+        {
+          "headword": "DÏM'-E",
+          "gold": "\\cf Der. n., Udïme-ntïbi",
+          "pred": "\\der n. Udïme-ntïbi",
+          "value_sim": 0.824
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 0,
+          "headword": "DÏM'-E",
+          "fingerprint_preview": "dïm'-e v dum'-e v. tr to make sonorous; big; as the voice odïme uyu ke itöñ he makes his voice big in his throat"
+        },
+        {
+          "index": 6,
+          "headword": "DÖÑ",
+          "fingerprint_preview": "döñ v. tr ib döñ akam to рray ef.; вöñ"
+        },
+        {
+          "index": 16,
+          "headword": "DU-ÖT'",
+          "fingerprint_preview": "du-öt' v. tr to make inert; feeble idem öduöt mi i feel indisрosed mem"
+        }
+      ],
+      "extra_record_samples": []
+    },
+    {
+      "page_id": "Evenki-Russian/page_1",
+      "gold_path": "dataset/mudidi/dictionaries/Evenki-Russian/Stage 2 MDF file/page_1/page_1.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Evenki-Russian/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_1/page_1.mdf.txt",
+      "n_pred_records": 28,
+      "Record_Accuracy": 0.857143,
+      "MDF_Fields_F1": 0.585859,
+      "record_counts": {
+        "tp": 24,
+        "fp": 4,
+        "fn": 4
+      },
+      "marker_counts": {
+        "tp": 87,
+        "fp": 61,
+        "fn": 62
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.142857,
+        "edit_distance": 4,
+        "max_length": 28
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.036559,
+        "FieldValue_GCER": 0.055228,
+        "FieldValue_WER": 0.170543
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.008796,
+        "Headword_GCER": 0.011905,
+        "Headword_WER": 0.083333
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.049636,
+        "Gloss_GCER": 0.071721,
+        "Gloss_WER": 0.408451
+      },
+      "language_quality": {
+        "source:evenki": {
+          "source_evenki_TextEdit": 0.010668,
+          "source_evenki_GCER": 0.015544,
+          "source_evenki_WER": 0.111111
+        },
+        "target:ru": {
+          "target_ru_TextEdit": 0.049636,
+          "target_ru_GCER": 0.071721,
+          "target_ru_WER": 0.408451
+        }
+      },
+      "language_script_quality": {
+        "Evenki-Cyrillic": {
+          "LangScript_Evenki-Cyrillic_TextEdit": 0.430093,
+          "LangScript_Evenki-Cyrillic_GCER": 0.433002,
+          "LangScript_Evenki-Cyrillic_WER": 0.554348
+        },
+        "Russian-Cyrillic": {
+          "LangScript_Russian-Cyrillic_TextEdit": 0.506351,
+          "LangScript_Russian-Cyrillic_GCER": 0.42429,
+          "LangScript_Russian-Cyrillic_WER": 0.626866
+        }
+      },
+      "marker_confusion": {
+        "dl": {
+          "un": 24,
+          "vn": 2
+        },
+        "xn": {
+          "gn": 4
+        },
+        "xv": {
+          "se": 4
+        },
+        "eg": {
+          "va": 2
+        },
+        "et": {
+          "va": 1
+        },
+        "pd": {
+          "lc": 1
+        },
+        "un": {
+          "ps": 1
+        },
+        "sn": {
+          "hm": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 25,
+          "pred_index": 25,
+          "similarity": 0.949,
+          "headword_gold": "авданнакāн",
+          "headword_pred": "авданнака̄н",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 7,
+          "pred_index": 7,
+          "similarity": 0.918,
+          "headword_gold": "авганича̄",
+          "headword_pred": "авганича̄",
+          "gold_lines": 8,
+          "pred_lines": 7,
+          "line_pairs": 6,
+          "missing_lines": 2,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 2,
+          "pred_index": 2,
+          "similarity": 0.909,
+          "headword_gold": "авачӣ",
+          "headword_pred": "авачӣ",
+          "gold_lines": 5,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 11,
+          "pred_index": 11,
+          "similarity": 0.895,
+          "headword_gold": "авгара̄т",
+          "headword_pred": "авгара̄т",
+          "gold_lines": 8,
+          "pred_lines": 8,
+          "line_pairs": 8,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 23,
+          "pred_index": 23,
+          "similarity": 0.894,
+          "headword_gold": "авдан",
+          "headword_pred": "авдан",
+          "gold_lines": 6,
+          "pred_lines": 6,
+          "line_pairs": 6,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 6,
+          "pred_index": 6,
+          "similarity": 0.886,
+          "headword_gold": "авгани-мӣ",
+          "headword_pred": "авганӣ-мӣ",
+          "gold_lines": 4,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 13,
+          "similarity": 0.867,
+          "headword_gold": "авгит",
+          "headword_pred": "авгит",
+          "gold_lines": 10,
+          "pred_lines": 10,
+          "line_pairs": 10,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 1,
+          "pred_index": 1,
+          "similarity": 0.84,
+          "headword_gold": "авахӣ",
+          "headword_pred": "авахӣ",
+          "gold_lines": 10,
+          "pred_lines": 12,
+          "line_pairs": 9,
+          "missing_lines": 1,
+          "extra_lines": 3
+        },
+        {
+          "gold_index": 17,
+          "pred_index": 17,
+          "similarity": 0.833,
+          "headword_gold": "авгӯ-вал",
+          "headword_pred": "авгӯ-вал",
+          "gold_lines": 4,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 26,
+          "pred_index": 26,
+          "similarity": 0.833,
+          "headword_gold": "авдарна",
+          "headword_pred": "авдарна",
+          "gold_lines": 4,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 8,
+          "pred_index": 8,
+          "similarity": 0.813,
+          "headword_gold": "авгара̄",
+          "headword_pred": "авгара̄",
+          "gold_lines": 11,
+          "pred_lines": 11,
+          "line_pairs": 9,
+          "missing_lines": 2,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 21,
+          "pred_index": 21,
+          "similarity": 0.78,
+          "headword_gold": "авгунча̄",
+          "headword_pred": "авгунча̄",
+          "gold_lines": 8,
+          "pred_lines": 7,
+          "line_pairs": 6,
+          "missing_lines": 2,
+          "extra_lines": 1
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "авганича̄",
+          "gold": "\\dl Урм",
+          "pred": "\\un Урм",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгара̄т",
+          "gold": "\\dl П-Т",
+          "pred": "\\un П-Т",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгара̄т",
+          "gold": "\\xn будь здоро́в!",
+          "pred": "\\gn будь здоро́в",
+          "value_sim": 0.96
+        },
+        {
+          "headword": "авгара̄т",
+          "gold": "\\xv авгара̄т бидекэл!",
+          "pred": "\\se авгара̄т бидекэ̄л",
+          "value_sim": 0.941
+        },
+        {
+          "headword": "авгара̄т",
+          "gold": "\\xv авгара̄т бикэл!",
+          "pred": "\\se авгара̄т бикэ̄л",
+          "value_sim": 0.933
+        },
+        {
+          "headword": "авгара̄т",
+          "gold": "\\xn проща́й!",
+          "pred": "\\gn проща́й",
+          "value_sim": 0.933
+        },
+        {
+          "headword": "авдан",
+          "gold": "\\dl С",
+          "pred": "\\un С",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авдан",
+          "gold": "\\dl С-Б, Бнт, Учр, Чмк",
+          "pred": "\\vn С-Б, Бнт, Учр, Чмк",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгани-мӣ",
+          "gold": "\\dl Урм",
+          "pred": "\\un Урм",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгит",
+          "gold": "\\dl П-Т, Н, И, З, Учр, Сх",
+          "pred": "\\un П-Т, Н, И, З, Учр, Сх",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгит",
+          "gold": "\\dl Сх",
+          "pred": "\\un Сх",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авгит",
+          "gold": "\\xv авгит эдындерэн",
+          "pred": "\\se авгит эдындерэ̄н",
+          "value_sim": 0.968
+        },
+        {
+          "headword": "авгит",
+          "gold": "\\xn отку́да ду́ет?",
+          "pred": "\\gn отку́да ду́ет",
+          "value_sim": 0.963
+        },
+        {
+          "headword": "авахӣ",
+          "gold": "\\dl З, Хнг, Учр, Урм, Сх, Чмк",
+          "pred": "\\un З, Хнг, Учр, Урм, Сх, Чмк",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "авахӣ",
+          "gold": "\\eg чёрт, дья́вол",
+          "pred": "\\va абааһӹ чёрт, дья́вол",
+          "value_sim": 0.788
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 4,
+          "headword": "авга-мӣ",
+          "fingerprint_preview": "авга-мӣ п-т; н; с-б; з; алд; учр 1 срасти́сь о костях зажи́ть о ране 2 попра́виться абга-мӣ"
+        },
+        {
+          "index": 16,
+          "headword": "авгӯ",
+          "fingerprint_preview": "авгӯ 1 п-т; н; с-б; брг; з; учр; урм; чмк; сх кото́рый по счёту 2 с-б како́й сх любо́е ме́сто; кро́ме того́; где нахо́ди"
+        },
+        {
+          "index": 20,
+          "headword": "авгун-мӣ",
+          "fingerprint_preview": "авгун-мӣ олкм; тнг; з; хнг; учр завя́нуть; пожелте́ть о листьях; траве абгӯ-мӣ авганӣ-мӣ"
+        },
+        {
+          "index": 24,
+          "headword": "авданна",
+          "fingerprint_preview": "авданна п-т; н; е; и; брг; з; алд; урм; чмк; сх лист растения абдан абданда абдандра абданна абдарна абдонно авдан авдан"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 4,
+          "headword": "авга-мӣ",
+          "fingerprint_preview": "авга-мӣ 1 срасти́сь (о костя́х); зажи́ть (о ра́не) п-т; н; с-б; з; алд; учр 2 попра́виться абга-мӣ"
+        },
+        {
+          "index": 16,
+          "headword": "авгӯ",
+          "fingerprint_preview": "авгӯ 1 1 кото́рый (по счёту) п-т; н; с-б; брг; з; учр; урм; чмк; сх 2 како́й с-б абгӯ; ававӯ; авагӯ; аввӯ; авгагӯ; авгав"
+        },
+        {
+          "index": 20,
+          "headword": "авгун-мӣ",
+          "fingerprint_preview": "авгун-мӣ завя́нуть; пожелте́ть (о листьях; траве́) олкм; тнг; з; хнг; учр абгӯ-мӣ; авганӣ-мӣ"
+        },
+        {
+          "index": 24,
+          "headword": "авданна",
+          "fingerprint_preview": "авданна лист (расте́ния) п-т; н; е; и; брг; з; алд; урм; чмк; сх абдан; абданда; абдандра; абданна; абдарна; абдонно; ав"
+        }
+      ]
+    },
+    {
+      "page_id": "Greek-English/page_38",
+      "gold_path": "dataset/mudidi/dictionaries/Greek-English/Stage 2 MDF file/page_38/page_38.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Greek-English/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_38/page_38.mdf.txt",
+      "n_pred_records": 60,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.502347,
+      "record_counts": {
+        "tp": 59,
+        "fp": 1,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 107,
+        "fp": 73,
+        "fn": 139
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 59
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.125212,
+        "FieldValue_GCER": 0.098942,
+        "FieldValue_WER": 0.307985
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.288434,
+        "Headword_GCER": 0.309091,
+        "Headword_WER": 1.0
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.005202,
+        "Gloss_GCER": 0.010196,
+        "Gloss_WER": 0.017857
+      },
+      "language_quality": {
+        "source:greek": {
+          "source_greek_TextEdit": 0.227037,
+          "source_greek_GCER": 0.287879,
+          "source_greek_WER": 0.817204
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.005202,
+          "target_en_GCER": 0.010196,
+          "target_en_WER": 0.017857
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.57461,
+          "LangScript_English-Latin_GCER": 0.381058,
+          "LangScript_English-Latin_WER": 0.583333
+        },
+        "Greek-Greek": {
+          "LangScript_Greek-Greek_TextEdit": 0.530232,
+          "LangScript_Greek-Greek_GCER": 0.55079,
+          "LangScript_Greek-Greek_WER": 1.0
+        }
+      },
+      "marker_confusion": {
+        "uv": {
+          "lx": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 36,
+          "pred_index": 37,
+          "similarity": 0.949,
+          "headword_gold": "᾿Αειφυγία, ας",
+          "headword_pred": "'Αειφυγία",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 39,
+          "pred_index": 40,
+          "similarity": 0.948,
+          "headword_gold": "᾿Αεράκι, ίου",
+          "headword_pred": "'Αεράκι",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 1,
+          "missing_lines": 3,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 10,
+          "pred_index": 11,
+          "similarity": 0.948,
+          "headword_gold": "᾿Αδυνατίζω",
+          "headword_pred": "'Αδυνατίζω",
+          "gold_lines": 10,
+          "pred_lines": 5,
+          "line_pairs": 4,
+          "missing_lines": 6,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 17,
+          "pred_index": 18,
+          "similarity": 0.947,
+          "headword_gold": "῎Αδυτον, ου",
+          "headword_pred": "\"Αδυτον",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 1,
+          "missing_lines": 2,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 33,
+          "pred_index": 34,
+          "similarity": 0.946,
+          "headword_gold": "᾿Αειπάρθενος, ον",
+          "headword_pred": "'Αειπάρθενος",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 14,
+          "similarity": 0.946,
+          "headword_gold": "᾿Αδυνατῶ, έω",
+          "headword_pred": "'Αδυνατῶ",
+          "gold_lines": 10,
+          "pred_lines": 3,
+          "line_pairs": 1,
+          "missing_lines": 9,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 25,
+          "pred_index": 26,
+          "similarity": 0.944,
+          "headword_gold": "᾿Αείδουλος, ον",
+          "headword_pred": "'Αείδουλος",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 48,
+          "pred_index": 49,
+          "similarity": 0.943,
+          "headword_gold": "᾿Αεριόφως, ωτος",
+          "headword_pred": "'Αεριόφως",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 1,
+          "missing_lines": 2,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 45,
+          "pred_index": 46,
+          "similarity": 0.941,
+          "headword_gold": "᾿Αερικὸς, ὴ, ὸν",
+          "headword_pred": "'Αερικὸς",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 1,
+          "missing_lines": 2,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 8,
+          "pred_index": 9,
+          "similarity": 0.939,
+          "headword_gold": "᾿Αδυνάστευτος, ον",
+          "headword_pred": "'Αδυνάστευτος",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 35,
+          "pred_index": 36,
+          "similarity": 0.939,
+          "headword_gold": "᾿Αειφρούρητος, ον",
+          "headword_pred": "'Αειφρούρητος",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 52,
+          "pred_index": 53,
+          "similarity": 0.938,
+          "headword_gold": "᾿Αεροβάτης, ου",
+          "headword_pred": "'Αεροβάτης",
+          "gold_lines": 6,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 4,
+          "extra_lines": 1
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "᾿Αέριος, ία, ιον",
+          "gold": "\\uv ἐναέριος",
+          "pred": "\\lx 'Αέριος",
+          "value_sim": 0.8
+        }
+      ],
+      "missing_record_samples": [],
+      "extra_record_samples": [
+        {
+          "index": 0,
+          "headword": "ΑΔΡΑ",
+          "fingerprint_preview": "αδρα ergy; laxly; slackly"
+        }
+      ]
+    },
+    {
+      "page_id": "Iñupiatun Eskimo-English/page_42",
+      "gold_path": "dataset/mudidi/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Iñupiatun Eskimo-English/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_42/page_42.mdf.txt",
+      "n_pred_records": 62,
+      "Record_Accuracy": 1.0,
+      "MDF_Fields_F1": 0.996324,
+      "record_counts": {
+        "tp": 62,
+        "fp": 0,
+        "fn": 0
+      },
+      "marker_counts": {
+        "tp": 271,
+        "fp": 0,
+        "fn": 2
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.0,
+        "edit_distance": 0,
+        "max_length": 62
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.005764,
+        "FieldValue_GCER": 0.00563,
+        "FieldValue_WER": 0.02916
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.01531,
+        "Headword_GCER": 0.012868,
+        "Headword_WER": 0.095238
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.003119,
+        "Gloss_GCER": 0.001558,
+        "Gloss_WER": 0.005618
+      },
+      "language_quality": {
+        "source:inupiatuneskimo": {
+          "source_inupiatuneskimo_TextEdit": 0.006414,
+          "source_inupiatuneskimo_GCER": 0.007937,
+          "source_inupiatuneskimo_WER": 0.04
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.003119,
+          "target_en_GCER": 0.001558,
+          "target_en_WER": 0.005618
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.014388,
+          "LangScript_English-Latin_GCER": 0.001168,
+          "LangScript_English-Latin_WER": 0.014388
+        },
+        "Iñupiatun Eskimo-Latin": {
+          "LangScript_Iñupiatun Eskimo-Latin_TextEdit": 0.011438,
+          "LangScript_Iñupiatun Eskimo-Latin_GCER": 0.011667,
+          "LangScript_Iñupiatun Eskimo-Latin_WER": 0.107438
+        }
+      },
+      "marker_confusion": {},
+      "record_samples": [
+        {
+          "gold_index": 42,
+          "pred_index": 42,
+          "similarity": 0.943,
+          "headword_gold": "anniviḷił̣iaq",
+          "headword_pred": "anniviḷiḷiq",
+          "gold_lines": 4,
+          "pred_lines": 4,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 10,
+          "pred_index": 10,
+          "similarity": 0.941,
+          "headword_gold": "annaatuk",
+          "headword_pred": "annaatuk",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 0,
+          "extra_lines": 0
+        }
+      ],
+      "marker_error_samples": [],
+      "missing_record_samples": [],
+      "extra_record_samples": []
+    },
+    {
+      "page_id": "Kashmiri-English/page_14",
+      "gold_path": "dataset/mudidi/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Kashmiri-English/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_14/page_14.mdf.txt",
+      "n_pred_records": 41,
+      "Record_Accuracy": 0.97561,
+      "MDF_Fields_F1": 0.675768,
+      "record_counts": {
+        "tp": 40,
+        "fp": 1,
+        "fn": 1
+      },
+      "marker_counts": {
+        "tp": 99,
+        "fp": 26,
+        "fn": 69
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.731707,
+        "edit_distance": 30,
+        "max_length": 41
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.008977,
+        "FieldValue_GCER": 0.011186,
+        "FieldValue_WER": 0.06044
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.011875,
+        "Headword_GCER": 0.015625,
+        "Headword_WER": 0.086957
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.005056,
+        "Gloss_GCER": 0.006897,
+        "Gloss_WER": 0.0625
+      },
+      "language_quality": {
+        "source:kashmiri": {
+          "source_kashmiri_TextEdit": 0.007917,
+          "source_kashmiri_GCER": 0.013986,
+          "source_kashmiri_WER": 0.060606
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.005056,
+          "target_en_GCER": 0.006897,
+          "target_en_WER": 0.0625
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.053265,
+          "LangScript_English-Latin_GCER": 0.044444,
+          "LangScript_English-Latin_WER": 0.083333
+        },
+        "Kashmiri-Arabic": {
+          "LangScript_Kashmiri-Arabic_TextEdit": 1.0,
+          "LangScript_Kashmiri-Arabic_GCER": 1.0,
+          "LangScript_Kashmiri-Arabic_WER": 1.0
+        },
+        "Kashmiri-Latin": {
+          "LangScript_Kashmiri-Latin_TextEdit": 0.157649,
+          "LangScript_Kashmiri-Latin_GCER": 0.203448,
+          "LangScript_Kashmiri-Latin_WER": 0.212766
+        }
+      },
+      "marker_confusion": {
+        "pd": {
+          "ps": 20
+        },
+        "ge": {
+          "ve": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 36,
+          "pred_index": 30,
+          "similarity": 0.939,
+          "headword_gold": "aDI",
+          "headword_pred": "aDI",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 30,
+          "pred_index": 17,
+          "similarity": 0.925,
+          "headword_gold": "aTI",
+          "headword_pred": "aTI",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 8,
+          "pred_index": 15,
+          "similarity": 0.92,
+          "headword_gold": "akha:DI",
+          "headword_pred": "akha:DI",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 6,
+          "pred_index": 11,
+          "similarity": 0.909,
+          "headword_gold": "aksar",
+          "headword_pred": "aksar",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 23,
+          "pred_index": 3,
+          "similarity": 0.906,
+          "headword_gold": "aza:n",
+          "headword_pred": "aza:n",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 32,
+          "pred_index": 21,
+          "similarity": 0.904,
+          "headword_gold": "aTIhor",
+          "headword_pred": "aTlhor",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 24,
+          "pred_index": 5,
+          "similarity": 0.9,
+          "headword_gold": "aza:b",
+          "headword_pred": "aza:b",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 11,
+          "pred_index": 20,
+          "similarity": 0.896,
+          "headword_gold": "akhba:r",
+          "headword_pred": "akhba:r",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 26,
+          "pred_index": 9,
+          "similarity": 0.892,
+          "headword_gold": "azkal",
+          "headword_pred": "azkal",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 28,
+          "pred_index": 14,
+          "similarity": 0.889,
+          "headword_gold": "azta:m",
+          "headword_pred": "azta:m",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 33,
+          "pred_index": 23,
+          "similarity": 0.889,
+          "headword_gold": "aTal",
+          "headword_pred": "aTal",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 27,
+          "pred_index": 12,
+          "similarity": 0.866,
+          "headword_gold": "azmat",
+          "headword_pred": "azmat",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "aTh",
+          "gold": "\\pd f",
+          "pred": "\\ps f",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aDI",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "akha:DI",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aTIhor",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aza:b",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "akhba:r",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "azmat",
+          "gold": "\\pd f",
+          "pred": "\\ps f",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aza:r",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ajal",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "agast",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "aktu:bar",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "azarvun",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "akTar",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ajA:yibgar",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ajanT",
+          "gold": "\\pd m",
+          "pred": "\\ps m",
+          "value_sim": 1.0
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 31,
+          "headword": "aTlba:r",
+          "fingerprint_preview": "atlba:r m اٹہٕ بور load on shoulders/back"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 40,
+          "headword": "aDIkAj",
+          "fingerprint_preview": "adikaj f.s see main entry: adikaji"
+        }
+      ]
+    },
+    {
+      "page_id": "Na-English-Chinese-French/page_19",
+      "gold_path": "dataset/mudidi/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Na-English-Chinese-French/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_19/page_19.mdf.txt",
+      "n_pred_records": 7,
+      "Record_Accuracy": 0.714286,
+      "MDF_Fields_F1": 0.809816,
+      "record_counts": {
+        "tp": 5,
+        "fp": 2,
+        "fn": 2
+      },
+      "marker_counts": {
+        "tp": 66,
+        "fp": 11,
+        "fn": 20
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.285714,
+        "edit_distance": 2,
+        "max_length": 7
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.029206,
+        "FieldValue_GCER": 0.011446,
+        "FieldValue_WER": 0.04878
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.028571,
+        "Headword_GCER": 0.028571,
+        "Headword_WER": 0.2
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.010267,
+        "Gloss_GCER": 0.005353,
+        "Gloss_WER": 0.027778
+      },
+      "language_quality": {
+        "source:na": {
+          "source_na_TextEdit": 0.098016,
+          "source_na_GCER": 0.129032,
+          "source_na_WER": 0.4
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.011776,
+          "target_en_GCER": 0.005274,
+          "target_en_WER": 0.028571
+        },
+        "target:fr": {
+          "target_fr_TextEdit": 0.019026,
+          "target_fr_GCER": 0.006466,
+          "target_fr_WER": 0.02994
+        },
+        "target:zh": {
+          "target_zh_TextEdit": 0.0,
+          "target_zh_GCER": 0.0,
+          "target_zh_WER": 0.0
+        }
+      },
+      "language_script_quality": {
+        "Chinese-Han": {
+          "LangScript_Chinese-Han_TextEdit": 0.238095,
+          "LangScript_Chinese-Han_GCER": 0.089744,
+          "LangScript_Chinese-Han_WER": 0.238095
+        },
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.439024,
+          "LangScript_English-Latin_GCER": 0.223282,
+          "LangScript_English-Latin_WER": 0.439024
+        },
+        "French-Latin": {
+          "LangScript_French-Latin_TextEdit": 0.238095,
+          "LangScript_French-Latin_GCER": 0.061118,
+          "LangScript_French-Latin_WER": 0.238095
+        },
+        "Na-IPA": {
+          "LangScript_Na-IPA_TextEdit": 0.216484,
+          "LangScript_Na-IPA_GCER": 0.143498,
+          "LangScript_Na-IPA_WER": 0.384615
+        },
+        "Na-Latin": {
+          "LangScript_Na-Latin_TextEdit": 1.0,
+          "LangScript_Na-Latin_GCER": 1.0,
+          "LangScript_Na-Latin_WER": 1.0
+        }
+      },
+      "marker_confusion": {
+        "nt": {
+          "un": 2
+        },
+        "xv": {
+          "se": 2
+        },
+        "xe": {
+          "ge": 2
+        },
+        "xn": {
+          "gn": 2
+        },
+        "xr": {
+          "gr": 2
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 5,
+          "pred_index": 5,
+          "similarity": 0.88,
+          "headword_gold": "ɑ˩pʰv̩#˥",
+          "headword_pred": "ɑ˩pʰv̩#˥",
+          "gold_lines": 9,
+          "pred_lines": 7,
+          "line_pairs": 7,
+          "missing_lines": 2,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 3,
+          "pred_index": 3,
+          "similarity": 0.785,
+          "headword_gold": "ɑ˩pʰo˩-hĩ˩",
+          "headword_pred": "ɑ˩pʰo˩-hĩ˩",
+          "gold_lines": 8,
+          "pred_lines": 6,
+          "line_pairs": 6,
+          "missing_lines": 2,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 4,
+          "pred_index": 4,
+          "similarity": 0.744,
+          "headword_gold": "ɑ˩pʰv̩˧˥",
+          "headword_pred": "ɑ˩pʰv̩˥",
+          "gold_lines": 8,
+          "pred_lines": 6,
+          "line_pairs": 6,
+          "missing_lines": 2,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 6,
+          "pred_index": 6,
+          "similarity": 0.729,
+          "headword_gold": "ɑ˩ʁo˧",
+          "headword_pred": "ɑ˩ʁo˧",
+          "gold_lines": 33,
+          "pred_lines": 31,
+          "line_pairs": 31,
+          "missing_lines": 2,
+          "extra_lines": 0
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "ɑ˩pʰv̩#˥",
+          "gold": "\\nt Commonly used classifier: mi˩",
+          "pred": "\\un Commonly used classifier: mi˩",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xv ɑ˩ʁo˧-hĩ#˥",
+          "pred": "\\se ɑ˩ʁo˧-hĩ#˥",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xe members of the family, family members (who live under the same roof), lineage",
+          "pred": "\\ge members of the family, family members (who live under the same roof), lineage",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xn 家人（住在一起的家人）",
+          "pred": "\\gn 家人（住在一起的家人）",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xr la maisonnée, les gens de la famille (proche : ceux qui habitent sous le même toit), la lignée",
+          "pred": "\\gr la maisonnée, les gens de la famille (proche : ceux qui habitent sous le même toit), la lignée",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xv ɑ˩ʁo˧=ɻæ˩",
+          "pred": "\\se ɑ˩ʁo˧=ɻæ˩",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xe the members of the family, the family group (living under the same roof)",
+          "pred": "\\ge the members of the family, the family group (living under the same roof)",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xn 家人、家族（住在一起的家人）",
+          "pred": "\\gn 家人、家族（住在一起的家人）",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\xr la maisonnée, les gens de la famille",
+          "pred": "\\gr la maisonnée, les gens de la famille",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "ɑ˩ʁo˧",
+          "gold": "\\nt Commonly used classifier: ɭɯ˧",
+          "pred": "\\un Commonly used classifier: ɭɯ˧",
+          "value_sim": 1.0
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 0,
+          "headword": "ɑ˩˧",
+          "fingerprint_preview": "ɑ˩˧ ɑ˩˥ oq noun tone: lm goose 鹅 oie (phonological elicitation)ɑ˩ dzɯ˥-ze˩ … has eaten (a/the) goose 吃了鹅 …a mangé (une) "
+        },
+        {
+          "index": 1,
+          "headword": "ɑ˩mi#˥",
+          "fingerprint_preview": "ɑ˩mi#˥ ɑ˩mi˥ omi noun tone: lm+#h female goose 母鹅 oie (femelle) ɑ˩mi˧-ɑ˥рʰv̩˩ goose and gander 公鹅与母鹅 oie et jars commonl"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 0,
+          "headword": "ɑ˩",
+          "fingerprint_preview": "ɑ˩ /ɑ˩/ noun 鹅 goose oie commonly used classifier: mi˩ ɑ˩ dzɯ˥-ze˩ has eaten (a/the) goose 吃了鹅 a mangé (une) oie ɑ˩ hwæ˧"
+        },
+        {
+          "index": 1,
+          "headword": "ɑ˩mi#˥",
+          "fingerprint_preview": "ɑ˩mi#˥ /ɑ˩mi˥/ noun 母鹅 female goose oie (femelle) commonly used classifier: mi˩ ɑ˩mi˧-ɑ˥рʰv̩˩ 公鹅与母鹅 goose and gander oie"
+        }
+      ]
+    },
+    {
+      "page_id": "Nahuatl-French/page_74",
+      "gold_path": "dataset/mudidi/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Nahuatl-French/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_74/page_74.mdf.txt",
+      "n_pred_records": 30,
+      "Record_Accuracy": 0.903226,
+      "MDF_Fields_F1": 0.369231,
+      "record_counts": {
+        "tp": 28,
+        "fp": 2,
+        "fn": 3
+      },
+      "marker_counts": {
+        "tp": 60,
+        "fp": 109,
+        "fn": 96
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.096774,
+        "edit_distance": 3,
+        "max_length": 31
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.093726,
+        "FieldValue_GCER": 0.126721,
+        "FieldValue_WER": 0.284182
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.0,
+        "Headword_GCER": 0.0,
+        "Headword_WER": 0.0
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.140627,
+        "Gloss_GCER": 0.152226,
+        "Gloss_WER": 0.24812
+      },
+      "language_quality": {
+        "source:nahuatl": {
+          "source_nahuatl_TextEdit": 0.041148,
+          "source_nahuatl_GCER": 0.026738,
+          "source_nahuatl_WER": 0.217391
+        },
+        "target:fr": {
+          "target_fr_TextEdit": 0.140627,
+          "target_fr_GCER": 0.152226,
+          "target_fr_WER": 0.24812
+        }
+      },
+      "language_script_quality": {
+        "French-Latin": {
+          "LangScript_French-Latin_TextEdit": 0.564696,
+          "LangScript_French-Latin_GCER": 0.426047,
+          "LangScript_French-Latin_WER": 0.671053
+        },
+        "Nahuatl-Latin": {
+          "LangScript_Nahuatl-Latin_TextEdit": 0.369982,
+          "LangScript_Nahuatl-Latin_GCER": 0.459042,
+          "LangScript_Nahuatl-Latin_WER": 0.478723
+        }
+      },
+      "marker_confusion": {
+        "mr": {
+          "et": 25
+        },
+        "xv": {
+          "rr": 2
+        },
+        "xn": {
+          "gn": 1
+        },
+        "pd": {
+          "rr": 8,
+          "et": 1
+        },
+        "sn": {
+          "hm": 2
+        },
+        "va": {
+          "rr": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 20,
+          "pred_index": 19,
+          "similarity": 0.942,
+          "headword_gold": "CENTETL",
+          "headword_pred": "CENTETL",
+          "gold_lines": 16,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 12,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 29,
+          "pred_index": 28,
+          "similarity": 0.94,
+          "headword_gold": "CENTLACA",
+          "headword_pred": "CENTLACA",
+          "gold_lines": 6,
+          "pred_lines": 6,
+          "line_pairs": 5,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 14,
+          "pred_index": 13,
+          "similarity": 0.939,
+          "headword_gold": "CENTENTLI",
+          "headword_pred": "CENTENTLI",
+          "gold_lines": 7,
+          "pred_lines": 6,
+          "line_pairs": 2,
+          "missing_lines": 5,
+          "extra_lines": 4
+        },
+        {
+          "gold_index": 9,
+          "pred_index": 8,
+          "similarity": 0.921,
+          "headword_gold": "CENTELCHIUALONI",
+          "headword_pred": "CENTELCHIUALONI",
+          "gold_lines": 7,
+          "pred_lines": 6,
+          "line_pairs": 3,
+          "missing_lines": 4,
+          "extra_lines": 3
+        },
+        {
+          "gold_index": 4,
+          "pred_index": 4,
+          "similarity": 0.911,
+          "headword_gold": "CENTECPANUIA",
+          "headword_pred": "CENTECPANUIA",
+          "gold_lines": 5,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 26,
+          "pred_index": 25,
+          "similarity": 0.907,
+          "headword_gold": "CENTIUITZE",
+          "headword_pred": "CENTIUITZE",
+          "gold_lines": 4,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 8,
+          "pred_index": 7,
+          "similarity": 0.905,
+          "headword_gold": "CENTELCHIUA",
+          "headword_pred": "CENTELCHIUA",
+          "gold_lines": 9,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 5,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 16,
+          "pred_index": 15,
+          "similarity": 0.898,
+          "headword_gold": "CENTEQUILIA",
+          "headword_pred": "CENTEQUILIA",
+          "gold_lines": 5,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 12,
+          "similarity": 0.894,
+          "headword_gold": "CENTENEUALOCA",
+          "headword_pred": "CENTENEUALOCA",
+          "gold_lines": 4,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 5,
+          "pred_index": 5,
+          "similarity": 0.894,
+          "headword_gold": "CENTECTLAPIXQUE",
+          "headword_pred": "CENTECTLAPIXQUE",
+          "gold_lines": 5,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 10,
+          "pred_index": 9,
+          "similarity": 0.893,
+          "headword_gold": "CENTEMA",
+          "headword_pred": "CENTEMA",
+          "gold_lines": 5,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 7,
+          "pred_index": 6,
+          "similarity": 0.887,
+          "headword_gold": "CENTECUTLI",
+          "headword_pred": "CENTECUTLI",
+          "gold_lines": 4,
+          "pred_lines": 6,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 3
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "CENTEOTL",
+          "gold": "\\mr centli, teotl.",
+          "pred": "\\et centli, teotl",
+          "value_sim": 0.963
+        },
+        {
+          "headword": "CENTETL",
+          "gold": "\\mr ce, tetl.",
+          "pred": "\\et ce, tetl",
+          "value_sim": 0.941
+        },
+        {
+          "headword": "CENTETL",
+          "gold": "\\xv oc centetl,",
+          "pred": "\\rr CENTETL",
+          "value_sim": 0.778
+        },
+        {
+          "headword": "CENTLACA",
+          "gold": "\\mr cen, tlacatl.",
+          "pred": "\\et cen, tlacatl",
+          "value_sim": 0.96
+        },
+        {
+          "headword": "CENTLACA",
+          "gold": "\\xv ticentlaca,",
+          "pred": "\\rr CENTLACA",
+          "value_sim": 0.842
+        },
+        {
+          "headword": "CENTLACA",
+          "gold": "\\xn nous sommes tous de la même fa-mille, de la même nation.",
+          "pred": "\\gn Personnes d'une même famille; ticentlaca, nous sommes tous de la même famille, de la même nation",
+          "value_sim": 0.711
+        },
+        {
+          "headword": "CENTENTLI",
+          "gold": "\\mr ce, tentli.",
+          "pred": "\\et ce, tentli",
+          "value_sim": 0.952
+        },
+        {
+          "headword": "CENTELCHIUALONI",
+          "gold": "\\mr centelchiua",
+          "pred": "\\et centelchiua",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "CENTECPANUIA",
+          "gold": "\\mr centeca, panuia",
+          "pred": "\\et centeca, panuia",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "CENTECPANUIA",
+          "gold": "\\pd ocentecpanui",
+          "pred": "\\rr CENTECPANUIA",
+          "value_sim": 0.833
+        },
+        {
+          "headword": "CENTIUITZE",
+          "gold": "\\mr cen, uitz.",
+          "pred": "\\et cen, uitz",
+          "value_sim": 0.947
+        },
+        {
+          "headword": "CENTELCHIUA",
+          "gold": "\\sn 1",
+          "pred": "\\hm 1",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "CENTELCHIUA",
+          "gold": "\\mr cen, telchiua.",
+          "pred": "\\et cen, telchiua",
+          "value_sim": 0.963
+        },
+        {
+          "headword": "CENTELCHIUA",
+          "gold": "\\pd ocentelchiu",
+          "pred": "\\rr CENTELCHIUA",
+          "value_sim": 0.909
+        },
+        {
+          "headword": "CENTEQUILIA",
+          "gold": "\\mr cen, tequilia.",
+          "pred": "\\et cen, tequilia",
+          "value_sim": 0.963
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 0,
+          "headword": "",
+          "fingerprint_preview": "des raisons; des arguments en faveur d'une chose; célébrer en les racontant; en les chantant; les exрloits de quelqu'un."
+        },
+        {
+          "index": 6,
+          "headword": "CENTECUCHTLI",
+          "fingerprint_preview": "centecuchtli centecochtli"
+        },
+        {
+          "index": 17,
+          "headword": "CENTETIA",
+          "fingerprint_preview": "centetia ocentetiac; ocentetix; ocentet; v. n. être unis; s'entendre; ne faire qu'un; centetia in toyollo; nous nous aim"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 1,
+          "headword": "CENTECUCHTLI",
+          "fingerprint_preview": "centecuchtli 1 s une tige de рlante; laitue; chou; etc centecuchtli ce; tecochtli"
+        },
+        {
+          "index": 16,
+          "headword": "CENTETIA",
+          "fingerprint_preview": "centetia 1 р. v. n ocentetiac; ocentetix ou ocentet; être unis; s'entendre; ne faire qu'un; centetia in toyollo; nous no"
+        }
+      ]
+    },
+    {
+      "page_id": "Tiri-English/page_15",
+      "gold_path": "dataset/mudidi/dictionaries/Tiri-English/Stage 2 MDF file/page_15/page_15.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Tiri-English/stage-2/qwen3vl235_high_mdf_intro_toolbox_from_gemini31pro_flat_alpha/page_15/page_15.mdf.txt",
+      "n_pred_records": 35,
+      "Record_Accuracy": 0.916667,
+      "MDF_Fields_F1": 0.871795,
+      "record_counts": {
+        "tp": 33,
+        "fp": 2,
+        "fn": 3
+      },
+      "marker_counts": {
+        "tp": 85,
+        "fp": 13,
+        "fn": 12
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.083333,
+        "edit_distance": 3,
+        "max_length": 36
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.027642,
+        "FieldValue_GCER": 0.027915,
+        "FieldValue_WER": 0.090517
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.011111,
+        "Headword_GCER": 0.012987,
+        "Headword_WER": 0.066667
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.014244,
+        "Gloss_GCER": 0.020202,
+        "Gloss_WER": 0.035714
+      },
+      "language_quality": {
+        "source:tiri": {
+          "source_tiri_TextEdit": 0.019841,
+          "source_tiri_GCER": 0.023256,
+          "source_tiri_WER": 0.125
+        },
+        "target:en": {
+          "target_en_TextEdit": 0.014244,
+          "target_en_GCER": 0.020202,
+          "target_en_WER": 0.035714
+        }
+      },
+      "language_script_quality": {
+        "English-Latin": {
+          "LangScript_English-Latin_TextEdit": 0.145309,
+          "LangScript_English-Latin_GCER": 0.075368,
+          "LangScript_English-Latin_WER": 0.26
+        },
+        "Tiri-Latin": {
+          "LangScript_Tiri-Latin_TextEdit": 0.214744,
+          "LangScript_Tiri-Latin_GCER": 0.119454,
+          "LangScript_Tiri-Latin_WER": 0.230769
+        }
+      },
+      "marker_confusion": {
+        "ue": {
+          "nt": 1
+        },
+        "se": {
+          "lx": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 20,
+          "pred_index": 22,
+          "similarity": 0.947,
+          "headword_gold": "bʷɛ̃řĩ",
+          "headword_pred": "bʷɛ̃řĩ",
+          "gold_lines": 7,
+          "pred_lines": 8,
+          "line_pairs": 7,
+          "missing_lines": 0,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 26,
+          "pred_index": 27,
+          "similarity": 0.933,
+          "headword_gold": "çiibə",
+          "headword_pred": "çĩĩbə",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 32,
+          "pred_index": 32,
+          "similarity": 0.931,
+          "headword_gold": "damiři",
+          "headword_pred": "damĩři",
+          "gold_lines": 3,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 7,
+          "pred_index": 8,
+          "similarity": 0.923,
+          "headword_gold": "bʷařa",
+          "headword_pred": "bʷařa",
+          "gold_lines": 3,
+          "pred_lines": 4,
+          "line_pairs": 3,
+          "missing_lines": 0,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 13,
+          "pred_index": 15,
+          "similarity": 0.923,
+          "headword_gold": "bʷašã",
+          "headword_pred": "bʷašã",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 2,
+          "pred_index": 3,
+          "similarity": 0.889,
+          "headword_gold": "bʷãĩĩ",
+          "headword_pred": "bʷãîî",
+          "gold_lines": 2,
+          "pred_lines": 2,
+          "line_pairs": 1,
+          "missing_lines": 1,
+          "extra_lines": 1
+        },
+        {
+          "gold_index": 5,
+          "pred_index": 6,
+          "similarity": 0.878,
+          "headword_gold": "bʷaŋũ",
+          "headword_pred": "bʷaŋũ",
+          "gold_lines": 4,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 1,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 33,
+          "pred_index": 33,
+          "similarity": 0.807,
+          "headword_gold": "dařa",
+          "headword_pred": "dařa",
+          "gold_lines": 5,
+          "pred_lines": 6,
+          "line_pairs": 4,
+          "missing_lines": 1,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 21,
+          "pred_index": 23,
+          "similarity": 0.804,
+          "headword_gold": "bʷii",
+          "headword_pred": "bʷii",
+          "gold_lines": 3,
+          "pred_lines": 5,
+          "line_pairs": 3,
+          "missing_lines": 0,
+          "extra_lines": 2
+        },
+        {
+          "gold_index": 29,
+          "pred_index": 29,
+          "similarity": 0.793,
+          "headword_gold": "dae",
+          "headword_pred": "dae",
+          "gold_lines": 4,
+          "pred_lines": 7,
+          "line_pairs": 4,
+          "missing_lines": 0,
+          "extra_lines": 3
+        },
+        {
+          "gold_index": 0,
+          "pred_index": 1,
+          "similarity": 0.667,
+          "headword_gold": "bʷaði",
+          "headword_pred": "bʷaðirɔ",
+          "gold_lines": 4,
+          "pred_lines": 2,
+          "line_pairs": 2,
+          "missing_lines": 2,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 10,
+          "pred_index": 11,
+          "similarity": 0.649,
+          "headword_gold": "bʷara",
+          "headword_pred": "bʷara",
+          "gold_lines": 5,
+          "pred_lines": 3,
+          "line_pairs": 3,
+          "missing_lines": 2,
+          "extra_lines": 0
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "çiibə",
+          "gold": "\\ue presumably borrowed",
+          "pred": "\\nt (presumably borrowed)",
+          "value_sim": 0.95
+        },
+        {
+          "headword": "bʷaði",
+          "gold": "\\se bʷaðirɔ",
+          "pred": "\\lx bʷaðirɔ",
+          "value_sim": 1.0
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 22,
+          "headword": "bʷii",
+          "fingerprint_preview": "bʷii 2 variety of taro"
+        },
+        {
+          "index": 28,
+          "headword": "dae",
+          "fingerprint_preview": "dae 1 something; thing"
+        },
+        {
+          "index": 34,
+          "headword": "dařa",
+          "fingerprint_preview": "dařa 2 wide"
+        }
+      ],
+      "extra_record_samples": [
+        {
+          "index": 0,
+          "headword": "bʷaði",
+          "fingerprint_preview": "bʷaði the gums"
+        },
+        {
+          "index": 12,
+          "headword": "bʷaraañĩ",
+          "fingerprint_preview": "bʷaraañĩ his forehead"
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "Record_Accuracy": 0.934132,
+    "MDF_Fields_F1": 0.709817,
+    "record_counts": {
+      "tp": 312,
+      "fp": 18,
+      "fn": 22
+    },
+    "marker_counts": {
+      "tp": 987,
+      "fp": 337,
+      "fn": 470
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.177675
+    },
+    "Field_Value_GCER": 0.050327,
+    "Field_Value_WER": 0.135871,
+    "Headword_GCER": 0.099381,
+    "Gloss_GCER": 0.039247,
+    "source_chukchi_GCER": 0.04,
+    "source_chukchi_WER": 0.285714,
+    "source_circassian_GCER": 0.393162,
+    "source_circassian_WER": 0.517241,
+    "source_efik_GCER": 0.011952,
+    "source_efik_WER": 0.05,
+    "source_evenki_GCER": 0.015544,
+    "source_evenki_WER": 0.111111,
+    "source_greek_GCER": 0.287879,
+    "source_greek_WER": 0.817204,
+    "source_inupiatuneskimo_GCER": 0.007937,
+    "source_inupiatuneskimo_WER": 0.04,
+    "source_kashmiri_GCER": 0.013986,
+    "source_kashmiri_WER": 0.060606,
+    "source_na_GCER": 0.129032,
+    "source_na_WER": 0.4,
+    "source_nahuatl_GCER": 0.026738,
+    "source_nahuatl_WER": 0.217391,
+    "source_tiri_GCER": 0.023256,
+    "source_tiri_WER": 0.125,
+    "target_en_GCER": 0.010088,
+    "target_en_WER": 0.023868,
+    "target_fr_GCER": 0.1,
+    "target_fr_WER": 0.163972,
+    "target_ru_GCER": 0.083818,
+    "target_ru_WER": 0.492063,
+    "target_tr_GCER": 0.165138,
+    "target_tr_WER": 0.590909,
+    "target_zh_GCER": 0.0,
+    "target_zh_WER": 0.0,
+    "LangScript_Chinese-Han_GCER": 0.089744,
+    "LangScript_Chinese-Han_WER": 0.238095,
+    "LangScript_Chukchi-Cyrillic Extended_GCER": 0.040441,
+    "LangScript_Chukchi-Cyrillic Extended_WER": 0.3125,
+    "LangScript_Circassian-Arabic_GCER": 0.783133,
+    "LangScript_Circassian-Arabic_WER": 1.0,
+    "LangScript_Circassian-Latin_GCER": 0.991266,
+    "LangScript_Circassian-Latin_WER": 0.909091,
+    "LangScript_Efik-Latin_GCER": 0.192719,
+    "LangScript_Efik-Latin_WER": 0.4,
+    "LangScript_English-Latin_GCER": 0.183637,
+    "LangScript_English-Latin_WER": 0.288014,
+    "LangScript_Evenki-Cyrillic_GCER": 0.433002,
+    "LangScript_Evenki-Cyrillic_WER": 0.554348,
+    "LangScript_French-Latin_GCER": 0.324,
+    "LangScript_French-Latin_WER": 0.57732,
+    "LangScript_Greek-Greek_GCER": 0.55079,
+    "LangScript_Greek-Greek_WER": 1.0,
+    "LangScript_Iñupiatun Eskimo-Latin_GCER": 0.011667,
+    "LangScript_Iñupiatun Eskimo-Latin_WER": 0.107438,
+    "LangScript_Kashmiri-Arabic_GCER": 1.0,
+    "LangScript_Kashmiri-Arabic_WER": 1.0,
+    "LangScript_Kashmiri-Latin_GCER": 0.203448,
+    "LangScript_Kashmiri-Latin_WER": 0.212766,
+    "LangScript_Na-IPA_GCER": 0.143498,
+    "LangScript_Na-IPA_WER": 0.384615,
+    "LangScript_Na-Latin_GCER": 1.0,
+    "LangScript_Na-Latin_WER": 1.0,
+    "LangScript_Nahuatl-Latin_GCER": 0.459042,
+    "LangScript_Nahuatl-Latin_WER": 0.478723,
+    "LangScript_Russian-Cyrillic_GCER": 0.389144,
+    "LangScript_Russian-Cyrillic_WER": 0.706422,
+    "LangScript_Tiri-Latin_GCER": 0.119454,
+    "LangScript_Tiri-Latin_WER": 0.230769,
+    "LangScript_Turkish-Arabic_GCER": 0.41844,
+    "LangScript_Turkish-Arabic_WER": 0.75
+  }
+}

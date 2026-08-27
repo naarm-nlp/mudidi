@@ -1,0 +1,27 @@
+experiment,language,page,language_script,gold_word_count,gold_grapheme_count,GCER,WER,TextEdit,total_graphemes_pred,total_grapheme_edits,total_word_edits
+gpt55_high_mdf_intro_toolbox_gold_notypography,Chukchi-Russian,page_3,Chukchi-Cyrillic Extended,32,272,0.0,0.0,0.0,272,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Chukchi-Russian,page_3,Russian-Cyrillic,42,453,0.0,0.0,0.0,453,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Circassian-English-Turkish,page_1,Circassian-Arabic,22,166,0.126506,0.090909,0.070076,171,21,2
+gpt55_high_mdf_intro_toolbox_gold_notypography,Circassian-English-Turkish,page_1,Circassian-Latin,22,229,0.170306,0.090909,0.090909,190,39,2
+gpt55_high_mdf_intro_toolbox_gold_notypography,Circassian-English-Turkish,page_1,English-Latin,46,248,0.0,0.0,0.0,248,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Circassian-English-Turkish,page_1,Turkish-Arabic,20,141,0.156028,0.15,0.116667,119,22,3
+gpt55_high_mdf_intro_toolbox_gold_notypography,Efik-English,page_13,Efik-Latin,50,467,0.100642,0.12,0.105714,420,47,6
+gpt55_high_mdf_intro_toolbox_gold_notypography,Efik-English,page_13,English-Latin,55,765,0.040523,0.072727,0.062338,734,31,4
+gpt55_high_mdf_intro_toolbox_gold_notypography,Evenki-Russian,page_1,Evenki-Cyrillic,92,806,0.362283,0.423913,0.355546,524,292,39
+gpt55_high_mdf_intro_toolbox_gold_notypography,Evenki-Russian,page_1,Russian-Cyrillic,67,634,0.124606,0.208955,0.176384,567,79,14
+gpt55_high_mdf_intro_toolbox_gold_notypography,Greek-English,page_38,English-Latin,144,1795,0.0,0.0,0.0,1795,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Greek-English,page_38,Greek-Greek,77,886,0.0,0.0,0.0,886,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Iñupiatun Eskimo-English,page_42,English-Latin,139,1713,0.001168,0.014388,0.014388,1711,2,2
+gpt55_high_mdf_intro_toolbox_gold_notypography,Iñupiatun Eskimo-English,page_42,Iñupiatun Eskimo-Latin,121,1200,0.120833,0.07438,0.069121,1055,145,9
+gpt55_high_mdf_intro_toolbox_gold_notypography,Kashmiri-English,page_14,English-Latin,84,585,0.006838,0.035714,0.027778,583,4,3
+gpt55_high_mdf_intro_toolbox_gold_notypography,Kashmiri-English,page_14,Kashmiri-Arabic,41,202,0.0,0.0,0.0,202,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Kashmiri-English,page_14,Kashmiri-Latin,47,290,0.034483,0.021277,0.021277,280,10,1
+gpt55_high_mdf_intro_toolbox_gold_notypography,Na-English-Chinese-French,page_19,Chinese-Han,21,156,0.025641,0.047619,0.010025,152,4,1
+gpt55_high_mdf_intro_toolbox_gold_notypography,Na-English-Chinese-French,page_19,English-Latin,41,1048,0.054389,0.195122,0.033035,991,57,8
+gpt55_high_mdf_intro_toolbox_gold_notypography,Na-English-Chinese-French,page_19,French-Latin,21,769,0.040312,0.142857,0.017578,738,31,3
+gpt55_high_mdf_intro_toolbox_gold_notypography,Na-English-Chinese-French,page_19,Na-IPA,26,223,0.0,0.0,0.0,223,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Na-English-Chinese-French,page_19,Na-Latin,7,23,0.0,0.0,0.0,23,0,0
+gpt55_high_mdf_intro_toolbox_gold_notypography,Nahuatl-French,page_74,French-Latin,76,1981,0.151439,0.289474,0.221322,1681,300,22
+gpt55_high_mdf_intro_toolbox_gold_notypography,Nahuatl-French,page_74,Nahuatl-Latin,94,1294,0.032457,0.12766,0.040289,1266,42,12
+gpt55_high_mdf_intro_toolbox_gold_notypography,Tiri-English,page_15,English-Latin,50,544,0.025735,0.06,0.031169,530,14,3
+gpt55_high_mdf_intro_toolbox_gold_notypography,Tiri-English,page_15,Tiri-Latin,52,586,0.05802,0.038462,0.012141,552,34,2

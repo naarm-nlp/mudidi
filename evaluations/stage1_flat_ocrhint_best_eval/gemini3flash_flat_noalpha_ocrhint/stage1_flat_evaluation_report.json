@@ -1,0 +1,453 @@
+[
+  {
+    "page_id": "Assyrian-English/page_352",
+    "character_quality": {
+      "TextEdit": 0.301361,
+      "GCER": 0.256297,
+      "WER": 0.461153,
+      "total_graphemes_gold": 2263,
+      "total_graphemes_pred": 1912,
+      "total_grapheme_edits": 580,
+      "total_words_gold": 399,
+      "total_word_edits": 184,
+      "matched_spans": 36,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 0.0435,
+        "f1": 0.0833,
+        "tp": 3,
+        "fp": 0,
+        "fn": 66
+      },
+      "italic": {
+        "precision": 0.9767,
+        "recall": 1.0,
+        "f1": 0.9882,
+        "tp": 84,
+        "fp": 2,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9775,
+        "recall": 0.5686,
+        "f1": 0.719,
+        "tp": 87,
+        "fp": 2,
+        "fn": 66
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.055556,
+      "edit_distance": 2,
+      "max_length": 36
+    }
+  },
+  {
+    "page_id": "Assyrian-English/page_39",
+    "character_quality": {
+      "TextEdit": 0.392386,
+      "GCER": 0.355255,
+      "WER": 0.488889,
+      "total_graphemes_gold": 1627,
+      "total_graphemes_pred": 1367,
+      "total_grapheme_edits": 578,
+      "total_words_gold": 270,
+      "total_word_edits": 132,
+      "matched_spans": 29,
+      "missing_spans": 2,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0517,
+        "recall": 0.1304,
+        "f1": 0.0741,
+        "tp": 6,
+        "fp": 110,
+        "fn": 40
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 41,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.2994,
+        "recall": 0.5402,
+        "f1": 0.3852,
+        "tp": 47,
+        "fp": 110,
+        "fn": 40
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.064516,
+      "edit_distance": 2,
+      "max_length": 31
+    }
+  },
+  {
+    "page_id": "Assyrian-English/page_842",
+    "character_quality": {
+      "TextEdit": 0.297598,
+      "GCER": 0.301364,
+      "WER": 0.355499,
+      "total_graphemes_gold": 2200,
+      "total_graphemes_pred": 1582,
+      "total_grapheme_edits": 663,
+      "total_words_gold": 391,
+      "total_word_edits": 139,
+      "matched_spans": 29,
+      "missing_spans": 7,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 50,
+        "fn": 55
+      },
+      "italic": {
+        "precision": 0.977,
+        "recall": 0.977,
+        "f1": 0.977,
+        "tp": 85,
+        "fp": 2,
+        "fn": 2
+      },
+      "typography": {
+        "precision": 0.6204,
+        "recall": 0.5986,
+        "f1": 0.6093,
+        "tp": 85,
+        "fp": 52,
+        "fn": 57
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.194444,
+      "edit_distance": 7,
+      "max_length": 36
+    }
+  },
+  {
+    "page_id": "Gujarati-English/page_50",
+    "character_quality": {
+      "TextEdit": 0.025405,
+      "GCER": 0.028409,
+      "WER": 0.237805,
+      "total_graphemes_gold": 1760,
+      "total_graphemes_pred": 1720,
+      "total_grapheme_edits": 50,
+      "total_words_gold": 328,
+      "total_word_edits": 78,
+      "matched_spans": 71,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9583,
+        "recall": 0.9787,
+        "f1": 0.9684,
+        "tp": 46,
+        "fp": 2,
+        "fn": 1
+      },
+      "italic": {
+        "precision": 0.9487,
+        "recall": 0.5606,
+        "f1": 0.7048,
+        "tp": 37,
+        "fp": 2,
+        "fn": 29
+      },
+      "typography": {
+        "precision": 0.954,
+        "recall": 0.7345,
+        "f1": 0.83,
+        "tp": 83,
+        "fp": 4,
+        "fn": 30
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 71
+    }
+  },
+  {
+    "page_id": "Gujarati-English/page_500",
+    "character_quality": {
+      "TextEdit": 0.002478,
+      "GCER": 0.002831,
+      "WER": 0.023729,
+      "total_graphemes_gold": 1766,
+      "total_graphemes_pred": 1766,
+      "total_grapheme_edits": 5,
+      "total_words_gold": 295,
+      "total_word_edits": 7,
+      "matched_spans": 71,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 0.9737,
+        "f1": 0.9867,
+        "tp": 37,
+        "fp": 0,
+        "fn": 1
+      },
+      "italic": {
+        "precision": 0.9778,
+        "recall": 0.9778,
+        "f1": 0.9778,
+        "tp": 44,
+        "fp": 1,
+        "fn": 1
+      },
+      "typography": {
+        "precision": 0.9878,
+        "recall": 0.9759,
+        "f1": 0.9818,
+        "tp": 81,
+        "fp": 1,
+        "fn": 2
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 71
+    }
+  },
+  {
+    "page_id": "Gujarati-English/page_866",
+    "character_quality": {
+      "TextEdit": 0.001063,
+      "GCER": 0.001197,
+      "WER": 0.010067,
+      "total_graphemes_gold": 1671,
+      "total_graphemes_pred": 1672,
+      "total_grapheme_edits": 2,
+      "total_words_gold": 298,
+      "total_word_edits": 3,
+      "matched_spans": 71,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9592,
+        "recall": 0.9792,
+        "f1": 0.9691,
+        "tp": 47,
+        "fp": 2,
+        "fn": 1
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 40,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9775,
+        "recall": 0.9886,
+        "f1": 0.9831,
+        "tp": 87,
+        "fp": 2,
+        "fn": 1
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 71
+    }
+  },
+  {
+    "page_id": "Telugu-English/page_151",
+    "character_quality": {
+      "TextEdit": 0.048547,
+      "GCER": 0.034834,
+      "WER": 0.100372,
+      "total_graphemes_gold": 1866,
+      "total_graphemes_pred": 1814,
+      "total_grapheme_edits": 65,
+      "total_words_gold": 269,
+      "total_word_edits": 27,
+      "matched_spans": 71,
+      "missing_spans": 3,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9231,
+        "recall": 0.8372,
+        "f1": 0.878,
+        "tp": 36,
+        "fp": 3,
+        "fn": 7
+      },
+      "italic": {
+        "precision": 0.9762,
+        "recall": 1.0,
+        "f1": 0.988,
+        "tp": 41,
+        "fp": 1,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9506,
+        "recall": 0.9167,
+        "f1": 0.9333,
+        "tp": 77,
+        "fp": 4,
+        "fn": 7
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.040541,
+      "edit_distance": 3,
+      "max_length": 74
+    }
+  },
+  {
+    "page_id": "Telugu-English/page_646",
+    "character_quality": {
+      "TextEdit": 0.005553,
+      "GCER": 0.006682,
+      "WER": 0.031519,
+      "total_graphemes_gold": 1796,
+      "total_graphemes_pred": 1796,
+      "total_grapheme_edits": 12,
+      "total_words_gold": 349,
+      "total_word_edits": 11,
+      "matched_spans": 71,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9375,
+        "recall": 1.0,
+        "f1": 0.9677,
+        "tp": 45,
+        "fp": 3,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 0.8,
+        "recall": 0.0851,
+        "f1": 0.1538,
+        "tp": 4,
+        "fp": 1,
+        "fn": 43
+      },
+      "typography": {
+        "precision": 0.9245,
+        "recall": 0.5326,
+        "f1": 0.6759,
+        "tp": 49,
+        "fp": 4,
+        "fn": 43
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 72
+    }
+  },
+  {
+    "page_id": "Telugu-English/page_80",
+    "character_quality": {
+      "TextEdit": 0.016502,
+      "GCER": 0.016726,
+      "WER": 0.072289,
+      "total_graphemes_gold": 1674,
+      "total_graphemes_pred": 1679,
+      "total_grapheme_edits": 28,
+      "total_words_gold": 332,
+      "total_word_edits": 24,
+      "matched_spans": 67,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 42,
+        "fp": 0,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 0.4681,
+        "f1": 0.6377,
+        "tp": 22,
+        "fp": 0,
+        "fn": 25
+      },
+      "typography": {
+        "precision": 1.0,
+        "recall": 0.7191,
+        "f1": 0.8366,
+        "tp": 64,
+        "fp": 0,
+        "fn": 25
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 67
+    }
+  },
+  {
+    "page_id": "__aggregate__",
+    "character_quality": {
+      "TextEdit": 0.077413,
+      "GCER": 0.119293,
+      "WER": 0.206414
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.6065,
+        "recall": 0.6051,
+        "f1": 0.6058
+      },
+      "italic": {
+        "precision": 0.9779,
+        "recall": 0.7992,
+        "f1": 0.8796
+      },
+      "typography": {
+        "precision": 0.7867,
+        "recall": 0.7089,
+        "f1": 0.7458
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.039451
+    }
+  }
+]

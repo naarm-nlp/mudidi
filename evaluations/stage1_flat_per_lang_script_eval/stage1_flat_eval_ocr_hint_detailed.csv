@@ -38,6 +38,7 @@ gemini31pro_flat_alpha_ocr,true,true,Iñupiatun Eskimo-English/page_206,0.00188,
 gemini31pro_flat_alpha_ocr,true,true,Iñupiatun Eskimo-English/page_42,0.003328,0.003145,0.017516,0.9904,0.0
 gemini31pro_flat_alpha_ocr,true,true,Japanese-English/page_137,0.010497,0.01004,0.041509,0.7704,0.015038
 gemini31pro_flat_alpha_ocr,true,true,Japanese-English/page_351,0.003708,0.002495,0.013614,0.7494,0.0
+gemini31pro_flat_alpha_ocr,true,true,Japanese-English/page_419,0.023479,0.018855,0.051383,0.9499,0.014815
 gemini31pro_flat_alpha_ocr,true,true,Kashmiri-English/page_14,0.046127,0.057544,0.21267,0.0,0.0
 gemini31pro_flat_alpha_ocr,true,true,Kashmiri-English/page_39,0.057645,0.087671,0.169312,0.3684,0.0
 gemini31pro_flat_alpha_ocr,true,true,Kashmiri-English/page_71,0.047862,0.057692,0.261111,0.3614,0.0
@@ -84,4 +85,4 @@ gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/p
 gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/page_26,0.104811,0.083108,0.241563,0.5775,0.010753
 gemini31pro_flat_alpha_ocr,true,true,Vernacular Syriac-Kurdish_Turkish-English/page_41,0.151866,0.14368,0.269517,0.5321,0.022222
 gemini31pro_flat_alpha_ocr,true,true,Yiddish-English/page_1,0.424873,0.464807,0.410714,0.3232,0.164706
-gemini31pro_flat_alpha_ocr,,,__aggregate__,0.040625,0.04559,0.109878,0.7978,0.037256
+gemini31pro_flat_alpha_ocr,,,__aggregate__,0.040281,0.045017,0.108555,0.8007,0.036995

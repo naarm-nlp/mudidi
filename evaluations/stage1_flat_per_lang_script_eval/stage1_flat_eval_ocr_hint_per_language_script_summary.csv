@@ -40,10 +40,10 @@ gemini31pro_flat_alpha_ocr,Gujarati-English,Gujarati-Gujarati,134,498,0.02008,0.
 gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,English-Latin,1424,6221,0.000482,0.002107,0.000482,1.0,0.9995,0.9998
 gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,Iñupiatun Eskimo-Latin,362,2961,0.00743,0.049724,0.00743,0.9936,0.9926,0.9931
 gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,Latin-Latin,13,101,0.0,0.0,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English,English-Latin,1048,4080,0.0,0.002863,0.0,1.0,1.0,1.0
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Kanji,59,138,0.195652,0.372881,0.195652,0.8102,0.8043,0.8073
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Katakana,102,405,0.017284,0.068627,0.017241,0.9828,0.9852,0.984
-gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Latin,320,1747,0.011448,0.01875,0.011448,0.9937,0.9937,0.9937
+gemini31pro_flat_alpha_ocr,Japanese-English,English-Latin,1501,6091,0.0,0.005996,0.0,1.0,1.0,1.0
+gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Kanji,87,200,0.16,0.287356,0.16,0.8442,0.84,0.8421
+gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Katakana,147,575,0.01913,0.07483,0.019097,0.9809,0.9826,0.9818
+gemini31pro_flat_alpha_ocr,Japanese-English,Japanese-Latin,517,2742,0.008023,0.025145,0.008023,0.9953,0.9953,0.9953
 gemini31pro_flat_alpha_ocr,Kashmiri-English,English-Latin,263,1628,0.001843,0.0,0.001843,0.9988,0.9988,0.9988
 gemini31pro_flat_alpha_ocr,Kashmiri-English,Kashmiri-Arabic,141,551,0.319419,0.744681,0.318264,0.689,0.6915,0.6902
 gemini31pro_flat_alpha_ocr,Kashmiri-English,Kashmiri-Latin,162,989,0.008089,0.049383,0.008065,0.9919,0.9949,0.9934

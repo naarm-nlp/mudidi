@@ -105,6 +105,10 @@ gemini31pro_flat_alpha_ocr,Japanese-English,page_351,English-Latin,525,2215,0.0,
 gemini31pro_flat_alpha_ocr,Japanese-English,page_351,Japanese-Kanji,30,76,0.065789,0.1,0.065789,76,5,3,0.9342,0.9342,0.9342
 gemini31pro_flat_alpha_ocr,Japanese-English,page_351,Japanese-Katakana,49,185,0.027027,0.102041,0.026882,186,5,5,0.9731,0.9784,0.9757
 gemini31pro_flat_alpha_ocr,Japanese-English,page_351,Japanese-Latin,166,882,0.0,0.006024,0.0,882,0,1,1.0,1.0,1.0
+gemini31pro_flat_alpha_ocr,Japanese-English,page_419,English-Latin,453,2011,0.0,0.013245,0.0,2011,0,6,1.0,1.0,1.0
+gemini31pro_flat_alpha_ocr,Japanese-English,page_419,Japanese-Kanji,28,62,0.080645,0.107143,0.080645,62,5,3,0.9194,0.9194,0.9194
+gemini31pro_flat_alpha_ocr,Japanese-English,page_419,Japanese-Katakana,45,170,0.023529,0.088889,0.023529,170,4,4,0.9765,0.9765,0.9765
+gemini31pro_flat_alpha_ocr,Japanese-English,page_419,Japanese-Latin,197,995,0.00201,0.035533,0.00201,995,2,7,0.998,0.998,0.998
 gemini31pro_flat_alpha_ocr,Kashmiri-English,page_14,English-Latin,100,590,0.001695,0.0,0.001692,591,1,0,0.9983,1.0,0.9992
 gemini31pro_flat_alpha_ocr,Kashmiri-English,page_14,Kashmiri-Arabic,58,202,0.351485,0.741379,0.351485,201,71,43,0.6617,0.6584,0.66
 gemini31pro_flat_alpha_ocr,Kashmiri-English,page_14,Kashmiri-Latin,54,290,0.017241,0.055556,0.017182,291,5,3,0.9828,0.9862,0.9845

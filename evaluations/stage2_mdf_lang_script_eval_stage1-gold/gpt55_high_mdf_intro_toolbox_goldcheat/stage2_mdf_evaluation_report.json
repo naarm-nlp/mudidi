@@ -1,0 +1,145 @@
+{
+  "settings": {
+    "record_threshold": 0.6,
+    "line_threshold": 0.7,
+    "marker_sub_list_path": null
+  },
+  "pages": [
+    {
+      "page_id": "Nahuatl-French/page_74",
+      "gold_path": "dataset/mudidi/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Nahuatl-French/stage-2/gpt55_high_mdf_intro_toolbox_goldcheat/page_74/page_74.mdf.txt",
+      "n_pred_records": 30,
+      "Record_Accuracy": 0.967742,
+      "MDF_Fields_F1": 0.882682,
+      "record_counts": {
+        "tp": 30,
+        "fp": 0,
+        "fn": 1
+      },
+      "marker_counts": {
+        "tp": 158,
+        "fp": 26,
+        "fn": 16
+      },
+      "read_order": {
+        "ReadOrderEdit": 0.032258,
+        "edit_distance": 1,
+        "max_length": 31
+      },
+      "field_value_quality": {
+        "FieldValue_TextEdit": 0.058991,
+        "FieldValue_GCER": 0.05896,
+        "FieldValue_WER": 0.212272
+      },
+      "headword_quality": {
+        "Headword_TextEdit": 0.0,
+        "Headword_GCER": 0.0,
+        "Headword_WER": 0.0
+      },
+      "gloss_quality": {
+        "Gloss_TextEdit": 0.066516,
+        "Gloss_GCER": 0.063563,
+        "Gloss_WER": 0.166259
+      },
+      "language_quality": {
+        "source": {
+          "source_TextEdit": 0.051587,
+          "source_GCER": 0.031401,
+          "source_WER": 0.232143
+        },
+        "target": {
+          "target_TextEdit": 0.066516,
+          "target_GCER": 0.063563,
+          "target_WER": 0.166259
+        }
+      },
+      "language_script_quality": {
+        "French-Latin": {
+          "LangScript_French-Latin_TextEdit": 0.200453,
+          "LangScript_French-Latin_GCER": 0.108531,
+          "LangScript_French-Latin_WER": 0.236842
+        },
+        "Nahuatl-Latin": {
+          "LangScript_Nahuatl-Latin_TextEdit": 0.019012,
+          "LangScript_Nahuatl-Latin_GCER": 0.030912,
+          "LangScript_Nahuatl-Latin_WER": 0.106383
+        }
+      },
+      "marker_confusion": {
+        "gn": {
+          "un": 2
+        },
+        "et": {
+          "mr": 1
+        }
+      },
+      "record_samples": [
+        {
+          "gold_index": 27,
+          "pred_index": 26,
+          "similarity": 0.947,
+          "headword_gold": "CENTLA",
+          "headword_pred": "CENTLA",
+          "gold_lines": 3,
+          "pred_lines": 7,
+          "line_pairs": 2,
+          "missing_lines": 1,
+          "extra_lines": 5
+        },
+        {
+          "gold_index": 17,
+          "pred_index": 16,
+          "similarity": 0.843,
+          "headword_gold": "CENTETIA",
+          "headword_pred": "CENTETIA",
+          "gold_lines": 16,
+          "pred_lines": 16,
+          "line_pairs": 16,
+          "missing_lines": 0,
+          "extra_lines": 0
+        },
+        {
+          "gold_index": 20,
+          "pred_index": 19,
+          "similarity": 0.667,
+          "headword_gold": "CENTETL",
+          "headword_pred": "CENTETL",
+          "gold_lines": 16,
+          "pred_lines": 17,
+          "line_pairs": 16,
+          "missing_lines": 0,
+          "extra_lines": 1
+        }
+      ],
+      "marker_error_samples": [
+        {
+          "headword": "CENTIUITZE",
+          "gold": "\\gn Qui sont du même âge, en parlant de deux personnes.",
+          "pred": "\\un en parlant de deux personnes",
+          "value_sim": 0.709
+        },
+        {
+          "headword": "CENTETITIUH",
+          "gold": "\\et R. centetia.",
+          "pred": "\\mr centetia",
+          "value_sim": 0.8
+        },
+        {
+          "headword": "CENTETL",
+          "gold": "\\gn pour compter des objets ronds, tels que pierre, fruit, œuf, colline, etc. Un, une;",
+          "pred": "\\un pour compter des objets ronds, tels que pierre, fruit, œuf, colline, etc",
+          "value_sim": 0.935
+        }
+      ],
+      "missing_record_samples": [
+        {
+          "index": 0,
+          "headword": "",
+          "fingerprint_preview": "des raisons; des arguments en faveur d'une chose; célébrer en les racontant; en les chantant; les exрloits de quelqu'un."
+        }
+      ],
+      "extra_record_samples": []
+    }
+  ]
+}

@@ -8,16 +8,12 @@ the files here are derived CSV reports and small provenance artifacts.
 
 | Directory | Meaning | Producer |
 |---|---|---|
+| `stage1_flat_per_lang_script_eval/` | Stage 1 flat-transcription reports, including global and per-language/script metrics | `examples/evaluation/run_stage1_benchmark_per_lang_script_eval.sh` |
+| `stage1_flat_ocrhint_best_eval/` | Stage 1 OCR-hint ablation: each dictionary's best model/alphabet combo re-run with an OCR hint in the prompt | `mudidi benchmark evaluate stage1 --pred-root outputs/benchmark/stage-1 --stage1-output-subdir stage-1-ocr --all-experiments -o evaluations/stage1_flat_ocrhint_best_eval` |
+| `stage2_mdf_lang_script_eval_stage1-gold/` | Stage 2 MDF evaluation, **oracle condition** — Stage 2 fed gold Stage 1 text directly. This is the canonical baseline for any Stage 2 ablation comparison. | `mudidi benchmark evaluate stage2 --pred-root outputs/benchmark/stage-2 --all-experiments -o evaluations/stage2_mdf_lang_script_eval_stage1-gold` |
+| `stage2_mdf_lang_script_eval/` | Stage 2 MDF evaluation, **end-to-end condition** — Stage 2 fed each experiment's own predicted Stage 1 text, isolating Stage 2 error from Stage 1 error | `mudidi benchmark evaluate stage2 --pred-root outputs/benchmark/stage-2-e2e --all-experiments -o evaluations/stage2_mdf_lang_script_eval` |
+| `stage2_mdf_eval_no_typography/` | Stage 2 ablation study that removes bold and italic tags | `examples/evaluation/run_stage2_no_typography_eval.sh` |
 | `statistics/` | Descriptive statistics for the canonical MUDIDI dictionaries, pages, Stage 1 gold text, language-script annotations, typography markup, and Stage 2 MDF fields | `examples/evaluation/run_statistics.sh` |
-| `stage1_flat_per_lang_script_eval/` | Current Stage 1 flat-transcription reports, including global and per-language/script metrics | `examples/evaluation/run_stage1_benchmark_per_lang_script_eval.sh` |
-| `stage2_mdf_lang_script_eval/` | Current Stage 2 MDF evaluation using oracle/gold Stage 1 inputs, with projection-based per-language/script reports | `examples/evaluation/run_stage2_benchmark_per_lang_script_eval.sh` |
-| `stage2_mdf_eval_e2e_lexical_repair/` | End-to-end Stage 2 predictions after lexical repair, plus repair audit | `examples/evaluation/run_stage2_e2e_lexical_repair.sh` |
-| `stage2_mdf_eval_no_typography/` | Focused Stage 2 no-typography experiment and baseline comparison | `examples/evaluation/run_stage2_no_typography_eval.sh` |
-
-`stage2_mdf_lang_script_eval/` is the current Stage 2 oracle result set. The
-similarly named `stage2_mdf_lang_script_eval_stage1-gold/` directory is an
-older snapshot with a different report schema; it is not the output directory
-used by the current evaluation script.
 
 The helper
 `examples/evaluation/run_stage2_mdf_stage1_lang_projection.sh` regenerates
@@ -27,8 +23,8 @@ published canonical result set.
 
 ## Dataset statistics
 
-`statistics/` is calculated from `dataset/MUDIDI/dictionaries`. The current
-snapshot covers 31 dictionary directories, 85 Stage 1 gold pages, and 10 Stage
+`statistics/` is calculated from `dataset/mudidi/dictionaries`. The current
+snapshot covers 30 dictionary directories, 85 Stage 1 gold pages, and 10 Stage
 2 MDF pages. Stage 1 pages are counted from `*_stage1_GOLD_flat.txt` files;
 Stage 2 pages are counted from `*.mdf.txt` files. A page present in both stages
 contributes once to each count.
@@ -109,11 +105,3 @@ bash examples/evaluation/run_statistics.sh
 
 Set `DATASET_DIR` or `OUTPUT_DIR` to run against another compatible dictionary
 tree or write the reports elsewhere.
-
-## Scope boundary
-
-Outputs whose experiment or path name contains `agentic` come from side
-experiments and are deliberately excluded from the canonical evaluation set.
-Debug, partial, spot-check, and archived runs are also non-canonical. Local
-obsolete results may be kept under ignored archive directories, but should not
-be added back to this root result inventory.

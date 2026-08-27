@@ -1,0 +1,17 @@
+========================================================================
+STAGE 2 MDF EVALUATION REPORT
+========================================================================
+record_threshold=0.6  line_threshold=0.7
+
+--- Nahuatl-French/page_74 ---
+  Records: matched=30 missing=1 extra=0 (pred=30)
+  Record Accuracy: 0.9677
+  MDF Fields F1:   0.8827
+  ReadOrderEdit:   0.0323
+  Field Value GCER:0.0590
+  Headword GCER:   0.0000
+  Gloss GCER:     0.0636
+  source GCER:       0.0314
+  target GCER:       0.0636
+  lang-script French-Latin GCER: 0.1085
+  lang-script Nahuatl-Latin GCER: 0.0309

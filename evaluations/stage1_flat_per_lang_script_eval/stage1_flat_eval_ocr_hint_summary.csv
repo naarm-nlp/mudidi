@@ -12,7 +12,7 @@ gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,true,true,3,0.000411,0.000457,0.0
 gemini31pro_flat_alpha_ocr,Greek-English,true,true,3,0.013396,0.017728,0.066507,0.3286,0.0
 gemini31pro_flat_alpha_ocr,Gujarati-English,true,true,3,0.017242,0.029248,0.099891,0.8383,0.0
 gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,true,true,3,0.002379,0.00235,0.011589,0.9789,0.0
-gemini31pro_flat_alpha_ocr,Japanese-English,true,true,2,0.00709,0.006077,0.027449,0.7599,0.007519
+gemini31pro_flat_alpha_ocr,Japanese-English,true,true,3,0.012594,0.010404,0.03514,0.816,0.009951
 gemini31pro_flat_alpha_ocr,Kashmiri-English,true,true,3,0.05074,0.067848,0.213559,0.3495,0.0
 gemini31pro_flat_alpha_ocr,Khmer-English,true,true,3,0.028511,0.029983,0.066292,0.0,0.328866
 gemini31pro_flat_alpha_ocr,Malay-English,true,true,3,0.026828,0.029223,0.103382,0.0,0.0
