@@ -1,0 +1,103 @@
+dictionary	language	script	words
+Assyrian-English	Arabic	Arabic	1
+Assyrian-English	Arabic	Latin	1
+Assyrian-English	Assyrian	Cuneiform	166
+Assyrian-English	Assyrian	Latin	299
+Assyrian-English	English	Latin	558
+Assyrian-English	Greek	Greek	1
+Assyrian-English	Hebrew	Hebrew	5
+Assyrian-English	Latin	Latin	2
+Assyrian-English	Old Persian	Latin	10
+Bengalese-English	Bengalese	Bengali	260
+Bengalese-English	English	Latin	1421
+Canala-English	Canala	Latin	243
+Canala-English	English	Latin	637
+Canala-English	French	Latin	6
+Chepang-English	Chepang	Latin	342
+Chepang-English	English	Latin	899
+Chepang-English	Nepali	Latin	0
+Chukchi-Russian	Chukchi	Cyrillic Extended	79
+Chukchi-Russian	Russian	Cyrillic	167
+Circassian-English-Turkish	Circassian	Arabic	99
+Circassian-English-Turkish	Circassian	Latin	88
+Circassian-English-Turkish	English	Latin	193
+Circassian-English-Turkish	French	Latin	1
+Circassian-English-Turkish	Turkish	Arabic	87
+Efik-English	Efik	Latin	366
+Efik-English	English	Latin	895
+Evenki-Russian	Evenki	Cyrillic	302
+Evenki-Russian	Russian	Cyrillic	357
+Georgian-Russian	Georgian	Georgian	59
+Georgian-Russian	Russian	Cyrillic	128
+Gojri-English-Hindi	English	Latin	171
+Gojri-English-Hindi	Gojri	Devanagari	13
+Gojri-English-Hindi	Gojri	Latin	11
+Gojri-English-Hindi	Hindi	Devanagari	181
+Greek-English	English	Latin	1218
+Greek-English	Greek	Greek	428
+Gujarati-English	English	Latin	776
+Gujarati-English	Gujarati	Gujarati	134
+Iñupiatun Eskimo-English	English	Latin	1424
+Iñupiatun Eskimo-English	Iñupiatun Eskimo	Latin	362
+Iñupiatun Eskimo-English	Latin	Latin	13
+Japanese-English	English	Latin	1501
+Japanese-English	Japanese	Kanji	87
+Japanese-English	Japanese	Katakana	147
+Japanese-English	Japanese	Latin	517
+Kashmiri-English	English	Latin	263
+Kashmiri-English	Kashmiri	Arabic	141
+Kashmiri-English	Kashmiri	Latin	162
+Khmer-English	English	Latin	706
+Khmer-English	Khmer	Khmer	167
+Malay-English	English	Latin	607
+Malay-English	Malay	Arabic	199
+Malay-English	Malay	Latin	178
+Na-English-Chinese-French	Chinese	Han	91
+Na-English-Chinese-French	English	Latin	594
+Na-English-Chinese-French	French	Latin	480
+Na-English-Chinese-French	Na	IPA	182
+Na-English-Chinese-French	Na	Latin	31
+Nahuatl-French	French	Latin	1379
+Nahuatl-French	Nahuatl	Latin	528
+Nahuatl-French	Spanish	Latin	3
+Punjabi-English	English	Latin	1627
+Punjabi-English	Punjabi	Gurmukhi	297
+Punjabi-English	Punjabi	Latin	215
+Reel-English	English	Latin	319
+Reel-English	Reel	IPA	27
+Reel-English	Reel	Latin	190
+Ritharngu-English	Dayi	Latin	1
+Ritharngu-English	English	Latin	725
+Ritharngu-English	Latin	Latin	19
+Ritharngu-English	Ritharngu	Latin	218
+Sanskrit-English	English	Latin	786
+Sanskrit-English	Sanskrit	Devanagari	187
+Sanskrit-English	Sanskrit	Latin	12
+Shilluk-English	English	Latin	1039
+Shilluk-English	Shilluk	Latin	145
+Syriac-English	English	Latin	571
+Syriac-English	Greek	Greek	5
+Syriac-English	Hebrew	Hebrew	2
+Syriac-English	Persian	Arabic	26
+Syriac-English	Syriac	Syriac	158
+Syriac-English	Turkish	Arabic	2
+Telugu-English	English	Latin	786
+Telugu-English	Telugu	Telugu	139
+Thai-Russian	Latin	Latin	14
+Thai-Russian	Russian	Cyrillic	508
+Thai-Russian	Thai	Cyrillic	121
+Thai-Russian	Thai	Thai	129
+Tiri-English	English	Latin	645
+Tiri-English	French	Latin	3
+Tiri-English	Tiri	Latin	238
+Vernacular Syriac-Kurdish_Turkish-English	Arabic	Arabic	15
+Vernacular Syriac-Kurdish_Turkish-English	English	Latin	1191
+Vernacular Syriac-Kurdish_Turkish-English	Greek	Greek	3
+Vernacular Syriac-Kurdish_Turkish-English	Kurdish	Arabic	3
+Vernacular Syriac-Kurdish_Turkish-English	Kurdish	Latin	2
+Vernacular Syriac-Kurdish_Turkish-English	Persian	Arabic	11
+Vernacular Syriac-Kurdish_Turkish-English	Turkish	Arabic	20
+Vernacular Syriac-Kurdish_Turkish-English	Vernacular Syriac	Latin	157
+Vernacular Syriac-Kurdish_Turkish-English	Vernacular Syriac	Syriac	314
+Yiddish-English	English	Latin	315
+Yiddish-English	Yiddish	Hebrew	85
