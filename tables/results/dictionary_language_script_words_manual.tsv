@@ -1,0 +1,103 @@
+dictionary	language	script	words	decision	script_difficulties	total_difficulties
+Assyrian-English	Arabic	Arabic-Extended-High	1	exclude	7 vowel diacritics	7
+Assyrian-English	Assyrian	Cuneiform	166	include		
+Assyrian-English	Greek	Greek	1	exclude		
+Assyrian-English	Hebrew	Hebrew	5	exclude		
+Assyrian-English	Arabic	Latin	1	exclude		
+Assyrian-English	English	Latin	558	include		
+Assyrian-English	Latin	Latin	2	exclude		
+Assyrian-English	Old Persian	Latin	10	exclude		
+Assyrian-English	Assyrian	Latin-Extended	299	include		
+Bengalese-English	Bengalese	Bengali	260	include		
+Bengalese-English	English	Latin	1421	include		
+Canala-English	English	Latin	637	include		
+Canala-English	French	Latin	6	exclude		
+Canala-English	Canala	Latin-Extended-High	243	include	8 Special characters, 4 vowel diacritics	12
+Chepang-English	English	Latin	899	include		
+Chepang-English	Nepali	Latin	0	exclude		
+Chepang-English	Chepang	Latin-Extended-Medium	342	include	3 Special characters	3
+Chukchi-Russian	Russian	Cyrillic	167	include		
+Chukchi-Russian	Chukchi	Cyrillic-Extended-Medium	79	include	3 Special letters	3
+Circassian-English-Turkish	Turkish	Arabic-Extended-High	87	include	5 special letters, Naskh ligatures	6
+Circassian-English-Turkish	Circassian	Arabic-Extended-High	99	include	6 Special letters, 7 vowel dicritics	13
+Circassian-English-Turkish	English	Latin	193	include		
+Circassian-English-Turkish	French	Latin	1	exclude		
+Circassian-English-Turkish	Circassian	Latin-Extended-Medium	88	include	4 vowel diacritics	4
+Efik-English	English	Latin	895	include		
+Efik-English	Efik	Latin-Extended-Light	366	include	2 diacritics	2
+Evenki-Russian	Russian	Cyrillic	357	include		
+Evenki-Russian	Evenki	Cyrillic-Extended-Light	302	include	1 vowel diacritic	1
+Georgian-Russian	Russian	Cyrillic-Extended-Light	128	include	1 vowel diacritic	1
+Georgian-Russian	Georgian	Georgian	59	include		
+Gojri-English-Hindi	Gojri	Devanagari	13	include		
+Gojri-English-Hindi	Hindi	Devanagari	181	include		
+Gojri-English-Hindi	English	Latin	171	include		
+Gojri-English-Hindi	Gojri	Latin	11	include		
+Greek-English	Greek	Greek	428	include		
+Greek-English	English	Latin	1218	include		
+Gujarati-English	Gujarati	Gujarati	134	include		
+Gujarati-English	English	Latin	776	include		
+Iñupiatun Eskimo-English	English	Latin	1424	include		
+Iñupiatun Eskimo-English	Latin	Latin	13	exclude		
+Iñupiatun Eskimo-English	Iñupiatun Eskimo	Latin-Extended-High	362	include	6 Special characters, 4 diacritics	10
+Japanese-English	Japanese	Kanji	87	include		
+Japanese-English	Japanese	Katakana	147	include		
+Japanese-English	English	Latin	1501	include		
+Japanese-English	Japanese	Latin-Extended-Light	517	include	1 diacritic	1
+Kashmiri-English	Kashmiri	Arabic-Extended-High	141	include	14 special letters, 8 vowel diacritics, handwritten calligraphy	23
+Kashmiri-English	English	Latin	263	include		
+Kashmiri-English	Kashmiri	Latin-Extended	162	include		
+Khmer-English	Khmer	Khmer	167	include		
+Khmer-English	English	Latin	706	include		
+Malay-English	Malay	Arabic-Extended-Medium	199	include	3 special letters	3
+Malay-English	English	Latin	607	include		
+Malay-English	Malay	Latin-Extended-Light	178	include	1 diacritic	1
+Na-English-Chinese-French	Chinese	Han	91	include		
+Na-English-Chinese-French	Na	IPA	182	include		
+Na-English-Chinese-French	English	Latin	594	include		
+Na-English-Chinese-French	French	Latin	480	include		
+Na-English-Chinese-French	Na	Latin-Extended-High	31	include	26 Special characters, 3-4 diacritics	30
+Nahuatl-French	French	Latin	1379	include		
+Nahuatl-French	Spanish	Latin	3	exclude		
+Nahuatl-French	Nahuatl	Latin-Extended-Light	528	include	1 Special character	1
+Punjabi-English	Punjabi	Gurmukhi	297	include		
+Punjabi-English	English	Latin	1627	include		
+Punjabi-English	Punjabi	Latin-Extended-Medium	215	include	5 diacritics	5
+Reel-English	Reel	IPA	27	exclude		
+Reel-English	Reel	Latin	190	include		
+Reel-English	English	Latin-Extended-Medium	319	include	5 Special characters, 1 diacritic	6
+Ritharngu-English	Dayi	Latin-Extended-High	1	exclude		6
+Ritharngu-English	Latin	Latin	19	exclude		
+Ritharngu-English	Ritharngu	Latin	218	include		
+Ritharngu-English	English	Latin-Extended-High	725	include	2 Special characers, 4 diacritics	6
+Sanskrit-English	Sanskrit	Devanagari	187	include		
+Sanskrit-English	English	Latin	786	include		
+Sanskrit-English	Sanskrit	Latin	12	exclude		
+Shilluk-English	English	Latin	1039	include		
+Shilluk-English	Shilluk	Latin-Extended-High	145	include	4 Special characters, 4 diacritics	8
+Syriac-English	Persian	Arabic-Extended-High	26	exclude	5 special letters, Naskh ligatures	6
+Syriac-English	Turkish	Arabic-Extended-High	2	exclude	5 special letters, Naskh ligatures	6
+Syriac-English	Greek	Greek	5	exclude		
+Syriac-English	Hebrew	Hebrew	2	exclude		
+Syriac-English	English	Latin	571	include		
+Syriac-English	Syriac	Syriac	158	include		
+Telugu-English	English	Latin	786	include		
+Telugu-English	Telugu	Telugu	139	include		
+Thai-Russian	Russian	Cyrillic	508	include		
+Thai-Russian	Thai	Cyrillic-Extended-High	121	include	1 Special character, 5 diacritics	6
+Thai-Russian	Latin	Latin	14	exclude		
+Thai-Russian	Thai	Thai	129	include		
+Tiri-English	English	Latin	645	include		
+Tiri-English	French	Latin	3	exclude		
+Tiri-English	Tiri	Latin-Extended-High	238	include	16 Special characters, 4 diacritics 	20
+Vernacular Syriac-Kurdish_Turkish-English	Kurdish	Arabic-Extended-Medium	3	exclude	4 special letters, few Naskh ligatures	5
+Vernacular Syriac-Kurdish_Turkish-English	Persian	Arabic-Extended-Medium	11	exclude	4 special letters, few Naskh ligatures	5
+Vernacular Syriac-Kurdish_Turkish-English	Turkish	Arabic-Extended-High	20	exclude	5 special letters, few Naskh ligatures	6
+Vernacular Syriac-Kurdish_Turkish-English	Arabic	Arabic-Extended-Light	15	exclude	few Naskh ligatures	1
+Vernacular Syriac-Kurdish_Turkish-English	Greek	Greek	3	exclude		
+Vernacular Syriac-Kurdish_Turkish-English	English	Latin	1191	include		
+Vernacular Syriac-Kurdish_Turkish-English	Kurdish	Latin	2	exclude		
+Vernacular Syriac-Kurdish_Turkish-English	Vernacular Syriac	Latin-Extended-Medium	157	include	4 diacritics	4
+Vernacular Syriac-Kurdish_Turkish-English	Vernacular Syriac	Syriac	314	include		
+Yiddish-English	Yiddish	Hebrew	85	include		
+Yiddish-English	English	Latin	315	include		
