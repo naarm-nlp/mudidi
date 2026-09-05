@@ -18,9 +18,8 @@ Windows usage supported through WSL2.
 ### Web dashboard with Docker (recommended)
 
 Docker runs MUDIDI in the same reproducible Linux environment on macOS,
-Windows, and Linux without requiring a separate Python, uv, or `pdftk`
-installation. Install [Docker Desktop](https://docs.docker.com/desktop/) on
-macOS or Windows, or Docker Engine with the Compose plugin on Linux.
+Windows, and Linux. Install [Docker Desktop](https://docs.docker.com/desktop/)
+on macOS or Windows, or Docker Engine with the Compose plugin on Linux.
 
 Before running MUDIDI, make sure Docker is running: start Docker Desktop on
 macOS or Windows, or start the Docker daemon on Linux, and wait until the
@@ -122,9 +121,6 @@ cd MUDIDI
 uv sync --frozen
 ```
 
-Install `pdftk` only when processing a multi-page source PDF. On Ubuntu or
-WSL2, run `sudo apt install -y pdftk-java`; on macOS with Homebrew, run
-`brew install pdftk-java`.
 
 ## API setup
 

@@ -24,15 +24,6 @@ uv sync --frozen
 cp .env.example .env
 ```
 
-Install `pdftk-java` only when processing a multi-page source PDF:
-
-```bash
-# Ubuntu or WSL2
-sudo apt install -y pdftk-java
-
-# macOS with Homebrew
-brew install pdftk-java
-```
 
 Add the API key for the provider used by your model:
 

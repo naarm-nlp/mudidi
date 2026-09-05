@@ -29,7 +29,7 @@ from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import FormFieldError, NewRunForm
 from mudidi.web.jobs import JobController
-from mudidi.web.inputs import InputMaterializer, rebase_managed_config
+from mudidi.web.inputs import InputMaterializer, _MAX_UPLOAD_BYTES, rebase_managed_config
 from mudidi.web.models import (
     ModelCatalog,
     ModelDiscovery,
@@ -70,6 +70,17 @@ class _RequestBodyTooLarge(Exception):
     """Internal control flow for streamed request-size enforcement."""
 
 
+def _validate_byte_limits(max_request_bytes: int, max_upload_bytes: int) -> None:
+    """Validate HTTP and managed-upload byte limits."""
+
+    if max_request_bytes < 1:
+        raise ValueError("request byte limit must be positive")
+    if max_upload_bytes < 1:
+        raise ValueError("upload byte limit must be positive")
+    if max_request_bytes <= max_upload_bytes:
+        raise ValueError("request byte limit must exceed upload byte limit")
+
+
 def _exception_group_contains(
     group: BaseExceptionGroup,
     expected: type[BaseException],
@@ -91,6 +102,8 @@ def create_app(
     offline_inference: bool = False,
     model_discovery: ModelDiscovery | None = None,
     container_mode: bool = False,
+    max_request_bytes: int = _MAX_REQUEST_BYTES,
+    max_upload_bytes: int = _MAX_UPLOAD_BYTES,
 ) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
@@ -100,10 +113,14 @@ def create_app(
             it is not writable.
         container_mode: Permit the local host aliases used to reach the app
             through Docker Desktop. Arbitrary host headers remain rejected.
+        max_request_bytes: Maximum raw HTTP request body size, including
+            multipart framing.
+        max_upload_bytes: Maximum cumulative managed upload size per run.
 
     Returns:
         Configured FastAPI application.
     """
+    _validate_byte_limits(max_request_bytes, max_upload_bytes)
 
     resolved_data_dir = (data_dir or Path.home() / ".local/share/mudidi").resolve()
     resolved_data_dir.mkdir(parents=True, exist_ok=True)
@@ -115,6 +132,8 @@ def create_app(
         openapi_url=None,
     )
     app.state.data_dir = resolved_data_dir
+    app.state.max_request_bytes = max_request_bytes
+    app.state.max_upload_bytes = max_upload_bytes
     app.state.credential_vault = credential_vault or CredentialVault(
         environ={},
         persistent_store=PersistentCredentialStore(
@@ -137,7 +156,10 @@ def create_app(
     )
     app.state.offline_inference = offline_inference
     app.state.artifacts = ArtifactService(controller=app.state.job_controller)
-    app.state.inputs = InputMaterializer(data_dir=resolved_data_dir)
+    app.state.inputs = InputMaterializer(
+        data_dir=resolved_data_dir,
+        max_total_bytes=max_upload_bytes,
+    )
     app.state.job_controller.reconcile_startup()
     app.state.inputs.reconcile(
         {run.run_id for run in app.state.run_store.list_runs()}
@@ -160,7 +182,7 @@ def create_app(
             except ValueError:
                 response = PlainTextResponse("Invalid Content-Length", status_code=400)
                 return _add_security_headers(response)
-            if declared_length > _MAX_REQUEST_BYTES:
+            if declared_length > max_request_bytes:
                 response = PlainTextResponse("Request body too large", status_code=413)
                 return _add_security_headers(response)
         received_bytes = 0
@@ -171,7 +193,7 @@ def create_app(
             message = await original_receive()
             if message.get("type") == "http.request":
                 received_bytes += len(message.get("body", b""))
-                if received_bytes > _MAX_REQUEST_BYTES:
+                if received_bytes > max_request_bytes:
                     raise _RequestBodyTooLarge
             return message
 

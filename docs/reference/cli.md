@@ -344,7 +344,9 @@ options:
 
 ```text
 usage: mudidi web [-h] [--host {127.0.0.1,localhost}] [--port PORT]
-                  [--data-dir DATA_DIR] [--container] [--no-browser]
+                  [--data-dir DATA_DIR] [--max-request-bytes MAX_REQUEST_BYTES]
+                  [--max-upload-bytes MAX_UPLOAD_BYTES] [--container]
+                  [--no-browser]
 
 options:
   -h, --help            show this help message and exit
@@ -352,6 +354,11 @@ options:
                         Loopback interface to bind (default: 127.0.0.1).
   --port PORT
   --data-dir DATA_DIR
+  --max-request-bytes MAX_REQUEST_BYTES
+                        Maximum raw HTTP request body size, including
+                        multipart framing.
+  --max-upload-bytes MAX_UPLOAD_BYTES
+                        Maximum cumulative managed upload size per run.
   --container           Bind to the container network interface. Use only
                         inside a container whose published port is restricted
                         to host loopback.

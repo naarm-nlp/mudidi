@@ -76,6 +76,37 @@ def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) 
     assert response.status_code == 413
 
 
+def test_configured_request_and_upload_limits_are_applied(tmp_path: Path) -> None:
+    app = create_app(
+        data_dir=tmp_path,
+        max_request_bytes=128,
+        max_upload_bytes=64,
+    )
+    assert app.state.max_request_bytes == 128
+    assert app.state.inputs.max_total_bytes == 64
+
+    response = TestClient(app).post(
+        "/runs/demo",
+        content=b"x" * 129,
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+
+    assert response.status_code == 413
+
+
+def test_request_limit_must_exceed_upload_limit(tmp_path: Path) -> None:
+    try:
+        create_app(
+            data_dir=tmp_path,
+            max_request_bytes=64,
+            max_upload_bytes=64,
+        )
+    except ValueError as exc:
+        assert "request byte limit must exceed upload byte limit" in str(exc)
+    else:
+        raise AssertionError("request limit must leave room for multipart overhead")
+
+
 def test_llm_derived_page_text_is_html_escaped(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     pages = tmp_path / "pages"
