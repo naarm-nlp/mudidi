@@ -18,8 +18,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Then clone MUDIDI and reproduce its locked environment:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git
-cd MUDIDI
+git clone https://github.com/naarm-nlp/mudidi.git
+cd mudidi
 uv sync --frozen
 cp .env.example .env
 ```

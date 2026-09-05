@@ -1,6 +1,6 @@
 # MUDIDI
 
-**[Read the MUDIDI documentation](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/)**
+**[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
 
 MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
@@ -43,7 +43,7 @@ public interface: the local dashboard is not designed as a multi-user or
 internet-facing service.
 
 See the
-**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
+**[local web application guide](https://naarm-nlp.github.io/mudidi/production/local-web-app/)**
 for startup, shutdown, logs, persistence, and troubleshooting.
 
 ### Create a dashboard run
@@ -130,7 +130,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Clone the repository and reproduce its locked Python environment:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git MUDIDI
+git clone https://github.com/naarm-nlp/mudidi.git MUDIDI
 cd MUDIDI
 uv sync --frozen
 ```
@@ -213,14 +213,14 @@ uv run mudidi run --config examples/configs/production/directory-inference.yaml
 ```
 
 For every available option, see the
-**[CLI flag reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/cli/)**
+**[CLI flag reference](https://naarm-nlp.github.io/mudidi/reference/cli/)**
 and the
-**[complete YAML field reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/config/)**.
+**[complete YAML field reference](https://naarm-nlp.github.io/mudidi/reference/config/)**.
 
 ## Documentation
 
 The public documentation is available at
-**[davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/)** and
+**[naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/)** and
 separates two primary workflows:
 
 - **Production Inference** — digitize your own PDF or page directory.
