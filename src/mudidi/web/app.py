@@ -47,7 +47,7 @@ from mudidi.web.runs import (
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
-_MAX_REQUEST_BYTES = 25 * 1024 * 1024
+_MAX_REQUEST_BYTES = 110 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
 _ALLOW_SAME_ORIGIN_FRAME_HEADER = "X-MUDIDI-Allow-Same-Origin-Frame"
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

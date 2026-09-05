@@ -63,14 +63,14 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
-The default request limit is 25 MiB and the default cumulative managed-upload
-limit is 24 MiB. To accept larger dictionary PDFs, configure both limits and
-leave request headroom for multipart framing:
+The default request limit is 110 MiB and the default cumulative managed-upload
+limit is 100 MiB. To override these defaults, configure both limits and leave
+request headroom for multipart framing:
 
 ```bash
 uv run mudidi web \
-  --max-request-bytes 67108864 \
-  --max-upload-bytes 65000000
+  --max-request-bytes 115343360 \
+  --max-upload-bytes 104857600
 ```
 
 `--max-request-bytes` applies to the complete raw HTTP request. The request
