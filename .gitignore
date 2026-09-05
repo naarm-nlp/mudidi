@@ -37,6 +37,7 @@ CLAUDE.md
 # Hidden dotfiles (keep .gitignore itself)
 .*
 !.gitignore
+!.python-version
 !.dockerignore
 !.env.example
 !.github/
