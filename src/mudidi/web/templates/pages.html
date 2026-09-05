@@ -1,15 +1,10 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}
-    <title>Page Viewer &amp; Editor · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
-    <script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
+{% extends "_layout.html" %}
+{% block title %}Page Viewer &amp; Editor · MUDIDI{% endblock %}
+{% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="providers-page">
       <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
       <header class="page-heading">
         <span class="eyebrow">Generated page inspection and correction</span>
@@ -19,6 +14,6 @@
         <h2>No page outputs yet</h2>
         <p>Processed pages will become available here as output files are generated.</p>
       </section>
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}

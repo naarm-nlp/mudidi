@@ -266,7 +266,6 @@ def create_app(
         errors = validation_errors or []
         return {
             "request": request,
-            "active_page": "new-run",
             "models": _all_models(app),
             "presets": presets,
             "selected_preset": selected_preset,

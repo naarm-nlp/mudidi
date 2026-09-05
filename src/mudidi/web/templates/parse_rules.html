@@ -1,14 +1,9 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Review MDF parsing guide · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
-    {% if review.status.value != 'approved' %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-1" defer></script>{% endif %}
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
+{% extends "_layout.html" %}
+{% block title %}Review MDF parsing guide · MUDIDI{% endblock %}
+{% block head_scripts %}{% if review.status.value != 'approved' %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-1" defer></script>{% endif %}{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="providers-page">
       <div class="detail-nav">
         <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
         <span class="status-pill {{ 'ready' if review.status.value == 'approved' else '' }}">{{ review.status.value.replace('_', ' ') | title }}</span>
@@ -72,6 +67,6 @@
       <template id="rule-template"><div class="editor-row single"><input name="rule" placeholder="Describe one structural rule"><button type="button" data-remove aria-label="Remove guide rule">×</button></div></template>
       <template id="abbreviation-template"><div class="editor-row"><input name="abbreviation_key" placeholder="n." aria-label="Abbreviation"><input name="abbreviation_value" placeholder="noun" aria-label="Meaning"><button type="button" data-remove aria-label="Remove abbreviation">×</button></div></template>
       {% endif %}
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}
