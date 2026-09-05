@@ -1,31 +1,7 @@
+{% extends "_layout.html" %}
 {% from "_icons.html" import credential_eye %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-11">
-  </head>
-  <body>
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="MUDIDI home">
-        <span class="brand-mark">M</span>
-        <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a class="active" href="/"><span>＋</span> New run</a>
-        <a href="/active"><span>●</span> Active run</a>
-        <a href="/history"><span>◷</span> Run history</a>
-        <a href="/presets"><span>★</span> Saved presets</a>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="https://naarm-nlp.github.io/mudidi/">Documentation</a>
-        <span class="local-badge">● Running locally</span>
-      </div>
-    </aside>
-
-    <main>
+{% block title %}MUDIDI Local{% endblock %}
+{% block main %}
       <header class="topbar">
         <div><span class="eyebrow">Production inference</span><h1>New run</h1></div>
         <div class="provider-status"><span></span> {% if credential_ready_count %}{{ credential_ready_count }} provider key{{ '' if credential_ready_count == 1 else 's' }} saved{% else %}API key setup required{% endif %}</div>
@@ -286,8 +262,8 @@
           <button type="button" data-remove aria-label="Remove language">Remove</button>
         </div>
       </template>
-    </main>
-    {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-11" defer></script>
-  </body>
-</html>
+{% endblock %}
+{% block body_end %}
+{% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-11" defer></script>
+{% endblock %}

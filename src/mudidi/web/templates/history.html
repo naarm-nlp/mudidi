@@ -1,14 +1,9 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Run history · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-3">
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-3" defer></script>
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
+{% extends "_layout.html" %}
+{% block title %}Run history · MUDIDI{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-3" defer></script>{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="providers-page">
       <a class="back-link" href="/">← New run</a>
       <header class="page-heading">
         <span class="eyebrow">Local metadata</span>
@@ -68,6 +63,6 @@
         <p>Removes inactive dashboard records and managed inputs. Generated output files are kept.</p>
       </form>
       {% endif %}
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}
