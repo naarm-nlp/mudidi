@@ -28,7 +28,7 @@ def test_image_runs_container_mode_with_persistent_application_data() -> None:
         "FROM ghcr.io/astral-sh/uv:0.11.28-python3.12-trixie-slim\n"
     )
     assert "uv sync --frozen --no-dev --extra web" in dockerfile
-    assert "pdftk-java" in dockerfile
+    assert "pdftk-java" not in dockerfile
     assert 'HEALTHCHECK' in dockerfile
     assert 'CMD ["mudidi", "web", "--container"' in dockerfile
     assert '"--data-dir", "/data/app"' in dockerfile

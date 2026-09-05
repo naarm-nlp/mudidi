@@ -1,6 +1,6 @@
 """Extract introduction and dictionary snippet pages from full-dictionary PDFs.
 
-Reads the dictionary metadata CSV and, for every row, uses `pdftk` to burst out
+Reads the dictionary metadata CSV and, for every row, uses PyMuPDF to extract
 each introduction page and each sampled dictionary-entry page into its own PDF.
 Output is organised per-dictionary under a `{source}-{target1}-{target2}...`
 folder with `introduction/` and `snippets/` subfolders.
@@ -14,7 +14,7 @@ import logging
 import sys
 from pathlib import Path
 
-from mudidi.utils.pdf_split import extract_single_page, parse_page_spec
+from mudidi.utils.pdf_split import extract_pdf_pages, parse_page_spec
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,8 @@ def process_row(
     dict_dir = output_dir / folder_name
     intro_dir = dict_dir / "introduction"
     snippets_dir = dict_dir / "snippets"
+    intro_dir.mkdir(parents=True, exist_ok=True)
+    snippets_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         intro_pages = parse_page_spec(intro_spec)
@@ -96,22 +98,20 @@ def process_row(
         len(snippet_pages),
     )
 
-    intro_dir.mkdir(parents=True, exist_ok=True)
-    snippets_dir.mkdir(parents=True, exist_ok=True)
-
-    for page in intro_pages:
-        out_path = intro_dir / f"page_{page}.pdf"
-        if out_path.exists() and not overwrite:
-            logger.debug("Intro page %d already exists, skipping", page)
-            continue
-        extract_single_page(source_pdf, page, out_path)
-
-    for page in snippet_pages:
-        out_path = snippets_dir / f"page_{page}.pdf"
-        if out_path.exists() and not overwrite:
-            logger.debug("Snippet page %d already exists, skipping", page)
-            continue
-        extract_single_page(source_pdf, page, out_path)
+    if intro_pages:
+        extract_pdf_pages(
+            source_pdf,
+            intro_pages,
+            intro_dir,
+            overwrite=overwrite,
+        )
+    if snippet_pages:
+        extract_pdf_pages(
+            source_pdf,
+            snippet_pages,
+            snippets_dir,
+            overwrite=overwrite,
+        )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -132,11 +132,6 @@ def main(argv: list[str] | None = None) -> int:
         datefmt="%H:%M:%S",
     )
 
-    from mudidi.utils.pdf_split import pdftk_available
-
-    if not pdftk_available():
-        logger.error("pdftk is not available on PATH; install it (e.g. `brew install pdftk-java`)")
-        return 1
 
     if not args.csv.exists():
         logger.error("CSV not found: %s", args.csv)

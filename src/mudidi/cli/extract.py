@@ -1160,7 +1160,7 @@ Examples:
         "--intro-pages",
         dest="intro_pages",
         help="When --pages is a PDF: 1-based introduction pages from that same PDF "
-        "(e.g. '1-5' or '1,3'). Optional; uses pdftk.",
+        "(e.g. '1-5' or '1,3'). Optional.",
     )
     parser.add_argument(
         "--stage1-reasoning",
@@ -1346,7 +1346,7 @@ Examples:
         "--dict-pages",
         dest="dict_pages",
         help="When --pages is a single PDF: 1-based dictionary page numbers to process "
-        "(e.g. '1-10' or '1,3,5'). Required for PDF input; uses pdftk.",
+        "(e.g. '1-10' or '1,3,5'). Required for PDF input.",
     )
     parser.add_argument(
         "--output-dir",

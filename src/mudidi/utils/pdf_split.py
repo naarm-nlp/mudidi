@@ -1,14 +1,11 @@
-"""Split individual pages from a multi-page PDF using pdftk."""
+"""Split individual pages from a PDF using PyMuPDF."""
 
 from __future__ import annotations
 
-import logging
 import re
-import shutil
-import subprocess
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+import pymupdf
 
 
 def parse_page_spec(spec: str) -> list[int]:
@@ -48,40 +45,6 @@ def parse_page_spec(spec: str) -> list[int]:
     return pages
 
 
-def pdftk_available() -> bool:
-    """Return True when ``pdftk`` is on PATH."""
-    return shutil.which("pdftk") is not None
-
-
-def require_pdftk() -> None:
-    """Raise ``RuntimeError`` when pdftk is missing."""
-    if not pdftk_available():
-        raise RuntimeError(
-            "pdftk is not available on PATH. Install it to split PDF pages "
-            "(e.g. apt install pdftk-java, or brew install pdftk-java)."
-        )
-
-
-def extract_single_page(source_pdf: Path, page: int, output_pdf: Path) -> None:
-    """Extract a single 1-based page from ``source_pdf`` to ``output_pdf`` via pdftk."""
-    output_pdf.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        "pdftk",
-        str(source_pdf),
-        "cat",
-        str(page),
-        "output",
-        str(output_pdf),
-    ]
-    logger.debug("Running: %s", " ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    if result.returncode != 0:
-        detail = result.stderr.strip() or result.stdout.strip()
-        raise RuntimeError(
-            f"pdftk failed for {source_pdf.name} page {page}: {detail}"
-        )
-
-
 def extract_pdf_pages(
     source_pdf: Path,
     page_numbers: list[int],
@@ -95,16 +58,42 @@ def extract_pdf_pages(
     Output files are named ``page_{N}.pdf`` by default (``N`` = source PDF page
     number). Returns paths in the same order as ``page_numbers``.
 
-    Time complexity: O(n) pdftk invocations for n pages.
+    The source PDF is opened once, regardless of how many pages are requested.
     """
-    require_pdftk()
     output_dir.mkdir(parents=True, exist_ok=True)
     results: list[Path] = []
-    for page in page_numbers:
-        out_path = output_dir / stem_template.format(page=page)
-        if out_path.exists() and not overwrite:
-            logger.debug("Reusing existing split page %s", out_path)
-        else:
-            extract_single_page(source_pdf, page, out_path)
-        results.append(out_path)
+    total = len(page_numbers)
+    print(
+        f"PDF split: {source_pdf.name} ({total} requested page(s))",
+        flush=True,
+    )
+    with pymupdf.open(str(source_pdf)) as source:
+        for index, page in enumerate(page_numbers, start=1):
+            if not 1 <= page <= source.page_count:
+                raise ValueError(
+                    f"page {page} is outside source PDF "
+                    f"(1-{source.page_count})"
+                )
+            out_path = output_dir / stem_template.format(page=page)
+            if out_path.exists() and not overwrite:
+                action = "reused"
+            else:
+                with pymupdf.open() as destination:
+                    destination.insert_pdf(
+                        source,
+                        from_page=page - 1,
+                        to_page=page - 1,
+                    )
+                    destination.save(str(out_path))
+                action = "wrote"
+            print(
+                f"PDF split: {action} source page {page} "
+                f"({index}/{total})",
+                flush=True,
+            )
+            results.append(out_path)
+    print(
+        f"PDF split complete: {source_pdf.name} ({len(results)} page(s))",
+        flush=True,
+    )
     return results

@@ -67,7 +67,7 @@ benchmark_sweep YAML
 ## Extraction Orchestration (`cli/extract.py`)
 
 Responsibilities:
-- Materialize page inputs (snippets dir, PDF split via pdftk, rasterize via PyMuPDF)
+- Materialize page inputs (snippets dir, PDF split via PyMuPDF, rasterize via PyMuPDF)
 - Collect intro / alphabet / OCR-hint / neighbor context
 - Select strategy: `TwoStageLLMExtraction`, VLM OCR batch, or Mathpix OCR batch
 - ThreadPoolExecutor page concurrency with rate-limit backoff
