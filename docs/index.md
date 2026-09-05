@@ -3,7 +3,7 @@
 ## About MUDIDI
 
 MUDIDI's documentation is published at
-[davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/) from
+[naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/) from
 the repository's `main` branch.
 
 ## Pipeline
