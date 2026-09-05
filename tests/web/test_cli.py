@@ -20,6 +20,53 @@ def test_web_command_defaults_to_loopback() -> None:
     assert args.container is False
 
 
+def test_web_command_accepts_configured_byte_limits() -> None:
+    args = build_parser().parse_args(
+        [
+            "web",
+            "--max-request-bytes",
+            "128",
+            "--max-upload-bytes",
+            "64",
+        ]
+    )
+
+    assert args.max_request_bytes == 128
+    assert args.max_upload_bytes == 64
+
+
+def test_server_passes_configured_byte_limits_to_application(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    create_calls: list[dict[str, object]] = []
+
+    def fake_create_app(**kwargs: object) -> object:
+        create_calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr("mudidi.web.app.create_app", fake_create_app)
+    monkeypatch.setattr("uvicorn.run", lambda *_args, **_kwargs: None)
+
+    run_server(
+        host="127.0.0.1",
+        port=8000,
+        data_dir=tmp_path,
+        open_browser=False,
+        max_request_bytes=128,
+        max_upload_bytes=64,
+    )
+
+    assert create_calls == [
+        {
+            "data_dir": tmp_path,
+            "container_mode": False,
+            "max_request_bytes": 128,
+            "max_upload_bytes": 64,
+        }
+    ]
+
+
 def test_web_command_supports_explicit_container_mode() -> None:
     args = build_parser().parse_args(["web", "--container", "--no-browser"])
 

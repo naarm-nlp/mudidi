@@ -88,7 +88,7 @@ spot-check, partial, and agentic-only slots were excluded.
 
 The tracked result-set inventory, producer scripts, and canonical scope are
 recorded in
-[`evaluations/README.md`](https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/blob/main/evaluations/README.md).
+[`evaluations/README.md`](https://github.com/naarm-nlp/mudidi/blob/main/evaluations/README.md).
 
 The Stage 1 output does not exactly match the current historical shell file:
 the output contains `gemini31pro_flat_alpha_ocr`, while the current script names

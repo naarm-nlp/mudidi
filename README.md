@@ -1,6 +1,6 @@
 # MUDIDI
 
-**[Read the MUDIDI documentation](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/)**
+**[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
 
 MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
@@ -18,9 +18,8 @@ Windows usage supported through WSL2.
 ### Web dashboard with Docker (recommended)
 
 Docker runs MUDIDI in the same reproducible Linux environment on macOS,
-Windows, and Linux without requiring a separate Python, uv, or `pdftk`
-installation. Install [Docker Desktop](https://docs.docker.com/desktop/) on
-macOS or Windows, or Docker Engine with the Compose plugin on Linux.
+Windows, and Linux. Install [Docker Desktop](https://docs.docker.com/desktop/)
+on macOS or Windows, or Docker Engine with the Compose plugin on Linux.
 
 Before running MUDIDI, make sure Docker is running: start Docker Desktop on
 macOS or Windows, or start the Docker daemon on Linux, and wait until the
@@ -44,7 +43,7 @@ public interface: the local dashboard is not designed as a multi-user or
 internet-facing service.
 
 See the
-**[local web application guide](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/production/local-web-app/)**
+**[local web application guide](https://naarm-nlp.github.io/mudidi/production/local-web-app/)**
 for startup, shutdown, logs, persistence, and troubleshooting.
 
 ### Create a dashboard run
@@ -72,6 +71,20 @@ start the dashboard:
 ```bash
 uv sync --frozen --extra web
 uv run mudidi web
+```
+
+The default raw request limit is 110 MiB and the default cumulative managed
+upload limit is 100 MiB. Configure both byte limits when overriding these
+defaults.
+`--max-request-bytes` covers the complete HTTP request, including multipart
+framing, and must be greater than `--max-upload-bytes`.
+
+For example, allow uploads up to 100 MiB with a 110 MiB request limit:
+
+```bash
+uv run mudidi web \
+  --max-request-bytes 115343360 \
+  --max-upload-bytes 104857600
 ```
 
 MUDIDI opens <http://localhost:8000>. Use `--no-browser` to prevent it from
@@ -117,14 +130,11 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Clone the repository and reproduce its locked Python environment:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git MUDIDI
+git clone https://github.com/naarm-nlp/mudidi.git MUDIDI
 cd MUDIDI
 uv sync --frozen
 ```
 
-Install `pdftk` only when processing a multi-page source PDF. On Ubuntu or
-WSL2, run `sudo apt install -y pdftk-java`; on macOS with Homebrew, run
-`brew install pdftk-java`.
 
 ## API setup
 
@@ -203,14 +213,14 @@ uv run mudidi run --config examples/configs/production/directory-inference.yaml
 ```
 
 For every available option, see the
-**[CLI flag reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/cli/)**
+**[CLI flag reference](https://naarm-nlp.github.io/mudidi/reference/cli/)**
 and the
-**[complete YAML field reference](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/reference/config/)**.
+**[complete YAML field reference](https://naarm-nlp.github.io/mudidi/reference/config/)**.
 
 ## Documentation
 
 The public documentation is available at
-**[davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary](https://davidsamuell.github.io/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary/)** and
+**[naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/)** and
 separates two primary workflows:
 
 - **Production Inference** — digitize your own PDF or page directory.

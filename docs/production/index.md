@@ -43,7 +43,7 @@ uv run mudidi run --config examples/configs/production/directory-inference.yaml
 ### PDF input
 
 PDF mode selects 1-based dictionary and introduction pages from one source scan.
-Install `pdftk` before processing a multi-page PDF.
+PyMuPDF extracts the selected pages automatically.
 
 ```bash
 uv run mudidi run --config examples/configs/production/pdf-inference.yaml

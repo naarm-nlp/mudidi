@@ -49,7 +49,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--dict-pages",
         dest="dict_pages",
         help="When --pages is a PDF: 1-based dictionary pages to process "
-        "(e.g. '1-10' or '1,3,5'). Required for PDF input; uses pdftk.",
+        "(e.g. '1-10' or '1,3,5'). Required for PDF input.",
     )
     parser.add_argument(
         "--input-image",
@@ -88,7 +88,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--intro-pages",
         dest="intro_pages",
         help="When --pages is a PDF: 1-based introduction pages from that same PDF "
-        "(e.g. '1-5'). Optional; uses pdftk.",
+        "(e.g. '1-5'). Optional.",
     )
     parser.add_argument(
         "--alphabet",

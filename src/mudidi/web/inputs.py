@@ -17,7 +17,7 @@ from mudidi.config.yaml_config import InferenceConfig
 
 _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 _MAX_FILES = 5_000
-_MAX_UPLOAD_BYTES = 24 * 1024 * 1024
+_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 _TEXT_CHARS = 20_000
 
 

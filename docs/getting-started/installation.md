@@ -18,21 +18,12 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Then clone MUDIDI and reproduce its locked environment:
 
 ```bash
-git clone https://github.com/DavidSamuell/MUDIDI-Pipeline-for-Digitization-of-Multilingual-Dictionary.git
-cd MUDIDI
+git clone https://github.com/naarm-nlp/mudidi.git
+cd mudidi
 uv sync --frozen
 cp .env.example .env
 ```
 
-Install `pdftk-java` only when processing a multi-page source PDF:
-
-```bash
-# Ubuntu or WSL2
-sudo apt install -y pdftk-java
-
-# macOS with Homebrew
-brew install pdftk-java
-```
 
 Add the API key for the provider used by your model:
 
