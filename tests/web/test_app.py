@@ -153,6 +153,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
     assert "/static/app.js?v=dashboard-11" in response.text
+    assert "Start offline demo" not in response.text
+    assert 'action="/runs/demo"' not in response.text
 
 
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
