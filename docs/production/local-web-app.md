@@ -53,21 +53,8 @@ is ready, and repeat the Compose command.
 
 ### Native dashboard with uv
 
-Native runs use the tools installed on the host computer. Install `pdftk` before
-processing a multi-page PDF:
-
-=== "macOS"
-
-    ```bash
-    brew install pdftk-java
-    ```
-
-=== "Ubuntu or WSL2"
-
-    ```bash
-    sudo apt update
-    sudo apt install -y pdftk-java
-    ```
+Native runs use PyMuPDF for PDF page extraction; no separate PDF system tool is
+required.
 
 Then install the web dependencies and start MUDIDI:
 
@@ -76,14 +63,24 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
+The default request limit is 110 MiB and the default cumulative managed-upload
+limit is 100 MiB. To override these defaults, configure both limits and leave
+request headroom for multipart framing:
+
+```bash
+uv run mudidi web \
+  --max-request-bytes 115343360 \
+  --max-upload-bytes 104857600
+```
+
+`--max-request-bytes` applies to the complete raw HTTP request. The request
+limit must be greater than `--max-upload-bytes`.
+
 Save the API key for your model provider under **API credentials** on the
 **New Run** screen by clicking **Save key** beside that provider.
 MUDIDI opens `http://localhost:8000`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
-`uv` installs MUDIDI's Python dependencies, but it does not install operating
-system programs such as `pdftk`. Docker already includes `pdftk-java` in its
-image.
 
 ## Create a run
 
@@ -266,7 +263,8 @@ Run views include:
   approved snapshot afterward.
 - **Page Viewer & Editor** — the rendered source page beside editable generated
   text, with previous/next controls and a slider across processed pages.
-- **Live Logs** — bounded diagnostics with known keys redacted.
+- **Live Logs** — bounded diagnostics with known keys redacted, including
+  PDF-splitting progress.
 - **File Artifacts** — downloads constrained to the validated output directory.
 - **Usage** — reported token and cost totals.
 
@@ -349,12 +347,9 @@ filesystem. The first release permits one inference worker at a time.
 - **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
   guide; this pause is intentional.
 - **Interrupted** — inspect the run and explicitly resume it.
-- **Request body too large** — compress the dictionary PDF or create a smaller
-  PDF containing the pages needed for the run, then upload that single PDF.
-- **`pdftk is not available on PATH` / `extraction returned 1`** — a native
-  `uv` run cannot split a multi-page PDF until `pdftk-java` is installed. Use
-  `brew install pdftk-java` on macOS or `sudo apt install -y pdftk-java` on
-  Ubuntu/WSL2, then restart the dashboard and create a new run.
+- **Request body too large** — start the dashboard with larger
+  `--max-request-bytes` and `--max-upload-bytes` values, leaving request
+  headroom for multipart framing.
 - **Address already in use on `127.0.0.1:8000`** — another dashboard process is
   already listening. On macOS or Linux, inspect it with
   `lsof -nP -iTCP:8000 -sTCP:LISTEN`, stop the listed process with `kill PID`,

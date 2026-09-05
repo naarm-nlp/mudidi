@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PDF mode on a full dictionary scan (requires pdftk).
+# PDF mode on a full dictionary scan.
 #
 # Place your downloaded dictionary PDF under inputs/ and adjust --dict-pages,
 # --intro-pages, and --parse-rules-page for your volume. This example uses the

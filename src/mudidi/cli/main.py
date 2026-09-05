@@ -211,6 +211,16 @@ def build_parser() -> argparse.ArgumentParser:
     web.add_argument("--port", type=int, default=8000)
     web.add_argument("--data-dir", type=Path)
     web.add_argument(
+        "--max-request-bytes",
+        type=int,
+        help="Maximum raw HTTP request body size, including multipart framing.",
+    )
+    web.add_argument(
+        "--max-upload-bytes",
+        type=int,
+        help="Maximum cumulative managed upload size per run.",
+    )
+    web.add_argument(
         "--container",
         action="store_true",
         help=(
@@ -286,6 +296,8 @@ def _run_web(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
             data_dir=args.data_dir,
             open_browser=args.open_browser,
             container_mode=args.container,
+            max_request_bytes=args.max_request_bytes,
+            max_upload_bytes=args.max_upload_bytes,
         )
     except ValueError as exc:
         parser.error(str(exc))

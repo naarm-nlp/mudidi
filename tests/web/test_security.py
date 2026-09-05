@@ -50,23 +50,27 @@ def test_security_headers_are_present_on_html(tmp_path: Path) -> None:
 def test_oversized_declared_request_is_rejected_before_form_parsing(
     tmp_path: Path,
 ) -> None:
-    client = TestClient(create_app(data_dir=tmp_path))
+    client = TestClient(
+        create_app(data_dir=tmp_path, max_request_bytes=128, max_upload_bytes=64)
+    )
 
     response = client.post(
         "/runs/demo",
         content=b"x",
-        headers={"content-length": str(30 * 1024 * 1024)},
+        headers={"content-length": "129"},
     )
 
     assert response.status_code == 413
 
 
 def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) -> None:
-    client = TestClient(create_app(data_dir=tmp_path))
+    client = TestClient(
+        create_app(data_dir=tmp_path, max_request_bytes=128, max_upload_bytes=64)
+    )
 
     response = client.post(
         "/runs/demo",
-        content=b"page_count=1&padding=" + b"x" * (26 * 1024 * 1024),
+        content=b"page_count=1&padding=" + b"x" * 129,
         headers={
             "content-length": "1",
             "content-type": "application/x-www-form-urlencoded",
@@ -74,6 +78,46 @@ def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) 
     )
 
     assert response.status_code == 413
+
+
+def test_default_byte_limits_allow_large_local_upload_ceiling(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+
+    assert app.state.max_request_bytes == 110 * 1024 * 1024
+    assert app.state.inputs.max_total_bytes == 100 * 1024 * 1024
+
+
+def test_configured_request_and_upload_limits_are_applied(tmp_path: Path) -> None:
+    app = create_app(
+        data_dir=tmp_path,
+        max_request_bytes=128,
+        max_upload_bytes=64,
+    )
+    assert app.state.max_request_bytes == 128
+    assert app.state.inputs.max_total_bytes == 64
+
+    response = TestClient(app).post(
+        "/runs/demo",
+        content=b"x" * 129,
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+
+    assert response.status_code == 413
+
+
+def test_request_limit_must_exceed_upload_limit(tmp_path: Path) -> None:
+    try:
+        create_app(
+            data_dir=tmp_path,
+            max_request_bytes=64,
+            max_upload_bytes=64,
+        )
+    except ValueError as exc:
+        assert "request byte limit must exceed upload byte limit" in str(exc)
+    else:
+        raise AssertionError("request limit must leave room for multipart overhead")
 
 
 def test_llm_derived_page_text_is_html_escaped(tmp_path: Path) -> None:

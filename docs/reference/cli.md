@@ -254,12 +254,12 @@ usage: mudidi benchmark evaluate stage1 [-h] [--config CONFIG]
 options:
   -h, --help            show this help message and exit
   --config CONFIG
-  --predicted PREDICTED, -p PREDICTED
-  --gold GOLD, -g GOLD
+  --predicted, -p PREDICTED
+  --gold, -g GOLD
   --dataset-dir DATASET_DIR
   --pred-root PRED_ROOT
   --samples-dir SAMPLES_DIR
-  --output-dir OUTPUT_DIR, -o OUTPUT_DIR
+  --output-dir, -o OUTPUT_DIR
   --languages LANGUAGES [LANGUAGES ...]
   --experiment-name EXPERIMENT_NAME
   --all-experiments
@@ -297,12 +297,12 @@ usage: mudidi benchmark evaluate stage2 [-h] [--config CONFIG]
 options:
   -h, --help            show this help message and exit
   --config CONFIG
-  --predicted PREDICTED, -p PREDICTED
-  --gold GOLD, -g GOLD
+  --predicted, -p PREDICTED
+  --gold, -g GOLD
   --dataset-dir DATASET_DIR
   --pred-root PRED_ROOT
   --samples-dir SAMPLES_DIR
-  --output-dir OUTPUT_DIR, -o OUTPUT_DIR
+  --output-dir, -o OUTPUT_DIR
   --languages LANGUAGES [LANGUAGES ...]
   --experiment-name EXPERIMENT_NAME
   --all-experiments
@@ -344,7 +344,10 @@ options:
 
 ```text
 usage: mudidi web [-h] [--host {127.0.0.1,localhost}] [--port PORT]
-                  [--data-dir DATA_DIR] [--container] [--no-browser]
+                  [--data-dir DATA_DIR]
+                  [--max-request-bytes MAX_REQUEST_BYTES]
+                  [--max-upload-bytes MAX_UPLOAD_BYTES] [--container]
+                  [--no-browser]
 
 options:
   -h, --help            show this help message and exit
@@ -352,6 +355,11 @@ options:
                         Loopback interface to bind (default: 127.0.0.1).
   --port PORT
   --data-dir DATA_DIR
+  --max-request-bytes MAX_REQUEST_BYTES
+                        Maximum raw HTTP request body size, including
+                        multipart framing.
+  --max-upload-bytes MAX_UPLOAD_BYTES
+                        Maximum cumulative managed upload size per run.
   --container           Bind to the container network interface. Use only
                         inside a container whose published port is restricted
                         to host loopback.

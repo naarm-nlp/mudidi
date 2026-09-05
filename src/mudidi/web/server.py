@@ -14,6 +14,8 @@ def run_server(
     data_dir: Path | None = None,
     open_browser: bool = True,
     container_mode: bool = False,
+    max_request_bytes: int | None = None,
+    max_upload_bytes: int | None = None,
 ) -> int:
     """Run the local application in one Uvicorn process.
 
@@ -33,7 +35,15 @@ def run_server(
         raise ValueError("port must be between 1 and 65535")
 
     load_dotenv()
-    app = create_app(data_dir=data_dir, container_mode=container_mode)
+    app_kwargs: dict[str, object] = {
+        "data_dir": data_dir,
+        "container_mode": container_mode,
+    }
+    if max_request_bytes is not None:
+        app_kwargs["max_request_bytes"] = max_request_bytes
+    if max_upload_bytes is not None:
+        app_kwargs["max_upload_bytes"] = max_upload_bytes
+    app = create_app(**app_kwargs)
     browser_url = f"http://localhost:{port}/"
     print(f"MUDIDI dashboard: {browser_url}", flush=True)
     if open_browser:

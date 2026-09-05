@@ -15,7 +15,7 @@
 | `litellm` | Unified LLM provider gateway (`llm/client.py`) |
 | `pydantic` | Schemas, structured output validation |
 | `python-dotenv` | `.env` API key loading |
-| `pymupdf` | PDF render/split (fallback to pdftk) |
+| `pymupdf` | PDF rendering and page splitting |
 | `Pillow` | Image handling for LLM vision calls |
 | `numpy` | OCR result arrays and geometry data |
 | `scipy` | Assignment used by MDF matching |
@@ -56,11 +56,11 @@ Key env toggles: `OPENROUTER_PROVIDER_ORDER`, `GEMINI_MAX_RETRIES`, `LLM_RATE_LI
 
 Local VLM servers: `paddle_genai_server.py`, `glm_vllm_server.py`.
 
+
 ## System Tools
 
 | Tool | Required When | Install |
 |------|---------------|---------|
-| `pdftk` | `--pages` is a PDF | `pdftk-java` (apt/brew) |
 | `git` | Clone repo | standard |
 | Label Studio | Annotation workflow | external pip/docker install |
 
