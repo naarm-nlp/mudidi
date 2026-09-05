@@ -73,6 +73,20 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
+The default raw request limit is 25 MiB and the default cumulative managed
+upload limit is 24 MiB. For larger dictionary PDFs, configure both byte limits:
+`--max-request-bytes` covers the complete HTTP request, including multipart
+framing, and must be greater than `--max-upload-bytes`.
+
+For example, allow uploads up to approximately 62 MiB with a 64 MiB request
+limit:
+
+```bash
+uv run mudidi web \
+  --max-request-bytes 67108864 \
+  --max-upload-bytes 65000000
+```
+
 MUDIDI opens <http://localhost:8000>. Use `--no-browser` to prevent it from
 opening a browser automatically, or `--port 8080` to choose another local port.
 
