@@ -88,3 +88,4 @@ experiment-results
 *archive/
 !examples/evaluation/archive/
 !examples/evaluation/archive/*.sh
+AGENTS.md
