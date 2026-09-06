@@ -178,6 +178,90 @@ def test_prepared_review_preserves_additional_instructions_summary(
     assert recovered.status_code == 200
     assert "Additional Instructions" in recovered.text
     assert "Stage 1, Stage 2" in recovered.text
+@pytest.mark.parametrize(
+    ("inherited_stage1", "inherited_stage2", "pipeline", "expected"),
+    [
+        ("Saved Stage 1 instructions", None, "complete", "Stage 1"),
+        (None, "Saved Stage 2 instructions", "complete", "Stage 2"),
+        (
+            "Saved Stage 1 instructions",
+            "Saved Stage 2 instructions",
+            "complete",
+            "Stage 1, Stage 2",
+        ),
+        (
+            "Saved Stage 1 instructions",
+            "Saved Stage 2 instructions",
+            "transcription",
+            "Stage 1",
+        ),
+        (
+            "Saved Stage 1 instructions",
+            "Saved Stage 2 instructions",
+            "structure",
+            "Stage 2",
+        ),
+    ],
+)
+def test_reused_preset_cleared_instructions_match_recovered_review(
+    tmp_path: Path,
+    inherited_stage1: str | None,
+    inherited_stage2: str | None,
+    pipeline: str,
+    expected: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    source_run_id = _preview(
+        client,
+        tmp_path,
+        stage1_additional_instructions=inherited_stage1,
+        stage2_additional_instructions=inherited_stage2,
+    )
+    saved = client.post(
+        f"/runs/{source_run_id}/presets",
+        data={"name": "Inherited instructions"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    preset = app.state.run_store.list_presets()[0]
+
+    immediate = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / f"{pipeline}-output"),
+            "pipeline": pipeline,
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "agentic": "false",
+            "dictionary_pages": "1",
+            "parse_rules_pages": "1",
+            "stage1_additional_instructions": "",
+            "stage2_additional_instructions": "",
+        },
+    )
+
+    assert immediate.status_code == 200
+    immediate_match = re.search(
+        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
+        immediate.text,
+    )
+    assert immediate_match is not None
+    recovered_run = next(
+        run for run in app.state.run_store.list_runs() if run.run_id != source_run_id
+    )
+    recovered = client.get(f"/runs/{recovered_run.run_id}/review")
+    assert recovered.status_code == 200
+    recovered_match = re.search(
+        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
+        recovered.text,
+    )
+    assert recovered_match is not None
+    assert immediate_match.group(1) == recovered_match.group(1) == expected
+
+
 
 
 
