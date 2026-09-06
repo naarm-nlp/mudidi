@@ -1200,3 +1200,26 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
     assert response.status_code == 422
     assert app.state.run_store.list_runs() == []
     assert not (tmp_path / "app-data" / "escape.png").exists()
+
+def test_new_run_wizard_exposes_ordered_named_panels_and_non_color_states(
+    tmp_path: Path,
+) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    panel_positions = [
+        response.text.index(f'data-wizard-panel="{step}"')
+        for step in ("input", "pipeline", "model", "agentic")
+    ]
+    assert panel_positions == sorted(panel_positions)
+    for step in ("input", "pipeline", "model", "agentic"):
+        assert (
+            f'<section id="wizard-{step}" data-wizard-panel="{step}" '
+            f'aria-labelledby="wizard-{step}-title"'
+        ) in response.text
+        assert f'id="wizard-{step}-title"' in response.text
+    assert response.text.count('aria-current="step"') == 1
+    assert 'data-stage2-mode="shared"' in response.text
+    assert 'data-stage2-pass="pass1"' in response.text
+    assert 'data-stage2-pass="pass2"' in response.text
+    assert 'data-wizard-validation-summary role="alert"' in response.text

@@ -3,5 +3,41 @@
 {% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=logs-1" defer></script>{% endblock %}
 {% block main %}
-<div class="page-shell"><div class="providers-page"><a class="back-link" href="/runs/{{ run_id }}">← Run overview</a><header class="page-heading"><span class="eyebrow">Worker diagnostics</span><h1>Live Logs</h1><p>Only the latest bounded portion of the local worker log is shown. Known provider keys are redacted.</p></header>{% if failure_message %}<section class="failure-details" role="alert"><strong>Run failure</strong><p>{{ failure_message }}</p></section>{% endif %}<section class="panel log-panel"><div class="log-toolbar"><div><span class="eyebrow">Stream status</span><span class="stream-status" data-stream-status role="status">{{ "Live" if is_active else "Idle" }}</span></div><div class="log-toolbar-actions"><button type="button" data-live-toggle aria-pressed="false"><span data-live-pause-label{% if not is_active %} hidden{% endif %}>Pause</span><span data-live-resume-label{% if is_active %} hidden{% endif %}>Resume</span></button><button type="button" data-log-copy>Copy visible text</button><span class="log-copy-status" data-log-copy-status role="status" aria-live="polite"></span></div></div>{% if truncated %}<p class="validation-warning">Older log output was truncated.</p>{% endif %}<pre data-log-console>{% if content %}{{ content }}{% else %}<span class="log-empty">No log output yet. Refresh this page while the run is active.</span>{% endif %}</pre></section></div></div>
+<div class="page-shell">
+  <div class="providers-page">
+    <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+    <header class="page-heading">
+      <span class="eyebrow">Worker diagnostics</span>
+      <h1>Live Logs</h1>
+      <p>Only the latest bounded portion of the local worker log is shown. Known provider keys are redacted.</p>
+    </header>
+    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+      <div class="detail-tabs">
+        <a href="/runs/{{ run_id }}">Overview</a>
+        <a href="/runs/{{ run_id }}/logs" aria-current="page">Live Logs</a>
+      </div>
+    </nav>
+    {% if failure_message %}
+    <section class="failure-details" role="alert" aria-labelledby="run-failure-title">
+      <strong id="run-failure-title">Run failure</strong>
+      <p>{{ failure_message }}</p>
+    </section>
+    {% endif %}
+    <section class="panel log-panel" aria-labelledby="log-panel-title">
+      <div class="log-toolbar">
+        <div>
+          <span class="eyebrow" id="log-panel-title">Stream status</span>
+          <span class="stream-status" data-stream-status role="status">{{ "Live" if is_active else "Idle" }}</span>
+        </div>
+        <div class="log-toolbar-actions">
+          <button type="button" data-live-toggle aria-pressed="false"><span data-live-pause-label{% if not is_active %} hidden{% endif %}>Pause</span><span data-live-resume-label{% if is_active %} hidden{% endif %}>Resume</span></button>
+          <button type="button" data-log-copy>Copy visible text</button>
+          <span class="log-copy-status" data-log-copy-status role="status" aria-live="polite"></span>
+        </div>
+      </div>
+      {% if truncated %}<p class="validation-warning">Older log output was truncated.</p>{% endif %}
+      <pre data-log-console aria-label="Live log output">{% if content %}{{ content }}{% else %}<span class="log-empty">No log output yet. Refresh this page while the run is active.</span>{% endif %}</pre>
+    </section>
+  </div>
+</div>
 {% endblock %}

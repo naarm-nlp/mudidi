@@ -4,10 +4,16 @@
     <div class="page-shell">
       <div class="review-page">
       <a class="back-link" href="/">← Edit configuration</a>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/review" aria-current="page">Review</a>
+        </div>
+      </nav>
       <div class="review-layout">
-        <section class="panel review-card">
+        <section class="panel review-card" aria-labelledby="review-title">
           <span class="eyebrow">Step 5 of 5</span>
-          <h1>Review your run</h1>
+          <h1 id="review-title">Review your run</h1>
           <p>These values were validated through MUDIDI's production configuration schema.</p>
           {% set review_groups = [
             ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),

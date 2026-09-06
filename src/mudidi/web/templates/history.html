@@ -11,17 +11,17 @@
       <p>Runs and events persist locally. Provider credentials are stored separately as encrypted values.</p>
     </header>
     <form class="panel history-filters" method="get" action="/history">
-      <label>Search<input name="q" value="{{ filters.q }}" placeholder="Run ID"></label>
-      <label>Status
-        <select name="status">
+      <label for="history-query">Search<input id="history-query" name="q" value="{{ filters.q }}" placeholder="Run ID"></label>
+      <label for="history-status">Status
+        <select id="history-status" name="status">
           <option value="">All statuses</option>
           {% for item in statuses %}
           <option value="{{ item.value }}" {{ 'selected' if filters.status == item.value else '' }}>{{ status_label(item) }}</option>
           {% endfor %}
         </select>
       </label>
-      <label>Provider
-        <select name="provider">
+      <label for="history-provider">Provider
+        <select id="history-provider" name="provider">
           <option value="">All providers</option>
           {% for item in providers %}
           <option value="{{ item.value }}" {{ 'selected' if filters.provider == item.value else '' }}>{{ item.value | title }}</option>
@@ -34,6 +34,7 @@
       {% if runs %}
       <div class="table-scroll">
         <table class="history-table">
+          <caption class="sr-only">Run history results</caption>
           <thead>
             <tr>
               <th scope="col">Run</th>
