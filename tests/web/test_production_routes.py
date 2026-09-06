@@ -449,13 +449,14 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert "My verified setup" in page.text
     assert f'href="/?preset={preset.preset_id}"' in page.text
     assert "Use preset" in page.text
-    assert "Load preset" in page.text
+    assert f'aria-label="Use preset My verified setup"' in page.text
     assert "Updated" in page.text
     assert "Provider" in page.text
     assert "Pipeline" in page.text
     assert "Primary model" in page.text
     assert "Agentic" in page.text
     assert "Remove" in page.text
+    assert f'aria-label="Remove preset My verified setup"' in page.text
     assert 'data-confirm-preset-delete="My verified setup"' in page.text
     assert 'action="/presets/' + preset.preset_id + '/delete"' in page.text
 

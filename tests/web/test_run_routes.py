@@ -188,6 +188,60 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "Stage 1 — Transcription" in response.text
     assert "MDF parsing guide discovery" in response.text
 
+@pytest.mark.parametrize("resumable_status", [RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED])
+def test_resumable_run_keeps_historical_progress_without_current_page(
+    tmp_path: Path,
+    resumable_status: RunStatus,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = f"resumable-{resumable_status.value}"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3))
+    store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
+    store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
+    store.interrupt(run_id)
+    if resumable_status is RunStatus.CREDENTIALS_REQUIRED:
+        store.transition(run_id, RunStatus.CREDENTIALS_REQUIRED)
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+    history = TestClient(app).get("/history")
+
+    assert response.status_code == 200
+    assert "1 of 3 pages" in history.text
+    assert "0 of 0 pages" not in history.text
+    assert "Currently processing: Page 2 of 3" not in response.text
+
+
+@pytest.mark.parametrize("terminal_status", [RunStatus.FAILED, RunStatus.CANCELLED])
+def test_terminal_run_keeps_historical_progress_without_current_page(
+    tmp_path: Path,
+    terminal_status: RunStatus,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = f"terminal-{terminal_status.value}"
+    store = app.state.run_store
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3))
+    store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
+    store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
+    store.transition(run_id, terminal_status)
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+    history = TestClient(app).get("/history")
+
+    assert response.status_code == 200
+    assert "1 of 3 pages" in history.text
+    assert "0 of 0 pages" not in history.text
+    assert "Currently processing: Page 2 of 3" not in response.text
+
+
 
 def test_run_overview_recovers_missing_total_and_uses_singular_page(
     tmp_path: Path,
