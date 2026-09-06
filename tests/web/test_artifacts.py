@@ -43,7 +43,16 @@ def _prepared_app(tmp_path: Path) -> tuple[object, TestClient, str, Path]:
     stage2.mkdir(parents=True)
     (stage2 / "page_1.mdf.txt").write_text("\\lx hello\n\\ge gloss", encoding="utf-8")
     (stage2 / "page_1_usage.json").write_text(
-        json.dumps({"total_tokens": 120, "total_cost_usd": 0.012}),
+        json.dumps(
+            {
+                "stage1": {"total_tokens": 40, "cost_usd": 0.004},
+                "field_discovery": {
+                    "total_tokens": 30,
+                    "total_cost_usd": 0.003,
+                },
+                "stage2": {"total_tokens": 50},
+            }
+        ),
         encoding="utf-8",
     )
     return app, TestClient(app), run_id, output
@@ -61,6 +70,7 @@ def test_artifact_listing_is_relative_and_grouped_by_page(tmp_path: Path) -> Non
         "stage-2/page_1/page_1.mdf.txt",
     }
     assert pages[0].page_id == "page_1"
+    assert artifacts[0].modified_at.tzinfo is not None
     assert pages[0].stage1 is not None
     assert pages[0].stage2 is not None
 
@@ -96,12 +106,50 @@ def test_artifact_resolution_rejects_symlink_escape(tmp_path: Path) -> None:
 
 def test_usage_summary_aggregates_page_usage(tmp_path: Path) -> None:
     app, _client, run_id, _output = _prepared_app(tmp_path)
-
     usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
 
     assert usage.total_tokens == 120
-    assert usage.total_cost_usd == 0.012
+    assert usage.total_cost_usd == 0.007
     assert usage.files_scanned == 1
+    assert isinstance(usage.breakdown, tuple)
+    assert [row.stage for row in usage.breakdown] == [
+        "Stage 1",
+        "Stage 2 · field discovery",
+        "Stage 2 · MDF extraction",
+    ]
+    assert [row.total_tokens for row in usage.breakdown] == [40, 30, 50]
+    assert [row.cost_usd for row in usage.breakdown] == [0.004, 0.003, None]
+
+
+def test_run_usage_summary_derives_page_totals_without_run_token_total(
+    tmp_path: Path,
+) -> None:
+    app, _client, run_id, output = _prepared_app(tmp_path)
+    (output / "run_usage.json").write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "page": "page_1",
+                        "stage1": {"total_tokens": 4, "cost_usd": 0.004},
+                        "field_discovery": {
+                            "total_tokens": 3,
+                            "total_cost_usd": 0.003,
+                        },
+                        "stage2": {"total_tokens": 5},
+                    }
+                ],
+                "run_total_cost_usd": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 12
+    assert usage.total_cost_usd == 0.007
+    assert [row.total_tokens for row in usage.breakdown] == [4, 3, 5]
 
 
 def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
@@ -116,15 +164,19 @@ def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
     assert overview.status_code == 200
     assert "Page Viewer &amp; Editor" in overview.text
     assert "Output Preview" not in overview.text
-    assert "File Artifacts" in overview.text
     assert outputs.status_code == 200
     assert "File Artifacts" in outputs.text
+    assert 'class="artifact-table"' in outputs.text
+    for heading in ("Relative path", "Stage", "Size", "Last updated", "Download"):
+        assert heading in outputs.text
     assert "page_1.mdf.txt" in outputs.text
     assert pages.status_code == 303
     assert pages.headers["location"] == f"/runs/{run_id}/pages/page_1"
     assert usage.status_code == 200
     assert "120" in usage.text
-    assert "$0.012" in usage.text
+    assert "$0.007" in usage.text
+    assert "Usage by stage" in usage.text
+    assert "Unavailable" in usage.text
     assert download.status_code == 200
     assert download.text.startswith("\\lx hello")
 
