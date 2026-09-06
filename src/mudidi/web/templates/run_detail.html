@@ -73,10 +73,10 @@
           <nav class="detail-tabs" aria-label="Run workspace">
             <a class="active" href="/runs/{{ run.run_id }}">Overview</a>
             {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
-            <a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>{% else %}<span aria-disabled="true">Page Viewer &amp; Editor</span>{% endif %}
             <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
-            <a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>
-            <a href="/runs/{{ run.run_id }}/usage">Usage</a>
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>{% else %}<span aria-disabled="true">File Artifacts</span>{% endif %}
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/usage">Usage</a>{% else %}<span aria-disabled="true">Usage</span>{% endif %}
           </nav>
         </aside>
       </div>
