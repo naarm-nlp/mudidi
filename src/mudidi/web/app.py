@@ -27,7 +27,11 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
 from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
-from mudidi.web.forms import FormFieldError, NewRunForm
+from mudidi.web.forms import (
+    FormFieldError,
+    NewRunForm,
+    additional_instructions_summary,
+)
 from mudidi.web.jobs import JobController
 from mudidi.web.inputs import InputMaterializer, _MAX_UPLOAD_BYTES, rebase_managed_config
 from mudidi.web.models import (
@@ -1523,15 +1527,12 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
         "stage_2_pass_1_model": pass1_summary,
         "stage_2_pass_2_model": pass2_summary,
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",
-        "additional_instructions": ", ".join(
-            label
-            for path, label in (
-                (config.pipeline.stage1_guides, "Stage 1"),
-                (config.pipeline.stage2_guides, "Stage 2"),
-            )
-            if path is not None
-        )
-        or "None",
+        "additional_instructions": additional_instructions_summary(
+            config.pipeline.stage1_guides,
+            config.pipeline.stage2_guides,
+            runs_stage1=runs_stage1,
+            runs_stage2=runs_stage2,
+        ),
         "mdf_parsing_guide": (
             "Human approval required"
             if config.pipeline.stage != "1"

@@ -47,6 +47,25 @@ _PIPELINE_STAGE = {
 }
 
 
+def additional_instructions_summary(
+    stage1_source: Path | str | None,
+    stage2_source: Path | str | None,
+    *,
+    runs_stage1: bool,
+    runs_stage2: bool,
+) -> str:
+    """Summarize only the instruction files applied by enabled stages."""
+
+    return ", ".join(
+        label
+        for enabled, source, label in (
+            (runs_stage1, stage1_source, "Stage 1"),
+            (runs_stage2, stage2_source, "Stage 2"),
+        )
+        if enabled and source is not None
+    ) or "None"
+
+
 class FormFieldError(ValueError):
     """Validation failure associated with one dashboard form field."""
 
@@ -359,6 +378,12 @@ class NewRunForm(BaseModel):
             "stage_2_pass_1_model": pass1_summary,
             "stage_2_pass_2_model": pass2_summary,
             "agentic": self._agentic_summary(),
+            "additional_instructions": additional_instructions_summary(
+                _clean_optional(self.stage1_additional_instructions),
+                _clean_optional(self.stage2_additional_instructions),
+                runs_stage1=runs_stage1,
+                runs_stage2=runs_stage2,
+            ),
             "mdf_manual": {
                 "none": "Not used",
                 "upload": "Custom upload",
