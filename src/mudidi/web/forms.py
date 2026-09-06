@@ -379,8 +379,10 @@ class NewRunForm(BaseModel):
             "stage_2_pass_2_model": pass2_summary,
             "agentic": self._agentic_summary(),
             "additional_instructions": additional_instructions_summary(
-                _clean_optional(self.stage1_additional_instructions),
-                _clean_optional(self.stage2_additional_instructions),
+                _clean_optional(self.stage1_additional_instructions)
+                or self.stage1_guides,
+                _clean_optional(self.stage2_additional_instructions)
+                or self.stage2_guides,
                 runs_stage1=runs_stage1,
                 runs_stage2=runs_stage2,
             ),
