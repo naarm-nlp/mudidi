@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import fitz
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 from mudidi.web.app import _validation_errors, create_app
 from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.models import Provider
+
 
 def _pdf_bytes(page_count: int = 1) -> bytes:
     document = fitz.open()
@@ -201,6 +203,228 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "/static/app.js?v=dashboard-ui-1" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
+
+
+def test_agentic_pipeline_sync_keeps_off_controls_out_of_form_data_and_restores_on() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+class Field {
+  constructor({
+    name = "",
+    value = "",
+    type = "text",
+    checked = false,
+    disabled = false,
+  } = {}) {
+    this.name = name;
+    this.value = value;
+    this.type = type;
+    this.checked = checked;
+    this.disabled = disabled;
+    this.hidden = false;
+    this.required = false;
+    this.dataset = {};
+    this.parentElement = this;
+    this.options = [];
+    this.selectedOptions = [];
+  }
+  addEventListener() {}
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+  closest() { return null; }
+  setAttribute() {}
+  removeAttribute() {}
+}
+
+class Fields extends Array {
+  namedItem(name) {
+    return this.find((field) => field.name === name) || null;
+  }
+}
+
+const off = new Field({name: "agentic", value: "false", checked: true});
+const on = new Field({name: "agentic", value: "true"});
+const complete = new Field({name: "pipeline", value: "complete", checked: true});
+const transcription = new Field({name: "pipeline", value: "transcription"});
+const structure = new Field({name: "pipeline", value: "structure"});
+const verifyStage1 = new Field({
+  name: "verify_stage1",
+  value: "true",
+  type: "checkbox",
+  checked: true,
+  disabled: true,
+});
+const verifyStage2 = new Field({
+  name: "verify_stage2",
+  value: "true",
+  type: "checkbox",
+  checked: true,
+  disabled: true,
+});
+const maxIterations = new Field({name: "max_iterations", value: "2", disabled: true});
+const minConfidence = new Field({name: "min_retry_confidence", value: "0.55", disabled: true});
+const evaluatorProvider = new Field({
+  name: "evaluator_provider",
+  value: "gemini",
+  disabled: true,
+});
+const evaluatorModel = new Field({name: "evaluator_model", value: "", disabled: true});
+const evaluatorReasoning = new Field({
+  name: "evaluator_reasoning",
+  value: "high",
+  disabled: true,
+});
+const rewriterProvider = new Field({
+  name: "rewriter_provider",
+  value: "gemini",
+  disabled: true,
+});
+const rewriterModel = new Field({name: "rewriter_model", value: "", disabled: true});
+const rewriterReasoning = new Field({
+  name: "rewriter_reasoning",
+  value: "low",
+  disabled: true,
+});
+const verifierPatches = new Field({
+  name: "verifier_patches",
+  value: "true",
+  disabled: true,
+});
+const requireConcreteRetry = new Field({
+  name: "require_concrete_retry",
+  value: "true",
+  disabled: true,
+});
+const advancedFields = [
+  verifyStage1,
+  verifyStage2,
+  maxIterations,
+  minConfidence,
+  evaluatorProvider,
+  evaluatorModel,
+  evaluatorReasoning,
+  rewriterProvider,
+  rewriterModel,
+  rewriterReasoning,
+  verifierPatches,
+  requireConcreteRetry,
+];
+const runForm = new Field();
+runForm.elements = new Fields(
+  off, on, complete, transcription, structure, ...advancedFields,
+);
+const agenticSettings = new Field();
+agenticSettings.querySelectorAll = (selector) => (
+  selector === "input, select, textarea" ? advancedFields : []
+);
+
+const document = {
+  body: {append() {}},
+  addEventListener() {},
+  createElement() { return new Field(); },
+  querySelector(selector) {
+    if (selector === "form.run-form") return runForm;
+    if (selector === "[data-agentic-settings]") return agenticSettings;
+    if (selector === 'input[name="verify_stage1"]') return verifyStage1;
+    if (selector === 'input[name="verify_stage2"]') return verifyStage2;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === 'input[name="pipeline"]') {
+      return [complete, transcription, structure];
+    }
+    if (selector === 'input[name="agentic"]') return [off, on];
+    if (selector === 'input[name="verify_stage1"], input[name="verify_stage2"]') {
+      return [verifyStage1, verifyStage2];
+    }
+    return [];
+  },
+};
+
+
+const window = {
+  EventSource: null,
+  confirm: () => true,
+  fetch: async () => { throw new Error("not used"); },
+  location: {origin: "http://test"},
+  addEventListener() {},
+  sessionStorage: {getItem: () => null, setItem() {}},
+};
+const context = vm.createContext({
+  URL,
+  URLSearchParams,
+  console,
+  document,
+  queueMicrotask,
+  window,
+});
+const source = fs.readFileSync(process.argv[1], "utf8");
+vm.runInContext(
+  `${source}\nglobalThis.__dashboardTest = { synchronizeAgentic, synchronizePipeline };`,
+  context,
+);
+const sync = context.__dashboardTest;
+const formDataFor = (form) => ({
+  has(name) {
+    return [...form.elements].some((field) => (
+      field.name === name
+      && !field.disabled
+      && (!(field.type === "checkbox" || field.type === "radio") || field.checked)
+    ));
+  },
+});
+
+on.checked = true;
+off.checked = false;
+sync.synchronizeAgentic();
+maxIterations.value = "7";
+evaluatorProvider.value = "openai";
+verifyStage1.checked = true;
+verifyStage1.dataset.userTouched = "true";
+
+on.checked = false;
+off.checked = true;
+sync.synchronizeAgentic();
+complete.checked = false;
+transcription.checked = true;
+sync.synchronizePipeline();
+if (!advancedFields.every((field) => field.disabled)) {
+  throw new Error("Agentic Off left an advanced field enabled");
+}
+const offFormData = formDataFor(runForm);
+for (const name of advancedFields.map((field) => field.name)) {
+  if (offFormData.has(name)) throw new Error(`Agentic Off submitted ${name}`);
+}
+
+on.checked = true;
+off.checked = false;
+sync.synchronizeAgentic();
+if (maxIterations.disabled || maxIterations.value !== "7") {
+  throw new Error("Agentic On did not restore correction iterations");
+}
+if (evaluatorProvider.disabled || evaluatorProvider.value !== "openai") {
+  throw new Error("Agentic On did not restore evaluator provider");
+}
+if (verifyStage1.disabled || !verifyStage1.checked || !verifyStage2.disabled) {
+  throw new Error("Agentic On did not compose with active pipeline stages");
+}
+const onFormData = formDataFor(runForm);
+for (const name of ["verify_stage1", "max_iterations", "evaluator_provider"]) {
+  if (!onFormData.has(name)) {
+    throw new Error(`Agentic On omitted ${name}: ${JSON.stringify(onFormData)}`);
+  }
+}
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:

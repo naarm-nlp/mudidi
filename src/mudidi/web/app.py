@@ -564,7 +564,11 @@ def create_app(
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="credential_required.html",
-                context={"run_id": run_id, "provider": provider.value},
+                context={
+                    "run_id": run_id,
+                    "provider": provider.value,
+                    "continue_action": f"/runs/{run_id}/start",
+                },
                 status_code=409,
             )
         try:
@@ -1149,7 +1153,11 @@ def create_app(
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="credential_required.html",
-                context={"run_id": run_id, "provider": provider.value},
+                context={
+                    "run_id": run_id,
+                    "provider": provider.value,
+                    "continue_action": f"/runs/{run_id}/resume",
+                },
                 status_code=409,
             )
         try:
@@ -1458,13 +1466,20 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
             if path is not None
         )
         or "None",
+        "mdf_parsing_guide": (
+            "Human approval required"
+            if config.pipeline.stage != "1"
+            and config.pipeline.parse_rules_file is None
+            else (
+                "Uploaded guide used directly"
+                if config.pipeline.parse_rules_file is not None
+                else "Not used"
+            )
+        ),
         "mdf_manual": (
             "Not used"
             if manual is None
             else "Custom upload"
-        ),
-        "mdf_parsing_guide": (
-            "Not used" if config.pipeline.stage == "1" else "Human approval required"
         ),
     }
 
