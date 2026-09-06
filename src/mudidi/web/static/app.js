@@ -319,6 +319,25 @@ const selectedCredential = document.querySelector("[data-selected-credential]");
 const otherCredentials = document.querySelector("[data-other-credentials]");
 const selectedProviderBadge = document.querySelector("[data-selected-provider-badge]");
 
+const credentialStatusLabels = {
+  persistent: "Stored",
+  environment: "Available from environment",
+  temporary: "Available for this session",
+  missing: "Not saved",
+};
+const credentialBadgeLabels = {
+  persistent: "Key saved",
+  environment: "Environment key",
+  temporary: "Session key",
+  missing: "Not saved",
+};
+const credentialPlaceholders = {
+  persistent: "Saved key — leave blank to keep it",
+  environment: "Environment key available — enter a key to save an override",
+  temporary: "Session key available — enter a key to save an override",
+  missing: "Paste provider API key",
+};
+
 const ensureDeleteButton = (card, provider, saved) => {
   const label = card?.querySelector("label");
   if (!label) return;
@@ -343,10 +362,31 @@ const renderCredentialSelection = (provider = providerValue?.value) => {
   credentialCards
     .filter((card) => card !== selected)
     .forEach((card) => otherCredentials?.append(card));
-  const saved = selected?.dataset.keySaved === "true";
+  const source = selected?.dataset.keySource || "missing";
   if (selectedProviderBadge) {
-    selectedProviderBadge.textContent = `${credentialProviderLabels[provider] || provider} · ${saved ? "Key saved" : "Not saved"}`;
+    selectedProviderBadge.textContent = `${credentialProviderLabels[provider] || provider} · ${credentialBadgeLabels[source] || credentialBadgeLabels.missing}`;
   }
+};
+const applyCredentialStatus = (card, provider, payload) => {
+  const source = payload?.source;
+  const available = payload?.available;
+  if (
+    typeof source !== "string"
+    || typeof available !== "boolean"
+    || !Object.prototype.hasOwnProperty.call(credentialStatusLabels, source)
+  ) {
+    return false;
+  }
+  card.dataset.keySaved = String(source === "persistent");
+  card.dataset.keyAvailable = String(available);
+  card.dataset.keySource = source;
+  const input = card.querySelector(`#credential-${provider}`);
+  const status = card.querySelector(`#credential-status-${provider}`);
+  if (input) input.placeholder = credentialPlaceholders[source];
+  if (status) status.textContent = credentialStatusLabels[source];
+  ensureDeleteButton(card, provider, source === "persistent");
+  renderCredentialSelection(providerValue?.value);
+  return true;
 };
 
 const synchronizeCustomModel = (select) => {
@@ -504,9 +544,19 @@ const modelDisplayName = (pass) => {
   return selected?.textContent.trim() || state.model || "Not selected";
 };
 
+const stage2IsEnabled = () => {
+  const selected = pipelineChoices.find((choice) => choice.checked);
+  const active = selected ? pipelineStages[selected.value] : null;
+  return Boolean(active?.has("pass1") || active?.has("pass2"));
+};
+
 const updateStage2Summary = () => {
   const summary = document.querySelector("[data-stage2-summary-model]");
   if (!summary || !stage2State) return;
+  if (!stage2IsEnabled()) {
+    summary.textContent = "Not used";
+    return;
+  }
   if (stage2State.mode === "shared") {
     summary.textContent = `Shared model · ${modelDisplayName("pass1")}`;
   } else {
@@ -912,13 +962,13 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
       }
       input.value = "";
       input.type = "password";
-      input.placeholder = "Saved key — leave blank to keep it";
-      status.textContent = "Saved";
       if (card) {
-        card.dataset.keySaved = "true";
-        ensureDeleteButton(card, provider, true);
+        applyCredentialStatus(card, provider, {source: "persistent", available: true});
+        status.textContent = "Saved";
+      } else {
+        input.placeholder = credentialPlaceholders.persistent;
+        status.textContent = "Saved";
       }
-      renderCredentialSelection(providerValue?.value === provider ? provider : providerValue?.value);
       const continueAction = button.dataset.continueAction;
       if (continueAction) {
         const continuationUrl = new URL(continueAction, window.location.origin);
@@ -960,15 +1010,16 @@ document.addEventListener("click", async (event) => {
       status.textContent = "Could not remove key";
       return;
     }
+    const payload = await response.json();
+    if (!applyCredentialStatus(card, provider, payload)) {
+      status.textContent = "Could not remove key";
+      return;
+    }
     input.value = "";
     input.type = "password";
     const reveal = card.querySelector("[data-reveal-key]");
     reveal?.setAttribute("aria-pressed", "false");
     reveal?.setAttribute("aria-label", `Show ${provider} API key`);
-    status.textContent = "Not saved";
-    card.dataset.keySaved = "false";
-    ensureDeleteButton(card, provider, false);
-    renderCredentialSelection(providerValue?.value);
   } catch (_error) {
     status.textContent = "Could not remove key";
   } finally {

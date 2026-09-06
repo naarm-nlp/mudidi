@@ -110,6 +110,25 @@ def test_active_page_links_to_running_job_and_cancel_route(tmp_path: Path) -> No
     assert cancelled.status_code == 303
     assert app.state.run_store.get_run(run_id).status is RunStatus.CANCELLED
 
+def test_active_page_filters_runs_with_terminal_event_before_status_reconciliation(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    run_id = "stale-live-status"
+    store.create_run(run_id, provider="offline")
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1"))
+    store.append_event(run_id, _event(run_id, 2, "run.completed", "stage1"))
+
+    response = TestClient(app).get("/active")
+
+    assert response.status_code == 200
+    assert run_id not in response.text
+    assert "No inference is running" in response.text
+
 
 def test_active_page_exposes_progress_timeline_activity_and_elapsed_hook(
     tmp_path: Path,

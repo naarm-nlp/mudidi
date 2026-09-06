@@ -201,7 +201,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-1" in response.text
+    assert "/static/app.js?v=dashboard-ui-3" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
@@ -558,6 +558,310 @@ if (formDataFor(runForm).has("evaluator_custom_model")) {
         capture_output=True,
         text=True,
         check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+def test_stage2_summary_tracks_transcription_and_shared_split_modes() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+class Field {
+  constructor({name = "", value = "", checked = false} = {}) {
+    this.name = name;
+    this.value = value;
+    this.checked = checked;
+    this.disabled = false;
+    this.hidden = false;
+    this.type = "text";
+    this.dataset = {};
+    this.options = [];
+    this.selectedOptions = [];
+    this.parentElement = this;
+    this.classList = {add() {}, remove() {}, toggle() {}};
+  }
+  addEventListener() {}
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+  closest() { return null; }
+  setAttribute() {}
+  removeAttribute() {}
+}
+class Fields extends Array {
+  namedItem(name) {
+    return this.find((field) => field.name === name) || null;
+  }
+}
+
+const complete = new Field({name: "pipeline", value: "complete", checked: true});
+const transcription = new Field({name: "pipeline", value: "transcription"});
+const structure = new Field({name: "pipeline", value: "structure"});
+const pass1Model = new Field({name: "stage2_pass1_model", value: "shared-model"});
+const pass1Custom = new Field({name: "stage2_pass1_custom_model"});
+const pass1Reasoning = new Field({name: "stage2_pass1_reasoning", value: "low"});
+const pass2Model = new Field({name: "stage2_pass2_model", value: "shared-model"});
+const pass2Custom = new Field({name: "stage2_pass2_custom_model"});
+const pass2Reasoning = new Field({name: "stage2_pass2_reasoning", value: "low"});
+const runForm = {
+  elements: new Fields(
+    complete,
+    transcription,
+    structure,
+    pass1Model,
+    pass1Custom,
+    pass1Reasoning,
+    pass2Model,
+    pass2Custom,
+    pass2Reasoning,
+  ),
+  addEventListener() {},
+  querySelectorAll() { return []; },
+};
+const summary = new Field();
+summary.textContent = "";
+const document = {
+  body: {append() {}},
+  addEventListener() {},
+  createElement() { return new Field(); },
+  querySelector(selector) {
+    if (selector === "form.run-form") return runForm;
+    if (selector === "[data-stage2-summary-model]") return summary;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === 'input[name="pipeline"]') {
+      return [complete, transcription, structure];
+    }
+    return [];
+  },
+};
+const window = {
+  confirm: () => true,
+  fetch: async () => { throw new Error("not used"); },
+  location: {origin: "http://test"},
+  addEventListener() {},
+  sessionStorage: {getItem: () => null, setItem() {}},
+};
+const context = vm.createContext({
+  URL,
+  URLSearchParams,
+  console,
+  document,
+  queueMicrotask,
+  window,
+});
+const source = fs.readFileSync(process.argv[1], "utf8");
+vm.runInContext(
+  `${source}\nglobalThis.__dashboardTest = {
+    enterSharedStage2,
+    enterSplitStage2,
+    synchronizePipeline,
+    synchronizeStage2Pass,
+  };`,
+  context,
+);
+const sync = context.__dashboardTest;
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+
+sync.synchronizePipeline();
+assert(summary.textContent === "Shared model · shared-model", "complete should show shared Stage 2");
+
+complete.checked = false;
+transcription.checked = true;
+sync.synchronizePipeline();
+assert(summary.textContent === "Not used", "transcription-only should hide Stage 2 summary");
+
+transcription.checked = false;
+structure.checked = true;
+sync.synchronizePipeline();
+assert(summary.textContent === "Shared model · shared-model", "structure should restore Stage 2 summary");
+
+sync.enterSplitStage2();
+assert(
+  summary.textContent === "Separate pass models · Pass 1: shared-model · Pass 2: shared-model",
+  "split mode should show both pass models",
+);
+pass1Model.value = "pass-one-model";
+pass2Model.value = "pass-two-model";
+sync.synchronizeStage2Pass("pass1");
+sync.synchronizeStage2Pass("pass2");
+assert(
+  summary.textContent === "Separate pass models · Pass 1: pass-one-model · Pass 2: pass-two-model",
+  "split mode should update independent pass models",
+);
+sync.enterSharedStage2();
+assert(summary.textContent === "Shared model · shared-model", "shared mode should restore shared model");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+def test_credential_delete_browser_state_uses_effective_fallback() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+class Element {
+  constructor() {
+    this.dataset = {};
+    this.hidden = false;
+    this.attributes = {};
+    this.listeners = {};
+    this.textContent = "";
+    this.value = "";
+    this.placeholder = "";
+    this.type = "password";
+    this.disabled = false;
+    this.isConnected = true;
+  }
+  addEventListener(type, listener) {
+    this.listeners[type] = listener;
+  }
+  querySelector(selector) {
+    if (selector === "[data-delete-key]") return this.deleteButton?.isConnected ? this.deleteButton : null;
+    if (selector === "[data-reveal-key]") return this.revealButton;
+    if (selector === "label") return this.label;
+    if (selector.startsWith("#credential-")) return this.input;
+    return null;
+  }
+  querySelectorAll() { return []; }
+  closest(selector) {
+    if (selector === "[data-credential-card]") return this.card;
+    if (selector === "[data-delete-key]" || selector === "button") return this;
+    return null;
+  }
+  append(child) {
+    this.deleteButton = child;
+    child.isConnected = true;
+  }
+  remove() {
+    this.isConnected = false;
+  }
+  setAttribute(name, value) {
+    this.attributes[name] = String(value);
+  }
+  hasAttribute() { return false; }
+}
+
+const providerValue = new Element();
+providerValue.value = "anthropic";
+const selectedProviderBadge = new Element();
+const selectedCredential = new Element();
+const otherCredentials = new Element();
+const card = new Element();
+card.dataset.provider = "anthropic";
+card.dataset.keySaved = "true";
+card.dataset.keyAvailable = "true";
+card.dataset.keySource = "persistent";
+const label = new Element();
+const input = new Element();
+const status = new Element();
+const reveal = new Element();
+const deleteButton = new Element();
+deleteButton.dataset.deleteKey = "";
+deleteButton.dataset.provider = "anthropic";
+deleteButton.card = card;
+card.label = label;
+card.input = input;
+card.revealButton = reveal;
+card.deleteButton = deleteButton;
+label.card = card;
+label.deleteButton = deleteButton;
+card.querySelector = (selector) => {
+  if (selector === "[data-delete-key]") return card.deleteButton?.isConnected ? card.deleteButton : null;
+  if (selector === "[data-reveal-key]") return reveal;
+  if (selector === "label") return label;
+  if (selector === "#credential-anthropic") return input;
+  if (selector === "#credential-status-anthropic") return status;
+  return null;
+};
+label.append = (child) => {
+  card.deleteButton = child;
+  child.isConnected = true;
+};
+const listeners = {};
+const document = {
+  body: {append() {}},
+  addEventListener(type, listener) {
+    (listeners[type] ||= []).push(listener);
+  },
+  createElement() { return new Element(); },
+  querySelector(selector) {
+    if (selector === "[data-provider-value]") return providerValue;
+    if (selector === "[data-selected-credential]") return selectedCredential;
+    if (selector === "[data-other-credentials]") return otherCredentials;
+    if (selector === "[data-selected-provider-badge]") return selectedProviderBadge;
+    if (selector === "#credential-anthropic") return input;
+    if (selector === "#credential-status-anthropic") return status;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === "[data-credential-card]") return [card];
+    return [];
+  },
+  async dispatch(type, event) {
+    await Promise.all((listeners[type] || []).map((listener) => listener(event)));
+  },
+};
+const window = {
+  confirm: () => true,
+  fetch: async () => ({
+    ok: true,
+    async json() {
+      return {
+        status: "deleted",
+        provider: "anthropic",
+        available: true,
+        source: "environment",
+      };
+    },
+  }),
+  location: {origin: "http://test"},
+  addEventListener() {},
+  sessionStorage: {getItem: () => null, setItem() {}},
+};
+const context = vm.createContext({
+  URL,
+  URLSearchParams,
+  console,
+  document,
+  queueMicrotask,
+  window,
+});
+const source = fs.readFileSync(process.argv[1], "utf8");
+vm.runInContext(source, context);
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+(async () => {
+  await document.dispatch("click", {
+    target: deleteButton,
+    preventDefault() {},
+  });
+  assert(card.dataset.keySaved === "false", "fallback must not remain marked saved");
+  assert(card.dataset.keyAvailable === "true", "fallback availability was lost");
+  assert(card.dataset.keySource === "environment", "fallback source was lost");
+  assert(status.textContent === "Available from environment", "fallback status was not rendered");
+  assert(input.placeholder.toLowerCase().includes("environment"), "fallback placeholder was not rendered");
+  assert(!card.querySelector("[data-delete-key]"), "environment fallback must not be deletable");
+  assert(selectedProviderBadge.textContent.endsWith("Environment key"), "fallback badge was not rendered");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0, result.stderr
 
@@ -1107,8 +1411,46 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
 
     deleted = restarted.post("/credentials/anthropic/delete")
     assert deleted.status_code == 200
-    assert deleted.json() == {"status": "deleted", "provider": "anthropic"}
+    assert deleted.json() == {
+        "status": "deleted",
+        "provider": "anthropic",
+        "available": False,
+        "source": "missing",
+    }
     assert restarted.post("/credentials/anthropic/reveal").status_code == 404
+
+
+def test_deleting_persistent_override_reports_environment_fallback(
+    tmp_path: Path,
+) -> None:
+    vault = CredentialVault(
+        environ={"ANTHROPIC_API_KEY": "env-only-secret"},
+        persistent_store=PersistentCredentialStore(
+            database_path=tmp_path / "mudidi-web.sqlite3",
+            key_path=tmp_path / ".credential-key",
+        ),
+    )
+    client = TestClient(create_app(data_dir=tmp_path, credential_vault=vault))
+
+    saved = client.post(
+        "/credentials/anthropic",
+        data={"api_key": "persistent-override"},
+        headers={"accept": "application/json"},
+    )
+    deleted = client.post("/credentials/anthropic/delete")
+
+    assert saved.status_code == 200
+    assert deleted.status_code == 200
+    assert deleted.json() == {
+        "status": "deleted",
+        "provider": "anthropic",
+        "available": True,
+        "source": "environment",
+    }
+    home = client.get("/")
+    assert 'data-key-source="environment"' in home.text
+    assert 'data-key-available="true"' in home.text
+    assert 'data-delete-key data-provider="anthropic"' not in home.text
 
 def test_environment_credential_has_no_destructive_action(tmp_path: Path) -> None:
     vault = CredentialVault(
