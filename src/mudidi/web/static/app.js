@@ -7,6 +7,17 @@ const wizard = document.querySelector("[data-new-run-wizard]");
 const wizardPanels = wizard ? [...wizard.querySelectorAll("[data-wizard-panel]")] : [];
 const wizardOrder = ["input", "pipeline", "model", "agentic"];
 const wizardStorageKey = "mudidi:new-run-wizard:v1";
+const readWizardSessionState = () => {
+  try {
+    const raw = window.sessionStorage.getItem(wizardStorageKey);
+    if (!raw) return {};
+    if (raw.startsWith("{")) return JSON.parse(raw) || {};
+    return { step: raw };
+  } catch (_error) {
+    return {};
+  }
+};
+const wizardSessionState = readWizardSessionState();
 let activeWizardStep = "input";
 let wizardErrorSequence = 0;
 let firstInvalidWizardField = null;
@@ -16,7 +27,10 @@ let invalidAttemptResetScheduled = false;
 const persistWizardStep = () => {
   if (!wizard) return;
   try {
-    window.sessionStorage.setItem(wizardStorageKey, activeWizardStep);
+    window.sessionStorage.setItem(wizardStorageKey, JSON.stringify({
+      step: activeWizardStep,
+      stage2Mode: stage2State?.mode || "shared",
+    }));
   } catch (_error) {
     // Storage may be unavailable in privacy-restricted browser contexts.
   }
@@ -163,6 +177,7 @@ const validateWizardPanel = (panel) => {
 
 const persistRunForm = () => {
   if (!runForm) return;
+  if (stage2State?.mode === "shared") synchronizeSharedStage2();
   const state = {};
   [...runForm.elements].forEach((field) => {
     if (!field.name || ["file", "password", "submit", "button"].includes(field.type)) return;
@@ -267,9 +282,12 @@ document.querySelectorAll(".info-button").forEach((button) => {
 });
 
 const pipelineChoices = [...document.querySelectorAll('input[name="pipeline"]')];
-const providerSelect = document.querySelector("[data-provider-select]");
+const providerValue = document.querySelector("[data-provider-value]");
+const providerChoices = [...document.querySelectorAll("[data-provider-choice]")];
 const modelSelects = [...document.querySelectorAll("[data-model-select]")];
 const openRouterProvider = document.querySelector("[data-openrouter-provider]");
+const stage2Container = document.querySelector("[data-stage2-container]");
+const stage2Toggle = document.querySelector("[data-stage2-toggle]");
 const pipelineStages = {
   complete: new Set(["stage1", "pass1", "pass2"]),
   transcription: new Set(["stage1"]),
@@ -288,9 +306,48 @@ const providerLabels = {
   openrouter: "OpenRouter",
   custom: "your selected provider",
 };
+const credentialProviderLabels = {
+  ...providerLabels,
+  custom: "Other / advanced provider",
+};
 const customModelPlaceholder = (provider) => provider === "openrouter"
   ? "e.g. qwen/qwen3-235b-a22b"
   : `Enter a model name supported by ${providerLabels[provider] || "your selected provider"}`;
+
+const credentialCards = [...document.querySelectorAll("[data-credential-card]")];
+const selectedCredential = document.querySelector("[data-selected-credential]");
+const otherCredentials = document.querySelector("[data-other-credentials]");
+const selectedProviderBadge = document.querySelector("[data-selected-provider-badge]");
+
+const ensureDeleteButton = (card, provider, saved) => {
+  const label = card?.querySelector("label");
+  if (!label) return;
+  let button = card.querySelector("[data-delete-key]");
+  if (saved && !button) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.className = "credential-delete";
+    button.dataset.deleteKey = "";
+    button.dataset.provider = provider;
+    button.textContent = "Remove saved key";
+    label.append(button);
+  } else if (!saved && button) {
+    button.remove();
+  }
+};
+
+const renderCredentialSelection = (provider = providerValue?.value) => {
+  if (!provider) return;
+  const selected = credentialCards.find((card) => card.dataset.provider === provider);
+  if (selected && selectedCredential) selectedCredential.append(selected);
+  credentialCards
+    .filter((card) => card !== selected)
+    .forEach((card) => otherCredentials?.append(card));
+  const saved = selected?.dataset.keySaved === "true";
+  if (selectedProviderBadge) {
+    selectedProviderBadge.textContent = `${credentialProviderLabels[provider] || provider} · ${saved ? "Key saved" : "Not saved"}`;
+  }
+};
 
 const synchronizeCustomModel = (select) => {
   const custom = select.parentElement.querySelector("[data-custom-model]");
@@ -303,8 +360,11 @@ const synchronizeCustomModel = (select) => {
 };
 
 const synchronizeModels = (providerChanged = false) => {
-  if (!providerSelect) return;
-  const provider = providerSelect.value;
+  if (!providerValue) return;
+  const provider = providerValue.value;
+  providerChoices.forEach((choice) => {
+    choice.value = provider;
+  });
   modelSelects.forEach((select) => {
     const active = !select.closest("[data-stage-control]").hidden;
     const manualEntry = provider === "openrouter" || provider === "custom";
@@ -324,9 +384,7 @@ const synchronizeModels = (providerChanged = false) => {
     select.hidden = manualEntry;
     select.disabled = !active || manualEntry;
     const custom = select.parentElement.querySelector("[data-custom-model]");
-    if (custom) {
-      custom.placeholder = customModelPlaceholder(provider);
-    }
+    if (custom) custom.placeholder = customModelPlaceholder(provider);
     synchronizeCustomModel(select);
   });
   if (openRouterProvider) {
@@ -365,6 +423,123 @@ const synchronizeAgenticModelGroup = (group, providerChanged = false) => {
   custom.disabled = !agenticEnabled || !customSelected;
   custom.placeholder = customModelPlaceholder(provider);
 };
+const stage2FieldNames = {
+  pass1: {
+    model: "stage2_pass1_model",
+    customModel: "stage2_pass1_custom_model",
+    reasoning: "stage2_pass1_reasoning",
+  },
+  pass2: {
+    model: "stage2_pass2_model",
+    customModel: "stage2_pass2_custom_model",
+    reasoning: "stage2_pass2_reasoning",
+  },
+};
+
+const stage2Field = (pass, key) => runForm?.elements.namedItem(stage2FieldNames[pass]?.[key]);
+const readStage2Pass = (pass) => ({
+  model: stage2Field(pass, "model")?.value || "",
+  customModel: stage2Field(pass, "customModel")?.value || "",
+  reasoning: stage2Field(pass, "reasoning")?.value || "",
+});
+const writeStage2Pass = (pass, state) => {
+  const model = stage2Field(pass, "model");
+  const customModel = stage2Field(pass, "customModel");
+  const reasoning = stage2Field(pass, "reasoning");
+  if (model && state.model !== undefined) model.value = state.model;
+  if (customModel && state.customModel !== undefined) customModel.value = state.customModel;
+  if (reasoning && state.reasoning !== undefined) reasoning.value = state.reasoning;
+};
+const stage2ValuesEqual = (left, right) => (
+  left.model === right.model
+  && left.customModel === right.customModel
+  && left.reasoning === right.reasoning
+);
+
+const synchronizeSharedStage2 = () => {
+  if (stage2State?.mode !== "shared") return;
+  stage2State.shared = readStage2Pass("pass1");
+  writeStage2Pass("pass2", stage2State.shared);
+  const pass2Model = stage2Field("pass2", "model");
+  if (pass2Model) synchronizeCustomModel(pass2Model);
+  updateStage2Summary();
+};
+
+const modelDisplayName = (pass) => {
+  const state = readStage2Pass(pass);
+  if (state.model === "__other__") return state.customModel || "Custom model";
+  const selected = stage2Field(pass, "model")?.selectedOptions[0];
+  return selected?.textContent.trim() || state.model || "Not selected";
+};
+
+const updateStage2Summary = () => {
+  const summary = document.querySelector("[data-stage2-summary-model]");
+  if (!summary || !stage2State) return;
+  if (stage2State.mode === "shared") {
+    summary.textContent = `Shared model · ${modelDisplayName("pass1")}`;
+  } else {
+    summary.textContent = `Separate pass models · Pass 1: ${modelDisplayName("pass1")} · Pass 2: ${modelDisplayName("pass2")}`;
+  }
+};
+
+const renderStage2Mode = () => {
+  if (!stage2State) return;
+  const split = stage2State.mode === "split";
+  if (stage2Container) stage2Container.dataset.stage2Mode = stage2State.mode;
+  const pass1Card = stage2Container?.querySelector('[data-stage2-pass="pass1"]');
+  const pass2Card = stage2Container?.querySelector('[data-stage2-pass="pass2"]');
+  if (pass1Card) {
+    pass1Card.querySelectorAll("[data-stage2-model-label]").forEach((label) => {
+      label.textContent = split ? "Stage 2 Pass 1 model" : "Stage 2 model";
+    });
+    pass1Card.querySelectorAll("[data-stage2-reasoning-label]").forEach((label) => {
+      label.textContent = split ? "Stage 2 Pass 1 reasoning" : "Stage 2 reasoning";
+    });
+  }
+  if (pass2Card) pass2Card.hidden = !split;
+  if (stage2Toggle) {
+    stage2Toggle.textContent = split ? "Use one Stage 2 model" : "Advanced · split passes";
+    stage2Toggle.setAttribute("aria-expanded", String(split));
+  }
+  if (!split) synchronizeSharedStage2();
+  else updateStage2Summary();
+};
+
+const enterSplitStage2 = () => {
+  stage2State.shared = readStage2Pass("pass1");
+  if (stage2HasVisitedSplit) {
+    writeStage2Pass("pass1", stage2State.split.pass1);
+    writeStage2Pass("pass2", stage2State.split.pass2);
+  } else {
+    writeStage2Pass("pass1", stage2State.shared);
+    writeStage2Pass("pass2", stage2State.shared);
+    stage2State.split.pass1 = readStage2Pass("pass1");
+    stage2State.split.pass2 = readStage2Pass("pass2");
+    stage2HasVisitedSplit = true;
+  }
+  stage2State.mode = "split";
+  renderStage2Mode();
+};
+
+const enterSharedStage2 = () => {
+  stage2State.split.pass1 = readStage2Pass("pass1");
+  stage2State.split.pass2 = readStage2Pass("pass2");
+  writeStage2Pass("pass1", stage2State.shared);
+  writeStage2Pass("pass2", stage2State.shared);
+  stage2State.mode = "shared";
+  renderStage2Mode();
+};
+
+const synchronizeStage2Pass = (pass) => {
+  const model = stage2Field(pass, "model");
+  if (model) synchronizeCustomModel(model);
+  if (stage2State?.mode === "shared" && pass === "pass1") {
+    synchronizeSharedStage2();
+  } else if (stage2State?.mode === "split" && pass) {
+    stage2State.split[pass] = readStage2Pass(pass);
+    updateStage2Summary();
+  }
+};
 
 agenticModelGroups.forEach((group) => {
   group.querySelector("[data-agentic-provider]")?.addEventListener("change", () => {
@@ -387,6 +562,9 @@ const synchronizePipeline = () => {
       input.disabled = !visible;
     });
   });
+  if (stage2Container) {
+    stage2Container.hidden = !(active.has("pass1") || active.has("pass2"));
+  }
   [
     ["verify_stage1", active.has("stage1")],
     ["verify_stage2", active.has("pass1") || active.has("pass2")],
@@ -399,14 +577,41 @@ const synchronizePipeline = () => {
   });
   synchronizeModels();
   if (typeof synchronizeManual === "function") synchronizeManual();
+  updateStage2Summary();
 };
 
 modelSelects.forEach((select) => {
-  select.addEventListener("change", () => synchronizeCustomModel(select));
+  select.addEventListener("change", () => {
+    const pass = select.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
+    else synchronizeCustomModel(select);
+  });
 });
-if (providerSelect) {
-  providerSelect.addEventListener("change", () => synchronizeModels(true));
-}
+providerChoices.forEach((choice) => {
+  choice.addEventListener("change", () => {
+    if (!providerValue) return;
+    providerValue.value = choice.value;
+    providerChoices.forEach((other) => {
+      other.value = choice.value;
+    });
+    synchronizeModels(true);
+    if (stage2State?.mode === "shared") {
+      stage2State.shared = readStage2Pass("pass1");
+      writeStage2Pass("pass2", stage2State.shared);
+    } else if (stage2State) {
+      stage2State.split.pass1 = readStage2Pass("pass1");
+      stage2State.split.pass2 = readStage2Pass("pass2");
+    }
+    updateStage2Summary();
+    renderCredentialSelection(choice.value);
+  });
+});
+stage2Toggle?.addEventListener("click", () => {
+  if (stage2State.mode === "shared") enterSplitStage2();
+  else enterSharedStage2();
+  persistRunForm();
+  persistWizardStep();
+});
 pipelineChoices.forEach((choice) => choice.addEventListener("change", synchronizePipeline));
 
 document.querySelectorAll('input[name="verify_stage1"], input[name="verify_stage2"]').forEach((input) => {
@@ -462,12 +667,28 @@ const synchronizeManual = () => {
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 restoreRunForm();
+const restoredPass1 = readStage2Pass("pass1");
+const restoredPass2 = readStage2Pass("pass2");
+const restoredPassesUnequal = !stage2ValuesEqual(restoredPass1, restoredPass2);
+const stage2State = {
+  mode: restoredPassesUnequal
+    ? "split"
+    : (wizardSessionState.stage2Mode === "split" ? "split" : "shared"),
+  shared: restoredPass1,
+  split: {
+    pass1: restoredPass1,
+    pass2: restoredPass2,
+  },
+};
+let stage2HasVisitedSplit = stage2State.mode === "split";
 if (presetStateElement && otherInformationToggle) {
   otherInformationToggle.dispatchEvent(new Event("change"));
 }
+renderStage2Mode();
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
+renderCredentialSelection();
 
 const beginWizardInvalidAttempt = () => {
   firstInvalidWizardField = null;
@@ -503,11 +724,8 @@ if (wizard) {
   if (firstServerPanel?.dataset.wizardPanel) {
     initialWizardStep = firstServerPanel.dataset.wizardPanel;
   } else {
-    try {
-      const storedStep = window.sessionStorage.getItem(wizardStorageKey);
-      if (wizardOrder.includes(storedStep)) initialWizardStep = storedStep;
-    } catch (_error) {
-      // Storage may be unavailable in privacy-restricted browser contexts.
+    if (wizardOrder.includes(wizardSessionState.step)) {
+      initialWizardStep = wizardSessionState.step;
     }
   }
   setWizardStep(initialWizardStep, { focus: false });
@@ -542,10 +760,14 @@ if (wizard) {
 
 if (runForm) {
   runForm.addEventListener("input", (event) => {
+    const pass = event.target.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
     persistRunForm();
     if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
   });
   runForm.addEventListener("change", (event) => {
+    const pass = event.target.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
     persistRunForm();
     if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
   });
@@ -595,6 +817,7 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
     const target = button.dataset.credentialTarget || `credential-${provider}`;
     const input = document.querySelector(`#${target}`);
     const status = document.querySelector(`#credential-status-${provider}`);
+    const card = button.closest("[data-credential-card]");
     if (!input || !status) return;
 
     const apiKey = input.value.trim();
@@ -623,12 +846,52 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
       input.type = "password";
       input.placeholder = "Saved key — leave blank to keep it";
       status.textContent = "Saved";
+      if (card) {
+        card.dataset.keySaved = "true";
+        ensureDeleteButton(card, provider, true);
+      }
+      renderCredentialSelection(providerValue?.value === provider ? provider : providerValue?.value);
     } catch (_error) {
       status.textContent = "Could not save key";
     } finally {
       button.disabled = false;
     }
   });
+});
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-key]");
+  if (!button) return;
+  event.preventDefault();
+  const provider = button.dataset.provider;
+  const card = button.closest("[data-credential-card]");
+  const input = card?.querySelector(`#credential-${provider}`);
+  const status = card?.querySelector(`#credential-status-${provider}`);
+  if (!card || !input || !status) return;
+  button.disabled = true;
+  try {
+    const response = await window.fetch(`/credentials/${provider}/delete`, {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) {
+      status.textContent = "Could not remove key";
+      return;
+    }
+    input.value = "";
+    input.type = "password";
+    const reveal = card.querySelector("[data-reveal-key]");
+    reveal?.setAttribute("aria-pressed", "false");
+    reveal?.setAttribute("aria-label", `Show ${provider} API key`);
+    status.textContent = "Not saved";
+    card.dataset.keySaved = "false";
+    ensureDeleteButton(card, provider, false);
+    renderCredentialSelection(providerValue?.value);
+  } catch (_error) {
+    status.textContent = "Could not remove key";
+  } finally {
+    if (button.isConnected) button.disabled = false;
+  }
 });
 
 const liveRun = document.querySelector('meta[name="mudidi-events"]');

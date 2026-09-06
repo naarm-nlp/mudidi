@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from mudidi.web.app import _validation_errors, create_app
+from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.models import Provider
 
 def _pdf_bytes(page_count: int = 1) -> bytes:
@@ -56,12 +57,25 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="stage2_pass1_model"' in response.text
     assert 'name="stage2_pass2_model"' in response.text
     for provider in ("gemini", "openai", "anthropic", "openrouter"):
-        assert f'id="credential-{provider}"' in response.text
+        assert response.text.count(f'id="credential-{provider}"') == 1
+        assert response.text.count(f'id="credential-status-{provider}"') == 1
         assert f'data-save-key data-provider="{provider}"' in response.text
     assert 'href="/providers"' not in response.text
     assert response.text.count('type="password"') >= 4
     assert response.text.count('class="eye-icon eye-show"') == 4
     assert response.text.count('class="eye-icon eye-hide"') == 4
+    assert 'name="provider"' in response.text
+    assert response.text.count('name="provider"') == 1
+    assert '<input type="hidden" name="provider" value="gemini" data-provider-value' in response.text
+    assert 'data-provider-value' in response.text
+    assert response.text.count("data-provider-choice") >= 2
+    assert 'data-stage2-mode="shared"' in response.text
+    assert 'data-stage2-toggle' in response.text
+    assert "Advanced · split passes" in response.text
+    assert 'data-stage2-pass="pass1"' in response.text
+    assert 'data-stage2-pass="pass2"' in response.text
+    assert 'data-selected-credential' in response.text
+    assert 'data-other-credentials' in response.text
     assert "◉" not in response.text
     assert 'name="stage1_reasoning"' in response.text
     assert 'name="stage2_pass1_reasoning"' in response.text
@@ -569,6 +583,7 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
     assert "1 provider key saved" in home_page.text
     assert "Saved key — leave blank to keep it" in home_page.text
     assert "sk-ant-browser-secret" not in home_page.text
+    assert 'data-delete-key data-provider="anthropic"' in home_page.text
     assert revealed.status_code == 200
     assert revealed.headers["cache-control"] == "no-store"
     assert revealed.json() == {"api_key": "sk-ant-browser-secret"}
@@ -577,6 +592,22 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
     assert deleted.status_code == 200
     assert deleted.json() == {"status": "deleted", "provider": "anthropic"}
     assert restarted.post("/credentials/anthropic/reveal").status_code == 404
+
+def test_environment_credential_has_no_destructive_action(tmp_path: Path) -> None:
+    vault = CredentialVault(
+        environ={"ANTHROPIC_API_KEY": "env-only-secret"},
+        persistent_store=PersistentCredentialStore(
+            database_path=tmp_path / "mudidi-web.sqlite3",
+            key_path=tmp_path / ".credential-key",
+        ),
+    )
+    response = TestClient(
+        create_app(data_dir=tmp_path, credential_vault=vault)
+    ).get("/")
+
+    assert response.status_code == 200
+    assert "env-only-secret" not in response.text
+    assert 'data-delete-key data-provider="anthropic"' not in response.text
 
 
 def test_invalid_provider_key_submission_is_not_reflected(tmp_path: Path) -> None:
