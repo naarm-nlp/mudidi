@@ -77,6 +77,11 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     )
 
     assert response.status_code == 200
+    for heading in ("Input", "Pipeline", "Model", "Agentic"):
+        assert f">{heading}<" in response.text
+    assert 'class="review-actions panel"' in response.text
+    assert "Start run" in response.text
+    assert "Save these non-secret settings as a preset" in response.text
     assert "Dictionary Pages" in response.text
     assert "10-12" in response.text
     assert "Parse Rule Pages" in response.text
@@ -87,6 +92,46 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     assert "anthropic/claude-opus-4-6" in response.text
     assert "Stage 2 Pass 2 Model" in response.text
     assert "openai/gpt-5.4" in response.text
+
+
+def test_prepared_review_recovery_route_is_read_only_and_safe(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    prepared_status = app.state.run_store.get_run(run_id).status
+    config_mtime = app.state.job_controller.config_path(run_id).stat().st_mtime_ns
+
+    recovered = client.get(f"/runs/{run_id}/review")
+
+    assert recovered.status_code == 200
+    assert "Review your run" in recovered.text
+    assert 'class="review-actions panel"' in recovered.text
+    assert app.state.run_store.get_run(run_id).status is prepared_status
+    assert app.state.job_controller.config_path(run_id).stat().st_mtime_ns == config_mtime
+
+    blocked = client.post(f"/runs/{run_id}/start")
+    assert blocked.status_code == 409
+    assert app.state.run_store.get_run(run_id).status is RunStatus.CREDENTIALS_REQUIRED
+    recovered_after_block = client.get(f"/runs/{run_id}/review")
+    assert recovered_after_block.status_code == 200
+    assert "Return to review" not in recovered_after_block.text
+
+
+def test_review_recovery_returns_safe_404_for_unknown_or_unprepared_runs(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    app.state.run_store.create_run("run-unprepared", provider="anthropic")
+
+    assert client.get("/runs/not-a-real-run/review").status_code == 404
+    assert client.get("/runs/run-unprepared/review").status_code == 404
 
 
 def test_review_start_pause_approve_and_complete_offline_journey(
@@ -133,6 +178,7 @@ def test_missing_key_moves_prepared_run_to_credentials_required(
         credential_vault=CredentialVault(environ={}),
         offline_inference=True,
     )
+
     client = TestClient(app)
     run_id = _preview(client, tmp_path)
 
@@ -141,6 +187,29 @@ def test_missing_key_moves_prepared_run_to_credentials_required(
     assert response.status_code == 409
     assert "API credential required" in response.text
     assert app.state.run_store.get_run(run_id).status is RunStatus.CREDENTIALS_REQUIRED
+
+def test_credentials_required_page_has_one_provider_recovery_card(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+
+    response = client.post(f"/runs/{run_id}/start")
+
+    assert response.status_code == 409
+    assert response.text.count('data-credential-card') == 1
+    assert f'data-provider="anthropic"' in response.text
+    assert 'data-save-key' in response.text
+    assert f'data-continue-action="/runs/{run_id}/start"' in response.text
+    assert f'href="/runs/{run_id}/review"' in response.text
+    assert "Save and continue" in response.text
+    assert "/static/app.js?v=dashboard-ui-1" in response.text
+    assert "api_key" not in response.text
 
 
 def test_prepared_review_snapshot_contains_no_credential(tmp_path: Path) -> None:

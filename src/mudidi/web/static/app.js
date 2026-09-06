@@ -878,6 +878,20 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
         ensureDeleteButton(card, provider, true);
       }
       renderCredentialSelection(providerValue?.value === provider ? provider : providerValue?.value);
+      const continueAction = button.dataset.continueAction;
+      if (continueAction) {
+        const continuationUrl = new URL(continueAction, window.location.origin);
+        if (continuationUrl.origin !== window.location.origin) {
+          status.textContent = "Could not continue safely";
+          return;
+        }
+        const continuation = document.createElement("form");
+        continuation.method = "post";
+        continuation.action = continuationUrl.pathname + continuationUrl.search;
+        continuation.hidden = true;
+        document.body.append(continuation);
+        continuation.submit();
+      }
     } catch (_error) {
       status.textContent = "Could not save key";
     } finally {
