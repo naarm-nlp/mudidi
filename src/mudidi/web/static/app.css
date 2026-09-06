@@ -330,6 +330,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .history-filters select { padding: 9px 48px 9px 10px; }
 .empty-state { display: grid; place-items: center; gap: var(--space-1); min-height: 180px; padding: var(--space-5) var(--space-2); text-align: center; color: var(--color-muted); }
 .empty-state h2, .empty-state p { max-width: 60ch; margin: 0; }
+.page-viewer-page { width: min(920px, 100%); margin: 0 auto; }
+.page-viewer-empty { min-height: 320px; }
 .detail-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .run-heading h1,
 .run-id { overflow-wrap: anywhere; }
@@ -524,6 +526,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .profile-panel .editor-row:not(.single) button { grid-column: 1 / -1; justify-self: start; }
 }
 
+
 @media (max-width: 1340px) and (min-width: 901px) {
   .page-editor-page { width: 100%; }
   .page-editor-workspace { grid-template-columns: 1fr; }
@@ -537,6 +540,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .history-filters { grid-template-columns: 1fr 1fr; }
   .preset-grid { grid-template-columns: 1fr; }
 }
+.page-editor-savebar { z-index: 2; }
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { position: static; width: 100%; height: auto; border-right: 0; border-bottom: var(--border-width) solid var(--color-line); }
@@ -546,9 +550,13 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .artifact-row, .metric-grid { grid-template-columns: 1fr; }
   .page-shell { padding: 28px 22px 48px; }
   .page-editor-page { width: min(100% - 28px, 760px); padding-top: 18px; }
+  .page-navigator { grid-template-columns: 1fr; gap: 12px; }
+  .page-slider-label { grid-template-columns: 1fr; gap: 8px; }
+  .page-slider-label output { min-width: 0; text-align: left; }
   .wizard-stepper { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .wizard-stepper li { min-width: 0; }
   .page-slider-label output { text-align: left; }
+  .page-editor-savebar { position: static; box-shadow: none; }
   .page-editor-workspace { grid-template-columns: 1fr; }
   .source-editor-panel { position: static; }
   .source-document { height: 70vh; min-height: 480px; }

@@ -4,15 +4,22 @@
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>{% endblock %}
 {% block main %}
     <div class="page-shell">
-      <div class="providers-page">
-      <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+      <div class="providers-page page-viewer-page">
+      <a class="back-link" href="{{ '/active' if is_active else '/runs/' ~ run_id }}">{{ '← Active progress' if is_active else '← Run overview' }}</a>
       <header class="page-heading">
         <span class="eyebrow">Generated page inspection and correction</span>
         <h1>Page Viewer &amp; Editor</h1>
       </header>
-      <section class="panel empty-state">
-        <h2>No page outputs yet</h2>
-        <p>Processed pages will become available here as output files are generated.</p>
+      <section class="panel empty-state page-viewer-empty">
+        <div>
+          <h2>No page outputs yet</h2>
+          <p>Processed pages will appear here as the worker generates and validates output files.</p>
+          {% if is_active %}
+          <a class="primary link-button" href="/active">View active progress →</a>
+          {% else %}
+          <a class="primary link-button" href="/runs/{{ run_id }}">Return to run overview →</a>
+          {% endif %}
+        </div>
       </section>
       </div>
     </div>
