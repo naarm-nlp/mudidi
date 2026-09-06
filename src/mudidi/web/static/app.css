@@ -378,6 +378,11 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .skip-link, .primary, .danger, .credential-save, .pipeline-action, .page-step-button, .history-delete { transition: none; }
 }
 
+@media (max-width: 1040px) {
+  .editor-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .editor-row:not(.single) button { grid-column: 1 / -1; justify-self: start; }
+}
+
 @media (max-width: 1340px) and (min-width: 901px) {
   .page-editor-page { width: 100%; }
   .page-editor-workspace { grid-template-columns: 1fr; }
@@ -416,6 +421,5 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .task-card-grid { grid-template-columns: 1fr; }
   .action-bar { align-items: stretch; flex-direction: column; }
   .action-bar-actions { justify-content: stretch; }
-  .editor-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .editor-row:not(.single) button { grid-column: 1 / -1; justify-self: start; }
+
 }
