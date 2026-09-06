@@ -44,7 +44,7 @@ class _SemanticParser(HTMLParser):
         self._hidden_depth = 0
         self._label_depth = 0
         self._open_elements: list[dict[str, object]] = []
-        self._label_for_ids: set[str] = set()
+        self._labels: list[dict[str, object]] = []
         self._element_text: dict[str, str] = {}
         self._open_workspace_nav = 0
         self.mains = 0
@@ -62,21 +62,34 @@ class _SemanticParser(HTMLParser):
             self.mains += 1
         if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             self.headings.append((int(tag[1]), not hidden))
+        label_index: int | None = None
         if tag == "label":
             self._label_depth += 1
-            if attributes.get("for"):
-                self._label_for_ids.add(str(attributes["for"]))
+            label_index = len(self._labels)
+            self._labels.append(
+                {
+                    "for": str(attributes.get("for") or ""),
+                    "hidden": hidden,
+                    "text": "",
+                }
+            )
         element_id = attributes.get("id")
         if element_id:
             self._element_text.setdefault(str(element_id), "")
         control_index: int | None = None
         if tag in self._CONTROL_TAGS:
             control_index = len(self.controls)
+            nested_label_indices = tuple(
+                int(element["label_index"])
+                for element in self._open_elements
+                if element["label_index"] is not None
+            )
             self.controls.append(
                 {
                     "tag": tag,
                     "hidden": hidden,
                     "label_depth": self._label_depth,
+                    "nested_labels": nested_label_indices,
                     "id": element_id or "",
                     "aria_label": attributes.get("aria-label"),
                     "aria_labelledby": attributes.get("aria-labelledby"),
@@ -101,6 +114,7 @@ class _SemanticParser(HTMLParser):
                     "hidden": hidden,
                     "id": str(element_id) if element_id else "",
                     "control_index": control_index,
+                    "label_index": label_index,
                 }
             )
             if own_hidden:
@@ -117,6 +131,11 @@ class _SemanticParser(HTMLParser):
             element_id = str(element["id"])
             if element_id:
                 self._element_text[element_id] += data
+            label_index = element["label_index"]
+            if label_index is not None:
+                self._labels[int(label_index)]["text"] = (
+                    str(self._labels[int(label_index)]["text"]) + data
+                )
             control_index = element["control_index"]
             if (
                 element["tag"] == "button"
@@ -156,9 +175,27 @@ class _SemanticParser(HTMLParser):
         )
         return name.strip()
 
-    @property
-    def label_for_ids(self) -> set[str]:
-        return self._label_for_ids
+    def explicit_label_name(self, value: object) -> str:
+        target = str(value or "").strip()
+        if not target:
+            return ""
+        names = (
+            _normalise_accessible_text(label["text"])
+            for label in self._labels
+            if str(label["for"]).strip() == target and not bool(label["hidden"])
+        )
+        return " ".join(name for name in names if name)
+
+    def nested_label_name(self, control: dict[str, object]) -> str:
+        names: list[str] = []
+        for index in tuple(control["nested_labels"]):
+            label = self._labels[int(index)]
+            if bool(label["hidden"]):
+                continue
+            name = _normalise_accessible_text(label["text"])
+            if name:
+                names.append(name)
+        return " ".join(names)
 
 
 def _normalise_accessible_text(value: object) -> str:
@@ -195,12 +232,8 @@ def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> 
                         visible_label.casefold() in accessible_name.casefold()
                     ), control
             continue
-        has_nested_label = int(control["label_depth"]) > 0
-        has_explicit_label = (
-            str(control["id"]).strip() in parser.label_for_ids
-            if str(control["id"]).strip()
-            else False
-        )
+        has_nested_label = bool(parser.nested_label_name(control))
+        has_explicit_label = bool(parser.explicit_label_name(control["id"]))
         assert (
             aria_label
             or aria_labelledby
@@ -225,11 +258,31 @@ def test_semantic_parser_handles_void_inputs_and_hidden_siblings() -> None:
     _assert_semantic_shell(response)
 
 
+def test_semantic_parser_does_not_leak_hidden_depth_from_void_inputs() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<div hidden><input type="hidden"></div>'
+            '<input hidden type="hidden">'
+            '<input id="leaked-hidden-depth">'
+            "</main>"
+        )
+    )
+    parser = _SemanticParser()
+    parser.feed(response.text)
+
+    assert [control["hidden"] for control in parser.controls] == [True, True, False]
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
 @pytest.mark.parametrize(
     "control",
     (
         '<input id="missing-label">',
         '<select id="missing-label"><option>Choose</option></select>',
+        '<label for="empty-label"> \n </label><input id="empty-label">',
+        '<label><input id="empty-wrapper"></label>',
     ),
 )
 def test_semantic_shell_rejects_unlabeled_form_controls(control: str) -> None:
