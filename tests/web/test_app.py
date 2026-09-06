@@ -220,7 +220,7 @@ class Field {
     disabled = false,
   } = {}) {
     this.name = name;
-    this.value = value;
+    this._value = value;
     this.type = type;
     this.checked = checked;
     this.disabled = disabled;
@@ -231,6 +231,11 @@ class Field {
     this.options = [];
     this.selectedOptions = [];
   }
+  get value() { return this._value; }
+  set value(value) {
+    this._value = value;
+    this.selectedOptions = this.options.filter((option) => option.value === value);
+  }
   addEventListener() {}
   querySelector() { return null; }
   querySelectorAll() { return []; }
@@ -238,7 +243,6 @@ class Field {
   setAttribute() {}
   removeAttribute() {}
 }
-
 class Fields extends Array {
   namedItem(name) {
     return this.find((field) => field.name === name) || null;
@@ -272,6 +276,11 @@ const evaluatorProvider = new Field({
   disabled: true,
 });
 const evaluatorModel = new Field({name: "evaluator_model", value: "", disabled: true});
+const evaluatorCustom = new Field({
+  name: "evaluator_custom_model",
+  value: "",
+  disabled: true,
+});
 const evaluatorReasoning = new Field({
   name: "evaluator_reasoning",
   value: "high",
@@ -283,6 +292,11 @@ const rewriterProvider = new Field({
   disabled: true,
 });
 const rewriterModel = new Field({name: "rewriter_model", value: "", disabled: true});
+const rewriterCustom = new Field({
+  name: "rewriter_custom_model",
+  value: "",
+  disabled: true,
+});
 const rewriterReasoning = new Field({
   name: "rewriter_reasoning",
   value: "low",
@@ -298,6 +312,21 @@ const requireConcreteRetry = new Field({
   value: "true",
   disabled: true,
 });
+const modelOption = (value, modelProvider = "") => ({
+  value,
+  dataset: {modelProvider},
+  hidden: false,
+  disabled: false,
+});
+const modelOptions = [
+  modelOption(""),
+  modelOption("gemini/gemini-3.5-flash", "gemini"),
+  modelOption("__other__", "other"),
+];
+[evaluatorModel, rewriterModel].forEach((select) => {
+  select.options = modelOptions.map((option) => ({...option, dataset: {...option.dataset}}));
+  select.value = select.value;
+});
 const advancedFields = [
   verifyStage1,
   verifyStage2,
@@ -305,9 +334,11 @@ const advancedFields = [
   minConfidence,
   evaluatorProvider,
   evaluatorModel,
+  evaluatorCustom,
   evaluatorReasoning,
   rewriterProvider,
   rewriterModel,
+  rewriterCustom,
   rewriterReasoning,
   verifierPatches,
   requireConcreteRetry,
@@ -317,9 +348,25 @@ runForm.elements = new Fields(
   off, on, complete, transcription, structure, ...advancedFields,
 );
 const agenticSettings = new Field();
+agenticSettings.hidden = true;
 agenticSettings.querySelectorAll = (selector) => (
   selector === "input, select, textarea" ? advancedFields : []
 );
+const makeAgenticGroup = (provider, model, custom) => ({
+  querySelector(selector) {
+    if (selector === "[data-agentic-provider]") return provider;
+    if (selector === "[data-agentic-model]") return model;
+    if (selector === "[data-agentic-custom-model]") return custom;
+    return null;
+  },
+  closest(selector) {
+    return selector === "[data-agentic-settings]" ? agenticSettings : null;
+  },
+});
+const agenticGroups = [
+  makeAgenticGroup(evaluatorProvider, evaluatorModel, evaluatorCustom),
+  makeAgenticGroup(rewriterProvider, rewriterModel, rewriterCustom),
+];
 
 const document = {
   body: {append() {}},
@@ -340,11 +387,10 @@ const document = {
     if (selector === 'input[name="verify_stage1"], input[name="verify_stage2"]') {
       return [verifyStage1, verifyStage2];
     }
+    if (selector === "[data-agentic-model-group]") return agenticGroups;
     return [];
   },
 };
-
-
 const window = {
   EventSource: null,
   confirm: () => true,
@@ -363,7 +409,11 @@ const context = vm.createContext({
 });
 const source = fs.readFileSync(process.argv[1], "utf8");
 vm.runInContext(
-  `${source}\nglobalThis.__dashboardTest = { synchronizeAgentic, synchronizePipeline };`,
+  `${source}\nglobalThis.__dashboardTest = {
+    synchronizeAgentic,
+    synchronizePipeline,
+    synchronizeAgenticModelGroup,
+  };`,
   context,
 );
 const sync = context.__dashboardTest;
@@ -416,6 +466,90 @@ for (const name of ["verify_stage1", "max_iterations", "evaluator_provider"]) {
   if (!onFormData.has(name)) {
     throw new Error(`Agentic On omitted ${name}: ${JSON.stringify(onFormData)}`);
   }
+}
+
+const evaluatorGroup = agenticGroups[0];
+const setPipeline = (value) => {
+  [complete, transcription, structure].forEach((choice) => {
+    choice.checked = choice.value === value;
+  });
+  sync.synchronizePipeline();
+};
+const assertUseStageModel = (label) => {
+  if (evaluatorProvider.value !== "gemini" || evaluatorModel.value !== "") {
+    throw new Error(`${label} changed the evaluator stage-model selection`);
+  }
+  if (evaluatorModel.hidden || evaluatorModel.disabled) {
+    throw new Error(`${label} disabled or hid the evaluator model selector`);
+  }
+  if (!evaluatorCustom.hidden || !evaluatorCustom.disabled) {
+    throw new Error(`${label} left the stale evaluator custom input active`);
+  }
+  if (!rewriterCustom.hidden || !rewriterCustom.disabled) {
+    throw new Error(`${label} left the rewriter custom input active`);
+  }
+  const formData = formDataFor(runForm);
+  for (const name of ["evaluator_custom_model", "rewriter_custom_model"]) {
+    if (formData.has(name)) throw new Error(`${label} submitted ${name}`);
+  }
+};
+
+evaluatorProvider.value = "gemini";
+sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
+evaluatorModel.value = "__other__";
+sync.synchronizeAgenticModelGroup(evaluatorGroup);
+evaluatorCustom.value = "stale/evaluator-model";
+sync.synchronizeAgenticModelGroup(evaluatorGroup);
+if (evaluatorCustom.hidden || evaluatorCustom.disabled) {
+  throw new Error("Agentic custom evaluator was not enabled for its selected model");
+}
+
+evaluatorProvider.value = "openai";
+sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
+evaluatorProvider.value = "gemini";
+sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
+evaluatorModel.value = "";
+sync.synchronizeAgenticModelGroup(evaluatorGroup);
+assertUseStageModel("Initial Gemini fallback");
+["transcription", "structure", "complete", "transcription", "complete"].forEach((pipeline) => {
+  setPipeline(pipeline);
+  assertUseStageModel(`Pipeline ${pipeline}`);
+});
+
+const assertManualModel = (provider, value) => {
+  evaluatorProvider.value = provider;
+  sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
+  evaluatorCustom.value = value;
+  sync.synchronizeAgenticModelGroup(evaluatorGroup);
+  if (!evaluatorModel.hidden || !evaluatorModel.disabled) {
+    throw new Error(`${provider} did not hide and disable its model selector`);
+  }
+  if (evaluatorCustom.hidden || evaluatorCustom.disabled) {
+    throw new Error(`${provider} custom model input was not enabled`);
+  }
+  if (!formDataFor(runForm).has("evaluator_custom_model")) {
+    throw new Error(`${provider} custom model was omitted from FormData`);
+  }
+};
+assertManualModel("openrouter", "qwen/qwen3-235b-a22b");
+setPipeline("structure");
+if (evaluatorCustom.disabled || evaluatorCustom.hidden) {
+  throw new Error("Pipeline synchronization disabled a selected OpenRouter custom model");
+}
+assertManualModel("custom", "provider/model");
+setPipeline("transcription");
+if (evaluatorCustom.disabled || evaluatorCustom.hidden) {
+  throw new Error("Pipeline synchronization disabled a selected custom-provider model");
+}
+
+on.checked = false;
+off.checked = true;
+sync.synchronizeAgentic();
+if (!agenticSettings.hidden || !advancedFields.every((field) => field.disabled)) {
+  throw new Error("Agentic Off did not disable every advanced field");
+}
+if (formDataFor(runForm).has("evaluator_custom_model")) {
+  throw new Error("Agentic Off submitted the custom evaluator model");
 }
 """
     result = subprocess.run(

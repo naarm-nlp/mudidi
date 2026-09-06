@@ -660,16 +660,14 @@ const synchronizeAgenticAvailability = (enabled) => {
     const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
     input.disabled = !enabled || (stageDisabled && input.disabled);
   });
+  agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));
 };
 const synchronizeAgentic = () => {
   if (!agenticSettings) return;
   const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
   agenticSettings.hidden = !enabled;
   synchronizeAgenticAvailability(enabled);
-  if (enabled) {
-    synchronizePipeline();
-    agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));
-  }
+  if (enabled) synchronizePipeline();
 };
 agenticChoices.forEach((choice) => choice.addEventListener("change", synchronizeAgentic));
 
