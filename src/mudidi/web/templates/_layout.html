@@ -5,32 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% block head_meta %}{% endblock %}
     <title>{% block title %}MUDIDI{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=brutalist-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-ui-1">
     <script src="{{ url_for('static', path='/theme.js') }}?v=brutalist-1"></script>
     {% block head_scripts %}{% endblock %}
   </head>
   <body>
     {% set path = request.url.path %}
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="MUDIDI home">
-        <span class="brand-mark">M</span>
-        <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a class="{{ 'active' if path == '/' else '' }}" href="/"><span>＋</span> New run</a>
-        <a class="{{ 'active' if path == '/active' else '' }}" href="/active"><span>●</span> Active run</a>
-        <a class="{{ 'active' if path.startswith('/history') else '' }}" href="/history"><span>◷</span> Run history</a>
-        <a class="{{ 'active' if path.startswith('/presets') else '' }}" href="/presets"><span>★</span> Saved presets</a>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="https://naarm-nlp.github.io/mudidi/">Documentation</a>
-        <span class="local-badge">● Running locally</span>
-        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
-          <span aria-hidden="true">◐</span> <span data-theme-label>Dark mode</span>
-        </button>
-      </div>
-    </aside>
-    <main>{% block main %}{% endblock %}</main>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="MUDIDI home">
+          <span class="brand-mark">M</span>
+          <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
+        </a>
+        <nav aria-label="Primary navigation">
+          <a class="{{ 'active' if path == '/' else '' }}" href="/" {% if path == '/' %}aria-current="page"{% endif %}><span>＋</span> New run</a>
+          <a class="{{ 'active' if path == '/active' else '' }}" href="/active" {% if path == '/active' %}aria-current="page"{% endif %}><span>●</span> Active run</a>
+          <a class="{{ 'active' if path.startswith('/history') else '' }}" href="/history" {% if path.startswith('/history') %}aria-current="page"{% endif %}><span>◷</span> Run history</a>
+          <a class="{{ 'active' if path.startswith('/presets') else '' }}" href="/presets" {% if path.startswith('/presets') %}aria-current="page"{% endif %}><span>★</span> Saved presets</a>
+        </nav>
+        <div class="sidebar-footer">
+          <a href="https://naarm-nlp.github.io/mudidi/">Documentation</a>
+          <span class="local-badge">● Running locally</span>
+          <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+            <span aria-hidden="true">◐</span> <span data-theme-label>Dark mode</span>
+          </button>
+        </div>
+      </aside>
+      <main id="main-content" tabindex="-1">{% block main %}{% endblock %}</main>
+    </div>
     {% block body_end %}{% endblock %}
   </body>
 </html>
