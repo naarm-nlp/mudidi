@@ -4,6 +4,10 @@ This directory contains the tracked evaluation reports used for the main
 MUDIDI benchmark analysis. Prediction trees remain under `outputs/benchmark/`;
 the files here are derived CSV reports and small provenance artifacts.
 
+Agentic verification is a separate run-time option; these canonical reports
+document the baseline Stage 1 and Stage 2 evaluation results rather than
+agentic verification runs.
+
 ## Result sets
 
 | Directory | Meaning | Producer |
