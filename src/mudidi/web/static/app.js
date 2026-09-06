@@ -982,9 +982,10 @@ if (liveRun && window.EventSource) {
   });
 }
 
-const pageSlider = document.querySelector("[data-page-slider]");
+const pageEditor = document.querySelector("[data-page-editor]");
+const pageSlider = pageEditor?.querySelector("[data-page-slider]");
 if (pageSlider) {
-  const position = document.querySelector("[data-page-position]");
+  const position = pageEditor.querySelector("[data-page-position]");
   let pageUrls = [];
   let pageLabels = [];
   try {
@@ -1006,7 +1007,7 @@ if (pageSlider) {
   });
 }
 
-const pageTextEditor = document.querySelector("form.page-text-editor");
+const pageTextEditor = pageEditor?.querySelector("form.page-text-editor");
 if (pageTextEditor) {
   let hasUnsavedChanges = false;
   pageTextEditor.querySelectorAll("textarea").forEach((textarea) => {

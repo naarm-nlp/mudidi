@@ -155,7 +155,38 @@ def test_page_viewer_entry_keeps_empty_state_when_no_pages_exist(
     assert response.status_code == 200
     assert "Page Viewer &amp; Editor" in response.text
     assert "No page outputs yet" in response.text
+    assert "Processed pages will appear here" in response.text
+    assert "page-viewer-empty" in response.text
+    assert f'href="/active"' in response.text
+    assert "View active progress" in response.text
     assert f'<meta name="mudidi-events" content="/runs/{run_id}/events?after=0">' in response.text
+
+def test_page_viewer_empty_state_links_to_run_overview_when_inactive(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"stage": "1"},
+        }
+    )
+    run_id = "inactive-empty-page-viewer"
+    app.state.job_controller.prepare_inference(
+        run_id,
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+
+    response = TestClient(app).get(f"/runs/{run_id}/pages")
+
+    assert response.status_code == 200
+    assert f'href="/runs/{run_id}"' in response.text
+    assert "Return to run overview" in response.text
+    assert f'class="back-link" href="/active"' not in response.text
 
 
 def test_page_viewer_refreshes_as_outputs_arrive_during_stage1(
@@ -201,9 +232,26 @@ def test_page_detail_combines_safe_source_and_generated_evidence(
     assert "Page 1" in detail.text
     assert f'href="/runs/{run_id}"' in detail.text
     assert "Output Preview" not in detail.text
+    assert "Changes saved" not in detail.text
     assert "hello transcription" in detail.text
     assert "\\lx hello" in detail.text
     assert f"/runs/{run_id}/pages/page_1/source" in detail.text
+    assert 'data-page-editor' in detail.text
+    for marker in (
+        'aria-label="Processed page navigation"',
+        'data-page-slider',
+        'data-page-position',
+        'source-editor-panel',
+        'name="stage1_text"',
+        'name="stage2_text"',
+        'page-editor-savebar',
+        'related-artifacts',
+    ):
+        assert marker in detail.text
+    assert detail.text.index("source-editor-panel") < detail.text.index('name="stage1_text"')
+    assert detail.text.index('name="stage1_text"') < detail.text.index('name="stage2_text"')
+    assert detail.text.index('name="stage2_text"') < detail.text.index("page-editor-savebar")
+    assert detail.text.index("page-editor-savebar") < detail.text.index("related-artifacts")
     assert source.status_code == 200
     assert source.content == b"safe source image"
 

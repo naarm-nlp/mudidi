@@ -4,7 +4,7 @@
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>{% endblock %}
 {% block main %}
     <div class="page-shell">
-      <div class="page-editor-page">
+      <div class="page-editor-page" data-page-editor>
       <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
 
       <header class="page-editor-heading">
