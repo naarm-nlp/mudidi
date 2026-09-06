@@ -10,6 +10,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from mudidi.web.app import create_app
+from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.runs import RunStatus
@@ -447,7 +448,16 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert page.status_code == 200
     assert "My verified setup" in page.text
     assert f'href="/?preset={preset.preset_id}"' in page.text
+    assert "Use preset" in page.text
     assert "Load preset" in page.text
+    assert "Updated" in page.text
+    assert "Provider" in page.text
+    assert "Pipeline" in page.text
+    assert "Primary model" in page.text
+    assert "Agentic" in page.text
+    assert "Remove" in page.text
+    assert 'data-confirm-preset-delete="My verified setup"' in page.text
+    assert 'action="/presets/' + preset.preset_id + '/delete"' in page.text
 
     home = client.get("/")
     assert 'name="preset"' in home.text
@@ -562,6 +572,45 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert saved_presets[0].preset_id != preset.preset_id
     assert not (tmp_path / "app-data" / "presets" / preset.preset_id).exists()
     assert client.get(f"/presets/{preset.preset_id}/files/pages/0").status_code == 404
+
+
+def test_preset_remove_deletes_metadata_bundle_and_returns_to_presets(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    preset = app.state.run_store.create_preset(
+        "preset-remove",
+        name="Remove me",
+        provider="offline",
+        config=InferenceConfig.model_validate(
+            {
+                "input": {"pages": pages},
+                "output": {"directory": tmp_path / "output"},
+            }
+        ),
+    )
+    bundle = app.state.inputs.presets_root / preset.preset_id / "inputs"
+    bundle.mkdir(parents=True)
+    (bundle / "source.pdf").write_bytes(_pdf_bytes())
+
+    response = client.post(
+        f"/presets/{preset.preset_id}/delete",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/presets"
+    assert not bundle.parent.exists()
+    assert client.get("/presets").status_code == 200
+    assert "Remove me" not in client.get("/presets").text
+    assert client.post("/presets/unknown/delete").status_code == 404
+    empty = client.get("/presets")
+    assert "No presets yet" in empty.text
+    assert 'href="/">' in empty.text
+    assert "Create a new run" in empty.text
 
 
 def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> None:

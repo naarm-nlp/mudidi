@@ -188,7 +188,7 @@ class InputMaterializer:
         shutil.rmtree(self.runs_root / run_id, ignore_errors=True)
 
     def discard_preset(self, preset_id: str) -> None:
-        """Remove an uncommitted preset-owned input bundle."""
+        """Remove a managed preset bundle, whether committed or uncommitted."""
 
         _validate_owner_id(preset_id)
         shutil.rmtree(self.presets_root / preset_id, ignore_errors=True)

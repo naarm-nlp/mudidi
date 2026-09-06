@@ -690,11 +690,18 @@ def create_app(
             runs = [run for run in runs if run.status.value == status]
         if provider:
             runs = [run for run in runs if run.provider == provider]
+        history_views = []
+        for run in runs:
+            view = _run_view(app.state.run_store, run)
+            view["output_directory"] = _history_output_directory(
+                app.state.job_controller, run.run_id
+            )
+            history_views.append(view)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="history.html",
             context={
-                "runs": [_run_view(app.state.run_store, run) for run in runs],
+                "runs": history_views,
                 "filters": {"q": q, "status": status, "provider": provider},
                 "statuses": tuple(RunStatus),
                 "status_label": _status_label,
@@ -715,6 +722,17 @@ def create_app(
             context={"presets": app.state.run_store.list_presets()},
         )
 
+    @app.post("/presets/{preset_id}/delete")
+    async def delete_preset(preset_id: str) -> RedirectResponse:
+        """Delete preset metadata and its managed input bundle."""
+
+        try:
+            app.state.run_store.delete_preset(preset_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="preset not found") from exc
+        app.state.inputs.discard_preset(preset_id)
+        return RedirectResponse("/presets", status_code=303)
+
     @app.get("/presets/{preset_id}/files/{asset_key:path}")
     async def preset_file(preset_id: str, asset_key: str) -> FileResponse:
         """Serve one allowlisted file owned by a local preset."""
@@ -731,6 +749,7 @@ def create_app(
         if path is None:
             raise HTTPException(status_code=404, detail="preset file not found")
         return FileResponse(path, headers={"Cache-Control": "private, no-store"})
+
 
     @app.post("/runs/{run_id}/presets")
     async def save_run_preset(request: Request, run_id: str) -> RedirectResponse:
@@ -1601,6 +1620,16 @@ def _all_models(app: FastAPI) -> tuple[object, ...]:
     )
 
 
+def _history_output_directory(controller: JobController, run_id: str) -> str:
+    """Return a prepared run's output directory without breaking stale history."""
+
+    try:
+        config = controller.load_inference_config(run_id)
+    except (KeyError, OSError, ValidationError):
+        return "Unavailable"
+    return str(config.output.directory)
+
+
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     events = store.list_events(run.run_id)
     for event in events:
@@ -1613,7 +1642,21 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         RunStatus.AWAITING_PARSE_RULES_REVIEW: "stage2_pass1",
         RunStatus.RUNNING_STAGE2: "stage2_pass2",
     }.get(run.status)
-    stage_events = [event for event in events if event.get("stage") == active_stage]
+    progress_stage = active_stage
+    if progress_stage is None and run.status in {
+        RunStatus.COMPLETED,
+        RunStatus.FAILED,
+        RunStatus.CANCELLED,
+    }:
+        progress_stage = next(
+            (
+                str(event["stage"])
+                for event in reversed(events)
+                if event.get("type") == "stage.started" and event.get("stage")
+            ),
+            None,
+        )
+    stage_events = [event for event in events if event.get("stage") == progress_stage]
     completed_pages = sum(
         event.get("type") == "page.completed" for event in stage_events
     )
@@ -1629,7 +1672,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
             if event.get("type") == "page.started"
             and not any(
                 later.get("type") == "page.completed"
-                and later.get("stage") == active_stage
+                and later.get("stage") == progress_stage
                 and later.get("page") == event.get("page")
                 for later in events[events.index(event) + 1 :]
             )
@@ -1661,6 +1704,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         ),
         "failure_message": _failure_message(events),
         "created_at": run.created_at,
+        "updated_at": run.updated_at,
         "is_active": run.status in _LIVE_RUN_STATUSES,
         "is_terminal": run.status
         in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},

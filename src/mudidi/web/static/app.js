@@ -687,6 +687,35 @@ document.querySelectorAll("[data-confirm-delete-all]").forEach((form) => {
   });
 });
 
+const formatElapsed = (elapsedSeconds) => {
+  if (elapsedSeconds < 60) return `${elapsedSeconds}s`;
+  const minutes = Math.floor(elapsedSeconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ${minutes % 60}m`;
+  return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+};
+
+document.querySelectorAll("[data-elapsed-from]").forEach((element) => {
+  const startedAt = Date.parse(element.dataset.elapsedFrom || "");
+  if (!Number.isFinite(startedAt)) return;
+  const updateElapsed = () => {
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+    element.textContent = `Elapsed ${formatElapsed(elapsedSeconds)}`;
+  };
+  updateElapsed();
+  window.setInterval(updateElapsed, 1000);
+});
+
+document.querySelectorAll("[data-confirm-preset-delete]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    const name = form.dataset.confirmPresetDelete || "this preset";
+    if (!window.confirm(`Remove preset "${name}"? Its managed inputs will also be removed.`)) {
+      event.preventDefault();
+    }
+  });
+});
+
 const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
 const customManual = document.querySelector("[data-custom-mdf-manual]");
 const synchronizeManual = () => {

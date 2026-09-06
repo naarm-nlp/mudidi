@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-
+from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.app import create_app
 from mudidi.web.runs import RunStatus
 
@@ -56,6 +56,7 @@ def test_offline_demo_runs_to_completion_and_appears_in_history(
     assert history.status_code == 200
     assert run_id in history.text
     assert "Completed" in history.text
+    assert "100%" in history.text
 
 
 def test_event_stream_replays_persisted_events_as_sse(tmp_path: Path) -> None:
@@ -108,6 +109,48 @@ def test_active_page_links_to_running_job_and_cancel_route(tmp_path: Path) -> No
     assert run_id in active.text
     assert cancelled.status_code == 303
     assert app.state.run_store.get_run(run_id).status is RunStatus.CANCELLED
+
+
+def test_active_page_exposes_progress_timeline_activity_and_elapsed_hook(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    run_id = "active-dashboard"
+    store.create_run(run_id, provider="offline")
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2))
+    store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
+    store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
+
+    response = TestClient(app).get("/active")
+
+    assert response.status_code == 200
+    assert "50%" in response.text
+    assert "1 of 2 pages" in response.text
+    assert 'data-elapsed-from="' in response.text
+    assert 'meta name="mudidi-events"' in response.text
+    for label in (
+        "Stage 1 — Transcription",
+        "MDF parsing guide discovery",
+        "Review parsing guide",
+        "Stage 2 — MDF conversion",
+    ):
+        assert label in response.text
+    assert "Recent activity" in response.text
+    assert 'href="/runs/active-dashboard"' in response.text
+    assert 'action="/runs/active-dashboard/cancel"' in response.text
+
+
+def test_empty_active_page_links_to_history_and_new_run(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/active")
+
+    assert response.status_code == 200
+    assert "No inference is running" in response.text
+    assert 'href="/history"' in response.text
+    assert 'href="/"' in response.text
 
 
 def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> None:
@@ -264,6 +307,49 @@ def test_history_filters_by_query_status_and_provider(tmp_path: Path) -> None:
     assert 'action="/runs/alpha-dictionary/delete"' in response.text
     assert "Remove" in response.text
     assert 'action="/history/delete-all"' in response.text
+
+
+def test_history_uses_semantic_table_and_survives_stale_prepared_config(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    store = app.state.run_store
+    output = tmp_path / "prepared-output"
+    prepared_id = "prepared-history"
+    stale_id = "stale-history"
+    store.create_run(prepared_id, provider="offline")
+    store.transition(prepared_id, RunStatus.VALIDATED)
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": output},
+        }
+    )
+    config_path = app.state.job_controller.config_path(prepared_id)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(config.model_dump_json(), encoding="utf-8")
+    store.create_run(stale_id, provider="offline")
+    store.transition(stale_id, RunStatus.VALIDATED)
+
+    response = TestClient(app).get("/history")
+
+    assert response.status_code == 200
+    for heading in ("Run", "Status", "Progress", "Provider", "Last update", "Actions"):
+        assert f'<th scope="col">{heading}</th>' in response.text
+    assert 'class="table-scroll"' in response.text
+    assert str(output) in response.text
+    assert "Unavailable" in response.text
+    assert 'action="/runs/prepared-history/delete"' in response.text
+
+
+def test_empty_history_state_links_to_new_run(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get(
+        "/history", params={"q": "no-such-run"}
+    )
+
+    assert response.status_code == 200
+    assert "No matching runs" in response.text
+    assert 'href="/" ' in response.text or 'href="/">' in response.text
 
 
 def test_terminal_run_deletion_removes_local_metadata_but_not_outputs(
