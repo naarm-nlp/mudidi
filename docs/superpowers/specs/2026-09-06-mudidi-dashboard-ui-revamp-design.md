@@ -1,7 +1,7 @@
 # MUDIDI Dashboard UI Revamp Design
 
 **Date:** 2026-09-06  
-**Status:** Mockup approved; awaiting specification approval  
+**Status:** Approved for implementation
 **Branch:** `features/brutalist-dashboard-reskin`
 
 ## Decision summary
