@@ -7,6 +7,7 @@ import re
 import shutil
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from mudidi.web.app import create_app
@@ -387,6 +388,42 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
         assert marker in response.text
     assert 'meta name="mudidi-events"' in response.text
 
+
+@pytest.mark.parametrize(
+    "terminal_event_type",
+    ["run.completed", "run.failed", "run.cancelled"],
+)
+def test_logs_use_terminal_event_as_inactive_state_for_stale_run(
+    tmp_path: Path,
+    terminal_event_type: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    store = app.state.run_store
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    terminal_event = {
+        "version": 1,
+        "type": terminal_event_type,
+        "run_id": run_id,
+        "sequence": 1,
+        "occurred_at": "2026-09-06T00:00:00+00:00",
+        "stage": "stage1",
+    }
+    if terminal_event_type == "run.failed":
+        terminal_event["message"] = "persisted terminal failure"
+    store.append_event(run_id, terminal_event)
+
+    response = client.get(f"/runs/{run_id}/logs")
+
+    assert response.status_code == 200
+    assert 'meta name="mudidi-events"' not in response.text
+    assert 'data-stream-status role="status">Idle</span>' in response.text
+
+    stream = client.get(f"/runs/{run_id}/events?after=1")
+    assert stream.status_code == 200
+    assert stream.text == ""
 
 def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)

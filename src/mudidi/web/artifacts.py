@@ -279,7 +279,12 @@ class ArtifactService:
         files_scanned = 0
         if root.is_dir():
             for path in sorted(root.rglob("*_usage.json")):
-                if path.is_symlink() or path.name == MDF_PARSING_GUIDE_USAGE_FILENAME:
+                if path.is_symlink() or path.name in {
+                    MDF_PARSING_GUIDE_USAGE_FILENAME,
+                    "run_usage.json",
+                }:
+                    continue
+                if path.name != f"{path.parent.name}_usage.json":
                     continue
                 payload = _read_json_object(path)
                 payloads.append(payload)

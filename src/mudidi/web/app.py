@@ -59,6 +59,10 @@ _LIVE_RUN_STATUSES = {
     RunStatus.DISCOVERING_PARSE_RULES,
     RunStatus.RUNNING_STAGE2,
 }
+
+_TERMINAL_EVENT_TYPES = frozenset(
+    {"run.completed", "run.failed", "run.cancelled"}
+)
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
@@ -880,7 +884,7 @@ def create_app(
             name="pages.html",
             context={
                 "run_id": run_id,
-                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "is_active": _run_is_active(run, events),
                 "last_event_sequence": max(
                     (int(event.get("sequence", 0)) for event in events),
                     default=0,
@@ -947,7 +951,7 @@ def create_app(
                     pages[page_index + 1] if page_index + 1 < len(pages) else None
                 ),
                 "saved": request.query_params.get("saved") == "1",
-                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "is_active": _run_is_active(run, events),
                 "last_event_sequence": max(
                     (int(event.get("sequence", 0)) for event in events),
                     default=0,
@@ -1047,7 +1051,7 @@ def create_app(
                 "content": content,
                 "truncated": truncated,
                 "failure_message": failure_message,
-                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "is_active": _run_is_active(run, events),
                 "last_event_sequence": max(
                     (int(event.get("sequence", 0)) for event in events),
                     default=0,
@@ -1228,12 +1232,8 @@ def create_app(
                 for event in new_events:
                     last_sequence = int(event["sequence"])
                     yield _sse_event(event)
-                status = app.state.run_store.get_run(run_id).status
-                if status in {
-                    RunStatus.COMPLETED,
-                    RunStatus.FAILED,
-                    RunStatus.CANCELLED,
-                }:
+                current_run = app.state.run_store.get_run(run_id)
+                if not _run_is_active(current_run, events):
                     return
                 if await request.is_disconnected():
                     return
@@ -1649,8 +1649,20 @@ def _managed_config_available(controller: JobController, run_id: str) -> bool:
     return True
 
 
+def _run_is_active(
+    run: RunRecord,
+    events: list[dict[str, object]],
+) -> bool:
+    """Treat persisted terminal events as authoritative for live views."""
+
+    return run.status in _LIVE_RUN_STATUSES and not any(
+        str(event.get("type", "")) in _TERMINAL_EVENT_TYPES for event in events
+    )
+
+
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     events = store.list_events(run.run_id)
+    is_active = _run_is_active(run, events)
     for event in events:
         event["display_type"] = _event_label(
             str(event.get("type", "")), str(event.get("stage", ""))
@@ -1687,7 +1699,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
     current_page = None
-    if run.status in _LIVE_RUN_STATUSES:
+    if is_active:
         current_page = next(
             (
                 int(event["page"])
@@ -1728,7 +1740,7 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "failure_message": _failure_message(events),
         "created_at": run.created_at,
         "updated_at": run.updated_at,
-        "is_active": run.status in _LIVE_RUN_STATUSES,
+        "is_active": is_active,
         "is_terminal": run.status
         in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},
         "delete_available": can_delete_run(run.status),
