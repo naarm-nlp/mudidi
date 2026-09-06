@@ -188,7 +188,7 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "Stage 1 — Transcription" in response.text
     assert "MDF parsing guide discovery" in response.text
 
-def test_run_overview_exposes_workspace_navigation_and_wrapping_identifier(
+def test_run_overview_disables_config_dependent_workspace_links_without_managed_config(
     tmp_path: Path,
 ) -> None:
     app = create_app(data_dir=tmp_path)
@@ -202,20 +202,51 @@ def test_run_overview_exposes_workspace_navigation_and_wrapping_identifier(
     assert f'<h1 class="run-id">{run_id}</h1>' in response.text
     assert 'class="panel run-workspace-nav' in response.text
     assert '<nav class="detail-tabs" aria-label="Run workspace">' in response.text
-    for label, href in (
-        ("Overview", f"/runs/{run_id}"),
-        ("Page Viewer &amp; Editor", f"/runs/{run_id}/pages"),
-        ("Live Logs", f"/runs/{run_id}/logs"),
-        ("File Artifacts", f"/runs/{run_id}/outputs"),
-        ("Usage", f"/runs/{run_id}/usage"),
+    assert f'href="/runs/{run_id}"' in response.text
+    assert f'href="/runs/{run_id}/logs"' in response.text
+    for label in ("Page Viewer &amp; Editor", "File Artifacts", "Usage"):
+        assert f'aria-disabled="true">{label}</span>' in response.text
+    for href in (
+        f"/runs/{run_id}/pages",
+        f"/runs/{run_id}/outputs",
+        f"/runs/{run_id}/usage",
     ):
-        assert f'href="{href}"' in response.text
-        assert label in response.text
+        assert f'href="{href}"' not in response.text
     assert "MDF parsing guide" in response.text
     assert 'aria-disabled="true">MDF parsing guide</span>' in response.text
     assert 'class="pipeline-marker" aria-hidden="true">○</span>' in response.text
     assert "Future" in response.text
 
+
+def test_run_overview_links_config_dependent_workspace_views_with_managed_config(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    run_id = "configured-workspace"
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+        }
+    )
+    config_path = app.state.job_controller.config_path(run_id)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(config.model_dump_json(), encoding="utf-8")
+    app.state.run_store.create_run(run_id, provider="offline")
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    for href in (
+        f"/runs/{run_id}",
+        f"/runs/{run_id}/pages",
+        f"/runs/{run_id}/logs",
+        f"/runs/{run_id}/outputs",
+        f"/runs/{run_id}/usage",
+    ):
+        assert f'href="{href}"' in response.text
+    for label in ("Page Viewer &amp; Editor", "File Artifacts", "Usage"):
+        assert f">{label}</a>" in response.text
 
 def test_run_overview_keeps_state_gated_actions_in_workspace(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path)

@@ -178,6 +178,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "can improve extraction accuracy" in response.text
     assert 'name="profile_headword_language"' in response.text
     assert 'name="profile_target_languages"' in response.text
+    assert 'aria-label="Remove language"' in response.text
     assert 'name="profile_headword_script"' in response.text
     assert 'name="profile_page_layout"' in response.text
     assert 'name="profile_information_types"' in response.text
@@ -641,6 +642,9 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert ".profile-layout-question textarea" in response.text
     assert ".profile-other-information" in response.text
     assert ".profile-other-information textarea" in response.text
+    css_rules = [line.strip() for line in response.text.splitlines()]
+    assert any(line.startswith(".rules-editor .editor-row button {") for line in css_rules)
+    assert not any(line.startswith(".editor-row button {") for line in css_rules)
     assert ".preset-loader {" in response.text
     assert "margin-bottom: 24px" in response.text
     assert "padding: 20px 24px" in response.text

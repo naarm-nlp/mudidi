@@ -827,10 +827,15 @@ def create_app(
             run = app.state.run_store.get_run(run_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
+        run_view = _run_view(app.state.run_store, run)
+        run_view["workspace_available"] = _managed_config_available(
+            app.state.job_controller,
+            run_id,
+        )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="run_detail.html",
-            context={"run": _run_view(app.state.run_store, run)},
+            context={"run": run_view},
         )
 
     @app.get("/runs/{run_id}/parse-rules", response_class=HTMLResponse)
@@ -1628,6 +1633,15 @@ def _history_output_directory(controller: JobController, run_id: str) -> str:
     except (KeyError, OSError, ValidationError):
         return "Unavailable"
     return str(config.output.directory)
+
+def _managed_config_available(controller: JobController, run_id: str) -> bool:
+    """Return whether config-dependent run workspace views can load safely."""
+
+    try:
+        controller.load_inference_config(run_id)
+    except (KeyError, OSError, ValidationError, ValueError):
+        return False
+    return True
 
 
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
