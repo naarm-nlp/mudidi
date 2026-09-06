@@ -384,7 +384,10 @@ const synchronizeModels = (providerChanged = false) => {
     select.hidden = manualEntry;
     select.disabled = !active || manualEntry;
     const custom = select.parentElement.querySelector("[data-custom-model]");
-    if (custom) custom.placeholder = customModelPlaceholder(provider);
+    if (custom) {
+      if (providerChanged) custom.value = "";
+      custom.placeholder = customModelPlaceholder(provider);
+    }
     synchronizeCustomModel(select);
   });
   if (openRouterProvider) {
@@ -442,6 +445,12 @@ const readStage2Pass = (pass) => ({
   customModel: stage2Field(pass, "customModel")?.value || "",
   reasoning: stage2Field(pass, "reasoning")?.value || "",
 });
+const synchronizeStage2CustomModels = () => {
+  ["pass1", "pass2"].forEach((pass) => {
+    const model = stage2Field(pass, "model");
+    if (model) synchronizeCustomModel(model);
+  });
+};
 const writeStage2Pass = (pass, state) => {
   const model = stage2Field(pass, "model");
   const customModel = stage2Field(pass, "customModel");
@@ -449,6 +458,7 @@ const writeStage2Pass = (pass, state) => {
   if (model && state.model !== undefined) model.value = state.model;
   if (customModel && state.customModel !== undefined) customModel.value = state.customModel;
   if (reasoning && state.reasoning !== undefined) reasoning.value = state.reasoning;
+  synchronizeStage2CustomModels();
 };
 const stage2ValuesEqual = (left, right) => (
   left.model === right.model
@@ -460,9 +470,29 @@ const synchronizeSharedStage2 = () => {
   if (stage2State?.mode !== "shared") return;
   stage2State.shared = readStage2Pass("pass1");
   writeStage2Pass("pass2", stage2State.shared);
-  const pass2Model = stage2Field("pass2", "model");
-  if (pass2Model) synchronizeCustomModel(pass2Model);
   updateStage2Summary();
+};
+const providerCompatibleStage2State = (state) => ({
+  ...state,
+  customModel: state.model === "__other__" ? state.customModel : "",
+});
+
+const migrateStage2CachesForProvider = () => {
+  if (!stage2State) return;
+  const pass1 = providerCompatibleStage2State(readStage2Pass("pass1"));
+  const pass2 = providerCompatibleStage2State(readStage2Pass("pass2"));
+  if (stage2State.mode === "shared") {
+    stage2State.shared = pass1;
+    stage2State.split.pass1 = { ...pass1 };
+    stage2State.split.pass2 = { ...pass1 };
+    writeStage2Pass("pass1", pass1);
+    writeStage2Pass("pass2", pass1);
+  } else {
+    stage2State.shared = { ...pass1 };
+    stage2State.split.pass1 = { ...pass1 };
+    stage2State.split.pass2 = { ...pass2 };
+    synchronizeStage2CustomModels();
+  }
 };
 
 const modelDisplayName = (pass) => {
@@ -503,6 +533,7 @@ const renderStage2Mode = () => {
   }
   if (!split) synchronizeSharedStage2();
   else updateStage2Summary();
+  synchronizeStage2CustomModels();
 };
 
 const enterSplitStage2 = () => {
@@ -595,13 +626,7 @@ providerChoices.forEach((choice) => {
       other.value = choice.value;
     });
     synchronizeModels(true);
-    if (stage2State?.mode === "shared") {
-      stage2State.shared = readStage2Pass("pass1");
-      writeStage2Pass("pass2", stage2State.shared);
-    } else if (stage2State) {
-      stage2State.split.pass1 = readStage2Pass("pass1");
-      stage2State.split.pass2 = readStage2Pass("pass2");
-    }
+    migrateStage2CachesForProvider();
     updateStage2Summary();
     renderCredentialSelection(choice.value);
   });
