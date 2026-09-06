@@ -476,21 +476,23 @@ const providerCompatibleStage2State = (state) => ({
   ...state,
   customModel: state.model === "__other__" ? state.customModel : "",
 });
+const migrateProviderFields = (cachedState, activeState) => ({
+  ...cachedState,
+  model: activeState.model,
+  customModel: activeState.customModel,
+});
 
 const migrateStage2CachesForProvider = () => {
   if (!stage2State) return;
   const pass1 = providerCompatibleStage2State(readStage2Pass("pass1"));
   const pass2 = providerCompatibleStage2State(readStage2Pass("pass2"));
+  stage2State.shared = migrateProviderFields(stage2State.shared, pass1);
+  stage2State.split.pass1 = migrateProviderFields(stage2State.split.pass1, pass1);
+  stage2State.split.pass2 = migrateProviderFields(stage2State.split.pass2, pass2);
   if (stage2State.mode === "shared") {
-    stage2State.shared = pass1;
-    stage2State.split.pass1 = { ...pass1 };
-    stage2State.split.pass2 = { ...pass1 };
     writeStage2Pass("pass1", pass1);
     writeStage2Pass("pass2", pass1);
   } else {
-    stage2State.shared = { ...pass1 };
-    stage2State.split.pass1 = { ...pass1 };
-    stage2State.split.pass2 = { ...pass2 };
     synchronizeStage2CustomModels();
   }
 };
