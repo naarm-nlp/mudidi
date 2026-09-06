@@ -12,12 +12,8 @@
     }
   })();
 
-  const prefersDark =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches;
-
   root.dataset.theme =
-    stored === "dark" || stored === "light" ? stored : prefersDark ? "dark" : "light";
+    stored === "dark" || stored === "light" ? stored : "light";
 
   const syncControls = () => {
     const isDark = root.dataset.theme === "dark";

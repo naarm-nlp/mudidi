@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -485,15 +486,75 @@ def test_nav_marks_only_the_current_section_active(tmp_path: Path) -> None:
     assert 'href="/history" aria-current="page"' in response.text
     assert 'class="active" href="/"' not in response.text
 
-def test_theme_script_is_served_and_follows_the_os_preference(tmp_path: Path) -> None:
+def test_theme_script_is_served_without_os_preference_fallback(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
     response = client.get("/static/theme.js")
 
     assert response.status_code == 200
     assert "mudidi:theme" in response.text
-    assert "prefers-color-scheme" in response.text
+    assert "prefers-color-scheme" not in response.text
     assert "dataset.theme" in response.text
+
+
+def test_theme_script_defaults_to_light_and_honors_valid_storage() -> None:
+    theme_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/theme.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+const source = fs.readFileSync(process.argv[1], "utf8");
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+
+const initialTheme = (storedValue, {storageThrows = false} = {}) => {
+  const root = {dataset: {}};
+  let domContentLoaded;
+  const storage = {
+    getItem(key) {
+      assert(key === "mudidi:theme", `unexpected storage key: ${key}`);
+      if (storageThrows) throw new Error("storage denied");
+      return storedValue;
+    },
+    setItem() {},
+  };
+  const document = {
+    documentElement: root,
+    addEventListener(type, listener) {
+      assert(type === "DOMContentLoaded", `unexpected event: ${type}`);
+      domContentLoaded = listener;
+    },
+    querySelectorAll() {
+      return [];
+    },
+  };
+  const context = vm.createContext({
+    document,
+    window: {
+      localStorage: storage,
+      matchMedia: () => ({matches: true}),
+    },
+  });
+
+  vm.runInContext(source, context);
+  assert(typeof domContentLoaded === "function", "theme bootstrap did not register DOMContentLoaded");
+  return root.dataset.theme;
+};
+
+assert(initialTheme(null) === "light", "unset storage should default to light");
+assert(initialTheme("system") === "light", "invalid storage should default to light");
+assert(initialTheme("dark") === "dark", "stored dark should win");
+assert(initialTheme("light") === "light", "stored light should win");
+assert(initialTheme(null, {storageThrows: true}) === "light", "storage errors should default to light");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(theme_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_stylesheet_exposes_the_brutalist_theme(tmp_path: Path) -> None:
