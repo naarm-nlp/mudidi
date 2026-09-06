@@ -189,9 +189,27 @@ h1 { margin-bottom: 0; font-size: 34px; }
 label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .input-row { display: flex; gap: 8px; }
 .input-row input { flex: 1; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-panel); }
-.key-reveal { display: inline-grid; width: 48px; padding: 9px; place-items: center; color: var(--color-muted); }
+.key-reveal, .input-row .key-reveal { display: inline-grid; width: 48px; padding: 9px; place-items: center; color: var(--color-muted); font-size: 0; }
 .input-row .credential-save { border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-on-accent); background: var(--color-accent); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; white-space: nowrap; }
 .credential-save-status { display: block; margin-top: 6px; color: var(--color-muted); font-size: .78rem; }
+.credential-management { display: grid; gap: 14px; }
+.selected-credential-panel { padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.credential-panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.credential-panel-heading .eyebrow { margin: 0; }
+.credential-card { min-width: 0; padding: 12px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
+.credential-card label { margin: 0; }
+.credential-card .input-row { min-width: 0; }
+.credential-card .input-row input { min-width: 0; }
+.credential-delete { margin-top: 8px; padding: 6px 9px; border: var(--divider-width) solid var(--color-danger); color: var(--color-ink); background: var(--color-danger-soft); font-size: 11px; font-weight: 800; cursor: pointer; }
+.credential-management details { margin: 0; padding: 10px 0 0; }
+.credential-management details summary { color: var(--color-ink); cursor: pointer; font-weight: 800; }
+[data-other-credentials] { display: grid; gap: 10px; margin-top: 10px; }
+.stage2-settings { grid-column: 1 / -1; min-width: 0; margin-top: 18px; padding: 16px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.stage2-settings-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.stage2-settings-heading h3 { margin: 0; font-size: 16px; }
+.stage2-toggle { flex: 0 0 auto; padding: 9px 12px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-ink); background: var(--color-panel); font-size: 12px; font-weight: 800; cursor: pointer; }
+.stage2-explanation { max-width: 70ch; margin: 8px 0 4px; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
+.stage2-pass-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
 .agentic-model-group { display: contents; }
 .eye-icon { grid-area: 1 / 1; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .key-reveal[aria-pressed="false"] .eye-hide,
@@ -242,7 +260,7 @@ details { margin-top: 24px; padding: 15px 0; border-top: var(--divider-width) so
 details p { margin: 14px 0 0; font-size: 13px; }
 .actions { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 24px; color: var(--color-muted); font-size: 12px; }
 .primary { padding: 11px 18px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-on-accent); background: var(--color-accent); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
-.summary { padding: 25px; }
+.summary { position: sticky; top: 24px; padding: 25px; }
 .summary h2 { font-size: 19px; }
 dl { margin: 22px 0; }
 dl div { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: var(--divider-width) solid var(--color-line); font-size: 13px; }
@@ -446,6 +464,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .task-card-grid { grid-template-columns: 1fr; }
   .action-bar { align-items: stretch; flex-direction: column; }
   .action-bar-actions { justify-content: stretch; }
+  .summary { position: static; }
+  .stage2-pass-card { grid-template-columns: 1fr; }
 
 }
 @media (max-width: 600px) {
@@ -456,6 +476,10 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .wizard-marker-copy { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .wizard-actions { align-items: stretch; flex-direction: column; gap: 10px; }
   .wizard-actions > * { width: 100%; min-height: 42px; }
+  .stage2-settings-heading { flex-direction: column; }
+  .stage2-toggle { width: 100%; }
+  .credential-card .input-row { flex-wrap: wrap; }
+  .credential-card .input-row input { flex-basis: 100%; }
   .wizard-actions > span { order: 3; text-align: center; }
   .profile-panel { padding-inline: 2px; }
 }
