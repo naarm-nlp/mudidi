@@ -49,6 +49,32 @@ def test_parse_rule_editor_renders_complete_schema(tmp_path: Path) -> None:
     assert 'value="n."' in response.text
     assert "Approve and continue" in response.text
 
+def test_parse_rule_editor_uses_semantic_sections_and_fixed_action_columns(
+    tmp_path: Path,
+) -> None:
+    _app, client, run_id = _review_app(tmp_path)
+
+    response = client.get(f"/runs/{run_id}/parse-rules")
+
+    assert response.status_code == 200
+    for section_id, label in (
+        ("markers", "Markers"),
+        ("guide-rules", "Guide Rules"),
+        ("abbreviations", "Abbreviations"),
+    ):
+        assert (
+            f'<fieldset class="editor-section" aria-labelledby="{section_id}-heading">'
+            in response.text
+        )
+        assert f'id="{section_id}-heading"' in response.text
+        assert label in response.text
+    for action_label in ("Add Marker", "Add Guide Rule", "Add Abbreviation"):
+        assert f'aria-label="{action_label}"' in response.text
+    assert 'aria-label="Save Draft"' in response.text
+    assert "Approve and Continue MDF parsing" in response.text
+    assert 'class="approval-bar"' in response.text
+
+
 
 def test_completed_parse_rule_guide_is_read_only_snapshot(tmp_path: Path) -> None:
     app, client, run_id = _review_app(tmp_path)

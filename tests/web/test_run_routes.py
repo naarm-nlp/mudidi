@@ -188,6 +188,65 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "Stage 1 — Transcription" in response.text
     assert "MDF parsing guide discovery" in response.text
 
+def test_run_overview_exposes_workspace_navigation_and_wrapping_identifier(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path)
+    run_id = "run-" + ("very-long-identifier-" * 8)
+    store = app.state.run_store
+    store.create_run(run_id)
+
+    response = TestClient(app).get(f"/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert f'<h1 class="run-id">{run_id}</h1>' in response.text
+    assert 'class="panel run-workspace-nav' in response.text
+    assert '<nav class="detail-tabs" aria-label="Run workspace">' in response.text
+    for label, href in (
+        ("Overview", f"/runs/{run_id}"),
+        ("Page Viewer &amp; Editor", f"/runs/{run_id}/pages"),
+        ("Live Logs", f"/runs/{run_id}/logs"),
+        ("File Artifacts", f"/runs/{run_id}/outputs"),
+        ("Usage", f"/runs/{run_id}/usage"),
+    ):
+        assert f'href="{href}"' in response.text
+        assert label in response.text
+    assert "MDF parsing guide" in response.text
+    assert 'aria-disabled="true">MDF parsing guide</span>' in response.text
+    assert 'class="pipeline-marker" aria-hidden="true">○</span>' in response.text
+    assert "Future" in response.text
+
+
+def test_run_overview_keeps_state_gated_actions_in_workspace(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    run_id = "gated-actions"
+    store.create_run(run_id)
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+
+    active = TestClient(app).get(f"/runs/{run_id}")
+
+    assert active.status_code == 200
+    assert f'action="/runs/{run_id}/cancel"' in active.text
+    assert f'action="/runs/{run_id}/resume"' not in active.text
+    assert f'action="/runs/{run_id}/delete"' not in active.text
+
+    store.interrupt(run_id)
+    resumable = TestClient(app).get(f"/runs/{run_id}")
+
+    assert f'action="/runs/{run_id}/cancel"' not in resumable.text
+    assert f'action="/runs/{run_id}/resume"' in resumable.text
+    assert f'action="/runs/{run_id}/delete"' in resumable.text
+
+    store.transition(run_id, RunStatus.CANCELLED)
+    terminal = TestClient(app).get(f"/runs/{run_id}")
+
+    assert f'action="/runs/{run_id}/cancel"' not in terminal.text
+    assert f'action="/runs/{run_id}/resume"' not in terminal.text
+    assert f'action="/runs/{run_id}/delete"' in terminal.text
+
 @pytest.mark.parametrize("resumable_status", [RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED])
 def test_resumable_run_keeps_historical_progress_without_current_page(
     tmp_path: Path,
