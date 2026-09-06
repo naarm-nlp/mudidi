@@ -189,6 +189,40 @@ def test_interrupted_uploaded_guide_stage2_resumes_without_approval(
 
     assert store.get_run("resume-uploaded-guide").status is RunStatus.COMPLETED
     assert (tmp_path / "output/stage-2/page_1/page_1_mdf.txt").is_file()
+def test_interrupted_parse_review_resumes_without_restarting_stage1(
+    tmp_path: Path,
+) -> None:
+    store, _reviews, controller = _controller(tmp_path)
+    controller.prepare_inference(
+        "resume-parse-review",
+        config=_config(tmp_path),
+        provider=Provider.ANTHROPIC,
+    )
+    store.transition("resume-parse-review", RunStatus.QUEUED)
+    store.transition("resume-parse-review", RunStatus.DISCOVERING_PARSE_RULES)
+    store.append_event(
+        "resume-parse-review",
+        {
+            "version": 1,
+            "type": "stage.started",
+            "run_id": "resume-parse-review",
+            "sequence": 1,
+            "occurred_at": "2026-07-14T00:00:00+00:00",
+            "stage": "stage1",
+        },
+    )
+    store.interrupt("resume-parse-review")
+    events_before = store.list_events("resume-parse-review")
+
+    controller.resume_inference(
+        "resume-parse-review",
+        credential=_credential(),
+        offline_executor=True,
+    )
+
+    assert store.get_run("resume-parse-review").status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    assert store.list_events("resume-parse-review") == events_before
+
 
 
 def test_prepared_config_and_worker_command_never_contain_temporary_key(
@@ -245,6 +279,11 @@ def test_interrupted_approved_pass2_resumes_from_authenticated_snapshot(
     )
     controller.wait("resume-pass2", timeout=10)
     reviews.approve("resume-pass2")
+    stage1_events_before = [
+        event
+        for event in store.list_events("resume-pass2")
+        if event.get("stage") == "stage1"
+    ]
     store.interrupt("resume-pass2")
 
     controller.resume_inference(
@@ -256,6 +295,12 @@ def test_interrupted_approved_pass2_resumes_from_authenticated_snapshot(
 
     assert store.get_run("resume-pass2").status is RunStatus.COMPLETED
     assert (tmp_path / "output/stage-2/page_1/page_1_mdf.txt").is_file()
+    stage1_events_after = [
+        event
+        for event in store.list_events("resume-pass2")
+        if event.get("stage") == "stage1"
+    ]
+    assert stage1_events_after == stage1_events_before
 
 
 def test_production_failure_uses_sequence_after_phase_setup(

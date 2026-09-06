@@ -16,21 +16,27 @@ from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
 from mudidi.web.runs import RunStatus
 
-def _preview(client: TestClient, tmp_path: Path) -> str:
+def _preview(
+    client: TestClient,
+    tmp_path: Path,
+    **overrides: str,
+) -> str:
+    data = {
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": "complete",
+        "provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "agentic": "true",
+        "verify_stage1": "true",
+        "verify_stage2": "true",
+        "parse_rules_pages": "1",
+        "dictionary_pages": "1",
+    }
+    data.update(overrides)
     response = client.post(
         "/runs/preview",
-        data={
-            "output_directory": str(tmp_path / "output"),
-            "pipeline": "complete",
-            "provider": "anthropic",
-            "model": "anthropic/claude-sonnet-5",
-            "reasoning": "low",
-            "agentic": "true",
-            "verify_stage1": "true",
-            "verify_stage2": "true",
-            "parse_rules_pages": "1",
-            "dictionary_pages": "1",
-        },
+        data=data,
         files={
             "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
         },
@@ -96,6 +102,30 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     assert "openai/gpt-5.4" in response.text
 
 
+def test_prepared_review_preserves_additional_instructions_summary(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(
+        client,
+        tmp_path,
+        stage1_additional_instructions="Keep uncertain letters marked.",
+        stage2_additional_instructions="Use the custom nt marker.",
+    )
+
+    recovered = client.get(f"/runs/{run_id}/review")
+
+    assert recovered.status_code == 200
+    assert "Additional Instructions" in recovered.text
+    assert "Stage 1, Stage 2" in recovered.text
+
+
+
 def test_prepared_review_recovery_route_is_read_only_and_safe(
     tmp_path: Path,
 ) -> None:
@@ -122,7 +152,9 @@ def test_prepared_review_recovery_route_is_read_only_and_safe(
     assert app.state.run_store.get_run(run_id).status is RunStatus.CREDENTIALS_REQUIRED
     recovered_after_block = client.get(f"/runs/{run_id}/review")
     assert recovered_after_block.status_code == 200
-    assert "Return to review" not in recovered_after_block.text
+    assert f'action="/runs/{run_id}/start"' in recovered_after_block.text
+    assert "Start run" in recovered_after_block.text
+    assert f'action="/runs/{run_id}/resume"' not in recovered_after_block.text
 
 
 def test_recovered_review_labels_uploaded_guide_as_direct_use(
@@ -191,6 +223,10 @@ def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
     parse_run = app.state.run_store.get_run(parse_run_id)
     assert parse_run.status is RunStatus.CREDENTIALS_REQUIRED
     assert parse_run.resume_phase == "parse_rule_review"
+    parse_review = client.get(f"/runs/{parse_run_id}/review")
+    assert parse_review.status_code == 200
+    assert f'action="/runs/{parse_run_id}/resume"' in parse_review.text
+    assert "Resume run" in parse_review.text
 
     pass2_run_id = _preview(client, tmp_path)
     app.state.run_store.transition(pass2_run_id, RunStatus.QUEUED)
@@ -212,6 +248,10 @@ def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
         f'data-continue-action="/runs/{pass2_run_id}/resume"'
         in pass2_blocked.text
     )
+    pass2_review = client.get(f"/runs/{pass2_run_id}/review")
+    assert pass2_review.status_code == 200
+    assert f'action="/runs/{pass2_run_id}/resume"' in pass2_review.text
+    assert "Resume run" in pass2_review.text
     pass2_run = app.state.run_store.get_run(pass2_run_id)
     assert pass2_run.status is RunStatus.CREDENTIALS_REQUIRED
     assert pass2_run.resume_phase == "stage2_pass2"
@@ -328,7 +368,7 @@ def test_credentials_required_page_has_one_provider_recovery_card(
     assert f'data-continue-action="/runs/{run_id}/start"' in response.text
     assert f'href="/runs/{run_id}/review"' in response.text
     assert "Save and continue" in response.text
-    assert "/static/app.js?v=dashboard-ui-1" in response.text
+    assert "/static/app.js?v=dashboard-ui-3" in response.text
     assert "api_key" not in response.text
 
 

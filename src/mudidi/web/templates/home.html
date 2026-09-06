@@ -195,15 +195,16 @@
                     <div data-other-credentials>
                       {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
                         {% set status = credential_statuses[provider] %}
-                        <div class="credential-card" data-credential-card data-provider="{{ provider }}" data-key-saved="{{ 'true' if status.available else 'false' }}">
+                        {% set source = status.source.value %}
+                        <div class="credential-card" data-credential-card data-provider="{{ provider }}" data-key-saved="{{ 'true' if source == 'persistent' else 'false' }}" data-key-available="{{ 'true' if status.available else 'false' }}" data-key-source="{{ source }}">
                           <label for="credential-{{ provider }}">{{ label }} API key
                             <span class="input-row">
-                              <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
+                              <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if source == 'persistent' else 'Environment key available — enter a key to save an override' if source == 'environment' else 'Session key available — enter a key to save an override' if source == 'temporary' else 'Paste provider API key' }}">
                               <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
                               <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
                             </span>
-                            <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if status.available else 'Not saved' }}</span>
-                            {% if status.source.value == 'persistent' %}<button type="button" class="credential-delete" data-delete-key data-provider="{{ provider }}">Remove saved key</button>{% endif %}
+                            <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if source == 'persistent' else 'Available from environment' if source == 'environment' else 'Available for this session' if source == 'temporary' else 'Not saved' }}</span>
+                            {% if source == 'persistent' %}<button type="button" class="credential-delete" data-delete-key data-provider="{{ provider }}">Remove saved key</button>{% endif %}
                           </label>
                         </div>
                       {% endfor %}
@@ -376,5 +377,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-1" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-3" defer></script>
 {% endblock %}

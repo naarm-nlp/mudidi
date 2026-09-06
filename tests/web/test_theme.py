@@ -6,6 +6,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
+import re
 
 import pytest
 
@@ -567,3 +568,71 @@ def test_stylesheet_exposes_the_brutalist_theme(tmp_path: Path) -> None:
     assert '[data-theme="dark"]' in response.text
     assert "8px 8px 0 0" in response.text
     assert "border-radius" not in response.text
+
+
+def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
+    templates_dir = Path(__file__).resolve().parents[2] / "src/mudidi/web/templates"
+    versions = {
+        version
+        for template in templates_dir.glob("*.html")
+        for version in re.findall(
+            r"app\.js.*?\?v=([^\"&\s]+)",
+            template.read_text(encoding="utf-8"),
+        )
+    }
+
+    assert versions == {"dashboard-ui-3"}
+
+
+def _relative_luminance(hex_color: str) -> float:
+    channels = [
+        int(hex_color[index : index + 2], 16) / 255
+        for index in (1, 3, 5)
+    ]
+    linear = [
+        channel / 12.92
+        if channel <= 0.03928
+        else ((channel + 0.055) / 1.055) ** 2.4
+        for channel in channels
+    ]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast_ratio(foreground: str, background: str) -> float:
+    lighter = max(
+        _relative_luminance(foreground),
+        _relative_luminance(background),
+    )
+    darker = min(
+        _relative_luminance(foreground),
+        _relative_luminance(background),
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def test_light_theme_semantic_text_tokens_meet_wcag_aa() -> None:
+    css_path = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.css"
+    css = css_path.read_text(encoding="utf-8")
+    light_block = re.search(r":root\s*\{([^}]*)\}", css)
+    assert light_block is not None
+    tokens = dict(
+        re.findall(
+            r"--(color-(?:accent-text|danger-text|panel|bg)):\s*(#[0-9a-fA-F]{6})",
+            light_block.group(1),
+        )
+    )
+
+    assert set(tokens) == {
+        "color-accent-text",
+        "color-danger-text",
+        "color-panel",
+        "color-bg",
+    }
+    for foreground in ("color-accent-text", "color-danger-text"):
+        for background in ("color-panel", "color-bg"):
+            assert _contrast_ratio(tokens[foreground], tokens[background]) >= 4.5
+
+    dark_block = re.search(r'\[data-theme="dark"\]\s*\{([^}]*)\}', css)
+    assert dark_block is not None
+    assert "--color-accent-text:" in dark_block.group(1)
+    assert "--color-danger-text:" in dark_block.group(1)

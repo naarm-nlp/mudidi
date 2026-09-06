@@ -17,7 +17,7 @@
           <p>These values were validated through MUDIDI's production configuration schema.</p>
           {% set review_groups = [
             ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
-            ('Pipeline', ['pipeline', 'mdf_parsing_guide']),
+            ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'additional_instructions']),
             ('Model', ['stage_1_model', 'stage_2_pass_1_model', 'stage_2_pass_2_model']),
             ('Agentic', ['agentic'])
           ] %}
@@ -42,8 +42,8 @@
             <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
           </div>
           <p class="local-data">Files and credentials stay on this computer. Secrets are never included in this review.</p>
-          <form class="actions review-start-form" method="post" action="/runs/{{ run_id }}/start">
-            <button class="primary" type="submit">Start run</button>
+          <form class="actions review-start-form" method="post" action="{{ continuation_action | default('/runs/' ~ run_id ~ '/start', true) }}">
+            <button class="primary" type="submit">{{ continuation_label | default('Start run', true) }}</button>
           </form>
         </aside>
       </div>

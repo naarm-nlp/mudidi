@@ -531,21 +531,32 @@ def create_app(
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": run_form.to_summary(), "run_id": run_id},
+            context={
+                "summary": run_form.to_summary(),
+                "run_id": run_id,
+                "continuation_action": f"/runs/{run_id}/start",
+                "continuation_label": "Start run",
+            },
         )
     @app.get("/runs/{run_id}/review", response_class=HTMLResponse)
     async def review_prepared_run(request: Request, run_id: str) -> HTMLResponse:
         """Render the persisted non-secret review for a prepared run."""
 
         try:
-            app.state.run_store.get_run(run_id)
+            run = app.state.run_store.get_run(run_id)
             config = app.state.job_controller.load_inference_config(run_id)
         except (KeyError, OSError, ValidationError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
+        continuation_action, continuation_label = _review_continuation(run)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": _config_summary(config), "run_id": run_id},
+            context={
+                "summary": _config_summary(config),
+                "run_id": run_id,
+                "continuation_action": continuation_action,
+                "continuation_label": continuation_label,
+            },
         )
 
 
@@ -634,8 +645,14 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=404, detail="unknown provider") from exc
         app.state.credential_vault.clear_persistent(provider)
+        status = app.state.credential_vault.status(provider)
         return JSONResponse(
-            {"status": "deleted", "provider": provider.value},
+            {
+                "status": "deleted",
+                "provider": provider.value,
+                "available": status.available,
+                "source": status.source.value,
+            },
             headers={"Cache-Control": "no-store"},
         )
 
@@ -669,11 +686,15 @@ def create_app(
     async def active_run(request: Request) -> HTMLResponse:
         """Render the currently active worker, if any."""
 
-        active = app.state.run_store.list_active_runs()
+        active = [
+            view
+            for run in app.state.run_store.list_active_runs()
+            if (view := _run_view(app.state.run_store, run))["is_active"]
+        ]
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="active.html",
-            context={"runs": [_run_view(app.state.run_store, run) for run in active]},
+            context={"runs": active},
         )
 
     @app.get("/history", response_class=HTMLResponse)
@@ -1430,6 +1451,22 @@ def _preset_form_state(
         ]
         put("profile_other_information_types", profile.other_information_types)
     return state
+
+
+_RESUMABLE_REVIEW_PHASES = frozenset(
+    {"stage1", "parse_rule_review", "stage2_pass2"}
+)
+
+
+def _review_continuation(run: RunRecord) -> tuple[str, str]:
+    """Choose the safe continuation for a prepared run review."""
+
+    if (
+        run.status in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED}
+        and run.resume_phase in _RESUMABLE_REVIEW_PHASES
+    ):
+        return f"/runs/{run.run_id}/resume", "Resume run"
+    return f"/runs/{run.run_id}/start", "Start run"
 
 
 def _read_preset_text(path: Path | None) -> str | None:
