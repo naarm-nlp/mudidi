@@ -57,7 +57,7 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; overflow-x: clip; background-image: radial-gradient(var(--color-dot) 1px, transparent 1px); background-size: 24px 24px; }
+body { margin: 0; min-height: 100vh; background-image: radial-gradient(var(--color-dot) 1px, transparent 1px); background-size: 24px 24px; }
 .app-shell { min-width: 0; min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
 a { color: inherit; text-decoration: none; }
 button,
@@ -95,10 +95,10 @@ h1, h2, h3 { text-transform: uppercase; font-weight: 900; letter-spacing: -.02em
 .page-workspace { width: min(1220px, 100%); margin: 0 auto; padding: 0 var(--space-5) var(--space-8); }
 .table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
 .status { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 8px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.status--ready, .status.ready { background: var(--color-success-soft); }
-.status--running, .status.running { color: var(--color-on-accent); background: var(--color-accent); }
-.status--pending, .status.pending { background: var(--color-warning-soft); }
-.status--blocked, .status.blocked, .status--failed, .status.failed { background: var(--color-danger-soft); }
+.status--ready { background: var(--color-success-soft); }
+.status--running { color: var(--color-on-accent); background: var(--color-accent); }
+.status--pending { background: var(--color-warning-soft); }
+.status--blocked, .status--failed { background: var(--color-danger-soft); }
 .task-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
 .task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2); min-width: 0; padding: var(--space-3); border: var(--border-width) solid var(--color-line); color: var(--color-ink); background: var(--color-panel); }
 .task-card:focus-within, .task-card.is-selected, .task-card:has(input:checked) { background: var(--color-accent-soft); box-shadow: var(--shadow-sm); }
@@ -312,10 +312,10 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .editor-heading h2 { margin-bottom: 0; font-size: 19px; }
 .editor-heading button, .approval-bar button { padding: 8px 12px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-ink); background: var(--color-panel); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
 .editor-rows { display: grid; gap: 9px; margin-top: 14px; }
-.editor-row { display: grid; grid-template-columns: 150px 1fr 38px; gap: 8px; }
-.editor-row.single { grid-template-columns: 1fr 38px; }
+.editor-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) max-content; gap: 8px; min-width: 0; }
+.editor-row.single { grid-template-columns: minmax(0, 1fr) max-content; }
 .editor-row input { min-width: 0; padding: 9px 11px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-panel); }
-.editor-row button { border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-ink); background: var(--color-danger-soft); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
+.editor-row button { min-width: 0; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-ink); background: var(--color-danger-soft); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; }
 .approval-bar { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 30px -28px -28px; padding: 16px 28px; border-top: var(--border-width) solid var(--color-line); background: var(--color-panel); }
 .approval-bar div { margin-right: auto; }
 .approval-bar p { margin: 3px 0 0; color: var(--color-muted); font-size: 12px; }
@@ -416,4 +416,6 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .task-card-grid { grid-template-columns: 1fr; }
   .action-bar { align-items: stretch; flex-direction: column; }
   .action-bar-actions { justify-content: stretch; }
+  .editor-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .editor-row:not(.single) button { grid-column: 1 / -1; justify-self: start; }
 }
