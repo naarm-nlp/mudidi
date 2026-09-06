@@ -529,6 +529,21 @@ def create_app(
             name="review.html",
             context={"summary": run_form.to_summary(), "run_id": run_id},
         )
+    @app.get("/runs/{run_id}/review", response_class=HTMLResponse)
+    async def review_prepared_run(request: Request, run_id: str) -> HTMLResponse:
+        """Render the persisted non-secret review for a prepared run."""
+
+        try:
+            app.state.run_store.get_run(run_id)
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={"summary": _config_summary(config), "run_id": run_id},
+        )
+
 
     @app.post("/runs/{run_id}/start")
     async def start_prepared_run(request: Request, run_id: str) -> HTMLResponse:

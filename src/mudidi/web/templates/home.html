@@ -314,14 +314,14 @@
                 <legend>Custom verification</legend>
                 <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
                 <div class="form-grid">
-                  <label{% if errors_by_field.verify_stage1 %} class="field-invalid" data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
-                  <label{% if errors_by_field.verify_stage2 %} class="field-invalid" data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
-                  <label{% if errors_by_field.max_iterations %} class="field-invalid" data-field-error="max_iterations"{% endif %}>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2">{% if errors_by_field.max_iterations %}<small class="field-error-message">{{ errors_by_field.max_iterations }}</small>{% endif %}</label>
-                  <label{% if errors_by_field.min_retry_confidence %} class="field-invalid" data-field-error="min_retry_confidence"{% endif %}>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55">{% if errors_by_field.min_retry_confidence %}<small class="field-error-message">{{ errors_by_field.min_retry_confidence }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.verify_stage1 %} class="field-invalid" data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.verify_stage2 %} class="field-invalid" data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.max_iterations %} class="field-invalid" data-field-error="max_iterations"{% endif %}>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2" disabled>{% if errors_by_field.max_iterations %}<small class="field-error-message">{{ errors_by_field.max_iterations }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.min_retry_confidence %} class="field-invalid" data-field-error="min_retry_confidence"{% endif %}>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55" disabled>{% if errors_by_field.min_retry_confidence %}<small class="field-error-message">{{ errors_by_field.min_retry_confidence }}</small>{% endif %}</label>
                   {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
                     <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
                       <label>{{ label }} provider
-                        <select name="{{ role }}_provider" data-agentic-provider>
+                        <select name="{{ role }}_provider" data-agentic-provider disabled>
                           <option value="anthropic">Anthropic</option>
                           <option value="openai">OpenAI</option>
                           <option value="gemini" selected>Google Gemini</option>
@@ -330,7 +330,7 @@
                         </select>
                       </label>
                       <label>{{ label }} model
-                        <select name="{{ role }}_model" data-agentic-model>
+                        <select name="{{ role }}_model" data-agentic-model disabled>
                           <option value="">Use stage model</option>
                           {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
                           <option value="__other__" data-model-provider="other">Other model…</option>
@@ -339,10 +339,10 @@
                       </label>
                     </div>
                   {% endfor %}
-                  <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
-                  <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                  <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
-                  <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
+                  <label>Evaluator reasoning<select name="evaluator_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
+                  <label>Rewriter reasoning<select name="rewriter_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                  <label>Deterministic patches<select name="verifier_patches" disabled><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                  <label>Concrete retry evidence<select name="require_concrete_retry" disabled><option value="true">Required</option><option value="false">Not required</option></select></label>
                 </div>
               </fieldset>
               <div class="wizard-actions"><button type="button" data-wizard-back="model">← Back</button><button class="primary" type="submit" data-wizard-submit>Review run →</button></div>

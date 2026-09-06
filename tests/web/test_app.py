@@ -102,26 +102,41 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Other / advanced provider" in response.text
     assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
-    assert 'name="evaluator_provider"' in response.text
-    assert 'name="evaluator_model"' in response.text
-    assert 'name="evaluator_custom_model"' in response.text
-    assert 'name="rewriter_provider"' in response.text
-    assert 'name="rewriter_model"' in response.text
-    assert 'name="rewriter_custom_model"' in response.text
+    assert 'name="verify_stage2"' in response.text
+    assert 'name="verify_stage1" type="checkbox" value="true" checked disabled' in response.text
+    assert 'name="verify_stage2" type="checkbox" value="true" checked disabled' in response.text
+    assert 'name="agentic" value="false" checked' in response.text
+    assert 'name="agentic" value="true"' in response.text
+    assert '<fieldset class="agentic-settings" data-agentic-settings hidden>' in response.text
+    for field in (
+        "max_iterations",
+        "min_retry_confidence",
+        "evaluator_provider",
+        "evaluator_model",
+        "evaluator_reasoning",
+        "rewriter_provider",
+        "rewriter_model",
+        "rewriter_reasoning",
+        "verifier_patches",
+        "require_concrete_retry",
+    ):
+        assert f'name="{field}"' in response.text
     assert 'data-agentic-model-group="evaluator"' in response.text
     assert 'data-agentic-model-group="rewriter"' in response.text
     assert 'list="model-catalog"' not in response.text
     assert (
-        'name="evaluator_reasoning"><option value="">Use default</option>'
+        'name="evaluator_reasoning" disabled><option value="">Use default</option>'
         '<option value="none">None</option><option value="low">Low</option>'
         '<option value="medium">Medium</option><option value="high" selected>High</option>'
         in response.text
     )
     assert (
-        'name="rewriter_reasoning"><option value="">Use default</option>'
+        'name="rewriter_reasoning" disabled><option value="">Use default</option>'
         '<option value="none">None</option><option value="low" selected>Low</option>'
         in response.text
     )
+    assert 'data-wizard-submit' in response.text
+    assert "Review run" in response.text
     assert 'name="page_limit"' not in response.text
     assert 'name="media_reference"' not in response.text
     assert 'name="prompt_cache"' not in response.text
@@ -273,6 +288,10 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert "padding: 20px 24px" in response.text
     assert ".preset-loader > label" in response.text
     assert ".preset-loader .primary" in response.text
+    assert ".review-layout" in response.text
+    assert ".review-groups" in response.text
+    assert ".review-actions" in response.text
+    assert ".credential-blocked" in response.text
 
 
 def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:

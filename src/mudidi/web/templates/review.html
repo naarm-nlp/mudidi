@@ -4,22 +4,47 @@
     <div class="page-shell">
       <div class="review-page">
       <a class="back-link" href="/">← Edit configuration</a>
-      <section class="panel review-card">
-        <span class="eyebrow">Step 5 of 5</span>
-        <h1>Review your run</h1>
-        <p>These values were validated through MUDIDI's production configuration schema.</p>
-        <dl>
-          {% for label, value in summary.items() %}
-          <div><dt>{{ label.replace('_', ' ') | title }}</dt><dd>{{ value }}</dd></div>
-          {% endfor %}
-        </dl>
-        <div class="checkpoint">
-          <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
-          <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
-        </div>
-        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for MDF parsing guide review before parsing pages into MDF.</span><button class="primary" type="submit">Start run</button></form>
-        <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets"><label for="preset-name">Save these non-secret settings as a preset</label><div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div></form>
-      </section>
+      <div class="review-layout">
+        <section class="panel review-card">
+          <span class="eyebrow">Step 5 of 5</span>
+          <h1>Review your run</h1>
+          <p>These values were validated through MUDIDI's production configuration schema.</p>
+          {% set review_groups = [
+            ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
+            ('Pipeline', ['pipeline', 'mdf_parsing_guide']),
+            ('Model', ['stage_1_model', 'stage_2_pass_1_model', 'stage_2_pass_2_model']),
+            ('Agentic', ['agentic'])
+          ] %}
+          <div class="review-groups">
+            {% for heading, keys in review_groups %}
+            <section class="review-group" aria-labelledby="review-{{ heading | lower }}-title">
+              <h2 id="review-{{ heading | lower }}-title">{{ heading }}</h2>
+              <dl class="review-grid">
+                {% for key in keys if key in summary %}
+                <div><dt>{{ key.replace('_', ' ') | title }}</dt><dd>{{ summary[key] }}</dd></div>
+                {% endfor %}
+              </dl>
+            </section>
+            {% endfor %}
+          </div>
+        </section>
+        <aside class="review-actions panel">
+          <span class="eyebrow">Run readiness</span>
+          <h2>Ready to start</h2>
+          <div class="checkpoint">
+            <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
+            <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
+          </div>
+          <p class="local-data">Files and credentials stay on this computer. Secrets are never included in this review.</p>
+          <form class="actions review-start-form" method="post" action="/runs/{{ run_id }}/start">
+            <button class="primary" type="submit">Start run</button>
+          </form>
+        </aside>
+      </div>
+      <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets">
+        <label for="preset-name">Save these non-secret settings as a preset</label>
+        <div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div>
+      </form>
       </div>
     </div>
 {% endblock %}
