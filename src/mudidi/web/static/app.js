@@ -983,6 +983,7 @@ const liveEventNames = [
   "parse_rules.generated",
   "run.completed",
   "run.failed",
+  "run.cancelled",
 ];
 let liveEventSource = null;
 
@@ -1047,6 +1048,10 @@ if (liveToggle) {
     setStreamStatus("Paused");
   });
 }
+window.addEventListener("pageshow", () => {
+  if (liveToggle?.dataset.livePaused === "true") return;
+  startLiveUpdates();
+});
 window.addEventListener("pagehide", stopLiveUpdates);
 
 const artifactFilters = document.querySelector("[data-artifact-filters]");

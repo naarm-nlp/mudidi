@@ -120,6 +120,36 @@ def test_usage_summary_aggregates_page_usage(tmp_path: Path) -> None:
     assert [row.total_tokens for row in usage.breakdown] == [40, 30, 50]
     assert [row.cost_usd for row in usage.breakdown] == [0.004, 0.003, None]
 
+def test_usage_summary_ignores_duplicate_agentic_attempt_usage_files(
+    tmp_path: Path,
+) -> None:
+    app, _client, run_id, output = _prepared_app(tmp_path)
+    agentic = output / "stage-2/page_1/agentic/stage2"
+    agentic.mkdir(parents=True)
+    for name, tokens, cost in (
+        ("attempt_0_verifier_usage.json", 900, 0.9),
+        ("attempt_1_rewrite_usage.json", 700, 0.7),
+    ):
+        (agentic / name).write_text(
+            json.dumps({"total_tokens": tokens, "total_cost_usd": cost}),
+            encoding="utf-8",
+        )
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 120
+    assert usage.total_cost_usd == 0.007
+    assert usage.files_scanned == 1
+    assert sum(row.total_tokens for row in usage.breakdown) == usage.total_tokens
+    assert sum(
+        row.cost_usd for row in usage.breakdown if row.cost_usd is not None
+    ) == usage.total_cost_usd
+    assert [(row.stage, row.total_tokens, row.cost_usd) for row in usage.breakdown] == [
+        ("Stage 1", 40, 0.004),
+        ("Stage 2 · field discovery", 30, 0.003),
+        ("Stage 2 · MDF extraction", 50, None),
+    ]
+
 
 def test_run_usage_summary_derives_page_totals_without_run_token_total(
     tmp_path: Path,

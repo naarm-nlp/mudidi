@@ -562,6 +562,142 @@ if (formDataFor(runForm).has("evaluator_custom_model")) {
     assert result.returncode == 0, result.stderr
 
 
+def test_live_updates_follow_bfcache_lifecycle_without_duplicate_sources() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+const source = fs.readFileSync(process.argv[1], "utf8");
+
+class Element {
+  constructor() {
+    this.dataset = {};
+    this.hidden = false;
+    this.listeners = {};
+    this.attributes = {};
+    this.textContent = "";
+  }
+  addEventListener(type, listener) {
+    this.listeners[type] = listener;
+  }
+  querySelector(selector) {
+    return this.children?.[selector] || null;
+  }
+  setAttribute(name, value) {
+    this.attributes[name] = String(value);
+  }
+}
+
+const makePage = ({withToggle}) => {
+  const events = {};
+  const sources = [];
+  const meta = {content: "/runs/live/events?after=3"};
+  const streamStatus = new Element();
+  const toggle = withToggle ? new Element() : null;
+  if (toggle) {
+    const pauseLabel = new Element();
+    const resumeLabel = new Element();
+    resumeLabel.hidden = true;
+    toggle.children = {
+      "[data-live-pause-label]": pauseLabel,
+      "[data-live-resume-label]": resumeLabel,
+    };
+  }
+  class EventSourceStub {
+    constructor(url) {
+      this.url = url;
+      this.closed = false;
+      this.listeners = {};
+      sources.push(this);
+    }
+    addEventListener(type, listener) {
+      this.listeners[type] = listener;
+    }
+    close() {
+      this.closed = true;
+    }
+  }
+  const window = {
+    EventSource: EventSourceStub,
+    confirm: () => true,
+    fetch: async () => { throw new Error("not used"); },
+    location: {origin: "http://test", reload() {}},
+    addEventListener(type, listener) {
+      (events[type] ||= []).push(listener);
+    },
+    sessionStorage: {getItem: () => null, setItem() {}},
+  };
+  const document = {
+    body: {append() {}},
+    addEventListener() {},
+    createElement() { return new Element(); },
+    querySelector(selector) {
+      if (selector === 'meta[name="mudidi-events"]') return meta;
+      if (selector === "[data-stream-status]") return streamStatus;
+      if (selector === "[data-live-toggle]") return toggle;
+      return null;
+    },
+    querySelectorAll() { return []; },
+  };
+  const context = vm.createContext({
+    URL,
+    URLSearchParams,
+    console,
+    document,
+    queueMicrotask,
+    window,
+    EventSource: EventSourceStub,
+  });
+  vm.runInContext(source, context);
+  return {
+    sources,
+    streamStatus,
+    toggle,
+    dispatch(type, event = {}) {
+      (events[type] || []).forEach((listener) => listener(event));
+    },
+  };
+};
+
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+
+const logs = makePage({withToggle: true});
+assert(logs.sources.length === 1, "logs did not open its initial source");
+logs.dispatch("pageshow", {persisted: true});
+assert(logs.sources.length === 1, "pageshow duplicated an open logs source");
+logs.dispatch("pagehide", {persisted: true});
+assert(logs.sources[0].closed, "pagehide did not close the bfcache logs source");
+logs.dispatch("pageshow", {persisted: true});
+assert(logs.sources.length === 2, "pageshow did not restart bfcache logs");
+
+logs.toggle.listeners.click();
+assert(logs.toggle.dataset.livePaused === "true", "logs pause state was not set");
+assert(logs.streamStatus.textContent === "Paused", "logs did not report Paused");
+logs.dispatch("pagehide", {persisted: true});
+logs.dispatch("pageshow", {persisted: true});
+assert(logs.sources.length === 2, "paused logs restarted on pageshow");
+assert(logs.streamStatus.textContent === "Paused", "paused logs status changed");
+
+const otherLivePage = makePage({withToggle: false});
+assert(otherLivePage.sources.length === 1, "other live page did not open");
+otherLivePage.dispatch("pagehide", {persisted: true});
+otherLivePage.dispatch("pageshow", {persisted: true});
+assert(otherLivePage.sources.length === 2, "other live page did not restart");
+otherLivePage.dispatch("pageshow", {persisted: true});
+assert(otherLivePage.sources.length === 2, "other live page duplicated its source");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/")
 
