@@ -176,13 +176,13 @@ class _SemanticParser(HTMLParser):
         return name.strip()
 
     def explicit_label_name(self, value: object) -> str:
-        target = str(value or "").strip()
+        target = str(value or "")
         if not target:
             return ""
         names = (
             _normalise_accessible_text(label["text"])
             for label in self._labels
-            if str(label["for"]).strip() == target and not bool(label["hidden"])
+            if str(label["for"]) == target and not bool(label["hidden"])
         )
         return " ".join(name for name in names if name)
 
@@ -256,6 +256,44 @@ def test_semantic_parser_handles_void_inputs_and_hidden_siblings() -> None:
     )
 
     _assert_semantic_shell(response)
+
+
+def test_semantic_shell_accepts_exact_explicit_label_association() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<label for="display-name"> Display \n name </label>'
+            '<input id="display-name">'
+            "</main>"
+        )
+    )
+
+    _assert_semantic_shell(response)
+
+
+@pytest.mark.parametrize(
+    ("label_for", "control_id"),
+    (
+        (" display-name", "display-name"),
+        ("display-name ", "display-name"),
+        ("display-name", " display-name"),
+        ("display-name", "display-name "),
+    ),
+)
+def test_semantic_shell_rejects_whitespace_mismatched_explicit_label_association(
+    label_for: str, control_id: str
+) -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            f'<label for="{label_for}">Display name</label>'
+            f'<input id="{control_id}">'
+            "</main>"
+        )
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
 
 
 def test_semantic_parser_does_not_leak_hidden_depth_from_void_inputs() -> None:
