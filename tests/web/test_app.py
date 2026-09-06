@@ -38,7 +38,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     for step in ("input", "pipeline", "model", "agentic"):
         assert f'id="wizard-{step}"' in response.text
         assert f'data-wizard-panel="{step}"' in response.text
-    assert response.text.count("data-wizard-marker=") == 5
+    assert response.text.count('aria-current="step"') == 1
+    assert 'data-wizard-marker="input" aria-current="step"' in response.text
     assert 'action="/runs/preview"' in response.text
     assert 'data-wizard-submit' in response.text
     panel_order = [

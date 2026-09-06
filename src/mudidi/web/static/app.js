@@ -9,6 +9,9 @@ const wizardOrder = ["input", "pipeline", "model", "agentic"];
 const wizardStorageKey = "mudidi:new-run-wizard:v1";
 let activeWizardStep = "input";
 let wizardErrorSequence = 0;
+let firstInvalidWizardField = null;
+let invalidWizardFields = [];
+let invalidAttemptResetScheduled = false;
 
 const persistWizardStep = () => {
   if (!wizard) return;
@@ -26,6 +29,12 @@ const wizardFieldOwner = (field) => (
   || field.parentElement
 );
 
+const wizardFieldErrorAnchor = (field) => field.closest(".input-row") || field;
+
+const wizardFieldErrorScope = (field) => (
+  wizardFieldErrorAnchor(field).parentElement || wizardFieldOwner(field)
+);
+
 const wizardFieldErrorId = (field) => {
   if (!field.dataset.wizardErrorId) {
     const base = (field.id || field.name || "field").replace(/[^a-z0-9_-]+/gi, "-");
@@ -35,11 +44,11 @@ const wizardFieldErrorId = (field) => {
 };
 
 const wizardClientError = (field) => {
-  const owner = wizardFieldOwner(field);
-  if (!owner) return null;
+  const scope = wizardFieldErrorScope(field);
+  if (!scope) return null;
   const id = field.dataset.wizardErrorId;
   return id
-    ? [...owner.querySelectorAll(".field-error-message")]
+    ? [...scope.querySelectorAll(".field-error-message")]
       .find((message) => message.dataset.wizardFieldErrorFor === id)
     : null;
 };
@@ -54,8 +63,7 @@ const markWizardFieldInvalid = (field) => {
     message = document.createElement("small");
     message.className = "field-error-message";
     message.dataset.wizardFieldErrorFor = errorId;
-    const anchor = field.closest(".input-row") || field;
-    anchor.insertAdjacentElement("afterend", message);
+    wizardFieldErrorAnchor(field).insertAdjacentElement("afterend", message);
   }
   message.id = errorId;
   message.textContent = field.validationMessage;
@@ -130,7 +138,8 @@ const setWizardStep = (step, { focus = true } = {}) => {
   document.querySelectorAll("[data-wizard-marker]").forEach((marker) => {
     const markerIndex = [...marker.parentElement.children].indexOf(marker);
     const activeIndex = wizardOrder.indexOf(step);
-    marker.toggleAttribute("aria-current", marker.dataset.wizardMarker === step);
+    if (marker.dataset.wizardMarker === step) marker.setAttribute("aria-current", "step");
+    else marker.removeAttribute("aria-current");
     marker.classList.toggle("is-active", marker.dataset.wizardMarker === step);
     marker.classList.toggle("is-complete", markerIndex < activeIndex);
   });
@@ -460,6 +469,33 @@ synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
 
+const beginWizardInvalidAttempt = () => {
+  firstInvalidWizardField = null;
+  invalidWizardFields = [];
+};
+
+const scheduleWizardInvalidAttemptReset = () => {
+  if (invalidAttemptResetScheduled) return;
+  invalidAttemptResetScheduled = true;
+  queueMicrotask(() => {
+    firstInvalidWizardField = invalidWizardFields.reduce((candidate, field) => {
+      if (!candidate) return field;
+      return candidate.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING
+        ? candidate
+        : field;
+    }, null);
+    if (firstInvalidWizardField) {
+      const panel = wizardPanelForField(firstInvalidWizardField);
+      if (panel?.dataset.wizardPanel && panel.dataset.wizardPanel !== activeWizardStep) {
+        setWizardStep(panel.dataset.wizardPanel, { focus: false });
+      }
+      firstInvalidWizardField.focus();
+    }
+    invalidWizardFields = [];
+    invalidAttemptResetScheduled = false;
+  });
+};
+
 if (wizard) {
   let initialWizardStep = "input";
   const firstServerError = wizard.querySelector("[data-field-error]");
@@ -493,6 +529,15 @@ if (wizard) {
       setWizardStep(previousStep);
     });
   });
+  wizard.querySelectorAll("[data-wizard-submit]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      beginWizardInvalidAttempt();
+      const panel = button.closest("[data-wizard-panel]");
+      if (!panel || validateWizardPanel(panel)) return;
+      event.preventDefault();
+      runForm?.reportValidity();
+    });
+  });
 }
 
 if (runForm) {
@@ -507,11 +552,9 @@ if (runForm) {
   runForm.addEventListener("invalid", (event) => {
     runForm.classList.add("was-validated");
     const field = event.target;
-    const panel = wizardPanelForField(field);
-    if (panel?.dataset.wizardPanel && panel.dataset.wizardPanel !== activeWizardStep) {
-      setWizardStep(panel.dataset.wizardPanel, { focus: false });
-    }
+    invalidWizardFields.push(field);
     markWizardFieldInvalid(field);
+    scheduleWizardInvalidAttemptReset();
   }, true);
   runForm.addEventListener("submit", () => {
     runForm.classList.add("was-validated");
