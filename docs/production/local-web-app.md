@@ -107,10 +107,7 @@ sending the complete multipart form to `/runs/preview`. Browser checks are only
 an early convenience: the server remains authoritative for required fields,
 PDF page bounds, profile completeness, model settings, and the rest of the
 production configuration.
-A rejected submission returns to **New Run** with safe, user-facing validation
-details. Only when the server associates an error with a rendered field does
-the wizard open that field's step and show a field-specific explanation; other
-failures still return to **New Run** without field-specific focus.
+A rejected submission always returns to **New Run** with safe, user-facing validation details. When the server ties an error to a specific field, the wizard opens that field's step and shows the field-specific explanation, but it does not move keyboard focus. Provider errors may include specific text while remaining in the **New Run** summary, and errors not tied to a field remain there too.
 
 The **Input** step asks for:
 
