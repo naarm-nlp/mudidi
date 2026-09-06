@@ -101,6 +101,61 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     assert "Stage 2 Pass 2 Model" in response.text
     assert "openai/gpt-5.4" in response.text
 
+@pytest.mark.parametrize(
+    ("pipeline", "stage1_instructions", "stage2_instructions", "expected"),
+    [
+        ("transcription", "Mark uncertain letters.", None, "Stage 1"),
+        ("structure", None, "Use the custom nt marker.", "Stage 2"),
+        (
+            "complete",
+            "Mark uncertain letters.",
+            "Use the custom nt marker.",
+            "Stage 1, Stage 2",
+        ),
+        (
+            "transcription",
+            "Mark uncertain letters.",
+            "Do not claim this disabled instruction.",
+            "Stage 1",
+        ),
+    ],
+)
+def test_preview_review_summarizes_enabled_additional_instructions(
+    tmp_path: Path,
+    pipeline: str,
+    stage1_instructions: str | None,
+    stage2_instructions: str | None,
+    expected: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    data = {
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": pipeline,
+        "provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "dictionary_pages": "1",
+    }
+    if stage1_instructions is not None:
+        data["stage1_additional_instructions"] = stage1_instructions
+    if stage2_instructions is not None:
+        data["stage2_additional_instructions"] = stage2_instructions
+
+    response = client.post(
+        "/runs/preview",
+        data=data,
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    match = re.search(
+        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
+        response.text,
+    )
+    assert match is not None
+    assert match.group(1) == expected
+
 
 def test_prepared_review_preserves_additional_instructions_summary(
     tmp_path: Path,
