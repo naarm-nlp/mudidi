@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from html.parser import HTMLParser
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
+
+from fastapi import Request
+from fastapi.responses import HTMLResponse
 from fastapi.testclient import TestClient
 
 from mudidi.config.yaml_config import InferenceConfig
-from mudidi.web.app import create_app
+from mudidi.web.app import _TEMPLATES, create_app
 from mudidi.web.models import Provider
 from mudidi.web.runs import RunStatus
 
@@ -17,13 +22,30 @@ class _SemanticParser(HTMLParser):
     """Collect response-level landmarks without depending on CSS classes."""
 
     _CONTROL_TAGS = {"button", "input", "select", "textarea"}
+    _VOID_TAGS = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
 
     def __init__(self) -> None:
         super().__init__()
         self._hidden_depth = 0
         self._label_depth = 0
-        self._open_controls: list[int] = []
-        self._open_headings: list[int] = []
+        self._open_elements: list[dict[str, object]] = []
+        self._label_for_ids: set[str] = set()
+        self._element_text: dict[str, str] = {}
         self._open_workspace_nav = 0
         self.mains = 0
         self.headings: list[tuple[int, bool]] = []
@@ -32,59 +54,115 @@ class _SemanticParser(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
-        hidden = self._hidden_depth > 0 or "hidden" in attributes
-        if hidden:
-            self._hidden_depth += 1
-        if tag == "main":
+        own_hidden = (
+            "hidden" in attributes or attributes.get("aria-hidden") == "true"
+        )
+        hidden = self._hidden_depth > 0 or own_hidden
+        if tag == "main" and not hidden:
             self.mains += 1
         if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
-            index = len(self.headings)
             self.headings.append((int(tag[1]), not hidden))
-            self._open_headings.append(index)
         if tag == "label":
             self._label_depth += 1
+            if attributes.get("for"):
+                self._label_for_ids.add(str(attributes["for"]))
+        element_id = attributes.get("id")
+        if element_id:
+            self._element_text.setdefault(str(element_id), "")
+        control_index: int | None = None
         if tag in self._CONTROL_TAGS:
-            index = len(self.controls)
+            control_index = len(self.controls)
             self.controls.append(
                 {
                     "tag": tag,
                     "hidden": hidden,
                     "label_depth": self._label_depth,
+                    "id": element_id or "",
                     "aria_label": attributes.get("aria-label"),
                     "aria_labelledby": attributes.get("aria-labelledby"),
-                    "type": attributes.get("type", ""),
+                    "type": str(attributes.get("type", "")).casefold(),
                     "text": "",
                 }
             )
-            self._open_controls.append(index)
         if (
             tag in {"a", "span"}
+            and not hidden
             and self._open_workspace_nav
             and attributes.get("aria-current") == "page"
         ):
             self.workspace_current.append(tag)
-        if tag == "nav" and attributes.get("aria-label") == "Run workspace":
+        if tag == "nav" and not hidden and attributes.get("aria-label") == "Run workspace":
             self._open_workspace_nav += 1
+        if tag not in self._VOID_TAGS:
+            self._open_elements.append(
+                {
+                    "tag": tag,
+                    "own_hidden": own_hidden,
+                    "hidden": hidden,
+                    "id": str(element_id) if element_id else "",
+                    "control_index": control_index,
+                }
+            )
+            if own_hidden:
+                self._hidden_depth += 1
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.handle_starttag(tag, attrs)
         self.handle_endtag(tag)
 
     def handle_data(self, data: str) -> None:
-        for index in self._open_controls:
-            self.controls[index]["text"] = str(self.controls[index]["text"]) + data
+        if not data:
+            return
+        for element in self._open_elements:
+            element_id = str(element["id"])
+            if element_id:
+                self._element_text[element_id] += data
+            control_index = element["control_index"]
+            if (
+                element["tag"] == "button"
+                and control_index is not None
+                and not bool(element["hidden"])
+                and self._hidden_depth == 0
+            ):
+                self.controls[control_index]["text"] = (
+                    str(self.controls[control_index]["text"]) + data
+                )
 
     def handle_endtag(self, tag: str) -> None:
-        if tag == "nav" and self._open_workspace_nav:
-            self._open_workspace_nav -= 1
-        if tag in self._CONTROL_TAGS and self._open_controls:
-            self._open_controls.pop()
-        if tag == "label" and self._label_depth:
-            self._label_depth -= 1
-        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"} and self._open_headings:
-            self._open_headings.pop()
-        if self._hidden_depth:
-            self._hidden_depth -= 1
+        if tag in self._VOID_TAGS:
+            return
+        for index in range(len(self._open_elements) - 1, -1, -1):
+            if self._open_elements[index]["tag"] != tag:
+                continue
+            closing_elements = self._open_elements[index:]
+            del self._open_elements[index:]
+            for element in closing_elements:
+                if bool(element["own_hidden"]):
+                    self._hidden_depth -= 1
+                if element["tag"] == "label":
+                    self._label_depth -= 1
+                if element["tag"] == "nav" and self._open_workspace_nav:
+                    self._open_workspace_nav -= 1
+            return
+
+    def labelledby_name(self, value: object) -> str:
+        references = str(value or "").split()
+        if not references or any(
+            reference not in self._element_text for reference in references
+        ):
+            return ""
+        name = " ".join(
+            self._element_text[reference].strip() for reference in references
+        )
+        return name.strip()
+
+    @property
+    def label_for_ids(self) -> set[str]:
+        return self._label_for_ids
+
+
+def _normalise_accessible_text(value: object) -> str:
+    return " ".join(str(value or "").split())
 
 
 def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> None:
@@ -101,14 +179,79 @@ def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> 
     for control in parser.controls:
         if control["hidden"] or control["type"] == "hidden":
             continue
+        tag = str(control["tag"])
+        aria_label = _normalise_accessible_text(control["aria_label"])
+        aria_labelledby = parser.labelledby_name(control["aria_labelledby"])
+        visible_text = _normalise_accessible_text(control["text"])
+        if tag == "button":
+            accessible_name = aria_label or aria_labelledby or visible_text
+            assert accessible_name, control
+            if visible_text and (aria_label or aria_labelledby):
+                # Single-character glyphs such as "i", "×", and "＋" are
+                # decorative button icons rather than visible text labels.
+                visible_label = visible_text.lstrip("＋+×✕←→↑↓ ")
+                if len(visible_label) > 1:
+                    assert (
+                        visible_label.casefold() in accessible_name.casefold()
+                    ), control
+            continue
+        has_nested_label = int(control["label_depth"]) > 0
+        has_explicit_label = (
+            str(control["id"]).strip() in parser.label_for_ids
+            if str(control["id"]).strip()
+            else False
+        )
         assert (
-            str(control["aria_label"] or "").strip()
-            or str(control["aria_labelledby"] or "").strip()
-            or int(control["label_depth"]) > 0
-            or str(control["text"]).strip()
+            aria_label
+            or aria_labelledby
+            or has_nested_label
+            or has_explicit_label
         ), control
     if run_workspace:
         assert len(parser.workspace_current) == 1
+
+
+def test_semantic_parser_handles_void_inputs_and_hidden_siblings() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<div hidden><input type="hidden"></div>'
+            '<label for="name">Name</label><input id="name">'
+            '<button aria-label="Save changes">Save</button>'
+            "</main>"
+        )
+    )
+
+    _assert_semantic_shell(response)
+
+
+@pytest.mark.parametrize(
+    "control",
+    (
+        '<input id="missing-label">',
+        '<select id="missing-label"><option>Choose</option></select>',
+    ),
+)
+def test_semantic_shell_rejects_unlabeled_form_controls(control: str) -> None:
+    response = SimpleNamespace(
+        text=f"<main><h1>Workspace</h1>{control}</main>"
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
+def test_semantic_shell_rejects_mismatched_button_label_name() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<button aria-label="Delete item">Save item</button>'
+            "</main>"
+        )
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
 
 
 def _semantic_matrix(tmp_path: Path) -> list[tuple[str, object, bool]]:
@@ -184,11 +327,28 @@ def _semantic_matrix(tmp_path: Path) -> list[tuple[str, object, bool]]:
     )
     credential = client.post("/runs/credential-run/start")
 
+    @app.get("/form-error", response_class=HTMLResponse)
+    async def form_error(request: Request) -> HTMLResponse:
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="form_error.html",
+            context={
+                "validation_errors": [
+                    {
+                        "field": "Pages",
+                        "message": "Upload one dictionary PDF.",
+                    }
+                ]
+            },
+        )
+
     responses = [
         ("/", client.get("/"), False),
+        ("/form-error", client.get("/form-error"), False),
         ("/active", client.get("/active"), False),
         ("/history", client.get("/history"), False),
         ("/presets", client.get("/presets"), False),
+        ("/runs/workspace-run", client.get("/runs/workspace-run"), True),
         ("/review", client.get("/runs/workspace-run/review"), True),
         ("/credential-required", credential, True),
         ("/parse-rules", client.get("/runs/review-run/parse-rules"), True),
@@ -198,12 +358,13 @@ def _semantic_matrix(tmp_path: Path) -> list[tuple[str, object, bool]]:
         ("/outputs", client.get("/runs/workspace-run/outputs"), True),
         ("/usage", client.get("/runs/workspace-run/usage"), True),
     ]
+    assert len(responses) == 14
     return responses
 
 
 def test_every_reachable_template_variant_has_semantic_shell(tmp_path: Path) -> None:
     for path, response, run_workspace in _semantic_matrix(tmp_path):
-        assert response.status_code in {200, 303, 409}, path
+        assert response.status_code in {200, 303, 409, 422}, path
         if response.status_code == 303:
             continue
         _assert_semantic_shell(response, run_workspace=run_workspace)
