@@ -34,6 +34,22 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Input" in response.text
     assert "Pipeline" in response.text
     assert "MDF parsing guide" in response.text
+    assert 'data-new-run-wizard' in response.text
+    for step in ("input", "pipeline", "model", "agentic"):
+        assert f'id="wizard-{step}"' in response.text
+        assert f'data-wizard-panel="{step}"' in response.text
+    assert response.text.count("data-wizard-marker=") == 5
+    assert 'action="/runs/preview"' in response.text
+    assert 'data-wizard-submit' in response.text
+    panel_order = [
+        response.text.index(f'data-wizard-panel="{step}"')
+        for step in ("input", "pipeline", "model", "agentic")
+    ]
+    assert panel_order == sorted(panel_order)
+    assert 'aria-labelledby="wizard-input-title"' in response.text
+    assert 'aria-labelledby="wizard-pipeline-title"' in response.text
+    assert 'aria-labelledby="wizard-model-title"' in response.text
+    assert 'aria-labelledby="wizard-agentic-title"' in response.text
     assert 'name="dictionary_pages"' in response.text
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
@@ -98,7 +114,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         'name="batch_size"'
     )
     assert response.text.index('name="batch_size"') < response.text.index(
-        "Agentic verification"
+        'data-wizard-panel="agentic"'
     )
     assert 'aria-label="About temperature"' in response.text
     assert 'aria-label="About Stage 1 model reasoning"' in response.text
@@ -152,7 +168,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-11" in response.text
+    assert "/static/app.js?v=dashboard-ui-1" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 

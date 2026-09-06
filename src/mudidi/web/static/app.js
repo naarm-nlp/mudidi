@@ -3,6 +3,154 @@
 const runForm = document.querySelector("form.run-form");
 const runFormStorageKey = "mudidi:new-run-form:v1";
 const presetStateElement = document.querySelector("#preset-form-state");
+const wizard = document.querySelector("[data-new-run-wizard]");
+const wizardPanels = wizard ? [...wizard.querySelectorAll("[data-wizard-panel]")] : [];
+const wizardOrder = ["input", "pipeline", "model", "agentic"];
+const wizardStorageKey = "mudidi:new-run-wizard:v1";
+let activeWizardStep = "input";
+let wizardErrorSequence = 0;
+
+const persistWizardStep = () => {
+  if (!wizard) return;
+  try {
+    window.sessionStorage.setItem(wizardStorageKey, activeWizardStep);
+  } catch (_error) {
+    // Storage may be unavailable in privacy-restricted browser contexts.
+  }
+};
+
+const wizardPanelForField = (field) => field.closest("[data-wizard-panel]");
+
+const wizardFieldOwner = (field) => (
+  field.closest("[data-wizard-field], .dropzone, label, fieldset, .input-row")
+  || field.parentElement
+);
+
+const wizardFieldErrorId = (field) => {
+  if (!field.dataset.wizardErrorId) {
+    const base = (field.id || field.name || "field").replace(/[^a-z0-9_-]+/gi, "-");
+    field.dataset.wizardErrorId = `wizard-field-error-${base}-${++wizardErrorSequence}`;
+  }
+  return field.dataset.wizardErrorId;
+};
+
+const wizardClientError = (field) => {
+  const owner = wizardFieldOwner(field);
+  if (!owner) return null;
+  const id = field.dataset.wizardErrorId;
+  return id
+    ? [...owner.querySelectorAll(".field-error-message")]
+      .find((message) => message.dataset.wizardFieldErrorFor === id)
+    : null;
+};
+
+const markWizardFieldInvalid = (field) => {
+  const owner = wizardFieldOwner(field);
+  if (!owner) return;
+  owner.classList.add("field-invalid");
+  const errorId = wizardFieldErrorId(field);
+  let message = wizardClientError(field);
+  if (!message) {
+    message = document.createElement("small");
+    message.className = "field-error-message";
+    message.dataset.wizardFieldErrorFor = errorId;
+    const anchor = field.closest(".input-row") || field;
+    anchor.insertAdjacentElement("afterend", message);
+  }
+  message.id = errorId;
+  message.textContent = field.validationMessage;
+  const describedBy = new Set((field.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+  describedBy.add(errorId);
+  field.setAttribute("aria-describedby", [...describedBy].join(" "));
+  field.setAttribute("aria-invalid", "true");
+};
+
+const clearWizardFieldInvalid = (field) => {
+  const owner = wizardFieldOwner(field);
+  if (!owner) return;
+  wizardClientError(field)?.remove();
+  const errorId = field.dataset.wizardErrorId;
+  if (errorId) {
+    const describedBy = (field.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((id) => id && id !== errorId);
+    if (describedBy.length) field.setAttribute("aria-describedby", describedBy.join(" "));
+    else field.removeAttribute("aria-describedby");
+  }
+  if (!owner.hasAttribute("data-field-error")) {
+    owner.classList.remove("field-invalid");
+    field.removeAttribute("aria-invalid");
+  }
+};
+
+const wizardFieldLabel = (field) => {
+  const heading = field.closest("label")?.querySelector(".field-heading");
+  const headingText = heading
+    ? [...heading.childNodes]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent.trim())
+      .join(" ")
+      .trim()
+    : "";
+  return (
+    field.getAttribute("aria-label")
+    || headingText
+    || field.name
+    || field.id
+    || "Field"
+  );
+};
+
+const updateWizardValidationSummary = (panel, invalidFields) => {
+  const summary = panel.querySelector("[data-wizard-validation-summary]");
+  if (!summary) return;
+  summary.replaceChildren();
+  summary.hidden = invalidFields.length === 0;
+  if (!invalidFields.length) return;
+  const heading = document.createElement("strong");
+  heading.textContent = "Complete the highlighted fields before continuing.";
+  summary.append(heading);
+  if (invalidFields.length > 1) {
+    const list = document.createElement("ul");
+    invalidFields.forEach((field) => {
+      const item = document.createElement("li");
+      item.textContent = `${wizardFieldLabel(field)}: ${field.validationMessage}`;
+      list.append(item);
+    });
+    summary.append(list);
+  }
+};
+
+const setWizardStep = (step, { focus = true } = {}) => {
+  if (!wizard || !wizardOrder.includes(step)) return;
+  activeWizardStep = step;
+  wizardPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.wizardPanel !== step;
+  });
+  document.querySelectorAll("[data-wizard-marker]").forEach((marker) => {
+    const markerIndex = [...marker.parentElement.children].indexOf(marker);
+    const activeIndex = wizardOrder.indexOf(step);
+    marker.toggleAttribute("aria-current", marker.dataset.wizardMarker === step);
+    marker.classList.toggle("is-active", marker.dataset.wizardMarker === step);
+    marker.classList.toggle("is-complete", markerIndex < activeIndex);
+  });
+  persistWizardStep();
+  if (focus) document.querySelector(`#wizard-${step}-title`)?.focus();
+};
+
+const validateWizardPanel = (panel) => {
+  const fields = [...panel.querySelectorAll("input, select, textarea")]
+    .filter((field) => !field.disabled && !field.closest("[hidden]"));
+  const invalidFields = fields.filter((field) => !field.checkValidity());
+  if (!invalidFields.length) {
+    updateWizardValidationSummary(panel, []);
+    return true;
+  }
+  invalidFields.forEach(markWizardFieldInvalid);
+  updateWizardValidationSummary(panel, invalidFields);
+  invalidFields[0].focus();
+  return false;
+};
 
 const persistRunForm = () => {
   if (!runForm) return;
@@ -226,7 +374,7 @@ const synchronizePipeline = () => {
     const stages = control.dataset.pipelineStages.split(/\s+/);
     const visible = stages.some((stage) => active.has(stage));
     control.hidden = !visible;
-    control.querySelectorAll("input, select").forEach((input) => {
+    control.querySelectorAll("input, select, textarea").forEach((input) => {
       input.disabled = !visible;
     });
   });
@@ -264,7 +412,6 @@ const synchronizeAgentic = () => {
   if (!agenticSettings) return;
   const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
   agenticSettings.hidden = !enabled;
-  if (enabled) agenticSettings.open = true;
   agenticSettings.querySelectorAll("input, select, textarea").forEach((input) => {
     const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
     input.disabled = !enabled || (stageDisabled && input.disabled);
@@ -312,23 +459,59 @@ if (presetStateElement && otherInformationToggle) {
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
+
+if (wizard) {
+  let initialWizardStep = "input";
+  const firstServerError = wizard.querySelector("[data-field-error]");
+  const firstServerPanel = firstServerError && wizardPanelForField(firstServerError);
+  if (firstServerPanel?.dataset.wizardPanel) {
+    initialWizardStep = firstServerPanel.dataset.wizardPanel;
+  } else {
+    try {
+      const storedStep = window.sessionStorage.getItem(wizardStorageKey);
+      if (wizardOrder.includes(storedStep)) initialWizardStep = storedStep;
+    } catch (_error) {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+  }
+  setWizardStep(initialWizardStep, { focus: false });
+
+  wizard.querySelectorAll("[data-wizard-next]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const panel = button.closest("[data-wizard-panel]");
+      const nextStep = button.dataset.wizardNext;
+      if (!panel || !nextStep || !validateWizardPanel(panel)) return;
+      persistRunForm();
+      setWizardStep(nextStep);
+    });
+  });
+  wizard.querySelectorAll("[data-wizard-back]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const previousStep = button.dataset.wizardBack;
+      if (!wizardOrder.includes(previousStep)) return;
+      persistRunForm();
+      setWizardStep(previousStep);
+    });
+  });
+}
+
 if (runForm) {
   runForm.addEventListener("input", (event) => {
     persistRunForm();
-    if (event.target.validity?.valid) {
-      const section = event.target.closest(".dropzone, label, .input-row, fieldset");
-      if (section && !section.hasAttribute("data-field-error")) {
-        section.classList.remove("field-invalid");
-      }
-    }
+    if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
   });
-  runForm.addEventListener("change", persistRunForm);
+  runForm.addEventListener("change", (event) => {
+    persistRunForm();
+    if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
+  });
   runForm.addEventListener("invalid", (event) => {
     runForm.classList.add("was-validated");
-    const invalidSection = event.target.closest(".dropzone, label, .input-row, fieldset");
-    if (invalidSection) invalidSection.classList.add("field-invalid");
-    const details = event.target.closest("details");
-    if (details) details.open = true;
+    const field = event.target;
+    const panel = wizardPanelForField(field);
+    if (panel?.dataset.wizardPanel && panel.dataset.wizardPanel !== activeWizardStep) {
+      setWizardStep(panel.dataset.wizardPanel, { focus: false });
+    }
+    markWizardFieldInvalid(field);
   }, true);
   runForm.addEventListener("submit", () => {
     runForm.classList.add("was-validated");

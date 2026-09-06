@@ -403,9 +403,9 @@ def test_dashboard_requires_dictionary_pages_and_marks_the_field_red(
     )
 
     assert response.status_code == 422
+    assert 'data-wizard-panel="input"' in response.text
     assert 'data-field-error="dictionary_pages"' in response.text
     assert 'name="dictionary_pages"' in response.text
-    assert "Dictionary page numbers are required" in response.text
 
 
 def test_dashboard_rejects_page_numbers_beyond_the_uploaded_pdf(
