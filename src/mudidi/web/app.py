@@ -1647,6 +1647,8 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         RunStatus.COMPLETED,
         RunStatus.FAILED,
         RunStatus.CANCELLED,
+        RunStatus.INTERRUPTED,
+        RunStatus.CREDENTIALS_REQUIRED,
     }:
         progress_stage = next(
             (
@@ -1665,20 +1667,22 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         {},
     )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
-    current_page = next(
-        (
-            int(event["page"])
-            for event in reversed(stage_events)
-            if event.get("type") == "page.started"
-            and not any(
-                later.get("type") == "page.completed"
-                and later.get("stage") == progress_stage
-                and later.get("page") == event.get("page")
-                for later in events[events.index(event) + 1 :]
-            )
-        ),
-        None,
-    )
+    current_page = None
+    if run.status in _LIVE_RUN_STATUSES:
+        current_page = next(
+            (
+                int(event["page"])
+                for event in reversed(stage_events)
+                if event.get("type") == "page.started"
+                and not any(
+                    later.get("type") == "page.completed"
+                    and later.get("stage") == progress_stage
+                    and later.get("page") == event.get("page")
+                    for later in events[events.index(event) + 1 :]
+                )
+            ),
+            None,
+        )
     try:
         review_row = store.get_parse_rule_review(run.run_id)
     except KeyError:

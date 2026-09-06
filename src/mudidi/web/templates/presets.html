@@ -30,9 +30,9 @@
           <div><dt>Agentic</dt><dd>{{ agentic_label }}</dd></div>
         </dl>
         <div class="preset-actions">
-          <a class="primary link-button" href="/?preset={{ preset.preset_id }}" aria-label="Load preset {{ preset.name }}">Use preset</a>
+          <a class="primary link-button" href="/?preset={{ preset.preset_id }}" aria-label="Use preset {{ preset.name }}">Use preset</a>
           <form method="post" action="/presets/{{ preset.preset_id }}/delete" data-confirm-preset-delete="{{ preset.name }}">
-            <button class="preset-delete" type="submit">Remove</button>
+            <button class="preset-delete" type="submit" aria-label="Remove preset {{ preset.name }}">Remove</button>
           </form>
         </div>
       </article>
