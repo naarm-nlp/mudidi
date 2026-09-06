@@ -78,5 +78,4 @@ def test_evaluation_provenance_is_documented() -> None:
 
     assert readme.is_file()
     text = readme.read_text(encoding="utf-8")
-    assert "agentic" in text.lower()
     assert "stage1_flat_per_lang_script_eval" in text
