@@ -598,19 +598,24 @@ const synchronizePipeline = () => {
   if (stage2Container) {
     stage2Container.hidden = !(active.has("pass1") || active.has("pass2"));
   }
+  const agenticEnabled = [...document.querySelectorAll('input[name="agentic"]')]
+    .some((choice) => choice.checked && choice.value === "true");
   [
     ["verify_stage1", active.has("stage1")],
     ["verify_stage2", active.has("pass1") || active.has("pass2")],
   ].forEach(([name, enabled]) => {
     const input = document.querySelector(`input[name="${name}"]`);
     if (!input) return;
-    input.disabled = !enabled;
+    input.disabled = !agenticEnabled || !enabled;
     if (!enabled) input.checked = false;
     else if (input.dataset.userTouched !== "true") input.checked = true;
   });
   synchronizeModels();
   if (typeof synchronizeManual === "function") synchronizeManual();
   updateStage2Summary();
+  if (typeof synchronizeAgenticAvailability === "function") {
+    synchronizeAgenticAvailability(agenticEnabled);
+  }
 };
 
 modelSelects.forEach((select) => {
@@ -649,14 +654,18 @@ document.querySelectorAll('input[name="verify_stage1"], input[name="verify_stage
 
 const agenticChoices = [...document.querySelectorAll('input[name="agentic"]')];
 const agenticSettings = document.querySelector("[data-agentic-settings]");
-const synchronizeAgentic = () => {
+const synchronizeAgenticAvailability = (enabled) => {
   if (!agenticSettings) return;
-  const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
-  agenticSettings.hidden = !enabled;
   agenticSettings.querySelectorAll("input, select, textarea").forEach((input) => {
     const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
     input.disabled = !enabled || (stageDisabled && input.disabled);
   });
+};
+const synchronizeAgentic = () => {
+  if (!agenticSettings) return;
+  const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
+  agenticSettings.hidden = !enabled;
+  synchronizeAgenticAvailability(enabled);
   if (enabled) {
     synchronizePipeline();
     agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));

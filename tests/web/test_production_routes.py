@@ -123,6 +123,124 @@ def test_prepared_review_recovery_route_is_read_only_and_safe(
     assert "Return to review" not in recovered_after_block.text
 
 
+def test_recovered_review_labels_uploaded_guide_as_direct_use(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "parse_rules_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "agentic": "false",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf"),
+            "existing_mdf_guide_file": (
+                "uploaded-guide.json",
+                b'{"markers": [{"marker": "lx", "description": "Headword"}]}',
+                "application/json",
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    run_id = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_id is not None
+    recovered = client.get(f"/runs/{run_id.group(1)}/review")
+
+    assert recovered.status_code == 200
+    assert "Uploaded guide used directly" in recovered.text
+    assert "Human approval required" not in recovered.text
+
+
+def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+
+    parse_run_id = _preview(client, tmp_path)
+    app.state.run_store.transition(parse_run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(parse_run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    app.state.run_store.interrupt(parse_run_id)
+
+    parse_blocked = client.post(f"/runs/{parse_run_id}/resume")
+
+    assert parse_blocked.status_code == 409
+    assert (
+        f'data-continue-action="/runs/{parse_run_id}/resume"'
+        in parse_blocked.text
+    )
+    parse_run = app.state.run_store.get_run(parse_run_id)
+    assert parse_run.status is RunStatus.CREDENTIALS_REQUIRED
+    assert parse_run.resume_phase == "parse_rule_review"
+
+    pass2_run_id = _preview(client, tmp_path)
+    app.state.run_store.transition(pass2_run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(
+        pass2_run_id,
+        RunStatus.AWAITING_PARSE_RULES_REVIEW,
+    )
+    app.state.run_store.authorize_pass2(
+        pass2_run_id,
+        review_id="review-provenance",
+        approval_digest="a" * 64,
+    )
+    app.state.run_store.interrupt(pass2_run_id)
+
+    pass2_blocked = client.post(f"/runs/{pass2_run_id}/resume")
+
+    assert pass2_blocked.status_code == 409
+    assert (
+        f'data-continue-action="/runs/{pass2_run_id}/resume"'
+        in pass2_blocked.text
+    )
+    pass2_run = app.state.run_store.get_run(pass2_run_id)
+    assert pass2_run.status is RunStatus.CREDENTIALS_REQUIRED
+    assert pass2_run.resume_phase == "stage2_pass2"
+    assert pass2_run.review_id == "review-provenance"
+    assert pass2_run.approval_digest == "a" * 64
+
+    app.state.credential_vault.set_temporary(Provider.ANTHROPIC, "sk-ant-resume")
+    continued = client.post(f"/runs/{parse_run_id}/resume", follow_redirects=False)
+
+    assert continued.status_code == 303
+    assert app.state.run_store.get_run(
+        parse_run_id
+    ).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+
+
+def test_initial_credential_block_uses_start_continuation(
+    tmp_path: Path,
+) -> None:
+    app = create_app(
+        data_dir=tmp_path / "app-data",
+        credential_vault=CredentialVault(environ={}),
+        offline_inference=True,
+    )
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+
+    blocked = client.post(f"/runs/{run_id}/start")
+
+    assert blocked.status_code == 409
+    assert f'data-continue-action="/runs/{run_id}/start"' in blocked.text
+
 def test_review_recovery_returns_safe_404_for_unknown_or_unprepared_runs(
     tmp_path: Path,
 ) -> None:
