@@ -99,15 +99,18 @@ The **New Run** screen is a five-step wizard:
    then inspect the server-rendered, non-secret review before starting the run.
 
 The client validates only the visible, enabled controls in the current wizard
-step. **Continue** checks that step, focuses the first invalid control, and
-shows field explanations and a summary when several controls need attention.
-**Back** does not validate or clear values. The browser checks are only an
-early convenience: the final **Review run** submission sends the complete
-multipart form to `/runs/preview`, where the server remains authoritative for
-required fields, PDF page bounds, profile completeness, model settings, and
-the rest of the production configuration. A rejected submission returns to
-**New Run**, opens the affected step, and shows the server's field-specific
-explanation before a durable run is prepared.
+step. **Continue** checks that current panel, focuses the first invalid control,
+and shows field explanations and a summary when several controls need attention.
+**Back** does not validate or clear values. At final **Review run**, the browser
+performs whole-form constraint validation across all enabled fields before
+sending the complete multipart form to `/runs/preview`. Browser checks are only
+an early convenience: the server remains authoritative for required fields,
+PDF page bounds, profile completeness, model settings, and the rest of the
+production configuration.
+A rejected submission returns to **New Run** with safe, user-facing validation
+details. Only when the server associates an error with a rendered field does
+the wizard open that field's step and show a field-specific explanation; other
+failures still return to **New Run** without field-specific focus.
 
 The **Input** step asks for:
 
@@ -276,8 +279,11 @@ the shared presentation with:
 Each split-pass card has its own model and reasoning controls, while the
 run-level provider remains shared. The summary changes to **Separate pass
 models** and shows both models. **Use one Stage 2 model** returns to shared mode
-and reuses the previous shared selections; split-pass values remain only for
-another visit to the advanced presentation.
+and reuses the previous shared selections. Independently cached split-pass values
+survive toggling only within the current page instance; because shared values
+replace both pass controls before session storage persists them, a reload or
+navigation restores those shared replacement values rather than the independent
+split-pass choices.
 
 The provider-specific catalog is combined with optional live model discovery and
 an **Other model** entry. OpenRouter uses a manually entered model such as
