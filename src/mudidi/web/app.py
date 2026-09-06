@@ -1029,16 +1029,16 @@ def create_app(
         """Render a bounded, redacted view of the app-managed worker log."""
 
         try:
+            run = app.state.run_store.get_run(run_id)
             log_path = app.state.job_controller.log_path(run_id)
-        except KeyError as exc:
+            events = app.state.run_store.list_events(run_id)
+        except (KeyError, OSError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
         content, truncated = _read_log_tail(
             log_path,
             redactions=app.state.credential_vault.redaction_values(),
         )
-        failure_message = _failure_message(
-            app.state.run_store.list_events(run_id)
-        )
+        failure_message = _failure_message(events)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="logs.html",
@@ -1047,6 +1047,11 @@ def create_app(
                 "content": content,
                 "truncated": truncated,
                 "failure_message": failure_message,
+                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "last_event_sequence": max(
+                    (int(event.get("sequence", 0)) for event in events),
+                    default=0,
+                ),
             },
         )
 

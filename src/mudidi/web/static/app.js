@@ -972,13 +972,118 @@ document.addEventListener("click", async (event) => {
 });
 
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
-if (liveRun && window.EventSource) {
-  const eventSource = new EventSource(liveRun.content);
-  ["stage.started", "page.started", "page.completed", "parse_rules.generated", "run.completed", "run.failed"].forEach((eventName) => {
-    eventSource.addEventListener(eventName, () => {
-      eventSource.close();
+const streamStatus = document.querySelector("[data-stream-status]");
+const liveToggle = document.querySelector("[data-live-toggle]");
+const livePauseLabel = liveToggle?.querySelector("[data-live-pause-label]");
+const liveResumeLabel = liveToggle?.querySelector("[data-live-resume-label]");
+const liveEventNames = [
+  "stage.started",
+  "page.started",
+  "page.completed",
+  "parse_rules.generated",
+  "run.completed",
+  "run.failed",
+];
+let liveEventSource = null;
+
+const setStreamStatus = (text) => {
+  if (streamStatus) streamStatus.textContent = text;
+};
+
+const setLiveToggleState = (paused) => {
+  if (!liveToggle) return;
+  liveToggle.dataset.livePaused = String(paused);
+  liveToggle.setAttribute("aria-pressed", String(paused));
+  if (livePauseLabel) livePauseLabel.hidden = paused;
+  if (liveResumeLabel) liveResumeLabel.hidden = !paused;
+};
+
+const stopLiveUpdates = () => {
+  if (!liveEventSource) return;
+  liveEventSource.close();
+  liveEventSource = null;
+};
+
+const startLiveUpdates = () => {
+  if (!liveRun || !window.EventSource || liveEventSource) return false;
+  setStreamStatus("Connecting…");
+  const source = new EventSource(liveRun.content);
+  liveEventSource = source;
+  source.addEventListener("open", () => {
+    if (source === liveEventSource) setStreamStatus("Live");
+  });
+  source.addEventListener("error", () => {
+    if (source === liveEventSource) setStreamStatus("Reconnecting…");
+  });
+  liveEventNames.forEach((eventName) => {
+    source.addEventListener(eventName, () => {
+      if (source !== liveEventSource) return;
+      stopLiveUpdates();
       window.location.reload();
     });
+  });
+  return true;
+};
+
+if (liveRun && window.EventSource) startLiveUpdates();
+if (liveToggle) {
+  const initiallyPaused = liveResumeLabel ? !liveResumeLabel.hidden : false;
+  setLiveToggleState(initiallyPaused);
+  liveToggle.addEventListener("click", () => {
+    const paused = liveToggle.dataset.livePaused === "true";
+    if (paused) {
+      const started = startLiveUpdates();
+      if (!started) {
+        setLiveToggleState(true);
+        setStreamStatus("Unavailable");
+        return;
+      }
+      setLiveToggleState(false);
+      setStreamStatus("Connecting…");
+      return;
+    }
+    stopLiveUpdates();
+    setLiveToggleState(true);
+    setStreamStatus("Paused");
+  });
+}
+window.addEventListener("pagehide", stopLiveUpdates);
+
+const artifactFilters = document.querySelector("[data-artifact-filters]");
+if (artifactFilters) {
+  const pathFilter = artifactFilters.querySelector("[data-artifact-path-filter]");
+  const stageFilter = artifactFilters.querySelector("[data-artifact-stage-filter]");
+  const artifactRows = [...document.querySelectorAll("[data-artifact-row]")];
+  const emptyState = document.querySelector("[data-artifact-filter-empty]");
+  const applyArtifactFilters = () => {
+    const pathQuery = (pathFilter?.value || "").trim().toLowerCase();
+    const stage = stageFilter?.value || "";
+    let visible = 0;
+    artifactRows.forEach((row) => {
+      const matchesPath = (row.dataset.artifactPath || "").toLowerCase().includes(pathQuery);
+      const matchesStage = !stage || row.dataset.artifactStage === stage;
+      row.hidden = !(matchesPath && matchesStage);
+      if (!row.hidden) visible += 1;
+    });
+    if (emptyState) emptyState.hidden = visible !== 0;
+  };
+  pathFilter?.addEventListener("input", applyArtifactFilters);
+  stageFilter?.addEventListener("change", applyArtifactFilters);
+  applyArtifactFilters();
+}
+
+const logConsole = document.querySelector("[data-log-console]");
+const copyLogButton = document.querySelector("[data-log-copy]");
+const copyLogStatus = document.querySelector("[data-log-copy-status]");
+if (logConsole && copyLogButton) {
+  copyLogButton.addEventListener("click", async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(logConsole.innerText);
+      if (copyLogStatus) copyLogStatus.textContent = "Copied visible text";
+    } catch (_error) {
+      if (copyLogStatus) copyLogStatus.textContent = "Copy failed";
+    }
   });
 }
 

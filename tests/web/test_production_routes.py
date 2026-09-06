@@ -360,6 +360,8 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
     )
     client = TestClient(app)
     run_id = _preview(client, tmp_path)
+    app.state.run_store.transition(run_id, RunStatus.QUEUED)
+    app.state.run_store.transition(run_id, RunStatus.RUNNING_STAGE1)
     log_path = app.state.job_controller.log_path(run_id)
     log_path.write_text(
         ("old output\n" * 70_000) + "request sk-ant-live-log-secret failed\n",
@@ -373,6 +375,17 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
     assert "[REDACTED]" in response.text
     assert "sk-ant-live-log-secret" not in response.text
     assert "Older log output was truncated" in response.text
+    assert response.text.count('<pre data-log-console') == 1
+    for marker in (
+        'data-stream-status',
+        'data-live-toggle',
+        'data-log-copy',
+        "Pause",
+        "Resume",
+        "Copy visible text",
+    ):
+        assert marker in response.text
+    assert 'meta name="mudidi-events"' in response.text
 
 
 def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
