@@ -3,10 +3,10 @@
 {% block main %}
     <div class="page-shell">
       <div class="review-page">
-      <section class="panel review-card error-card" role="alert" aria-labelledby="configuration-error-title">
+      <section class="panel review-card error-card" role="alert" aria-labelledby="configuration-error-title" aria-describedby="configuration-error-summary">
         <span class="eyebrow">Configuration needs attention</span>
         <h1 id="configuration-error-title">Check the highlighted configuration</h1>
-        <p>{{ validation_errors|length }} validation issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
+        <p id="configuration-error-summary">{{ validation_errors|length }} validation issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
         <ul class="validation-errors" aria-label="Configuration issues">
           {% for error in validation_errors %}
             <li><strong>{{ error.field }}</strong><span>{{ error.message }}</span></li>

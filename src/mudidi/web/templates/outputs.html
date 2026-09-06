@@ -2,5 +2,45 @@
 {% block title %}File Artifacts · MUDIDI{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=outputs-1" defer></script>{% endblock %}
 {% block main %}
-<div class="page-shell"><div class="providers-page"><a class="back-link" href="/runs/{{ run_id }}">← Run overview</a><header class="page-heading"><span class="eyebrow">Generated files</span><h1>File Artifacts</h1><p>Downloads are constrained to this run's validated output directory.</p></header><section class="panel artifact-filter-panel" data-artifact-filters><label>Filter path<input type="search" data-artifact-path-filter placeholder="Search relative paths" autocomplete="off"></label><label>Stage<select data-artifact-stage-filter><option value="">All stages</option>{% for artifact in artifacts|sort(attribute="relative_path") %}{% set stage_key = artifact.relative_path.parts[0] if artifact.relative_path.parts else "other" %}{% if loop.first or stage_key not in artifacts[:loop.index0]|map(attribute="relative_path.parts")|map("first")|list %}<option value="{{ stage_key }}">{{ stage_key.replace("-", " ")|title }}</option>{% endif %}{% endfor %}</select></label></section><section class="panel artifact-table-panel"><div class="artifact-table-scroll"><table class="artifact-table"><caption class="sr-only">Generated file artifacts</caption><thead><tr><th scope="col">Relative path</th><th scope="col">Stage</th><th scope="col">Size</th><th scope="col">Last updated</th><th scope="col">Download</th></tr></thead><tbody>{% for artifact in artifacts %}{% set stage_key = artifact.relative_path.parts[0] if artifact.relative_path.parts else "other" %}<tr data-artifact-row data-artifact-path="{{ artifact.relative_path.as_posix() }}" data-artifact-stage="{{ stage_key }}"><td><code>{{ artifact.relative_path.as_posix() }}</code></td><td>{{ stage_key.replace("-", " ")|title }}</td><td>{{ artifact.size_bytes }} bytes</td><td><time datetime="{{ artifact.modified_at.isoformat() }}">{{ artifact.modified_at.strftime("%Y-%m-%d %H:%M UTC") }}</time></td><td><a class="artifact-download" href="/runs/{{ run_id }}/artifacts/{{ artifact.relative_path.as_posix() }}">Download ↓</a></td></tr>{% endfor %}</tbody></table><p class="artifact-filter-empty" data-artifact-filter-empty{% if artifacts %} hidden{% endif %}>No matching artifacts.</p>{% if not artifacts %}<div class="empty-state"><h2>No file artifacts yet</h2></div>{% endif %}</div></section></div></div>
+<div class="page-shell">
+  <div class="providers-page">
+    <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+    <header class="page-heading">
+      <span class="eyebrow">Generated files</span>
+      <h1>File Artifacts</h1>
+      <p>Downloads are constrained to this run's validated output directory.</p>
+    </header>
+    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+      <div class="detail-tabs">
+        <a href="/runs/{{ run_id }}">Overview</a>
+        <a href="/runs/{{ run_id }}/outputs" aria-current="page">File Artifacts</a>
+        <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
+        <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+        <a href="/runs/{{ run_id }}/usage">Usage</a>
+      </div>
+    </nav>
+    <section class="panel artifact-filter-panel" data-artifact-filters aria-labelledby="artifact-filter-title">
+      <h2 id="artifact-filter-title" class="sr-only">Filter artifacts</h2>
+      <label for="artifact-path-filter">Filter path<input id="artifact-path-filter" type="search" data-artifact-path-filter placeholder="Search relative paths" autocomplete="off"></label>
+      <label for="artifact-stage-filter">Stage<select id="artifact-stage-filter" data-artifact-stage-filter><option value="">All stages</option>{% for artifact in artifacts|sort(attribute="relative_path") %}{% set stage_key = artifact.relative_path.parts[0] if artifact.relative_path.parts else "other" %}{% if loop.first or stage_key not in artifacts[:loop.index0]|map(attribute="relative_path.parts")|map("first")|list %}<option value="{{ stage_key }}">{{ stage_key.replace("-", " ")|title }}</option>{% endif %}{% endfor %}</select></label>
+    </section>
+    <section class="panel artifact-table-panel" aria-labelledby="artifact-table-title">
+      <h2 id="artifact-table-title" class="sr-only">Generated file artifacts</h2>
+      <div class="artifact-table-scroll">
+        <table class="artifact-table">
+          <caption class="sr-only">Generated file artifacts</caption>
+          <thead><tr><th scope="col">Relative path</th><th scope="col">Stage</th><th scope="col">Size</th><th scope="col">Last updated</th><th scope="col">Download</th></tr></thead>
+          <tbody>
+          {% for artifact in artifacts %}
+          {% set stage_key = artifact.relative_path.parts[0] if artifact.relative_path.parts else "other" %}
+          <tr data-artifact-row data-artifact-path="{{ artifact.relative_path.as_posix() }}" data-artifact-stage="{{ stage_key }}"><td><code>{{ artifact.relative_path.as_posix() }}</code></td><td>{{ stage_key.replace("-", " ")|title }}</td><td>{{ artifact.size_bytes }} bytes</td><td><time datetime="{{ artifact.modified_at.isoformat() }}">{{ artifact.modified_at.strftime("%Y-%m-%d %H:%M UTC") }}</time></td><td><a class="artifact-download" href="/runs/{{ run_id }}/artifacts/{{ artifact.relative_path.as_posix() }}">Download ↓</a></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <p class="artifact-filter-empty" data-artifact-filter-empty{% if artifacts %} hidden{% endif %}>No matching artifacts.</p>
+        {% if not artifacts %}<div class="empty-state"><h2>No file artifacts yet</h2></div>{% endif %}
+      </div>
+    </section>
+  </div>
+</div>
 {% endblock %}

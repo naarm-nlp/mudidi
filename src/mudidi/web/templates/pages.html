@@ -10,6 +10,15 @@
         <span class="eyebrow">Generated page inspection and correction</span>
         <h1>Page Viewer &amp; Editor</h1>
       </header>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/pages" aria-current="page">Page Viewer &amp; Editor</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+          <a href="/runs/{{ run_id }}/usage">Usage</a>
+        </div>
+      </nav>
       <section class="panel empty-state page-viewer-empty">
         <div>
           <h2>No page outputs yet</h2>

@@ -23,11 +23,11 @@
       {% if progress_percent < 0 %}{% set progress_percent = 0 %}{% endif %}
       {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
       <div class="active-layout">
-        <section class="panel review-card run-progress-card active-progress">
+        <section class="panel review-card run-progress-card active-progress" aria-labelledby="active-stage-{{ run.run_id }}">
           <div class="progress-heading">
             <div>
               <span class="eyebrow">{{ run.provider }} · {{ run.run_id }}</span>
-              <h2>{{ run.current_stage_label }}</h2>
+              <h2 id="active-stage-{{ run.run_id }}">{{ run.current_stage_label }}</h2>
             </div>
             <span class="status-pill running">{{ run.status_label }}</span>
           </div>

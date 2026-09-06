@@ -527,6 +527,11 @@ const renderStage2Mode = () => {
     pass1Card.querySelectorAll("[data-stage2-reasoning-label]").forEach((label) => {
       label.textContent = split ? "Stage 2 Pass 1 reasoning" : "Stage 2 reasoning";
     });
+    pass1Card.querySelectorAll(".info-button").forEach((button) => {
+      const currentLabel = button.getAttribute("aria-label") || "";
+      const kind = currentLabel.includes("reasoning") ? "model reasoning" : "model";
+      button.setAttribute("aria-label", `About ${split ? "Stage 2 Pass 1" : "Stage 2"} ${kind}`);
+    });
   }
   if (pass2Card) pass2Card.hidden = !split;
   if (stage2Toggle) {

@@ -17,6 +17,13 @@
         <p>MDF page parsing consumes only the immutable guide snapshot created by <strong>Approve and continue MDF parsing</strong>.</p>
         {% endif %}
       </header>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/parse-rules" aria-current="page">MDF parsing guide</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+        </div>
+      </nav>
       {% if message %}<div class="notice" role="status">{{ message }}</div>{% endif %}
       {% if review.validation_error %}
       <div class="validation-warning"><strong>Generated MDF parsing guide needs repair</strong><p>{{ review.validation_error }}</p></div>

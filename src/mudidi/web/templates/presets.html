@@ -11,7 +11,8 @@
       <p>Presets contain validated local inputs and model settings, never API credentials.</p>
     </header>
     {% if presets %}
-    <section class="preset-grid" aria-label="Saved presets">
+    <section class="preset-grid" aria-labelledby="saved-presets-title">
+      <h2 id="saved-presets-title" class="sr-only">Saved presets</h2>
       {% for preset in presets %}
       {% set pipeline_label = {'1': 'Transcription', '2': 'Structure', 'all': 'Complete'}.get(preset.config.pipeline.stage, preset.config.pipeline.stage) %}
       {% set agentic_label = 'On' if preset.config.agentic.stage1 or preset.config.agentic.stage2 else 'Off' %}

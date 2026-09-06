@@ -16,6 +16,15 @@
         {% if saved %}<div class="save-confirmation" role="status">Changes saved</div>{% endif %}
       </header>
 
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/pages" aria-current="page">Page Viewer &amp; Editor</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+          <a href="/runs/{{ run_id }}/usage">Usage</a>
+        </div>
+      </nav>
       <nav class="panel page-navigator" aria-label="Processed page navigation">
         {% if previous_page %}
         <a class="page-step-button" href="/runs/{{ run_id }}/pages/{{ previous_page.page_id }}">← Previous</a>
