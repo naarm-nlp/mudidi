@@ -52,6 +52,7 @@ def test_legacy_stage2_guides_are_routed_by_scope() -> None:
         pass2_text, _ = strategy._stage2_guide_values(
             strategy._stage2_context_for_pass2(), pass_name="pass2"
         )
+        assert pass1_text == pass1_expected
         assert pass2_text == pass2_expected
 
 
@@ -154,13 +155,19 @@ def test_stage1_agentic_evaluator_and_rewriter_use_selected_context(
             "0000000d49444154789c6360f8cfc000000301010018dd8db40000000049454e44ae426082"
         )
     )
+    content_calls = []
+
+    def content_parts(model, stage_label):
+        content_calls.append((model, stage_label))
+        return [
+            {"type": "text", "text": f"{stage_label} PDF reference"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,ref"}},
+        ]
+
     context = SimpleNamespace(
         text="selected guide",
         metadata=SimpleNamespace(original_filename="selected.pdf"),
-        content_parts=lambda model, stage_label: [
-            {"type": "text", "text": f"{stage_label} PDF reference"},
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,ref"}},
-        ],
+        content_parts=content_parts,
     )
     strategy = TwoStageLLMExtraction(
         stage1_mode="flat",
@@ -199,8 +206,85 @@ def test_stage1_agentic_evaluator_and_rewriter_use_selected_context(
     )
     assert structured_calls[0]["model"] == "provider/evaluator"
     assert structured_calls[1]["model"] == "provider/rewriter"
-    assert any(
-        "selected guide" in part["text"]
-        for part in structured_calls[0]["messages"][1]["content"]
-        if part["type"] == "text"
+    assert content_calls == [
+        ("provider/evaluator", "Stage 1 evaluator"),
+        ("provider/rewriter", "Stage 1 rewriter"),
+    ]
+    for call in structured_calls:
+        content = call["messages"][1]["content"]
+        assert any(
+            "selected guide" in part["text"]
+            for part in content
+            if part["type"] == "text"
+        )
+        assert content[-2]["type"] == "text"
+        assert "TRANSCRIPTION TARGET" in content[-2]["text"]
+        assert content[-1]["type"] == "image_url"
+        assert any(part["type"] == "image_url" and part["image_url"]["url"].endswith("ref") for part in content)
+
+
+def test_stage2_agentic_scope_routes_context_for_evaluator_and_rewriter(
+    monkeypatch,
+) -> None:
+    from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+
+    def context_parts(model, stage_label):
+        del model
+        return [
+            {"type": "text", "text": f"{stage_label} PDF reference"},
+            {"type": "file", "file": {"file_data": "data:application/pdf;base64,ref"}},
+        ]
+
+    context = SimpleNamespace(
+        text="stage2 selected guide",
+        metadata=SimpleNamespace(original_filename="stage2.pdf"),
+        content_parts=context_parts,
     )
+    field_map = SimpleNamespace(format_prompt_block=lambda: "\\lx headword")
+    verifier_calls = []
+    rewriter_calls = []
+
+    def fake_structured(**kwargs):
+        verifier_calls.append(kwargs)
+        return AgenticVerifierDecision(decision="retry", confidence=1.0), "{}", {}
+
+    def fake_with_usage(**kwargs):
+        rewriter_calls.append(kwargs)
+        return "rewritten", {}
+
+    monkeypatch.setattr(
+        "mudidi.extraction.llm_two_stage.llm.complete_structured", fake_structured
+    )
+    monkeypatch.setattr(
+        "mudidi.extraction.llm_two_stage.llm.complete_with_usage", fake_with_usage
+    )
+    for scope in ("pass1", "pass2", "both"):
+        verifier_calls.clear()
+        rewriter_calls.clear()
+        strategy = TwoStageLLMExtraction(
+            stage2_instruction_context=context,
+            stage2_guides_scope=scope,
+            agentic_evaluator_model="provider/evaluator",
+            agentic_rewriter_model="provider/rewriter",
+        )
+        decision = strategy._verify_stage2_output(
+            "\\lx foo\n\\gn bar",
+            transcribed_text="foo bar",
+            field_map=field_map,
+            attempt=1,
+        )
+        strategy._rewrite_stage2_output(
+            "\\lx foo\n\\gn bar",
+            transcribed_text="foo bar",
+            field_map=field_map,
+            decision=decision[0],
+            attempt=1,
+        )
+        for call in (verifier_calls[0], rewriter_calls[0]):
+            content = call["messages"][1]["content"]
+            has_context = any(
+                "stage2 selected guide" in part.get("text", "")
+                or part.get("type") == "file"
+                for part in content
+            )
+            assert has_context is (scope in {"pass2", "both"})

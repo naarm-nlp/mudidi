@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from mudidi.cli import extract
@@ -160,3 +161,39 @@ def test_manifest_declares_dictionary_profile_variable() -> None:
         item["name"] for item in manifest["stage_1_user_inference"]["variables"]
     }
     assert "dictionary_profile" in variables
+def test_context_preparation_is_once_before_multiple_page_calls(
+    tmp_path: Path, monkeypatch
+) -> None:
+    calls = []
+
+    def prepare(path, *, page_spec, cache_dir, models):
+        calls.append((path, page_spec, cache_dir, tuple(models)))
+        return SimpleNamespace(
+            text="prepared",
+            metadata=SimpleNamespace(original_filename="guide.txt"),
+            content_parts=lambda model, stage_label: [
+                {"type": "text", "text": "prepared"}
+            ],
+        )
+
+    monkeypatch.setattr("mudidi.cli.extract.prepare_instruction_context", prepare)
+    args = SimpleNamespace(
+        strategy="two_stage",
+        stage1_guides_path=tmp_path / "stage1.txt",
+        stage2_guides_path=tmp_path / "stage2.txt",
+        stage1_guides_pages=None,
+        stage2_guides_pages=None,
+        stage_models=SimpleNamespace(
+            stage_1="provider/generation",
+            stage_2_pass_1="provider/pass1",
+            stage_2_pass_2="provider/pass2",
+        ),
+        agentic_evaluator_model="provider/evaluator",
+        agentic_rewriter_model="provider/rewriter",
+    )
+    extract._prepare_instruction_contexts(args, tmp_path / "output", argparse.ArgumentParser())
+    for _ in range(3):
+        args.stage1_instruction_context.content_parts(
+            "provider/generation", stage_label="Stage 1"
+        )
+    assert len(calls) == 2
