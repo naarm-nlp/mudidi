@@ -629,6 +629,11 @@ def test_actual_worker_stage2_scope_and_split_model_media(
         pass2_generation[0], stage_label="Stage 2 Pass 2", count=2
     )
     assert len(raster_urls) == 2
+    assert not any(
+        part.get("type") == "image_url"
+        and part["image_url"]["url"] in raster_urls
+        for part in _parts(pass1_call)
+    )
     for call in pass2_generation:
         _assert_instruction_media(
             call,
