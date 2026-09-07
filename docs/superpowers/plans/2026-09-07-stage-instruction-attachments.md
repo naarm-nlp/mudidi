@@ -259,14 +259,26 @@ git commit -m "Add instruction attachment form workflow"
 
 **Files:**
 - Modify: `src/mudidi/cli/run.py`
+- Modify: `src/mudidi/cli/main.py`
 - Modify: `src/mudidi/cli/extract.py`
 - Modify: `src/mudidi/extraction/llm_two_stage.py`
 - Modify: `src/mudidi/llm/pass_1.py`
 - Modify: `src/mudidi/llm/pass_2.py`
+- Modify: `src/mudidi/assets/prompts/manifest.json`
+- Modify: `src/mudidi/assets/prompts/stage_1/user_benchmark.j2`
+- Modify: `src/mudidi/assets/prompts/stage_1/user_inference.j2`
+- Modify: `src/mudidi/assets/prompts/stage_2/pass_1/user_single.j2`
+- Modify: `src/mudidi/assets/prompts/stage_2/pass_1/user_multi.j2`
+- Modify: `src/mudidi/assets/prompts/stage_2/pass_2/user_benchmark.j2`
+- Modify: `src/mudidi/assets/prompts/stage_2/pass_2/user_inference.j2`
 - Test: `tests/cli/test_config_execution.py`
+- Test: `tests/cli/test_command_tree.py`
+- Test: `tests/cli/test_run_agentic_args.py`
 - Test: `tests/cli/test_extract_instruction_guides.py`
 - Test: `tests/llm/test_pass_1_media.py`
+- Test: `tests/llm/test_pass_1_multi.py`
 - Test: `tests/llm/test_prompt_caching.py`
+- Test: `tests/llm/test_prompt_manifest.py`
 - Test: `tests/extraction/test_agentic_instruction_context.py`
 - Test: `tests/extraction/test_resolved_config_snapshot.py`
 
@@ -276,7 +288,7 @@ git commit -m "Add instruction attachment form workflow"
 
 - [ ] **Step 1: Add failing namespace and CLI tests**
 
-Assert `execution_namespace_from_config()` maps `stage1_guides_pages`, `stage2_guides_pages`, and `stage2_guides_scope`. Extend the extract parser with:
+Assert `execution_namespace_from_config()` maps `stage1_guides_pages`, `stage2_guides_pages`, and `stage2_guides_scope`. Cover both public command surfaces: add sparse `default=argparse.SUPPRESS` overrides to `cli/main.py` and the `_RUN_OVERRIDE_PATHS` mapping in `cli/run.py`, then keep the legacy direct extraction parser and `register_run_arguments()`/`run_from_args()` forwarding equivalent. The accepted flags are:
 
 ```text
 --stage-1-guides PATH
@@ -286,17 +298,17 @@ Assert `execution_namespace_from_config()` maps `stage1_guides_pages`, `stage2_g
 --stage-2-guides-scope {pass1,pass2,both}
 ```
 
-Test `.txt`, `.md`, `.docx`, and `.pdf`; invalid suffixes; pages without PDF; invalid/out-of-bounds pages; the 20,000-character limit; and default scope `both`.
+Test omitted sparse overrides do not replace YAML values; CLI paths become absolute; `.txt`, `.md`, `.docx`, and `.pdf` are accepted; invalid suffixes, pages without PDF, invalid/out-of-bounds pages, and text beyond 20,000 characters fail; direct-parser scope defaults to `both`.
 
 - [ ] **Step 2: Run CLI tests and confirm failure**
 
-Run: `uv run pytest tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py -q`
+Run: `uv run pytest tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py tests/cli/test_command_tree.py tests/cli/test_run_agentic_args.py -q`
 
 Expected: failures for missing namespace fields, flags, and preparation.
 
 - [ ] **Step 3: Prepare contexts once per run**
 
-Map config fields into the argparse namespace. Replace the eager `stage1_guides_text`/`stage2_guides_text` loading block with `prepare_instruction_context()` after the per-entry output/cache directory is known and before worker threads begin. Store the two immutable contexts on the strategy and use one cache directory per stage under the resolved output. Supply all generation and configured evaluator/rewriter model IDs so required raster variants are prepared before page workers start.
+Map config fields through sparse CLI overrides, the legacy forwarding layer, and the argparse execution namespace. Replace the eager `stage1_guides_text`/`stage2_guides_text` loading block with `prepare_instruction_context()` after the per-entry output/cache directory is known and before worker threads begin. Store the two immutable contexts on the strategy and use one cache directory per stage under the resolved output. Supply all generation and configured evaluator/rewriter model IDs so required raster variants are prepared before page workers start. Reject PDF guides for `vlm_ocr` and `mathpix_ocr` before worker execution because those backends cannot preserve visual attachment context.
 
 - [ ] **Step 4: Add failing Pass 1 and Pass 2 routing tests**
 
@@ -304,7 +316,7 @@ For Stage 1, assert text guides remain under `USER DEFINED GUIDELINES`, PDF inst
 
 - [ ] **Step 5: Implement generation routing**
 
-Add optional `PreparedInstructionContext` parameters to `discover_field_cheatsheet()`, `discover_field_cheatsheet_multi()`, `_build_direct_mdf_prompt()`, `build_direct_mdf_messages()`, and `extract_direct_mdf()`. Preserve existing callers with an empty default context. In `TwoStageLLMExtraction`, use `context.text` for current guide-template interpolation and append `context.content_parts(model, stage_label=...)` before all dictionary page/sample images. Pass Stage 2 context into Pass 1 only for scope `pass1|both`, and into Pass 2 only for `pass2|both`.
+Add optional `PreparedInstructionContext` parameters to `discover_field_cheatsheet()`, `discover_field_cheatsheet_multi()`, `load_or_discover_parse_rules()`, `_build_direct_mdf_prompt()`, `build_direct_mdf_messages()`, and `extract_direct_mdf()`. Preserve existing callers with an empty default context. Update the prompt templates and `assets/prompts/manifest.json` so textual instructions retain `USER DEFINED GUIDELINES`, name their untrusted source, and visually distinguish reference attachments from introduction/sample/target material. In `TwoStageLLMExtraction`, use `context.text` for guide-template interpolation and append `context.content_parts(model, stage_label=...)` before all dictionary page/sample images. Forward context through both single- and multi-sample Pass 1 paths. Pass Stage 2 context into Pass 1 only for scope `pass1|both`, and into Pass 2 only for `pass2|both`.
 
 - [ ] **Step 6: Add failing agentic parity tests**
 
@@ -316,22 +328,22 @@ Build agentic user messages as content-part lists when an instruction PDF exists
 
 - [ ] **Step 8: Add manifest and prompt-cache tests**
 
-Assert Stage 1 and Stage 2 manifests include string paths, source kind, original filename, byte count, SHA-256, PDF page count, selected pages, selected artifact path/digest, and Stage 2 scope. Assert no base64 payload enters manifests/logs. Assert the Pass 2 prompt-cache key changes when instruction digest, selected pages, or scope changes.
+Assert Stage 1 and Stage 2 manifests include string paths, source kind, original filename, byte count, SHA-256, PDF page count, selected pages, selected artifact path/digest, and Stage 2 scope. Assert no base64 payload enters manifests/logs. Assert the Pass 1 parse-rule cache and Pass 2 prompt-cache identities change when an applicable instruction digest, selected pages, or scope changes. Add resume tests proving matching identity reuses output while changed bytes, selection, or scope fails with an overwrite-required error before parse-rule/page-output reuse.
 
-- [ ] **Step 9: Implement manifests and cache identity**
+- [ ] **Step 9: Implement manifests, cache identity, and resume compatibility**
 
-Replace `_guides_manifest_entry(path, text)` with context metadata serialization. Include instruction fingerprint data in `_stage2_prompt_cache_key()`. Keep provider-reported usage accounting unchanged and preserve `_sanitize_messages()` redaction for every PDF/image data URL.
+Replace `_guides_manifest_entry(path, text)` with context metadata serialization. Include instruction fingerprint data in Pass 1 cache identity and `_stage2_prompt_cache_key()`. Compare the applicable instruction identity with existing manifests before accepting parse rules or skipped page outputs; preserve `--overwrite` as the explicit replacement route. Keep provider-reported usage accounting unchanged and preserve `_sanitize_messages()` redaction for every PDF/image data URL.
 
 - [ ] **Step 10: Run focused runtime tests**
 
-Run: `uv run pytest tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py tests/llm/test_pass_1_media.py tests/llm/test_prompt_caching.py tests/extraction/test_agentic_instruction_context.py tests/extraction/test_resolved_config_snapshot.py -q`
+Run: `uv run pytest tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py tests/cli/test_command_tree.py tests/cli/test_run_agentic_args.py tests/llm/test_pass_1_media.py tests/llm/test_pass_1_multi.py tests/llm/test_prompt_caching.py tests/llm/test_prompt_manifest.py tests/extraction/test_agentic_instruction_context.py tests/extraction/test_resolved_config_snapshot.py -q`
 
 Expected: all tests pass.
 
 - [ ] **Step 11: Commit**
 
 ```bash
-git add src/mudidi/cli/run.py src/mudidi/cli/extract.py src/mudidi/extraction/llm_two_stage.py src/mudidi/llm/pass_1.py src/mudidi/llm/pass_2.py tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py tests/llm/test_pass_1_media.py tests/llm/test_prompt_caching.py tests/extraction/test_agentic_instruction_context.py tests/extraction/test_resolved_config_snapshot.py
+git add src/mudidi/cli/main.py src/mudidi/cli/run.py src/mudidi/cli/extract.py src/mudidi/extraction/llm_two_stage.py src/mudidi/llm/pass_1.py src/mudidi/llm/pass_2.py src/mudidi/assets/prompts tests/cli/test_config_execution.py tests/cli/test_extract_instruction_guides.py tests/cli/test_command_tree.py tests/cli/test_run_agentic_args.py tests/llm/test_pass_1_media.py tests/llm/test_pass_1_multi.py tests/llm/test_prompt_caching.py tests/llm/test_prompt_manifest.py tests/extraction/test_agentic_instruction_context.py tests/extraction/test_resolved_config_snapshot.py
 git commit -m "Route instruction attachments through pipeline passes"
 ```
 
@@ -401,18 +413,21 @@ git commit -m "Add stage instruction upload controls"
 - Test: `tests/config/test_docs_reference.py`
 - Test: `tests/web/test_production_routes.py`
 - Test: `tests/extraction/test_resolved_config_snapshot.py`
+- Test: `tests/extraction/test_instruction_worker_smoke.py`
 
 **Interfaces:**
 - Consumes: all completed tasks.
 - Produces: generated references, implemented-spec status, end-to-end proof, and a clean branch.
 
-- [ ] **Step 1: Add end-to-end regression cases**
+- [ ] **Step 1: Add end-to-end and actual-worker regression cases**
 
-Add production-route tests that prepare runs for: Stage 1 TXT, Stage 1 selected-page PDF, Stage 2 Pass 1-only Markdown, Stage 2 Pass 2-only PDF, Both-pass PDF, typed/file exclusion, preset keep, and preset replacement. Inspect the prepared config and managed metadata; use mocked LLM calls to assert applicable generation/agentic messages and exclusion from non-selected passes.
+Add production-route cases that prepare runs for: Stage 1 TXT, Stage 1 selected-page PDF, Stage 2 Pass 1-only Markdown, Stage 2 Pass 2-only PDF, Both-pass PDF, typed/file exclusion, preset keep, and preset replacement. Inspect the prepared config and managed metadata.
+
+Add two actual-worker smokes with provider calls stubbed only at the LLM boundary: one Stage 1 selected-PDF instruction run and one split-model Stage 2 scope run. Exercise the real execution namespace, preparation, strategy, prompt builders, manifests, and output lifecycle; assert applicable generation/agentic messages receive instructions, unselected passes do not, and the run-owned selected/raster artifacts are reused.
 
 - [ ] **Step 2: Run end-to-end cases**
 
-Run: `uv run pytest tests/web/test_production_routes.py tests/extraction/test_resolved_config_snapshot.py -q`
+Run: `uv run pytest tests/web/test_production_routes.py tests/extraction/test_resolved_config_snapshot.py tests/extraction/test_instruction_worker_smoke.py -q`
 
 Expected: all tests pass.
 
@@ -426,9 +441,9 @@ Confirm `docs/reference/cli.md` documents both PDF page flags and Stage 2 scope,
 
 Change the spec status from `Awaiting written-spec review` to `Implemented` and add the implementation commit range only after Tasks 1-4 exist. Do not rewrite the approved behavior.
 
-- [ ] **Step 5: Run complete verification**
+- [ ] **Step 5: Run behavioral smoke, then complete verification**
 
-Run:
+Repeat the desktop/mobile browser smoke for the complete workflow before the complete dashboard regression. Then run:
 
 ```bash
 uv run pytest -q
@@ -436,11 +451,11 @@ node --check src/mudidi/web/static/app.js
 uv run python scripts/generate_docs_reference.py --check
 ```
 
-Then repeat the desktop/mobile browser smoke for the complete workflow. Expected: the full suite passes, generated references are clean, JavaScript parses, and every approved interaction works against the running dashboard.
+Expected: both actual-worker smokes and the browser workflow pass, the full suite passes, generated references are clean, and JavaScript parses.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add docs/reference/cli.md docs/reference/config.md docs/superpowers/specs/2026-09-07-stage-instruction-attachments-design.md tests/config/test_docs_reference.py tests/web/test_production_routes.py tests/extraction/test_resolved_config_snapshot.py
+git add docs/reference/cli.md docs/reference/config.md docs/superpowers/specs/2026-09-07-stage-instruction-attachments-design.md tests/config/test_docs_reference.py tests/web/test_production_routes.py tests/extraction/test_resolved_config_snapshot.py tests/extraction/test_instruction_worker_smoke.py
 git commit -m "Document stage instruction attachments"
 ```
