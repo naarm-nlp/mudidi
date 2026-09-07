@@ -607,17 +607,28 @@ def create_app(
                 except ValueError as exc:
                     raise FormFieldError(file_field, str(exc)) from exc
                 return
-            if (
-                keep_existing
-                and managed_inherited_file()
-                and (
-                    not page_was_submitted
-                    or page_spec == inherited_page_spec
+            if keep_existing and managed_inherited_file():
+                effective_page_spec = (
+                    page_spec if page_was_submitted else inherited_page_spec
                 )
-            ):
-                payload[guide_field] = inherited
-                if not page_was_submitted and inherited_page_spec:
-                    payload[pages_field] = inherited_page_spec
+                try:
+                    payload[guide_field] = (
+                        app.state.inputs.refresh_managed_instruction(
+                            run_id,
+                            stage,
+                            inherited,
+                            page_spec=effective_page_spec,
+                            stage2_scope=scope,
+                        )
+                    )
+                except InstructionMaterializationError as exc:
+                    error_field = (
+                        pages_field if exc.category == "pages" else file_field
+                    )
+                    raise FormFieldError(error_field, str(exc)) from exc
+                except ValueError as exc:
+                    raise FormFieldError(file_field, str(exc)) from exc
+                payload[pages_field] = effective_page_spec
                 return
             raise FormFieldError(
                 file_field,

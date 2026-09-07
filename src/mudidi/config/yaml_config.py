@@ -22,7 +22,13 @@ from pydantic import (
 )
 
 from mudidi.cli.model_args import DEFAULT_MODEL
-from mudidi.config.run_config import RunStage
+from mudidi.config.run_config import (
+    RunStage,
+    runs_stage1,
+    runs_stage2_any,
+    runs_stage2_pass1,
+    runs_stage2_pass2,
+)
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.utils.pdf_split import parse_page_spec
 
@@ -140,22 +146,15 @@ def _readable_instruction_guide(
                 f"(1-{page_count})"
             )
         return
-
     if page_spec is not None:
         pages_label = label.removesuffix("guides") + "guides_pages"
         raise ValueError(f"{pages_label} requires a PDF guide")
-    if suffix in {".txt", ".md"}:
-        try:
-            path.read_bytes().decode("utf-8")
-        except (OSError, UnicodeDecodeError) as exc:
-            raise ValueError(f"{label} is not readable as UTF-8 text") from exc
-    else:
-        from mudidi.utils.io import read_docx_text
+    from mudidi.instructions import read_instruction_text
+    try:
+        read_instruction_text(path)
+    except Exception as exc:
+        raise ValueError(f"{label} text is invalid: {exc}") from exc
 
-        try:
-            read_docx_text(str(path))
-        except Exception as exc:
-            raise ValueError(f"{label} DOCX is not readable: {exc}") from exc
 
 
 class _StrictModel(BaseModel):
@@ -225,6 +224,35 @@ class PipelineConfig(_StrictModel):
             raise ValueError("mathpix_ocr requires pipeline.stage: '1'")
         if self.strategy == "mathpix_ocr" and self.stage1_mode != "flat":
             raise ValueError("mathpix_ocr requires pipeline.stage1_mode: flat")
+
+        stage1_selected = runs_stage1(self.stage)
+        if self.stage1_guides is not None and not stage1_selected:
+            raise ValueError(
+                "pipeline.stage1_guides is configured but selected pipeline "
+                "does not run Stage 1"
+            )
+
+        stage2_selected = runs_stage2_any(self.stage)
+        if self.stage2_guides is None:
+            return self
+        if not stage2_selected:
+            raise ValueError(
+                "pipeline.stage2_guides is configured but selected pipeline "
+                "does not run Stage 2"
+            )
+
+        scope_matches = {
+            "pass1": runs_stage2_pass1(self.stage),
+            "pass2": runs_stage2_pass2(self.stage),
+            "both": runs_stage2_pass1(self.stage)
+            or runs_stage2_pass2(self.stage),
+        }
+        if not scope_matches[self.stage2_guides_scope]:
+            raise ValueError(
+                "pipeline.stage2_guides_scope="
+                f"{self.stage2_guides_scope!r} does not intersect the "
+                f"selected Stage 2 pass ({self.stage})"
+            )
         return self
 
 

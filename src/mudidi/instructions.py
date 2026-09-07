@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, Sequence
 
@@ -112,6 +113,44 @@ class PreparedInstructionContext:
         if scope is not None:
             entry["scope"] = scope
         return entry
+
+
+def instruction_identity_projection(
+    entry: Mapping[str, object] | None,
+    *,
+    default_scope: str | None = None,
+) -> dict[str, object]:
+    """Return the path-free semantic identity of one instruction attachment."""
+
+    values = entry if isinstance(entry, Mapping) else {}
+    if not values or values.get("used") is False:
+        identity: dict[str, object] = {
+            "kind": "none",
+            "original_filename": None,
+            "byte_count": 0,
+            "sha256": None,
+            "pdf_page_count": None,
+            "selected_pages": [],
+            "selected_sha256": None,
+        }
+    else:
+        selected_pages = values.get("selected_pages")
+        identity = {
+            "kind": values.get("kind"),
+            "original_filename": values.get("original_filename"),
+            "byte_count": values.get("byte_count"),
+            "sha256": values.get("sha256"),
+            "pdf_page_count": values.get("pdf_page_count"),
+            "selected_pages": (
+                list(selected_pages)
+                if isinstance(selected_pages, (list, tuple))
+                else []
+            ),
+            "selected_sha256": values.get("selected_sha256"),
+        }
+    if default_scope is not None:
+        identity["scope"] = values.get("scope", default_scope)
+    return identity
 
 
 def _model_supports_instruction_pdf(model: str) -> bool:
@@ -265,8 +304,7 @@ def _prepare_pdf_context(
     ).hexdigest()
     selected_path = cache_dir / "pdf" / f"{cache_key}.pdf"
     extract_pdf_subset(path, selected_pages, selected_path)
-    selected_bytes = selected_path.read_bytes()
-    selected_digest = hashlib.sha256(selected_bytes).hexdigest()
+    selected_digest = cache_key
 
     capabilities = {
         model: _model_supports_instruction_pdf(model)

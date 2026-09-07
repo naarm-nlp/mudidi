@@ -36,6 +36,7 @@
                     {% if metadata.original_filename %}<span>Original filename: {{ metadata.original_filename }}</span>{% endif %}
                     {% if metadata.kind == 'pdf' %}
                     <span>Selected PDF pages: {{ metadata.selected_pages_label }}</span>
+                    <span>Selected PDF page count: {{ metadata.selected_page_count }}</span>
                     <span>PDF page count: {{ metadata.pdf_page_count if metadata.pdf_page_count is not none else 'Unavailable' }}</span>
                     {% endif %}
                     {% if key == 'stage_2_instructions' %}<span>Scope: {{ metadata.scope_label }}</span>{% endif %}

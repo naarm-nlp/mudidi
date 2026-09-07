@@ -267,6 +267,117 @@ class InputMaterializer:
             raise
         return destination / name
 
+    def refresh_managed_instruction(
+        self,
+        run_id: str,
+        stage: Literal["stage1", "stage2"],
+        path: Path,
+        *,
+        page_spec: str | None,
+        stage2_scope: Literal["pass1", "pass2", "both"] | None,
+    ) -> Path:
+        """Revalidate a copied managed attachment and refresh its sidecar."""
+
+        _validate_instruction_stage(stage)
+        bundle = self.bundle(run_id)
+        instructions_root = bundle / "instructions"
+        stage_root = instructions_root / stage
+        raw_path = path.expanduser()
+        if any(
+            candidate.is_symlink()
+            for candidate in (
+                self.runs_root,
+                bundle.parent,
+                bundle,
+                instructions_root,
+                stage_root,
+                raw_path,
+            )
+        ):
+            raise InstructionMaterializationError(
+                "managed instruction path is not safe",
+                category="file",
+            )
+        if not stage_root.is_dir() or not raw_path.is_file():
+            raise InstructionMaterializationError(
+                "managed instruction file is missing",
+                category="file",
+            )
+        managed_path = raw_path.resolve()
+        try:
+            managed_path.relative_to(stage_root.resolve())
+        except ValueError as exc:
+            raise InstructionMaterializationError(
+                "managed instruction path is not safe",
+                category="file",
+            ) from exc
+        metadata = read_managed_instruction_metadata(managed_path)
+        if metadata is None or metadata.get("source_mode") != "file":
+            raise InstructionMaterializationError(
+                "managed instruction metadata is missing",
+                category="file",
+            )
+
+        normalized_page_spec = page_spec.strip() if page_spec else None
+        if normalized_page_spec == "":
+            normalized_page_spec = None
+        suffix = managed_path.suffix.lower()
+        if suffix not in _INSTRUCTION_SUFFIXES:
+            raise InstructionMaterializationError(
+                "managed instruction file type is invalid",
+                category="file",
+            )
+        if suffix != ".pdf" and normalized_page_spec is not None:
+            raise InstructionMaterializationError(
+                "instruction PDF page selection requires a PDF source",
+                category="pages",
+            )
+        normalized_scope = _instruction_scope(stage, stage2_scope)
+        try:
+            byte_count, digest = _hash_file(managed_path)
+        except OSError as exc:
+            raise InstructionMaterializationError(
+                "managed instruction file is not readable",
+                category="file",
+            ) from exc
+        if suffix == ".pdf":
+            pdf_page_count, selected_pages = _read_instruction_pdf(
+                managed_path,
+                normalized_page_spec,
+            )
+        else:
+            _read_instruction_text(managed_path)
+            pdf_page_count = None
+            selected_pages = []
+
+        updated = dict(metadata)
+        updated.update(
+            {
+                "source_mode": "file",
+                "original_filename": metadata.get("original_filename")
+                or managed_path.name,
+                "suffix": suffix,
+                "kind": _instruction_kind(suffix),
+                "byte_count": byte_count,
+                "sha256": digest,
+                "pdf_page_count": pdf_page_count,
+                "selected_pages": selected_pages,
+                "stage2_scope": normalized_scope,
+            }
+        )
+        sidecar = managed_path.parent / "metadata.json"
+        temporary = managed_path.parent / f".metadata.json.part-{uuid4().hex}"
+        try:
+            temporary.write_text(
+                json.dumps(updated, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            temporary.replace(sidecar)
+        except Exception:
+            temporary.unlink(missing_ok=True)
+            raise
+        return managed_path
+
     def _materialize_instruction_bytes(
         self,
         run_id: str,
@@ -619,6 +730,16 @@ def _remove_path(path: Path) -> None:
     elif path.is_dir():
         shutil.rmtree(path, ignore_errors=True)
 
+
+
+def _hash_file(path: Path) -> tuple[int, str]:
+    digest = hashlib.sha256()
+    byte_count = 0
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+            byte_count += len(chunk)
+    return byte_count, digest.hexdigest()
 
 def _read_instruction_text(path: Path) -> str:
     try:

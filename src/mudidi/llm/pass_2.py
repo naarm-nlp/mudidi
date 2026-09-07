@@ -27,7 +27,10 @@ from mudidi.utils.image import (
     model_supports_pdf_input,
 )
 from mudidi.utils.mdf_export import normalize_mdf_text
-from mudidi.instructions import PreparedInstructionContext
+from mudidi.instructions import (
+    PreparedInstructionContext,
+    instruction_identity_projection,
+)
 from mudidi.llm.prompts import page_boundary_rules_prompt
 from mudidi.utils.page_context import (
     PageContext,
@@ -180,6 +183,18 @@ def _mark_static_cache_boundary(
     return [*content[:-1], {**content[-1], "cache_control": {"type": "ephemeral"}}]
 
 
+
+
+def _toolbox_identity(toolbox_pdf: Optional[Path]) -> dict[str, object] | None:
+    """Return path-free content identity for the optional Toolbox PDF."""
+    if toolbox_pdf is None or not toolbox_pdf.is_file():
+        return None
+    raw = toolbox_pdf.read_bytes()
+    return {
+        "kind": "pdf",
+        "byte_count": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
 def _stage2_prompt_cache_key(
     *,
     model: str,
@@ -190,21 +205,25 @@ def _stage2_prompt_cache_key(
     instruction_scope: str = "both",
 ) -> str:
     """Build a stable key including all applicable instruction identity metadata."""
-    instruction_identity = (
+    instruction_entry = (
         instruction_context.manifest_entry(scope=instruction_scope)
         if instruction_context is not None
-        else {
-            "kind": "none",
-            "scope": instruction_scope,
-        }
+        else None
+    )
+    instruction_identity = instruction_identity_projection(
+        instruction_entry,
+        default_scope=instruction_scope,
     )
     digest_input = "\n".join(
         [
             model,
             static_text,
             json.dumps(instruction_identity, sort_keys=True, ensure_ascii=False),
-            str(toolbox_pdf) if toolbox_pdf else "",
-            str(toolbox_pdf.stat().st_mtime_ns) if toolbox_pdf and toolbox_pdf.exists() else "",
+            json.dumps(
+                _toolbox_identity(toolbox_pdf),
+                sort_keys=True,
+                ensure_ascii=False,
+            ),
         ]
     )
     digest = hashlib.sha256(digest_input.encode("utf-8")).hexdigest()[:16]
