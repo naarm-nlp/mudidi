@@ -280,7 +280,7 @@ def _instruction_file_data(call: dict[str, Any]) -> str:
 
 
 def _assert_usage_record(
-    record: dict[str, Any],
+    record: dict[str, Any] | None,
     *,
     expected_calls: int,
 ) -> None:
@@ -288,6 +288,67 @@ def _assert_usage_record(
     assert record["prompt_tokens"] == 10 * expected_calls
     assert record["completion_tokens"] == 5 * expected_calls
     assert record["total_tokens"] == 15 * expected_calls
+
+
+def _assert_optional_usage_record(
+    record: dict[str, Any] | None,
+    *,
+    expected_calls: int | None,
+) -> None:
+    if expected_calls is None:
+        assert record is None
+    else:
+        _assert_usage_record(record, expected_calls=expected_calls)
+
+
+def _assert_agentic_usage(
+    record: dict[str, Any] | None,
+    *,
+    expected_calls: tuple[int, int] | None,
+) -> None:
+    if expected_calls is None:
+        assert record is None
+        return
+    evaluator_calls, rewriter_calls = expected_calls
+    assert record is not None
+    _assert_usage_record(
+        record, expected_calls=evaluator_calls + rewriter_calls
+    )
+    _assert_usage_record(record["verifier"], expected_calls=evaluator_calls)
+    if rewriter_calls:
+        _assert_usage_record(record["rewriter"], expected_calls=rewriter_calls)
+    else:
+        assert record["rewriter"] is None
+
+
+def _assert_page_usage(
+    record: dict[str, Any],
+    *,
+    stage1_calls: int | None,
+    stage1_agentic_calls: tuple[int, int] | None,
+    field_discovery_calls: int | None,
+    stage2_calls: int | None,
+    stage2_agentic_calls: tuple[int, int] | None,
+) -> None:
+    for key in (
+        "stage1",
+        "stage1_agentic",
+        "field_discovery",
+        "stage2",
+        "stage2_agentic",
+    ):
+        assert key in record
+    _assert_optional_usage_record(record["stage1"], expected_calls=stage1_calls)
+    _assert_agentic_usage(
+        record["stage1_agentic"], expected_calls=stage1_agentic_calls
+    )
+    _assert_optional_usage_record(
+        record["field_discovery"], expected_calls=field_discovery_calls
+    )
+    _assert_optional_usage_record(record["stage2"], expected_calls=stage2_calls)
+    _assert_agentic_usage(
+        record["stage2_agentic"], expected_calls=stage2_agentic_calls
+    )
 
 
 def _assert_usage_aggregate(
@@ -305,6 +366,7 @@ def _read_usage_records(
     *,
     stage_root: str,
     page_stems: tuple[str, ...],
+    expected_run_pages: tuple[str, ...],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     records = [
         json.loads(
@@ -315,8 +377,9 @@ def _read_usage_records(
         for stem in page_stems
     ]
     run_usage = json.loads((output / "run_usage.json").read_text(encoding="utf-8"))
-    page_names = [entry["page"] for entry in run_usage["pages"]]
-    assert page_names in (list(page_stems), list(page_stems) * 2)
+    assert [entry["page"] for entry in run_usage["pages"]] == list(
+        expected_run_pages
+    )
     return records, run_usage
 
 
@@ -462,53 +525,40 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
     assert (output / "stage-1" / "page_2" / "page_2_stage1_flat.txt").is_file()
     assert (output / "resolved_config.json").is_file()
 
+    stage1_page_expectations = (
+        {
+            "stage1_calls": 1,
+            "stage1_agentic_calls": (1, 1),
+            "field_discovery_calls": None,
+            "stage2_calls": None,
+            "stage2_agentic_calls": None,
+        },
+        {
+            "stage1_calls": 1,
+            "stage1_agentic_calls": (1, 0),
+            "field_discovery_calls": None,
+            "stage2_calls": None,
+            "stage2_agentic_calls": None,
+        },
+    )
     page_records, run_usage = _read_usage_records(
-        output, stage_root="stage-1", page_stems=("page_1", "page_2")
+        output,
+        stage_root="stage-1",
+        page_stems=("page_1", "page_2"),
+        expected_run_pages=("page_1", "page_2"),
     )
+    for record, expected in zip(page_records, stage1_page_expectations):
+        _assert_page_usage(record, **expected)
+    for entry, expected in zip(run_usage["pages"], stage1_page_expectations):
+        _assert_page_usage(entry, **expected)
     stage1_records = [record["stage1"] for record in page_records]
-    assert all(record is not None for record in stage1_records)
-    for record in stage1_records:
-        _assert_usage_record(record, expected_calls=record["total_tokens"] // 15)
-    assert sum(record["prompt_tokens"] for record in stage1_records) == 10 * len(
-        generation_calls
-    )
-    assert sum(record["completion_tokens"] for record in stage1_records) == 5 * len(
-        generation_calls
-    )
-    assert sum(record["total_tokens"] for record in stage1_records) == 15 * len(
-        generation_calls
-    )
-    agentic_records = [
-        record["stage1_agentic"]
-        for record in page_records
-        if record.get("stage1_agentic") is not None
-    ]
-    assert agentic_records
-    for record in agentic_records:
-        _assert_usage_record(record, expected_calls=record["total_tokens"] // 15)
-    assert sum(record["prompt_tokens"] for record in agentic_records) == 10 * (
-        len(evaluator_calls) + len(rewriter_calls)
-    )
-    assert sum(record["completion_tokens"] for record in agentic_records) == 5 * (
-        len(evaluator_calls) + len(rewriter_calls)
-    )
-    assert sum(record["total_tokens"] for record in agentic_records) == 15 * (
-        len(evaluator_calls) + len(rewriter_calls)
-    )
+    _assert_usage_aggregate(stage1_records, expected_calls=2)
+    agentic_records = [record["stage1_agentic"] for record in page_records]
+    _assert_usage_aggregate(agentic_records, expected_calls=3)
     run_stage1_records = [entry["stage1"] for entry in run_usage["pages"]]
-    assert len(run_stage1_records) == len(generation_calls)
-    assert all(record is not None for record in run_stage1_records)
-    _assert_usage_aggregate(run_stage1_records, expected_calls=len(generation_calls))
-    run_stage1_agentic = [
-        entry["stage1_agentic"]
-        for entry in run_usage["pages"]
-        if entry.get("stage1_agentic") is not None
-    ]
-    assert run_stage1_agentic
-    _assert_usage_aggregate(
-        run_stage1_agentic,
-        expected_calls=len(evaluator_calls) + len(rewriter_calls),
-    )
+    _assert_usage_aggregate(run_stage1_records, expected_calls=2)
+    run_stage1_agentic = [entry["stage1_agentic"] for entry in run_usage["pages"]]
+    _assert_usage_aggregate(run_stage1_agentic, expected_calls=3)
 
     _json_files_are_serializable(
         output,
@@ -683,75 +733,78 @@ def test_actual_worker_stage2_scope_and_split_model_media(
         (output / ".instruction-cache" / "stage2" / "raster").rglob("*.png")
     )
     assert len(raster_files) == 2
+    stage1_page_expectations = (
+        {
+            "stage1_calls": 1,
+            "stage1_agentic_calls": None,
+            "field_discovery_calls": None,
+            "stage2_calls": None,
+            "stage2_agentic_calls": None,
+        },
+        {
+            "stage1_calls": 1,
+            "stage1_agentic_calls": None,
+            "field_discovery_calls": None,
+            "stage2_calls": None,
+            "stage2_agentic_calls": None,
+        },
+    )
+    stage2_page_expectations = (
+        {
+            "stage1_calls": None,
+            "stage1_agentic_calls": None,
+            "field_discovery_calls": 1,
+            "stage2_calls": 1,
+            "stage2_agentic_calls": (2, 1),
+        },
+        {
+            "stage1_calls": None,
+            "stage1_agentic_calls": None,
+            "field_discovery_calls": None,
+            "stage2_calls": 1,
+            "stage2_agentic_calls": (2, 1),
+        },
+    )
+    expected_run_pages = ("page_1", "page_2", "page_1", "page_2")
     stage1_page_records, run_usage = _read_usage_records(
-        output, stage_root="stage-1", page_stems=("page_1", "page_2")
+        output,
+        stage_root="stage-1",
+        page_stems=("page_1", "page_2"),
+        expected_run_pages=expected_run_pages,
     )
     stage2_page_records, _ = _read_usage_records(
-        output, stage_root="stage-2", page_stems=("page_1", "page_2")
+        output,
+        stage_root="stage-2",
+        page_stems=("page_1", "page_2"),
+        expected_run_pages=expected_run_pages,
     )
+    for record, expected in zip(stage1_page_records, stage1_page_expectations):
+        _assert_page_usage(record, **expected)
+    for record, expected in zip(stage2_page_records, stage2_page_expectations):
+        _assert_page_usage(record, **expected)
+    for entry, expected in zip(
+        run_usage["pages"], (*stage1_page_expectations, *stage2_page_expectations)
+    ):
+        _assert_page_usage(entry, **expected)
     stage1_records = [record["stage1"] for record in stage1_page_records]
     stage2_records = [record["stage2"] for record in stage2_page_records]
-    assert all(record is not None for record in stage1_records)
-    assert all(record is not None for record in stage2_records)
-    for record in stage1_records + stage2_records:
-        _assert_usage_record(record, expected_calls=record["total_tokens"] // 15)
-    _assert_usage_aggregate(
-        stage1_records,
-        expected_calls=len(stage1_page_generation_calls),
-    )
-    discovery_records = [
-        record["field_discovery"]
-        for record in stage2_page_records
-        if record.get("field_discovery") is not None
-    ]
-    assert len(discovery_records) == 1
+    _assert_usage_aggregate(stage1_records, expected_calls=2)
+    _assert_usage_aggregate(stage2_records, expected_calls=2)
+    discovery_records = [stage2_page_records[0]["field_discovery"]]
     _assert_usage_aggregate(discovery_records, expected_calls=1)
-    assert all(record.get("stage1_agentic") is None for record in stage2_page_records)
     stage2_agentic_records = [
-        record["stage2_agentic"]
-        for record in stage2_page_records
-        if record.get("stage2_agentic") is not None
+        record["stage2_agentic"] for record in stage2_page_records
     ]
-    assert stage2_agentic_records
-    for record in stage2_agentic_records:
-        _assert_usage_record(record, expected_calls=record["total_tokens"] // 15)
-    _assert_usage_aggregate(
-        stage2_agentic_records,
-        expected_calls=len(evaluator_calls) + len(rewriter_calls),
-    )
-    assert run_usage["field_discovery"] is not None
-    _assert_usage_record(
-        run_usage["field_discovery"],
-        expected_calls=1,
-    )
-    run_stage1_records = [
-        entry["stage1"]
-        for entry in run_usage["pages"]
-        if entry.get("stage1") is not None
-    ]
-    run_stage2_records = [
-        entry["stage2"]
-        for entry in run_usage["pages"]
-        if entry.get("stage2") is not None
-    ]
-    assert len(run_stage1_records) == 2
-    assert len(run_stage2_records) == 2
-    assert all(record is not None for record in run_stage1_records)
-    assert all(record is not None for record in run_stage2_records)
-    _assert_usage_aggregate(
-        run_stage1_records, expected_calls=len(stage1_page_generation_calls)
-    )
-    _assert_usage_aggregate(run_stage2_records, expected_calls=len(pass2_generation))
+    _assert_usage_aggregate(stage2_agentic_records, expected_calls=6)
+    _assert_usage_record(run_usage["field_discovery"], expected_calls=1)
+    run_stage1_records = [entry["stage1"] for entry in run_usage["pages"][:2]]
+    run_stage2_records = [entry["stage2"] for entry in run_usage["pages"][2:]]
+    _assert_usage_aggregate(run_stage1_records, expected_calls=2)
+    _assert_usage_aggregate(run_stage2_records, expected_calls=2)
     run_stage2_agentic = [
-        entry["stage2_agentic"]
-        for entry in run_usage["pages"]
-        if entry.get("stage2_agentic") is not None
+        entry["stage2_agentic"] for entry in run_usage["pages"][2:]
     ]
-    assert run_stage2_agentic
-    _assert_usage_aggregate(
-        run_stage2_agentic,
-        expected_calls=len(evaluator_calls) + len(rewriter_calls),
-    )
+    _assert_usage_aggregate(run_stage2_agentic, expected_calls=6)
 
     _json_files_are_serializable(
         output,
