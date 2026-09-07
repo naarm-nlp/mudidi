@@ -1,5 +1,52 @@
 {% extends "_layout.html" %}
 {% from "_icons.html" import credential_eye %}
+{% macro instruction_source_panel(stage, stage_label, pipeline_stages, asset, errors_by_field) %}
+{% set source_field = stage ~ '_instruction_source' %}
+{% set file_field = stage ~ '_instruction_file' %}
+{% set pages_field = stage ~ '_instruction_pdf_pages' %}
+{% set keep_field = stage ~ '_instruction_keep_existing' %}
+{% set text_field = stage ~ '_additional_instructions' %}
+{% set status_id = stage ~ '-instruction-file-status' %}
+{% set has_kept = asset and asset.source_mode == 'file' %}
+<fieldset class="form-field instruction-source-panel{% if errors_by_field[file_field] or errors_by_field[pages_field] %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}>
+  <legend>{{ stage_label }} instructions</legend>
+  <div class="choice-card-grid instruction-source-choices">
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="typed" checked data-instruction-source-radio><span><strong>Type instructions</strong><small>Write instructions directly for this run.</small></span></label>
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="file" data-instruction-source-radio><span><strong>Upload instruction file</strong><small>Attach one .txt, .md, or .pdf file instead of typing.</small></span></label>
+  </div>
+  <div class="instruction-source-body" data-instruction-typed-panel>
+    <label><span class="field-heading">Typed instructions <button class="info-button" type="button" aria-label="About {{ stage_label }} additional instructions" data-help="Optional instructions appended to the {{ stage_label }} prompt for this run.">i</button></span><textarea name="{{ text_field }}" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
+  </div>
+  <div class="instruction-source-body instruction-file-panel" data-instruction-file-panel hidden>
+    {% if has_kept %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a></span>{% endif %}
+    <div class="mdf-guide-file-row instruction-file-row">
+      <label class="primary mdf-guide-upload-trigger instruction-upload-trigger">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+        </svg>
+        <span>Choose file</span>
+        <input class="mdf-guide-file-input" data-instruction-file-input name="{{ file_field }}" type="file" accept=".txt,.md,.pdf" disabled aria-describedby="{{ status_id }}{% if errors_by_field[file_field] %} {{ stage }}-instruction-file-error{% endif %}"{% if errors_by_field[file_field] %} aria-invalid="true"{% endif %}>
+      </label>
+      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="{% if has_kept %}Using saved file unless replaced{% else %}No file selected{% endif %}">{% if has_kept %}Using saved file unless replaced{% else %}No file selected{% endif %}</span>
+    </div>
+    {% if errors_by_field[file_field] %}<small id="{{ stage }}-instruction-file-error" class="field-error-message">{{ errors_by_field[file_field] }}</small>{% endif %}
+    <input type="hidden" name="{{ keep_field }}" value="{{ 'true' if has_kept else 'false' }}" data-instruction-keep-existing disabled>
+    <label class="instruction-pdf-pages{% if errors_by_field[pages_field] %} field-invalid{% endif %}" data-instruction-pdf-pages hidden><span class="field-heading">PDF pages <button class="info-button" type="button" aria-label="About {{ stage_label }} instruction PDF pages" data-help="Optional. Enter one page number, a page range, comma-separated page numbers, or a combination, for example 2-4,8. Blank selects every page in the uploaded PDF.">i</button></span><input class="page-spec-input" name="{{ pages_field }}" placeholder="ex: 2-4,8" disabled{% if errors_by_field[pages_field] %} aria-invalid="true" aria-describedby="{{ stage }}-instruction-pages-error"{% endif %}></label>
+    {% if errors_by_field[pages_field] %}<small id="{{ stage }}-instruction-pages-error" class="field-error-message">{{ errors_by_field[pages_field] }}</small>{% endif %}
+    <p class="instruction-pdf-warning" data-instruction-pdf-warning hidden>Selected PDF pages are attached to every applicable model call. Large files or “all pages” can substantially increase token use, cost, latency, and the chance of exceeding a model context limit.</p>
+  </div>
+  {% if stage == 'stage2' %}
+  <fieldset class="choice-group instruction-scope-group">
+    <legend>Apply to</legend>
+    <div class="choice-card-grid">
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="pass1" data-instruction-scope-radio><span><strong>Pass 1 only — parsing-guide discovery</strong></span></label>
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="pass2" data-instruction-scope-radio><span><strong>Pass 2 only — per-page MDF extraction</strong></span></label>
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="both" checked data-instruction-scope-radio><span><strong>Both passes</strong></span></label>
+    </div>
+  </fieldset>
+  {% endif %}
+</fieldset>
+{% endmacro %}
 {% block title %}MUDIDI Local{% endblock %}
 {% block main %}
       <header class="topbar">
@@ -104,8 +151,8 @@
                 <h3>Additional context and MDF inputs</h3>
                 <div class="form-grid">
                   <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
-                  <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
-                  <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
+                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), errors_by_field) }}
+                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), errors_by_field) }}
                   <div class="form-field mdf-guide-field" data-stage-control data-pipeline-stages="pass1 pass2">
                     <span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>
                     {% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}
@@ -407,5 +454,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-7" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>
 {% endblock %}

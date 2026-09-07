@@ -163,6 +163,7 @@ const setWizardStep = (step, { focus = true } = {}) => {
 const persistRunForm = () => {
   if (!runForm) return;
   if (stage2State?.mode === "shared") synchronizeSharedStage2();
+  synchronizeInstructionPanels();
   const state = {};
   [...runForm.elements].forEach((field) => {
     if (!field.name || ["file", "password", "submit", "button"].includes(field.type)) return;
@@ -326,6 +327,102 @@ if (mdfGuideFileInput && mdfGuideFileStatus) {
       : mdfGuideFileStatus.dataset.emptyLabel;
   });
 }
+
+const instructionPanels = [...document.querySelectorAll("[data-instruction-source-panel]")];
+
+const instructionPanelHasKeptPreset = (panel) => panel.dataset.instructionHasPreset === "true";
+const instructionPanelPresetIsPdf = (panel) => panel.dataset.instructionPresetKind === "pdf";
+
+const instructionPanelRefs = (panel) => ({
+  sourceRadios: [...panel.querySelectorAll("[data-instruction-source-radio]")],
+  typedPanel: panel.querySelector("[data-instruction-typed-panel]"),
+  textarea: panel.querySelector("[data-instruction-typed-panel] textarea"),
+  filePanel: panel.querySelector("[data-instruction-file-panel]"),
+  fileInput: panel.querySelector("[data-instruction-file-input]"),
+  fileStatus: panel.querySelector("[data-instruction-file-status]"),
+  keepExisting: panel.querySelector("[data-instruction-keep-existing]"),
+  pdfPagesField: panel.querySelector("[data-instruction-pdf-pages]"),
+  pdfPagesInput: panel.querySelector("[data-instruction-pdf-pages] input"),
+  pdfWarning: panel.querySelector("[data-instruction-pdf-warning]"),
+});
+
+const synchronizeInstructionPanel = (panel) => {
+  if (panel.hidden) return;
+  const refs = instructionPanelRefs(panel);
+  const selected = refs.sourceRadios.find((radio) => radio.checked) || refs.sourceRadios[0];
+  if (!selected) return;
+  const isFile = selected.value === "file";
+
+  if (refs.typedPanel) refs.typedPanel.hidden = isFile;
+  if (refs.textarea) refs.textarea.disabled = isFile;
+
+  if (refs.filePanel) refs.filePanel.hidden = !isFile;
+  const hasKept = instructionPanelHasKeptPreset(panel);
+  const selectedFile = refs.fileInput?.files?.[0] || null;
+  if (refs.fileInput) {
+    refs.fileInput.disabled = !isFile;
+    refs.fileInput.required = isFile && !hasKept;
+  }
+  if (refs.keepExisting) {
+    refs.keepExisting.disabled = !isFile;
+    refs.keepExisting.value = isFile && hasKept && !selectedFile ? "true" : "false";
+  }
+  if (refs.fileStatus) {
+    const emptyLabel = hasKept ? "Using saved file unless replaced" : "No file selected";
+    refs.fileStatus.dataset.emptyLabel = emptyLabel;
+    refs.fileStatus.textContent = selectedFile ? `Selected: ${selectedFile.name}` : emptyLabel;
+  }
+  const currentIsPdf = selectedFile
+    ? selectedFile.name.toLowerCase().endsWith(".pdf")
+    : hasKept && instructionPanelPresetIsPdf(panel);
+  const showPdfPages = isFile && currentIsPdf;
+  if (refs.pdfPagesField) refs.pdfPagesField.hidden = !showPdfPages;
+  if (refs.pdfPagesInput) refs.pdfPagesInput.disabled = !showPdfPages;
+  if (refs.pdfWarning) refs.pdfWarning.hidden = !showPdfPages;
+};
+
+const synchronizeInstructionPanels = () => instructionPanels.forEach(synchronizeInstructionPanel);
+
+const wireInstructionPanel = (panel) => {
+  const refs = instructionPanelRefs(panel);
+  panel.dataset.instructionActiveSource = (
+    refs.sourceRadios.find((radio) => radio.checked) || refs.sourceRadios[0]
+  )?.value || "typed";
+  synchronizeInstructionPanel(panel);
+  refs.sourceRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      const previousMode = panel.dataset.instructionActiveSource;
+      const newMode = radio.value;
+      if (previousMode === newMode) {
+        synchronizeInstructionPanel(panel);
+        return;
+      }
+      const clearing = previousMode === "typed"
+        ? Boolean(refs.textarea?.value.trim())
+        : Boolean(refs.fileInput?.files?.length) || instructionPanelHasKeptPreset(panel);
+      if (clearing) {
+        const label = previousMode === "typed" ? "the typed instructions" : "the uploaded instruction file";
+        if (!window.confirm(`Switching sources clears ${label}. Continue?`)) {
+          refs.sourceRadios.forEach((other) => {
+            other.checked = other.value === previousMode;
+          });
+          synchronizeInstructionPanel(panel);
+          return;
+        }
+        if (previousMode === "typed" && refs.textarea) refs.textarea.value = "";
+        if (previousMode === "file") {
+          if (refs.fileInput) refs.fileInput.value = "";
+          panel.dataset.instructionHasPreset = "false";
+        }
+      }
+      panel.dataset.instructionActiveSource = newMode;
+      synchronizeInstructionPanel(panel);
+      (newMode === "typed" ? refs.textarea : refs.fileInput)?.focus();
+    });
+  });
+  refs.fileInput?.addEventListener("change", () => synchronizeInstructionPanel(panel));
+};
 
 const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
 const otherInformationField = document.querySelector("#profile-other-information");
@@ -694,6 +791,7 @@ const synchronizePipeline = () => {
       input.disabled = !visible;
     });
   });
+  synchronizeInstructionPanels();
   if (stage2Container) {
     stage2Container.hidden = !(active.has("pass1") || active.has("pass2"));
   }
@@ -828,6 +926,7 @@ const synchronizeManual = () => {
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 restoreRunForm();
+instructionPanels.forEach(wireInstructionPanel);
 const restoredPass1 = readStage2Pass("pass1");
 const restoredPass2 = readStage2Pass("pass2");
 const restoredPassesUnequal = !stage2ValuesEqual(restoredPass1, restoredPass2);

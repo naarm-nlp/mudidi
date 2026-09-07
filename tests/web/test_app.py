@@ -224,7 +224,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-7" in response.text
+    assert "/static/app.js?v=dashboard-ui-8" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
@@ -583,6 +583,226 @@ if (formDataFor(runForm).has("evaluator_custom_model")) {
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+def test_instruction_source_panel_sync_handles_switching_confirmation_and_kept_presets() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+class Node {
+  constructor() {
+    this.dataset = {};
+    this.hidden = false;
+    this.disabled = false;
+    this.required = false;
+    this.value = "";
+    this.textContent = "";
+    this.focused = false;
+    this.listeners = {};
+    this._files = [];
+  }
+  get files() { return this._files; }
+  set files(list) { this._files = list; }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  focus() { this.focused = true; }
+}
+
+class FileInputNode extends Node {
+  set value(next) {
+    if (next === "") this._files = [];
+    this._value = next;
+  }
+  get value() { return this._files[0]?.name || ""; }
+}
+
+class Radio extends Node {
+  constructor(value, checked) {
+    super();
+    this.value = value;
+    this.checked = checked;
+  }
+}
+
+class InstructionPanel extends Node {
+  constructor({ hasPreset = false, presetKind = "" } = {}) {
+    super();
+    this.dataset.instructionHasPreset = hasPreset ? "true" : "false";
+    if (presetKind) this.dataset.instructionPresetKind = presetKind;
+    this.sourceRadios = [new Radio("typed", true), new Radio("file", false)];
+    this.typedPanel = new Node();
+    this.textarea = new Node();
+    this.filePanel = new Node();
+    this.fileInput = new FileInputNode();
+    this.fileStatus = new Node();
+    this.fileStatus.dataset.emptyLabel = hasPreset ? "Using saved file unless replaced" : "No file selected";
+    this.keepExisting = new Node();
+    this.pdfPagesField = new Node();
+    this.pdfPagesInput = new Node();
+    this.pdfWarning = new Node();
+  }
+  querySelectorAll(selector) {
+    if (selector === "[data-instruction-source-radio]") return this.sourceRadios;
+    return [];
+  }
+  querySelector(selector) {
+    switch (selector) {
+      case "[data-instruction-typed-panel]": return this.typedPanel;
+      case "[data-instruction-typed-panel] textarea": return this.textarea;
+      case "[data-instruction-file-panel]": return this.filePanel;
+      case "[data-instruction-file-input]": return this.fileInput;
+      case "[data-instruction-file-status]": return this.fileStatus;
+      case "[data-instruction-keep-existing]": return this.keepExisting;
+      case "[data-instruction-pdf-pages]": return this.pdfPagesField;
+      case "[data-instruction-pdf-pages] input": return this.pdfPagesInput;
+      case "[data-instruction-pdf-warning]": return this.pdfWarning;
+      default: return null;
+    }
+  }
+}
+
+const freshPanel = new InstructionPanel();
+const keptPdfPanel = new InstructionPanel({ hasPreset: true, presetKind: "pdf" });
+const document = {
+  body: { append() {} },
+  addEventListener() {},
+  createElement() { return new Node(); },
+  querySelector() { return null; },
+  querySelectorAll(selector) {
+    if (selector === "[data-instruction-source-panel]") return [freshPanel, keptPdfPanel];
+    return [];
+  },
+};
+let confirmResult = true;
+let confirmCalls = 0;
+const window = {
+  confirm: () => { confirmCalls += 1; return confirmResult; },
+  fetch: async () => { throw new Error("not used"); },
+  location: { origin: "http://test" },
+  addEventListener() {},
+  sessionStorage: { getItem: () => null, setItem() {} },
+};
+const context = vm.createContext({
+  URL,
+  URLSearchParams,
+  console,
+  document,
+  queueMicrotask,
+  window,
+});
+const source = fs.readFileSync(process.argv[1], "utf8");
+vm.runInContext(
+  `${source}\nglobalThis.__dashboardTest = {
+    synchronizeInstructionPanel,
+    synchronizeInstructionPanels,
+    wireInstructionPanel,
+  };`,
+  context,
+);
+const sync = context.__dashboardTest;
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+const selectRadio = (panel, value) => {
+  panel.sourceRadios.forEach((radio) => { radio.checked = radio.value === value; });
+  // Real radios fire "input" (which bubbles to a generic resync via persistRunForm)
+  // before "change" fires on the target. Reproduce that ordering here so a
+  // regression that lets the generic resync clobber the previous-mode marker
+  // before the dedicated change handler reads it is caught.
+  sync.synchronizeInstructionPanels();
+  panel.sourceRadios.find((radio) => radio.value === value).listeners.change();
+};
+
+sync.wireInstructionPanel(freshPanel);
+sync.wireInstructionPanel(keptPdfPanel);
+
+assert(!freshPanel.typedPanel.hidden, "typed panel starts visible");
+assert(!freshPanel.textarea.disabled, "typed textarea starts enabled");
+assert(freshPanel.filePanel.hidden, "file panel starts hidden");
+assert(freshPanel.fileInput.disabled, "file input starts disabled");
+
+selectRadio(freshPanel, "file");
+assert(confirmCalls === 0, "switching away from an empty typed field must not confirm");
+assert(freshPanel.typedPanel.hidden, "typed panel hides once file mode is active");
+assert(freshPanel.textarea.disabled, "typed textarea disables once file mode is active");
+assert(!freshPanel.filePanel.hidden, "file panel becomes visible in file mode");
+assert(!freshPanel.fileInput.disabled, "file input enables in file mode");
+assert(freshPanel.fileInput.required, "file input is required without a kept preset");
+assert(freshPanel.fileInput.focused, "switching to file mode focuses the file input");
+assert(freshPanel.fileStatus.textContent === "No file selected", "empty file mode shows the empty label");
+
+freshPanel.fileInput.files = [{ name: "guide.pdf" }];
+freshPanel.fileInput.listeners.change();
+assert(!freshPanel.pdfPagesField.hidden, "PDF selection reveals the pages field");
+assert(!freshPanel.pdfPagesInput.disabled, "PDF selection enables the pages input");
+assert(!freshPanel.pdfWarning.hidden, "PDF selection reveals the persistent cost warning");
+assert(freshPanel.fileStatus.textContent === "Selected: guide.pdf", "filename status reflects the selected file");
+
+freshPanel.fileInput.files = [{ name: "guide.txt" }];
+freshPanel.fileInput.listeners.change();
+assert(freshPanel.pdfPagesField.hidden, "TXT selection hides the pages field");
+assert(freshPanel.pdfPagesInput.disabled, "TXT selection disables the pages input");
+assert(freshPanel.pdfWarning.hidden, "TXT selection hides the persistent cost warning");
+
+confirmResult = false;
+selectRadio(freshPanel, "typed");
+assert(confirmCalls === 1, "switching away from a non-empty upload must confirm");
+assert(freshPanel.sourceRadios[1].checked, "cancelling the confirmation keeps file mode selected");
+assert(!freshPanel.sourceRadios[0].checked, "cancelling the confirmation does not select typed mode");
+assert(freshPanel.fileInput.files.length === 1, "cancelling the confirmation preserves the uploaded file");
+assert(!freshPanel.filePanel.hidden, "cancelling the confirmation keeps the file panel visible");
+
+confirmResult = true;
+confirmCalls = 0;
+selectRadio(freshPanel, "typed");
+assert(confirmCalls === 1, "switching away from a non-empty upload must confirm");
+assert(freshPanel.sourceRadios[0].checked, "accepting the confirmation selects typed mode");
+assert(freshPanel.fileInput.files.length === 0, "accepting the confirmation clears the uploaded file");
+assert(freshPanel.typedPanel.hidden === false, "accepting the confirmation reveals the typed panel");
+assert(freshPanel.textarea.focused, "accepting the confirmation focuses the typed textarea");
+
+freshPanel.textarea.value = "Mark uncertain characters.";
+confirmCalls = 0;
+confirmResult = false;
+selectRadio(freshPanel, "file");
+assert(confirmCalls === 1, "switching away from non-empty typed text must confirm");
+assert(freshPanel.sourceRadios[0].checked, "cancelling keeps typed mode selected");
+assert(freshPanel.textarea.value === "Mark uncertain characters.", "cancelling preserves typed text");
+
+confirmResult = true;
+confirmCalls = 0;
+selectRadio(freshPanel, "file");
+assert(confirmCalls === 1, "switching away from non-empty typed text must confirm");
+assert(freshPanel.textarea.value === "", "accepting the confirmation clears typed text");
+assert(freshPanel.fileInput.required, "file input remains required after re-entering file mode");
+
+selectRadio(keptPdfPanel, "file");
+assert(!keptPdfPanel.fileInput.required, "a kept preset means a fresh file is not required");
+assert(keptPdfPanel.keepExisting.value === "true", "keep-existing reports true while no replacement is chosen");
+assert(!keptPdfPanel.pdfPagesField.hidden, "a kept PDF preset shows the pages field before any new upload");
+assert(!keptPdfPanel.pdfWarning.hidden, "a kept PDF preset shows the persistent cost warning");
+assert(keptPdfPanel.fileStatus.textContent === "Using saved file unless replaced", "kept preset shows its saved-file status");
+
+keptPdfPanel.fileInput.files = [{ name: "replacement.txt" }];
+keptPdfPanel.fileInput.listeners.change();
+assert(keptPdfPanel.keepExisting.value === "false", "choosing a replacement file clears keep-existing");
+assert(keptPdfPanel.pdfPagesField.hidden, "a TXT replacement hides the pages field even with a PDF preset");
+
+keptPdfPanel.hidden = true;
+keptPdfPanel.fileInput.disabled = true;
+keptPdfPanel.fileInput.required = true;
+sync.synchronizeInstructionPanel(keptPdfPanel);
+assert(keptPdfPanel.fileInput.disabled, "a hidden panel excluded by the pipeline stays disabled");
+assert(keptPdfPanel.fileInput.required, "a hidden panel excluded by the pipeline is not re-enabled by our own sync");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
 
 def test_stage2_summary_tracks_transcription_and_shared_split_modes() -> None:
     app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
@@ -1044,6 +1264,92 @@ def test_home_explains_each_pipeline_model_role(tmp_path: Path) -> None:
     assert "transcribes the selected dictionary pages into faithful flat text" in response.text
     assert "infers the dictionary-specific MDF parsing guide" in response.text
     assert "applies the approved MDF parsing guide" in response.text
+
+
+def test_new_run_wizard_exposes_stage_instruction_source_panels(tmp_path: Path) -> None:
+    response = TestClient(create_app(data_dir=tmp_path)).get("/")
+
+    assert response.status_code == 200
+    text = response.text
+    assert text.count('class="form-field instruction-source-panel') == 2
+    assert 'data-instruction-stage="stage1"' in text
+    assert 'data-instruction-stage="stage2"' in text
+    assert 'data-instruction-source-panel data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1"' in text
+    assert 'data-instruction-source-panel data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2"' in text
+    assert text.count('data-instruction-has-preset="false"') == 2
+    assert text.count('name="stage1_instruction_source" value="typed" checked') == 1
+    assert text.count('name="stage1_instruction_source" value="file"') == 1
+    assert text.count('name="stage2_instruction_source" value="typed" checked') == 1
+    assert text.count('name="stage2_instruction_source" value="file"') == 1
+    assert text.count('name="stage1_instruction_file"') == 1
+    assert text.count('name="stage2_instruction_file"') == 1
+    assert text.count('accept=".txt,.md,.pdf"') == 2
+    assert 'name="stage1_instruction_pdf_pages"' in text
+    assert 'name="stage2_instruction_pdf_pages"' in text
+    assert 'name="stage1_additional_instructions"' in text
+    assert 'name="stage2_additional_instructions"' in text
+    assert '<input type="hidden" name="stage1_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>' in text
+    assert '<input type="hidden" name="stage2_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>' in text
+    assert text.count(
+        "Selected PDF pages are attached to every applicable model call. Large files or "
+        "\u201call pages\u201d can substantially increase token use, cost, latency, and the "
+        "chance of exceeding a model context limit."
+    ) == 2
+    assert "Pass 1 only \u2014 parsing-guide discovery" in text
+    assert "Pass 2 only \u2014 per-page MDF extraction" in text
+    assert ">Both passes<" in text
+    assert 'name="stage2_instruction_scope" value="both" checked' in text
+    assert text.count('id="stage1-instruction-file-status"') == 1
+    assert text.count('id="stage2-instruction-file-status"') == 1
+    assert 'aria-live="polite"' in text
+
+
+def test_new_run_wizard_shows_kept_instruction_state_for_a_loaded_preset(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "source-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage2_instruction_source": "typed",
+            "stage2_additional_instructions": "Use nt for usage notes.",
+            "stage2_instruction_scope": "pass2",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage1_instruction_file",
+                ("stage1.pdf", _pdf_bytes(2), "application/pdf"),
+            ),
+        ],
+    )
+    assert response.status_code == 200
+    run_id = response.text.split('action="/runs/', 1)[1].split("/start", 1)[0]
+
+    saved = client.post(
+        f"/runs/{run_id}/presets",
+        data={"name": "Instruction kept preset"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    preset = app.state.run_store.list_presets()[0]
+
+    loaded = client.get(f"/?preset={preset.preset_id}")
+    assert loaded.status_code == 200
+    text = loaded.text
+    assert 'data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1" data-instruction-has-preset="true" data-instruction-preset-kind="pdf"' in text
+    assert 'data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2" data-instruction-has-preset="false"' in text
+    assert '<input type="hidden" name="stage1_instruction_keep_existing" value="true" data-instruction-keep-existing disabled>' in text
+    assert "Using saved file unless replaced" in text
+    assert "stage1.pdf" in text
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
