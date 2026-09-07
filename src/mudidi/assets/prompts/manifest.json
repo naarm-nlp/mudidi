@@ -34,6 +34,7 @@
     "variables": [
       {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
       {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
+      {"name": "dictionary_profile", "tag": "<dictionary_profile>", "description": "Optional dictionary metadata supplied by the dashboard or YAML configuration."},
       {"name": "guides", "description": "Optional user-defined guidelines."},
       {"name": "guides_source", "description": "Source filename for the optional guidelines."}
     ]
