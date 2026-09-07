@@ -76,3 +76,22 @@ def test_templates_show_effective_kind_defaults_and_valid_required_examples() ->
     assert blocks["benchmark_run"]["pipeline"]["stage1_source"] == "gold"
     assert blocks["stage1_evaluation"]["input"]["predicted"] == "path/to/predicted"
     assert blocks["stage1_evaluation"]["input"]["gold"] == "path/to/gold"
+
+
+def test_extraction_templates_document_instruction_attachment_pipeline_fields() -> None:
+    rendered = render_config_reference()
+    sections = {
+        match.group("kind"): match.group("body")
+        for match in re.finditer(
+            r"(?ms)^## `(?P<kind>[^`]+)`\n(?P<body>.*?)(?=^## `|\Z)",
+            rendered,
+        )
+    }
+    for kind in ("inference", "benchmark_run", "benchmark_sweep"):
+        body = sections[kind]
+        for field in (
+            "stage1_guides_pages",
+            "stage2_guides_pages",
+            "stage2_guides_scope",
+        ):
+            assert re.search(rf"(?m)^\s+{re.escape(field)}:", body), (kind, field)

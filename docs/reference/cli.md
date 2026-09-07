@@ -27,6 +27,11 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--dict-pages DICT_PAGES] [--intro INTRO]
                   [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
                   [--ocr-text OCR_TEXT] [--toolbox-pdf TOOLBOX_PDF]
+                  [--stage-1-guides STAGE1_GUIDES_PATH]
+                  [--stage-1-guides-pages STAGE1_GUIDES_PAGES]
+                  [--stage-2-guides STAGE2_GUIDES_PATH]
+                  [--stage-2-guides-pages STAGE2_GUIDES_PAGES]
+                  [--stage-2-guides-scope {pass1,pass2,both}]
                   [--output-dir OUTPUT_DIR]
                   [--stage {1,2,all,2-pass-1,2-pass-2}] [--model MODEL]
                   [--stage-1-model STAGE_1_MODEL]
@@ -54,6 +59,16 @@ options:
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
   --toolbox-pdf TOOLBOX_PDF
+  --stage-1-guides STAGE1_GUIDES_PATH
+                        Stage 1 instruction guide path.
+  --stage-1-guides-pages STAGE1_GUIDES_PAGES
+                        Selected pages when --stage-1-guides is a PDF.
+  --stage-2-guides STAGE2_GUIDES_PATH
+                        Stage 2 instruction guide path.
+  --stage-2-guides-pages STAGE2_GUIDES_PAGES
+                        Selected pages when --stage-2-guides is a PDF.
+  --stage-2-guides-scope {pass1,pass2,both}
+                        Stage 2 guide routing scope.
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
   --model MODEL
@@ -121,6 +136,11 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
                             [--ocr-text OCR_TEXT]
                             [--dictionary-languages DICTIONARY_LANGUAGES]
                             [--toolbox-pdf TOOLBOX_PDF]
+                            [--stage-1-guides STAGE1_GUIDES_PATH]
+                            [--stage-1-guides-pages STAGE1_GUIDES_PAGES]
+                            [--stage-2-guides STAGE2_GUIDES_PATH]
+                            [--stage-2-guides-pages STAGE2_GUIDES_PAGES]
+                            [--stage-2-guides-scope {pass1,pass2,both}]
                             [--output-dir OUTPUT_DIR]
                             [--stage {1,2,all,2-pass-1,2-pass-2}]
                             [--model MODEL] [--stage-1-model STAGE_1_MODEL]
@@ -155,6 +175,16 @@ options:
   --dictionary-languages DICTIONARY_LANGUAGES
                         Legacy benchmark language metadata file.
   --toolbox-pdf TOOLBOX_PDF
+  --stage-1-guides STAGE1_GUIDES_PATH
+                        Stage 1 instruction guide path.
+  --stage-1-guides-pages STAGE1_GUIDES_PAGES
+                        Selected pages when --stage-1-guides is a PDF.
+  --stage-2-guides STAGE2_GUIDES_PATH
+                        Stage 2 instruction guide path.
+  --stage-2-guides-pages STAGE2_GUIDES_PAGES
+                        Selected pages when --stage-2-guides is a PDF.
+  --stage-2-guides-scope {pass1,pass2,both}
+                        Stage 2 guide routing scope.
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
   --model MODEL
