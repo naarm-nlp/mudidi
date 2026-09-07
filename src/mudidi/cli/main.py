@@ -97,6 +97,37 @@ def _add_sparse_run_arguments(
             help="Legacy benchmark language metadata file.",
         )
     parser.add_argument("--toolbox-pdf", dest="toolbox_pdf", default=argparse.SUPPRESS)
+    parser.add_argument(
+        "--stage-1-guides",
+        dest="stage1_guides_path",
+        default=argparse.SUPPRESS,
+        help="Stage 1 instruction guide path.",
+    )
+    parser.add_argument(
+        "--stage-1-guides-pages",
+        dest="stage1_guides_pages",
+        default=argparse.SUPPRESS,
+        help="Selected pages when --stage-1-guides is a PDF.",
+    )
+    parser.add_argument(
+        "--stage-2-guides",
+        dest="stage2_guides_path",
+        default=argparse.SUPPRESS,
+        help="Stage 2 instruction guide path.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-pages",
+        dest="stage2_guides_pages",
+        default=argparse.SUPPRESS,
+        help="Selected pages when --stage-2-guides is a PDF.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-scope",
+        dest="stage2_guides_scope",
+        choices=["pass1", "pass2", "both"],
+        default=argparse.SUPPRESS,
+        help="Stage 2 guide routing scope.",
+    )
     parser.add_argument("--output-dir", dest="output_dir", default=argparse.SUPPRESS)
     parser.add_argument(
         "--stage",

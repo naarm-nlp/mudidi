@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import json
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,7 @@ from mudidi.utils.image import (
     model_supports_pdf_input,
 )
 from mudidi.utils.mdf_export import normalize_mdf_text
+from mudidi.instructions import PreparedInstructionContext
 from mudidi.llm.prompts import page_boundary_rules_prompt
 from mudidi.utils.page_context import (
     PageContext,
@@ -126,14 +128,13 @@ def _neighbor_format_kwargs(
         ),
         "page_image_order": format_page_image_order_note(page_context),
     }
-
-
 def _render_direct_mdf_user_parts(
     *,
     transcription: str,
     field_map: FieldMapPrompt,
     toolbox_reference_mode: Literal["none", "pdf", "text_fallback"],
     guides: str,
+    guides_source: str,
     mode: PromptMode,
     page_context: PageContext | None,
 ) -> tuple[str, str]:
@@ -147,6 +148,7 @@ def _render_direct_mdf_user_parts(
         toolbox_reference_mode=toolbox_reference_mode,
         mdf_marker_reference=get_prompt_store().get("mdf_marker_reference"),
         guides=guides,
+        guides_source=guides_source,
         **neighbor_kwargs,
     )
     before, marker, after = rendered.partition(_TRANSCRIPTION_SPLIT_MARKER)
@@ -184,12 +186,23 @@ def _stage2_prompt_cache_key(
     static_text: str,
     toolbox_pdf: Optional[Path],
     prompt_cache_key: Optional[str],
+    instruction_context: PreparedInstructionContext | None = None,
+    instruction_scope: str = "both",
 ) -> str:
-    """Build a stable cache key for providers that accept routing hints."""
+    """Build a stable key including all applicable instruction identity metadata."""
+    instruction_identity = (
+        instruction_context.manifest_entry(scope=instruction_scope)
+        if instruction_context is not None
+        else {
+            "kind": "none",
+            "scope": instruction_scope,
+        }
+    )
     digest_input = "\n".join(
         [
             model,
             static_text,
+            json.dumps(instruction_identity, sort_keys=True, ensure_ascii=False),
             str(toolbox_pdf) if toolbox_pdf else "",
             str(toolbox_pdf.stat().st_mtime_ns) if toolbox_pdf and toolbox_pdf.exists() else "",
         ]
@@ -211,6 +224,8 @@ def _build_direct_mdf_prompt(
     page_context: PageContext | None = None,
     prompt_cache: PromptCacheMode = "auto",
     media_reference: MediaReferenceMode = "auto",
+    instruction_context: PreparedInstructionContext | None = None,
+    instruction_scope: str = "both",
 ) -> DirectMdfPrompt:
     """Build LLM messages and cache-key source text for Pass 2 extraction."""
     toolbox_reference_mode: Literal["none", "pdf", "text_fallback"] = "none"
@@ -221,13 +236,25 @@ def _build_direct_mdf_prompt(
             model=model,
             media_reference=media_reference,
         )
+    guide_text = instruction_context.text if instruction_context is not None else guides
+    guide_source = (
+        instruction_context.metadata.original_filename
+        if instruction_context is not None
+        else ""
+    ) or ""
     static_text, dynamic_text = _render_direct_mdf_user_parts(
         transcription=transcription,
         field_map=field_map,
         toolbox_reference_mode=toolbox_reference_mode,
-        guides=guides,
+        guides=guide_text,
+        guides_source=guide_source,
         mode=mode,
         page_context=page_context,
+    )
+    instruction_parts = (
+        instruction_context.content_parts(model, stage_label="Stage 2 Pass 2")
+        if instruction_context is not None
+        else []
     )
     mime = mime_type_for_path(image_path)
     dynamic_content: list[dict] = [{"type": "text", "text": dynamic_text}]
@@ -258,13 +285,14 @@ def _build_direct_mdf_prompt(
         merged_text = "\n".join(part for part in (static_text, dynamic_text) if part)
         user_content = [
             {"type": "text", "text": merged_text},
+            *instruction_parts,
             *toolbox_parts,
             *dynamic_content[1:],
         ]
         messages = [system_message, {"role": "user", "content": user_content}]
     else:
         static_content = _mark_static_cache_boundary(
-            [{"type": "text", "text": static_text}, *toolbox_parts],
+            [{"type": "text", "text": static_text}, *instruction_parts, *toolbox_parts],
             prompt_cache,
         )
         messages = [
@@ -287,6 +315,8 @@ def build_direct_mdf_messages(
     page_context: PageContext | None = None,
     prompt_cache: PromptCacheMode = "auto",
     media_reference: MediaReferenceMode = "auto",
+    instruction_context: PreparedInstructionContext | None = None,
+    instruction_scope: str = "both",
 ) -> list[dict]:
     """Build LLM messages for Pass 2 direct MDF extraction."""
     return _build_direct_mdf_prompt(
@@ -300,8 +330,9 @@ def build_direct_mdf_messages(
         page_context=page_context,
         prompt_cache=prompt_cache,
         media_reference=media_reference,
+        instruction_context=instruction_context,
+        instruction_scope=instruction_scope,
     ).messages
-
 
 def extract_direct_mdf(
     *,
@@ -318,6 +349,8 @@ def extract_direct_mdf(
     prompt_cache: PromptCacheMode = "auto",
     media_reference: MediaReferenceMode = "auto",
     prompt_cache_key: Optional[str] = None,
+    instruction_context: PreparedInstructionContext | None = None,
+    instruction_scope: str = "both",
 ) -> tuple[str, str, dict, list]:
     """
     Run Pass 2 direct MDF extraction.
@@ -336,6 +369,8 @@ def extract_direct_mdf(
         page_context=page_context,
         prompt_cache=prompt_cache,
         media_reference=media_reference,
+        instruction_context=instruction_context,
+        instruction_scope=instruction_scope,
     )
     messages = prompt.messages
     effective_cache_key = None
@@ -345,6 +380,8 @@ def extract_direct_mdf(
             static_text=prompt.static_text,
             toolbox_pdf=toolbox_pdf,
             prompt_cache_key=prompt_cache_key,
+            instruction_context=instruction_context,
+            instruction_scope=instruction_scope,
         )
     raw, usage = llm.complete_with_usage(
         model=model,
