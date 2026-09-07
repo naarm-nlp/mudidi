@@ -59,6 +59,11 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'aria-labelledby="wizard-model-title"' in response.text
     assert 'aria-labelledby="wizard-agentic-title"' in response.text
     assert 'name="dictionary_pages"' in response.text
+    assert 'data-dictionary-dropzone' in response.text
+    assert '<label class="dictionary-upload-trigger" data-dictionary-file-trigger>' in response.text
+    assert '<span class="sr-only">Choose dictionary PDF</span>' in response.text
+    assert 'class="dictionary-file-input"' in response.text
+    assert 'data-dictionary-file-status aria-live="polite"' in response.text
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
     assert 'name="stage2_pass2_model"' in response.text
@@ -193,6 +198,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="profile_headword_language"' in response.text
     assert 'name="profile_target_languages"' in response.text
     assert 'aria-label="Remove language"' in response.text
+    assert response.text.count('class="primary profile-remove"') == 2
     assert 'name="profile_headword_script"' in response.text
     assert 'name="profile_page_layout"' in response.text
     assert 'name="profile_information_types"' in response.text
@@ -215,7 +221,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-5" in response.text
+    assert "/static/app.js?v=dashboard-ui-6" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 

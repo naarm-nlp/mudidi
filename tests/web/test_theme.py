@@ -619,6 +619,37 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     assert "padding-top: 18px" in subsection.group("body")
 
 
+
+def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    hidden_input = re.search(
+        r"\.dropzone\s+\.dictionary-file-input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    upload_trigger = re.search(
+        r"\.dropzone\s+\.dictionary-upload-trigger\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    dragover = re.search(
+        r"\.dropzone\.is-dragover\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert hidden_input is not None
+    assert "min-height: 0" in hidden_input.group("body")
+    assert "opacity: 0" in hidden_input.group("body")
+    assert upload_trigger is not None
+    assert "place-items: center" in upload_trigger.group("body")
+    assert "margin: 0 auto" in upload_trigger.group("body")
+    assert "background: var(--color-accent)" in upload_trigger.group("body")
+    assert "box-shadow: var(--shadow-sm)" in upload_trigger.group("body")
+    assert dragover is not None
+    assert "background: var(--color-accent-soft)" in dragover.group("body")
+
+
 def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
@@ -814,7 +845,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-5" in layout
+    assert "app.css') }}?v=dashboard-ui-6" in layout
 
 
 
@@ -829,7 +860,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-5"}
+    assert versions == {"dashboard-ui-6"}
 
 
 def _relative_luminance(hex_color: str) -> float:

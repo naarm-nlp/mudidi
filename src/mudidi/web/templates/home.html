@@ -72,13 +72,18 @@
                 <span class="private">Files stay on this computer</span>
               </div>
               <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
-              <div class="dropzone{% if errors_by_field.pages %} field-invalid{% endif %}"{% if errors_by_field.pages %} data-field-error="pages"{% endif %}>
-                <span class="file-icon">⇧</span>
-                <h3>Upload one dictionary PDF</h3>
+              <div class="dropzone{% if errors_by_field.pages %} field-invalid{% endif %}" data-dictionary-dropzone{% if errors_by_field.pages %} data-field-error="pages"{% endif %}>
+                <label class="dictionary-upload-trigger" data-dictionary-file-trigger>
+                  <span class="sr-only">Choose dictionary PDF</span>
+                  <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
+                    <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+                  </svg>
+                  <input class="dictionary-file-input" id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %} aria-describedby="dictionary-file-status{% if errors_by_field.pages %} pages-error{% endif %}"{% if errors_by_field.pages %} aria-invalid="true"{% endif %}>
+                </label>
+                <h3>Upload one dictionary PDF <span class="required-marker" aria-hidden="true">*</span></h3>
                 <p>{% if selected_preset %}The saved dictionary PDF will be reused unless you choose a replacement.{% else %}PDF only · copied into this run's local input bundle{% endif %}</p>
                 {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
-                <label class="path-label" for="dictionary-pdf">Dictionary PDF <span class="required-marker" aria-hidden="true">*</span></label>
-                <input id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %}{% if errors_by_field.pages %} aria-invalid="true" aria-describedby="pages-error"{% endif %}>
+                <span id="dictionary-file-status" class="dictionary-file-status" data-dictionary-file-status aria-live="polite" data-empty-label="{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}">{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}</span>
                 {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
               </div>
               <label class="path-label" for="output">Output directory</label>
@@ -140,7 +145,7 @@
                     <div class="editor-row">
                       <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
                       <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Cyrillic">
-                      <button type="button" data-remove aria-label="Remove language">Remove</button>
+                      <button class="primary profile-remove" type="button" data-remove aria-label="Remove language">Remove</button>
                     </div>
                   </div>
                   <button type="button" data-add="profile-target">Add another language</button>
@@ -383,11 +388,11 @@
         <div class="editor-row">
           <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. English">
           <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Latin">
-          <button type="button" data-remove aria-label="Remove language">Remove</button>
+          <button class="primary profile-remove" type="button" data-remove aria-label="Remove language">Remove</button>
         </div>
       </template>
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-5" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-6" defer></script>
 {% endblock %}
