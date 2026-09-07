@@ -8,16 +8,18 @@ import shutil
 import time
 import zipfile
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Literal
 
 from starlette.datastructures import UploadFile
 
-from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.config.yaml_config import InferenceConfig
+from mudidi.instructions import read_instruction_text, resolve_instruction_pdf_pages
+from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 
 _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 _MAX_FILES = 5_000
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+_INSTRUCTION_SUFFIXES = {".txt", ".md", ".pdf"}
 _TEXT_CHARS = 20_000
 
 
@@ -119,6 +121,7 @@ class InputMaterializer:
         text: str,
         *,
         replace: bool = False,
+        stage2_scope: Literal["pass1", "pass2", "both"] | None = None,
     ) -> Path:
         """Write bounded user instruction text as a run-owned UTF-8 guide file."""
 
@@ -128,6 +131,20 @@ class InputMaterializer:
         if len(cleaned) > _TEXT_CHARS:
             raise ValueError(f"additional instructions must be at most {_TEXT_CHARS} characters")
         content = cleaned.encode("utf-8")
+        if stage in {"stage1", "stage2"}:
+            return self._materialize_instruction_bytes(
+                run_id,
+                stage,
+                filename=f"{stage}.txt",
+                content=content,
+                source_mode="typed",
+                page_spec=None,
+                stage2_scope=stage2_scope,
+                replace=replace,
+            )
+
+        # Character Inventory predates stage-specific instruction attachments.
+        # Keep its established path stable for existing dashboard configs.
         destination = self.bundle(run_id) / "instructions"
         destination.mkdir(parents=True, exist_ok=True)
         target = destination / f"{stage}.txt"
@@ -144,6 +161,184 @@ class InputMaterializer:
             temporary.unlink(missing_ok=True)
             raise
         return target
+
+    async def materialize_instruction_upload(
+        self,
+        run_id: str,
+        stage: Literal["stage1", "stage2"],
+        upload: UploadFile,
+        *,
+        page_spec: str | None,
+        stage2_scope: Literal["pass1", "pass2", "both"] | None,
+        replace: bool = False,
+    ) -> Path:
+        """Stream one validated TXT, Markdown, or PDF instruction attachment."""
+
+        if isinstance(upload, (list, tuple)):
+            if len(upload) != 1:
+                raise ValueError("select exactly one instruction file")
+            upload = upload[0]
+        if not isinstance(upload, UploadFile):
+            raise ValueError("select exactly one instruction file")
+        name = _validated_name(upload.filename, allow_relative=True)
+        suffix = Path(name).suffix.lower()
+        if suffix not in _INSTRUCTION_SUFFIXES:
+            allowed = ", ".join(sorted(_INSTRUCTION_SUFFIXES))
+            raise ValueError(f"instruction files must use: {allowed}")
+        normalized_page_spec = page_spec.strip() if page_spec else None
+        if normalized_page_spec == "":
+            normalized_page_spec = None
+        if suffix != ".pdf" and normalized_page_spec is not None:
+            raise ValueError("instruction PDF page selection requires a PDF source")
+        normalized_scope = _instruction_scope(stage, stage2_scope)
+        destination = self._new_instruction_dir(run_id, stage, replace=replace)
+        temporary = destination / f".{name}.part{suffix}"
+        digest = hashlib.sha256()
+        byte_count = 0
+        try:
+            with temporary.open("wb") as stream:
+                while chunk := await upload.read(1024 * 1024):
+                    self._check_total(run_id, len(chunk))
+                    digest.update(chunk)
+                    byte_count += len(chunk)
+                    stream.write(chunk)
+            if byte_count == 0:
+                raise ValueError("instruction upload is empty")
+            if suffix in {".txt", ".md"}:
+                # The shared runtime validator owns UTF-8, blank, and
+                # character-count semantics for textual instructions.
+                read_instruction_text(temporary)
+                pdf_page_count: int | None = None
+                selected_pages: list[int] = []
+            else:
+                _validate_pdf_signature(temporary)
+                selected = resolve_instruction_pdf_pages(
+                    temporary,
+                    normalized_page_spec,
+                )
+                import pymupdf
+
+                with pymupdf.open(str(temporary)) as document:
+                    pdf_page_count = document.page_count
+                selected_pages = list(selected)
+            target = destination / name
+            temporary.replace(target)
+            self._write_instruction_metadata(
+                destination,
+                source_mode="file",
+                original_filename=name,
+                suffix=suffix,
+                kind=_instruction_kind(suffix),
+                byte_count=byte_count,
+                sha256=digest.hexdigest(),
+                pdf_page_count=pdf_page_count,
+                selected_pages=selected_pages,
+                stage2_scope=normalized_scope,
+            )
+        except Exception:
+            shutil.rmtree(destination, ignore_errors=True)
+            self._remove_empty_bundle(run_id)
+            raise
+        return target
+
+    def _materialize_instruction_bytes(
+        self,
+        run_id: str,
+        stage: Literal["stage1", "stage2"],
+        *,
+        filename: str,
+        content: bytes,
+        source_mode: Literal["typed", "file"],
+        page_spec: str | None,
+        stage2_scope: Literal["pass1", "pass2", "both"] | None,
+        replace: bool,
+    ) -> Path:
+        normalized_scope = _instruction_scope(stage, stage2_scope)
+        destination = self._new_instruction_dir(run_id, stage, replace=replace)
+        target = destination / filename
+        temporary = destination / f".{filename}.part{Path(filename).suffix.lower()}"
+        try:
+            self._check_total(run_id, len(content))
+            temporary.write_bytes(content)
+            if Path(filename).suffix.lower() in {".txt", ".md"}:
+                read_instruction_text(temporary)
+                pdf_page_count: int | None = None
+                selected_pages: list[int] = []
+            else:
+                _validate_pdf_signature(temporary)
+                selected = resolve_instruction_pdf_pages(temporary, page_spec)
+                import pymupdf
+
+                with pymupdf.open(str(temporary)) as document:
+                    pdf_page_count = document.page_count
+                selected_pages = list(selected)
+            temporary.replace(target)
+            self._write_instruction_metadata(
+                destination,
+                source_mode=source_mode,
+                original_filename=filename,
+                suffix=Path(filename).suffix.lower(),
+                kind=_instruction_kind(Path(filename).suffix.lower()),
+                byte_count=len(content),
+                sha256=hashlib.sha256(content).hexdigest(),
+                pdf_page_count=pdf_page_count,
+                selected_pages=selected_pages,
+                stage2_scope=normalized_scope,
+            )
+        except Exception:
+            shutil.rmtree(destination, ignore_errors=True)
+            self._remove_empty_bundle(run_id)
+            raise
+        return target
+
+    def _new_instruction_dir(
+        self,
+        run_id: str,
+        stage: Literal["stage1", "stage2"],
+        *,
+        replace: bool,
+    ) -> Path:
+        _validate_instruction_stage(stage)
+        destination = self.bundle(run_id) / "instructions" / stage
+        if destination.exists():
+            if not replace:
+                raise ValueError(f"{stage} additional instructions already exist")
+            shutil.rmtree(destination)
+        destination.mkdir(parents=True, exist_ok=False)
+        return destination
+
+    def _write_instruction_metadata(
+        self,
+        destination: Path,
+        *,
+        source_mode: str,
+        original_filename: str,
+        suffix: str,
+        kind: str,
+        byte_count: int,
+        sha256: str,
+        pdf_page_count: int | None,
+        selected_pages: list[int],
+        stage2_scope: str | None,
+    ) -> None:
+        payload = {
+            "source_mode": source_mode,
+            "original_filename": original_filename,
+            "suffix": suffix,
+            "kind": kind,
+            "byte_count": byte_count,
+            "sha256": sha256,
+            "pdf_page_count": pdf_page_count,
+            "selected_pages": selected_pages,
+            "stage2_scope": stage2_scope,
+        }
+        temporary = destination / "metadata.json.part"
+        target = destination / "metadata.json"
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(target)
 
     def copy_run_to_preset(self, run_id: str, preset_id: str) -> Path:
         """Copy a run bundle into independently owned preset storage."""
@@ -298,6 +493,60 @@ class InputMaterializer:
             pass
 
 
+def read_managed_instruction_metadata(path: Path | None) -> dict[str, object] | None:
+    """Read one validated instruction sidecar without exposing its contents."""
+
+    if path is None or path.is_symlink() or not path.is_file():
+        return None
+    sidecar = path.parent / "metadata.json"
+    if sidecar.is_symlink() or not sidecar.is_file():
+        return None
+    try:
+        payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _validate_instruction_stage(stage: str) -> None:
+    if stage not in {"stage1", "stage2"}:
+        raise ValueError("instruction stage must be stage1 or stage2")
+
+
+def _instruction_scope(
+    stage: str,
+    scope: Literal["pass1", "pass2", "both"] | None,
+) -> str | None:
+    _validate_instruction_stage(stage)
+    if stage == "stage1":
+        if scope is not None:
+            raise ValueError("Stage 2 scope is only valid for Stage 2 instructions")
+        return None
+    return scope or "both"
+
+
+def _instruction_kind(suffix: str) -> Literal["text", "pdf"]:
+    return "pdf" if suffix == ".pdf" else "text"
+
+
+def _validate_pdf_signature(path: Path) -> None:
+    try:
+        with path.open("rb") as stream:
+            signature = stream.read(5)
+    except OSError as exc:
+        raise ValueError("uploaded PDF is unreadable") from exc
+    if signature != b"%PDF-":
+        raise ValueError("uploaded PDF signature is invalid")
+
+
+def _stream_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _upload_suffixes(
     uploads: list[UploadFile], *, allow_relative: bool
 ) -> list[str]:
@@ -329,8 +578,7 @@ def _validate_owner_id(value: str) -> None:
 
 def _validate_content(path: Path, suffix: str, *, role: str) -> None:
     if suffix == ".pdf":
-        if not path.read_bytes()[:5] == b"%PDF-":
-            raise ValueError("uploaded PDF signature is invalid")
+        _validate_pdf_signature(path)
         try:
             import fitz
 
@@ -394,8 +642,7 @@ def _write_pdf_metadata(path: Path, *, source: str) -> None:
     payload = {
         "filename": path.name,
         "pages": pages,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "source": source,
+        "sha256": _stream_sha256(path),
     }
     temporary = path.parent / "metadata.json.part"
     target = path.parent / "metadata.json"

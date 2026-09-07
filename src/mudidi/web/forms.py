@@ -18,6 +18,7 @@ from mudidi.config.yaml_config import (
     PipelineConfig,
     RuntimeConfig,
 )
+from mudidi.web.inputs import read_managed_instruction_metadata
 from mudidi.schemas.dictionary_profile import (
     DictionaryProfile,
     InformationType,
@@ -34,12 +35,12 @@ class PipelineChoice(StrEnum):
     TRANSCRIPTION = "transcription"
     STRUCTURE = "structure"
 
-
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
 ReasoningChoice = Literal["none", "low", "medium", "high"]
 MdfManualSource = Literal["none", "upload"]
+InstructionSource = Literal["typed", "file"]
+InstructionScope = Literal["pass1", "pass2", "both"]
 _PAGE_SPEC_PART = re.compile(r"^[1-9][0-9]*(?:-[1-9][0-9]*)?$")
-
 _PIPELINE_STAGE = {
     PipelineChoice.COMPLETE: "all",
     PipelineChoice.TRANSCRIPTION: "1",
@@ -63,7 +64,95 @@ def additional_instructions_summary(
             (runs_stage2, stage2_source, "Stage 2"),
         )
         if enabled and source is not None
-    ) or "None"
+) or "None"
+
+
+def instruction_review_summary(
+    path: Path | None,
+    *,
+    page_spec: str | None,
+    stage2_scope: InstructionScope | None,
+) -> dict[str, object]:
+    """Return metadata-only labels for one configured instruction source."""
+
+    metadata = read_managed_instruction_metadata(path)
+    if metadata is not None:
+        mode = str(metadata.get("source_mode") or "file")
+        suffix = str(metadata.get("suffix") or "").lower()
+        kind = str(metadata.get("kind") or ("pdf" if suffix == ".pdf" else "text"))
+        original_filename = metadata.get("original_filename")
+        selected_pages = _metadata_pages(metadata.get("selected_pages"))
+        pdf_page_count = _metadata_int(metadata.get("pdf_page_count"))
+        if stage2_scope is None:
+            raw_scope = metadata.get("stage2_scope")
+            stage2_scope = (
+                raw_scope
+                if raw_scope in {"pass1", "pass2", "both"}
+                else None
+            )
+    elif path is not None and path.is_file() and not path.is_symlink():
+        suffix = path.suffix.lower()
+        mode = "typed" if suffix in {".txt", ".md", ".docx"} else "file"
+        kind = "pdf" if suffix == ".pdf" else "text"
+        original_filename = path.name
+        selected_pages = []
+        pdf_page_count = None
+    else:
+        mode = "none"
+        suffix = ""
+        kind = "none"
+        original_filename = None
+        selected_pages = []
+        pdf_page_count = None
+
+    if kind == "pdf":
+        page_label = (
+            ", ".join(str(page) for page in selected_pages)
+            if selected_pages
+            else "Unavailable"
+        )
+        if page_spec is None and pdf_page_count is not None:
+            page_label = f"All pages (1-{pdf_page_count})"
+    else:
+        page_label = "Not applicable"
+    scope_label = {
+        None: "Not applicable",
+        "pass1": "Pass 1 only — parsing-guide discovery",
+        "pass2": "Pass 2 only — per-page MDF extraction",
+        "both": "Both passes",
+    }[stage2_scope]
+    source_label = {
+        "none": "None",
+        "typed": "Typed",
+        "file": {
+            ".txt": "TXT",
+            ".md": "Markdown",
+            ".pdf": "PDF",
+        }.get(suffix, kind.title()),
+    }[mode]
+    return {
+        "source": source_label,
+        "source_mode": mode,
+        "kind": kind,
+        "suffix": suffix or None,
+        "original_filename": original_filename,
+        "selected_pages": selected_pages,
+        "selected_page_count": len(selected_pages),
+        "pdf_page_count": pdf_page_count,
+        "selected_pages_label": page_label,
+        "scope": stage2_scope,
+        "scope_label": scope_label,
+    }
+
+
+def _metadata_pages(value: object) -> list[int]:
+    if not isinstance(value, list | tuple):
+        return []
+    return [item for item in value if isinstance(item, int) and item > 0]
+
+
+def _metadata_int(value: object) -> int | None:
+    return value if isinstance(value, int) and value >= 1 else None
 
 
 class FormFieldError(ValueError):
@@ -99,11 +188,19 @@ class NewRunForm(BaseModel):
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
+    stage1_instruction_source: InstructionSource = "typed"
+    stage1_instruction_file: object | None = None
+    stage1_instruction_pdf_pages: str | None = None
+    stage1_instruction_keep_existing: bool = False
+    stage2_instruction_source: InstructionSource = "typed"
+    stage2_instruction_file: object | None = None
+    stage2_instruction_pdf_pages: str | None = None
+    stage2_instruction_keep_existing: bool = False
+    stage2_instruction_scope: InstructionScope = "both"
     stage1_additional_instructions: str | None = Field(default=None, max_length=20_000)
     stage2_additional_instructions: str | None = Field(default=None, max_length=20_000)
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
-
     provider: ProviderName
     model: str | None = None
     reasoning: ReasoningChoice | None = None
@@ -136,8 +233,12 @@ class NewRunForm(BaseModel):
     rewriter_reasoning: ReasoningChoice | None = "low"
 
     batch_size: int = Field(default=1, ge=1, le=32)
-
-    @field_validator("dictionary_pages", "introduction_pages")
+    @field_validator(
+        "dictionary_pages",
+        "introduction_pages",
+        "stage1_instruction_pdf_pages",
+        "stage2_instruction_pdf_pages",
+    )
     @classmethod
     def validate_page_spec(cls, value: str | None) -> str | None:
         """Normalize the dashboard's positive Arabic page-range grammar."""
@@ -191,6 +292,10 @@ class NewRunForm(BaseModel):
             PipelineChoice.COMPLETE,
             PipelineChoice.STRUCTURE,
         }
+        self._validate_instruction_controls(
+            runs_stage1=runs_stage1,
+            runs_stage2=runs_stage2,
+        )
         verify_stage1, verify_stage2 = self._verification_stages()
         default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
         legacy_reasoning = self.reasoning or "low"
@@ -241,10 +346,19 @@ class NewRunForm(BaseModel):
                     if self.stage1_guides and runs_stage1
                     else None
                 ),
+                stage1_guides_pages=(
+                    self.stage1_instruction_pdf_pages if runs_stage1 else None
+                ),
                 stage2_guides=(
                     self.stage2_guides.expanduser().resolve()
                     if self.stage2_guides and runs_stage2
                     else None
+                ),
+                stage2_guides_pages=(
+                    self.stage2_instruction_pdf_pages if runs_stage2 else None
+                ),
+                stage2_guides_scope=(
+                    self.stage2_instruction_scope if runs_stage2 else "both"
                 ),
             ),
             models=ModelsConfig(
@@ -346,8 +460,8 @@ class NewRunForm(BaseModel):
                     f"{outside_dictionary} is not included in Dictionary pages.",
                 )
 
-    def to_summary(self) -> dict[str, str]:
-        """Return concise, non-secret review labels for the UI."""
+    def to_summary(self) -> dict[str, object]:
+        """Return concise, metadata-only review labels for the UI."""
 
         runs_stage1 = self.pipeline in {
             PipelineChoice.COMPLETE,
@@ -378,13 +492,21 @@ class NewRunForm(BaseModel):
             "stage_2_pass_1_model": pass1_summary,
             "stage_2_pass_2_model": pass2_summary,
             "agentic": self._agentic_summary(),
-            "additional_instructions": additional_instructions_summary(
-                _clean_optional(self.stage1_additional_instructions)
-                or self.stage1_guides,
-                _clean_optional(self.stage2_additional_instructions)
-                or self.stage2_guides,
-                runs_stage1=runs_stage1,
-                runs_stage2=runs_stage2,
+            "stage_1_instructions": instruction_review_summary(
+                self.stage1_guides,
+                page_spec=(
+                    self.stage1_instruction_pdf_pages if runs_stage1 else None
+                ),
+                stage2_scope=None,
+            ),
+            "stage_2_instructions": instruction_review_summary(
+                self.stage2_guides,
+                page_spec=(
+                    self.stage2_instruction_pdf_pages if runs_stage2 else None
+                ),
+                stage2_scope=(
+                    self.stage2_instruction_scope if runs_stage2 else None
+                ),
             ),
             "mdf_manual": {
                 "none": "Not used",
@@ -400,6 +522,63 @@ class NewRunForm(BaseModel):
                 )
             ),
         }
+
+    def _validate_instruction_controls(
+        self,
+        *,
+        runs_stage1: bool,
+        runs_stage2: bool,
+    ) -> None:
+        """Keep browser source controls consistent with active pipeline stages."""
+
+        for stage, active in (("stage1", runs_stage1), ("stage2", runs_stage2)):
+            source = getattr(self, f"{stage}_instruction_source")
+            source_field = f"{stage}_instruction_source"
+            file_field = f"{stage}_instruction_file"
+            text = _clean_optional(
+                getattr(self, f"{stage}_additional_instructions")
+            )
+            path = getattr(self, f"{stage}_guides")
+            page_spec = getattr(self, f"{stage}_instruction_pdf_pages")
+            file_value = getattr(self, file_field)
+            if not active:
+                inactive = (
+                    source != "typed"
+                    or text is not None
+                    or path is not None
+                    or page_spec is not None
+                    or file_value is not None
+                    or (
+                        stage == "stage2"
+                        and self.stage2_instruction_scope != "both"
+                    )
+                )
+                if inactive:
+                    raise FormFieldError(
+                        source_field,
+                        f"{stage.title()} instructions are not used by this pipeline.",
+                    )
+                continue
+            if source == "typed" and file_value is not None:
+                raise FormFieldError(
+                    file_field,
+                    "Remove the uploaded file before using typed instructions.",
+                )
+            if source == "file" and text is not None:
+                raise FormFieldError(
+                    file_field,
+                    "Clear typed instructions before using an uploaded file.",
+                )
+            if page_spec is not None and path is None and file_value is None:
+                raise FormFieldError(
+                    f"{stage}_instruction_pdf_pages",
+                    "Instruction PDF page selection requires a PDF source.",
+                )
+            if source == "file" and path is None and file_value is None:
+                raise FormFieldError(
+                    file_field,
+                    "Upload exactly one instruction file.",
+                )
 
     def _verification_stages(self) -> tuple[bool, bool]:
         if not self.agentic:
