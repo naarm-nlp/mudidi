@@ -57,6 +57,7 @@ def stage_1_user(
     dictionary_profile: "DictionaryProfile | None" = None,
     *,
     mode: PromptMode = "inference",
+    guides_source: str = "",
 ) -> str:
     """
     Build the user-turn prompt for Stage 1 transcription.
@@ -74,5 +75,6 @@ def stage_1_user(
         alphabet_text=alphabet_text,
         ocr_hint=ocr_hint,
         dictionary_profile=dictionary_profile if mode == "inference" else None,
+        guides_source=guides_source,
         guides=guides,
     )

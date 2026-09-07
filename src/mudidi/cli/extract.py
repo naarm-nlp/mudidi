@@ -21,6 +21,7 @@ from mudidi.ocr.mathpix import MathpixBackend
 from mudidi.ocr.vlm.prompts import find_ocr_hint_file
 from mudidi.schemas.ocr_result import OCRPageResult
 from mudidi.extraction.llm_two_stage import TwoStageLLMExtraction
+from mudidi.instructions import PreparedInstructionContext, prepare_instruction_context
 from mudidi.evaluation.stage2.mdf_lexical_repair import (
     repair_mdf_text,
     normalize_stage1_text_for_repair,
@@ -531,12 +532,34 @@ def _alphabet_manifest_entry(alphabet_path: Optional[str]) -> Dict[str, Any]:
 
 
 def _guides_manifest_entry(
-    path: Optional[str | Path], loaded_text: str
+    context: PreparedInstructionContext | Path | str | None,
+    legacy_text: str | None = None,
+    *,
+    scope: str | None = None,
 ) -> Dict[str, Any]:
-    """Describe an inline guides file (stage-1 or stage-2 guides)."""
-    if not path:
-        return {"used": False, "path": None, "text": None}
-    return {"used": True, "path": str(path), "text": loaded_text or ""}
+    """Serialize guide metadata without embedding instruction contents."""
+    if legacy_text is not None:
+        return {
+            "used": True,
+            "path": str(context),
+            "text": legacy_text,
+        }
+    if context is None:
+        entry: Dict[str, Any] = {
+            "source_path": None,
+            "kind": "none",
+            "original_filename": None,
+            "byte_count": 0,
+            "sha256": None,
+            "pdf_page_count": None,
+            "selected_pages": [],
+            "selected_path": None,
+            "selected_sha256": None,
+        }
+        if scope is not None:
+            entry["scope"] = scope
+        return entry
+    return context.manifest_entry(scope=scope)
 
 
 def _per_page_inputs_stage1(
@@ -601,6 +624,43 @@ def _per_page_inputs_stage2(
     return rows
 
 
+def _instruction_manifest_identity(manifest: Dict[str, Any]) -> dict[str, Any]:
+    """Return only content identity fields used for resume compatibility."""
+    stage1 = manifest.get("stage1_guides")
+    stage2 = manifest.get("stage2_guides")
+    if not isinstance(stage1, dict):
+        stage1 = {}
+    if not isinstance(stage2, dict):
+        stage2 = {}
+
+    def compact(entry: dict[str, Any], *, default_scope: str | None = None) -> dict[str, Any]:
+        result = {
+            key: entry.get(key)
+            for key in (
+                "source_path",
+                "kind",
+                "original_filename",
+                "byte_count",
+                "sha256",
+                "pdf_page_count",
+                "selected_pages",
+                "selected_path",
+                "selected_sha256",
+            )
+        }
+        if default_scope is not None:
+            result["scope"] = entry.get("scope", default_scope)
+        return result
+
+    return {
+        "stage1": compact(stage1),
+        "stage2": compact(
+            stage2,
+            default_scope=str(manifest.get("stage2_guides_scope", "both")),
+        ),
+    }
+
+
 def _write_run_config(
     target_dir: Path,
     manifest: Dict[str, Any],
@@ -608,16 +668,23 @@ def _write_run_config(
     force: bool,
     resolved_config: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Write a run_config.json into ``target_dir`` honoring the resume guard.
-
-    On resume (file exists, ``force`` False) the existing manifest wins so
-    the on-disk config never drifts from what produced the predictions
-    sitting in the slot. With ``force=True`` (i.e. ``--overwrite``) the
-    manifest is rewritten to match the fresh invocation.
-    """
+    """Write a run manifest while guarding instruction-compatible resume."""
     target_dir.mkdir(parents=True, exist_ok=True)
     path = target_dir / "run_config.json"
     if not force and path.exists():
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                f"Existing manifest {path} is unreadable; pass --overwrite to replace it."
+            ) from exc
+        if _instruction_manifest_identity(existing) != _instruction_manifest_identity(
+            manifest
+        ):
+            raise ValueError(
+                f"Instruction attachment metadata changed for {target_dir}; "
+                "pass --overwrite before resuming."
+            )
         print(
             f"  Keeping existing {path} (resume; pass --overwrite to refresh it)."
         )
@@ -632,7 +699,6 @@ def _write_run_config(
                 json.dumps(resolved_config, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
-
 
 def _build_stage1_manifest(
     args,
@@ -656,6 +722,9 @@ def _build_stage1_manifest(
         "git_sha": _git_short_sha(),
         "model": args.stage_models.stage_1,
         "reasoning_effort": args.stage1_reasoning_effort,
+        "stage1_guides": _guides_manifest_entry(
+            getattr(args, "stage1_instruction_context", None)
+        ),
         "temperature": args.temperature,
         "batch_size": getattr(args, "batch_size", 1),
         "render_pdfs": run_needs_pdf_rasterization(
@@ -668,10 +737,6 @@ def _build_stage1_manifest(
             "used": bool(ocr_dir),
             "dir": str(ocr_dir) if ocr_dir else None,
         },
-        "stage1_guides": _guides_manifest_entry(
-            getattr(args, "stage1_guides_path", None),
-            getattr(args, "stage1_guides_text", ""),
-        ),
         "inputs": {
             "snippets_dir": str(snippets_dir),
             "page_count": len(images),
@@ -746,9 +811,10 @@ def _build_stage2_manifest(
             "source_path": args.intro,
             "intro_image_or_pdf_paths": list(intro_image_paths),
         },
+        "stage2_guides_scope": getattr(args, "stage2_guides_scope", "both"),
         "stage2_guides": _guides_manifest_entry(
-            getattr(args, "stage2_guides_path", None),
-            getattr(args, "stage2_guides_text", ""),
+            getattr(args, "stage2_instruction_context", None),
+            scope=getattr(args, "stage2_guides_scope", "both"),
         ),
         "inputs": {
             "snippets_dir": str(snippets_dir),
@@ -766,6 +832,55 @@ def _build_stage2_manifest(
     if dictionary_languages is not None:
         manifest["dictionary_languages"] = dictionary_languages
     return manifest
+
+def _instruction_models(args) -> list[str]:
+    """Return every effective generation and configured agentic model."""
+    stage_models = args.stage_models
+    values = [
+        stage_models.stage_1,
+        stage_models.stage_2_pass_1,
+        stage_models.stage_2_pass_2,
+        getattr(args, "agentic_evaluator_model", None),
+        getattr(args, "agentic_rewriter_model", None),
+    ]
+    return list(dict.fromkeys(value for value in values if value))
+
+
+def _prepare_instruction_contexts(
+    args,
+    output_dir: Path,
+    parser: argparse.ArgumentParser,
+) -> tuple[PreparedInstructionContext, PreparedInstructionContext]:
+    """Prepare immutable guide payloads once before any page/cache reuse."""
+    stage1_path = getattr(args, "stage1_guides_path", None)
+    stage2_path = getattr(args, "stage2_guides_path", None)
+    for label, value in (("stage-1-guides", stage1_path), ("stage-2-guides", stage2_path)):
+        if value and Path(value).suffix.lower() == ".pdf" and args.strategy in {
+            "vlm_ocr",
+            "mathpix_ocr",
+        }:
+            parser.error(f"{label} PDF guides are not supported by {args.strategy}")
+
+    models = _instruction_models(args)
+    try:
+        stage1_context = prepare_instruction_context(
+            Path(stage1_path).expanduser().resolve() if stage1_path else None,
+            page_spec=getattr(args, "stage1_guides_pages", None),
+            cache_dir=output_dir / ".instruction-cache" / "stage1",
+            models=models,
+        )
+        stage2_context = prepare_instruction_context(
+            Path(stage2_path).expanduser().resolve() if stage2_path else None,
+            page_spec=getattr(args, "stage2_guides_pages", None),
+            cache_dir=output_dir / ".instruction-cache" / "stage2",
+            models=models,
+        )
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    args.stage1_instruction_context = stage1_context
+    args.stage2_instruction_context = stage2_context
+    return stage1_context, stage2_context
+
 
 
 def _build_strategy(
@@ -795,8 +910,11 @@ def _build_strategy(
             temperature=getattr(args, "temperature", 0.1),
             stage1_guides=getattr(args, "stage1_guides_text", ""),
             stage2_guides=getattr(args, "stage2_guides_text", ""),
-            stage1_mode=getattr(args, "stage1_mode", "column"),
+            stage1_instruction_context=getattr(args, "stage1_instruction_context", None),
+            stage2_instruction_context=getattr(args, "stage2_instruction_context", None),
             dictionary_languages=dictionary_languages,
+            stage2_guides_scope=getattr(args, "stage2_guides_scope", "both"),
+            stage1_mode=getattr(args, "stage1_mode", "column"),
             dictionary_profile=dictionary_profile,
             entry_dir=str(getattr(args, "entry_dir", "") or "") or None,
             stage2_experiment_dir=(
@@ -1199,6 +1317,11 @@ Examples:
         "Optional — leave unset to use the default prompt.",
     )
     parser.add_argument(
+        "--stage-1-guides-pages",
+        dest="stage1_guides_pages",
+        help="Selected pages when --stage-1-guides is a PDF.",
+    )
+    parser.add_argument(
         "--stage1-typography",
         action="store_true",
         dest="stage1_typography",
@@ -1218,9 +1341,21 @@ Examples:
     parser.add_argument(
         "--stage-2-guides",
         dest="stage2_guides_path",
-        help="Path to a .txt/.md/.docx file of extra rules appended verbatim to "
-        "the Stage 2 user prompt under a 'USER DEFINED GUIDELINES' header. "
+        help="Path to a .txt/.md/.docx/.pdf file of extra rules appended verbatim "
+        "to the Stage 2 user prompt under a 'USER DEFINED GUIDELINES' header. "
         "Optional — leave unset to use the default prompt.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-pages",
+        dest="stage2_guides_pages",
+        help="Selected pages when --stage-2-guides is a PDF.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-scope",
+        dest="stage2_guides_scope",
+        choices=["pass1", "pass2", "both"],
+        default="both",
+        help="Stage 2 guide routing scope.",
     )
 
     # Per-stage experiment namespacing + ablation toggles
@@ -1626,19 +1761,6 @@ Examples:
     if args.no_intro:
         args.intro = None
 
-    # ── Load user-defined guides (if any) once, shared across all pages ──────
-    args.stage1_guides_text = ""
-    if getattr(args, "stage1_guides_path", None):
-        p = Path(args.stage1_guides_path)
-        if not p.exists():
-            parser.error(f"--stage-1-guides path not found: {p}")
-        args.stage1_guides_text = _read_text_file(p)
-    args.stage2_guides_text = ""
-    if getattr(args, "stage2_guides_path", None):
-        p = Path(args.stage2_guides_path)
-        if not p.exists():
-            parser.error(f"--stage-2-guides path not found: {p}")
-        args.stage2_guides_text = _read_text_file(p)
 
     prompts_path = args.prompts_file or default_prompts_path()
     if not prompts_path.is_file():
@@ -2008,6 +2130,7 @@ def _run_single_entry(args, parser) -> int:
     )
     snippets_cache_dir = output_dir / ".rendered_snippets"
     intro_cache_dir = output_dir / ".rendered_intro"
+    _prepare_instruction_contexts(args, output_dir, parser)
 
     # ── Collect snippet pages (render PDFs when any step needs PNG) ───────────
     render_pdfs = run_needs_pdf_rasterization(
@@ -2120,6 +2243,31 @@ def _run_single_entry(args, parser) -> int:
         dictionary_profile,
         stage2_experiment_dir=cheatsheet_root if runs_stage2_any(args.stage) else None,
     )
+    # Check instruction identity before preparing samples or accepting cached outputs.
+    if args.strategy == "two_stage":
+        if runs_stage1(args.stage):
+            _write_run_config(
+                stage1_dir,
+                _build_stage1_manifest(args, input_dir, images, ocr_dir),
+                force=args.overwrite,
+                resolved_config=resolved_config,
+            )
+        if runs_stage2_any(args.stage):
+            _write_run_config(
+                stage2_dir,
+                _build_stage2_manifest(
+                    args,
+                    input_dir,
+                    images,
+                    output_dir,
+                    intro_image_paths,
+                    config_to_yaml_dict(dictionary_languages)
+                    if dictionary_languages
+                    else None,
+                ),
+                force=args.overwrite,
+                resolved_config=resolved_config,
+            )
     if (
         args.strategy == "two_stage"
         and runs_stage2_pass1(args.stage)
@@ -2247,32 +2395,6 @@ def _run_single_entry(args, parser) -> int:
                     if getattr(args, "toolbox_pdf", None)
                     else ""
                 )
-            )
-        # Manifests describe what's on disk in each experiment slot. On
-        # resume (slot already populated) the existing manifest wins so it
-        # never drifts from the predictions it documents.
-        if runs_stage1(args.stage):
-            _write_run_config(
-                stage1_dir,
-                _build_stage1_manifest(args, input_dir, images, ocr_dir),
-                force=args.overwrite,
-                resolved_config=resolved_config,
-            )
-        if runs_stage2_any(args.stage):
-            _write_run_config(
-                stage2_dir,
-                _build_stage2_manifest(
-                    args,
-                    input_dir,
-                    images,
-                    output_dir,
-                    intro_image_paths,
-                    config_to_yaml_dict(dictionary_languages)
-                    if dictionary_languages
-                    else None,
-                ),
-                force=args.overwrite,
-                resolved_config=resolved_config,
             )
     print("=" * 60)
 
