@@ -287,9 +287,14 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="mdf_manual_source" value="upload"' in response.text
     assert 'name="mdf_manual_source" value="bundled"' not in response.text
     assert 'name="custom_mdf_manual" type="file"' in response.text
+    assert '<fieldset class="choice-group mdf-manual"' in response.text
+    assert 'class="choice-card-grid mdf-manual-options"' in response.text
+    assert 'class="mdf-manual-upload" data-custom-mdf-manual hidden' in response.text
+    assert "<legend>MDF manual (optional)</legend>" in response.text
     assert "Upload my own MDF manual" in response.text
     assert "Continue without an MDF manual" in response.text
-    assert "Open or download the official SIL MDF manual" in response.text
+    assert "Open official SIL MDF manual" in response.text
+    assert 'aria-label="Open or download the official SIL MDF manual"' not in response.text
     assert (
         'href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf"'
         in response.text

@@ -619,6 +619,30 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     assert "padding-top: 18px" in subsection.group("body")
 
 
+def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    heading = re.search(r"\.mdf-manual-heading\s*\{(?P<body>[^}]*)\}", css)
+    option_grids = re.findall(
+        r"\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    resource = re.search(r"\.mdf-manual-official\s*\{(?P<body>[^}]*)\}", css)
+    resource_link = re.search(r"\.mdf-manual-link\s*\{(?P<body>[^}]*)\}", css)
+
+    assert heading is not None
+    assert "display: grid" in heading.group("body")
+    assert "grid-template-columns: minmax(0, 1fr) auto" in heading.group("body")
+    assert len(option_grids) == 2
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grids[0]
+    assert "grid-template-columns: 1fr" in option_grids[1]
+    assert resource is not None
+    assert "display: flex" in resource.group("body")
+    assert "justify-content: space-between" in resource.group("body")
+    assert resource_link is not None
+    assert "white-space: nowrap" in resource_link.group("body")
+
+
 def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
@@ -790,7 +814,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-4" in layout
+    assert "app.css') }}?v=dashboard-ui-5" in layout
 
 
 
