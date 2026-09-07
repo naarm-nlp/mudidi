@@ -1281,6 +1281,12 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 ),
             }
         ]
+        if self.stage1_instruction_context is not None:
+            content.extend(
+                self.stage1_instruction_context.content_parts(
+                    evaluator_model, stage_label="Stage 1 evaluator"
+                )
+            )
         content.append(
             {
                 "type": "text",
@@ -1290,12 +1296,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 ),
             }
         )
-        if self.stage1_instruction_context is not None:
-            content.extend(
-                self.stage1_instruction_context.content_parts(
-                    evaluator_model, stage_label="Stage 1 evaluator"
-                )
-            )
         content.append(
             {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}}
         )
