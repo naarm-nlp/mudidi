@@ -475,3 +475,21 @@ def test_instruction_pdf_page_fields_normalize_before_config_mapping(
     assert config.pipeline.stage1_guides_pages == "2-3"
     assert config.pipeline.stage2_guides_pages == "4,5"
     assert config.pipeline.stage2_guides_scope == "pass2"
+
+
+@pytest.mark.parametrize("scope", ["pass1", "pass2", "both"])
+def test_each_stage2_instruction_scope_maps_to_pipeline_config(
+    tmp_path: Path,
+    scope: str,
+) -> None:
+    form = _form(
+        tmp_path,
+        pipeline=PipelineChoice.STRUCTURE,
+        stage2_guides=tmp_path / "stage2.pdf",
+        stage2_instruction_source="file",
+        stage2_instruction_scope=scope,
+    )
+
+    config = form.to_inference_config()
+
+    assert config.pipeline.stage2_guides_scope == scope

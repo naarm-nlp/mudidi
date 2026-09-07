@@ -1147,6 +1147,11 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
     )
     assert cleared_config.pipeline.stage1_guides is None
     assert cleared_config.pipeline.stage2_guides is not None
+    assert not (
+        app.state.inputs.bundle(cleared_run_id.group(1))
+        / "instructions"
+        / "stage1"
+    ).exists()
 
 
 def test_sidecar_free_legacy_docx_preset_restores_extracted_text(
@@ -1307,3 +1312,473 @@ def test_preview_instruction_failures_use_safe_error_key(
     assert response.status_code == 422
     assert f"<strong>{expected_field}:</strong>" in response.text
     assert not app.state.run_store.list_runs()
+
+
+def test_preview_normalizes_whitespace_padded_instruction_source_and_scope(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+        ("output_directory", (None, str(tmp_path / "output"))),
+        ("pipeline", (None, "complete")),
+        ("dictionary_pages", (None, "1")),
+        ("provider", (None, "anthropic")),
+        ("model", (None, "anthropic/claude-sonnet-5")),
+        ("reasoning", (None, "low")),
+        ("stage1_instruction_source", (None, " file ")),
+        ("stage2_instruction_source", (None, " file ")),
+        ("stage2_instruction_scope", (None, " pass1 ")),
+        ("stage1_instruction_file", ("stage1.txt", b"stage one", "text/plain")),
+        (
+            "stage2_instruction_file",
+            ("stage2.txt", b"stage two", "text/plain"),
+        ),
+    ]
+
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 200
+    run_id = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_id is not None
+    config = app.state.job_controller.load_inference_config(run_id.group(1))
+    assert config.pipeline.stage1_guides is not None
+    assert config.pipeline.stage2_guides is not None
+    assert config.pipeline.stage2_guides_scope == "pass1"
+
+
+def test_preview_whitespace_padded_non_pdf_page_selection_uses_pages_error(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+        ("output_directory", (None, str(tmp_path / "output"))),
+        ("pipeline", (None, "transcription")),
+        ("dictionary_pages", (None, "1")),
+        ("provider", (None, "anthropic")),
+        ("model", (None, "anthropic/claude-sonnet-5")),
+        ("reasoning", (None, "low")),
+        ("stage1_instruction_source", (None, " file ")),
+        ("stage1_instruction_pdf_pages", (None, " 1 ")),
+        ("stage1_instruction_file", ("stage1.txt", b"stage one", "text/plain")),
+    ]
+
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 422
+    assert "<strong>Stage1 Instruction Pdf Pages:</strong>" in response.text
+    assert "Stage1 Instruction Source" not in response.text
+    assert not app.state.run_store.list_runs()
+
+
+def test_instruction_validation_preserves_safe_non_file_form_state(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    output = tmp_path / "safe-output"
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+        ("output_directory", (None, str(output))),
+        ("pipeline", (None, "transcription")),
+        ("dictionary_pages", (None, "1")),
+        ("provider", (None, "anthropic")),
+        ("model", (None, "anthropic/claude-sonnet-5")),
+        ("reasoning", (None, "low")),
+        ("stage1_instruction_source", (None, "file")),
+        (
+            "stage1_instruction_file",
+            ("guide.txt", b" \n", "text/plain"),
+        ),
+    ]
+
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 422
+    assert "<strong>Stage1 Instruction File:</strong>" in response.text
+    assert "Stage1 Instruction Source" not in response.text
+    assert "Stage1 Instruction Pdf Pages" not in response.text
+    assert str(output) not in response.text
+    assert 'value="~/Documents/MUDIDI-runs"' in response.text
+    assert "private instruction" not in response.text
+    assert not app.state.run_store.list_runs()
+
+
+def test_uploaded_instruction_review_matches_recovered_review_metadata(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_pdf_pages": "2",
+            "stage2_instruction_scope": "pass2",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            ("stage1_instruction_file", ("stage1.txt", b"private one", "text/plain")),
+            (
+                "stage2_instruction_file",
+                ("stage2.pdf", _pdf_bytes(3), "application/pdf"),
+            ),
+        ],
+    )
+
+    assert response.status_code == 200
+    run_match = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_match is not None
+    recovered = client.get(f"/runs/{run_match.group(1)}/review")
+    assert recovered.status_code == 200
+
+    def rows(html: str) -> dict[str, str]:
+        return {
+            stage: re.search(
+                rf"<dt>{stage} Instructions</dt>\s*<dd>(.*?)</dd>",
+                html,
+                re.S,
+            ).group(1)
+            for stage in ("Stage 1", "Stage 2")
+        }
+
+    assert rows(response.text) == rows(recovered.text)
+    assert "private one" not in response.text
+    assert "private one" not in recovered.text
+
+
+def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+
+    selected = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "selected-output"),
+            "pipeline": "structure",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_pdf_pages": "2",
+            "stage2_instruction_scope": "pass2",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage2_instruction_file",
+                ("selected.pdf", _pdf_bytes(3), "application/pdf"),
+            ),
+        ],
+    )
+    assert selected.status_code == 200
+    selected_run = re.search(r'action="/runs/([^/]+)/start"', selected.text)
+    assert selected_run is not None
+    saved = client.post(
+        f"/runs/{selected_run.group(1)}/presets",
+        data={"name": "Selected PDF preset"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    selected_preset = app.state.run_store.list_presets()[0]
+
+    loaded = client.get(f"/?preset={selected_preset.preset_id}")
+    assert loaded.status_code == 200
+    state_match = re.search(
+        r'<script id="preset-form-state" type="application/json">(.*?)</script>',
+        loaded.text,
+        re.S,
+    )
+    assert state_match is not None
+    state = json.loads(state_match.group(1))
+    assert state["stage2_instruction_pdf_pages"] == ["2"]
+    assert state["stage2_instruction_scope"] == ["pass2"]
+
+    kept = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": selected_preset.preset_id,
+            "output_directory": str(tmp_path / "selected-kept-output"),
+            "pipeline": "structure",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_pdf_pages": "2",
+            "stage2_instruction_keep_existing": "true",
+            "stage2_instruction_scope": "pass2",
+        },
+    )
+    assert kept.status_code == 200
+    kept_run = re.search(r'action="/runs/([^/]+)/start"', kept.text)
+    assert kept_run is not None
+    kept_config = app.state.job_controller.load_inference_config(kept_run.group(1))
+    assert kept_config.pipeline.stage2_guides_pages == "2"
+    assert kept_config.pipeline.stage2_guides_scope == "pass2"
+
+    all_pages = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "all-pages-output"),
+            "pipeline": "structure",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage2_instruction_file",
+                ("all.pdf", _pdf_bytes(3), "application/pdf"),
+            ),
+        ],
+    )
+    assert all_pages.status_code == 200
+    all_run = re.search(r'action="/runs/([^/]+)/start"', all_pages.text)
+    assert all_run is not None
+    all_saved = client.post(
+        f"/runs/{all_run.group(1)}/presets",
+        data={"name": "All PDF preset"},
+        follow_redirects=False,
+    )
+    assert all_saved.status_code == 303
+    all_preset = next(
+        preset
+        for preset in app.state.run_store.list_presets()
+        if preset.name == "All PDF preset"
+    )
+
+    blank_kept = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": all_preset.preset_id,
+            "output_directory": str(tmp_path / "all-pages-kept-output"),
+            "pipeline": "structure",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_pdf_pages": " ",
+            "stage2_instruction_keep_existing": "true",
+            "stage2_instruction_scope": "both",
+        },
+    )
+    assert blank_kept.status_code == 200
+    blank_run = re.search(r'action="/runs/([^/]+)/start"', blank_kept.text)
+    assert blank_run is not None
+    blank_config = app.state.job_controller.load_inference_config(blank_run.group(1))
+    assert blank_config.pipeline.stage2_guides_pages is None
+    assert blank_config.pipeline.stage2_guides_scope == "both"
+    metadata = json.loads(
+        (
+            blank_config.pipeline.stage2_guides.parent / "metadata.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert metadata["selected_pages"] == [1, 2, 3]
+
+
+def test_typed_blank_deletes_managed_and_legacy_instruction_paths(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    managed = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "managed-output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage1_instruction_file",
+                ("managed.txt", b"managed", "text/plain"),
+            ),
+        ],
+    )
+    assert managed.status_code == 200
+    managed_run = re.search(r'action="/runs/([^/]+)/start"', managed.text)
+    assert managed_run is not None
+    saved = client.post(
+        f"/runs/{managed_run.group(1)}/presets",
+        data={"name": "Managed delete preset"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    managed_preset = app.state.run_store.list_presets()[0]
+    cleared = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": managed_preset.preset_id,
+            "output_directory": str(tmp_path / "managed-cleared-output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "typed",
+            "stage1_additional_instructions": "",
+        },
+    )
+    assert cleared.status_code == 200
+    cleared_run = re.search(r'action="/runs/([^/]+)/start"', cleared.text)
+    assert cleared_run is not None
+    cleared_bundle = app.state.inputs.bundle(cleared_run.group(1))
+    assert not (cleared_bundle / "instructions" / "stage1").exists()
+
+    legacy_root = app.state.inputs.presets_root / "legacy-delete" / "inputs"
+    legacy_pages = legacy_root / "pages.pdf"
+    legacy_guide = legacy_root / "instructions" / "stage1.txt"
+    legacy_guide.parent.mkdir(parents=True)
+    legacy_pages.parent.mkdir(parents=True, exist_ok=True)
+    legacy_pages.write_bytes(_pdf_bytes())
+    legacy_guide.write_text("legacy", encoding="utf-8")
+    legacy_config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": legacy_pages},
+            "output": {"directory": tmp_path / "legacy-output"},
+            "pipeline": {"stage": "1", "stage1_guides": legacy_guide},
+        }
+    )
+    app.state.run_store.create_preset(
+        "legacy-delete",
+        name="Legacy delete preset",
+        provider="anthropic",
+        config=legacy_config,
+    )
+    legacy_cleared = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": "legacy-delete",
+            "output_directory": str(tmp_path / "legacy-cleared-output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "typed",
+            "stage1_additional_instructions": "",
+        },
+    )
+    assert legacy_cleared.status_code == 200
+    legacy_run = re.search(r'action="/runs/([^/]+)/start"', legacy_cleared.text)
+    assert legacy_run is not None
+    legacy_bundle = app.state.inputs.bundle(legacy_run.group(1))
+    assert not (legacy_bundle / "instructions" / "stage1.txt").exists()
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["stage2_instruction_scope", "stage2_instruction_keep_existing"],
+)
+def test_preview_rejects_repeated_stage2_scope_and_keep_controls(
+    tmp_path: Path,
+    field: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+        ("output_directory", (None, str(tmp_path / "output"))),
+        ("pipeline", (None, "structure")),
+        ("dictionary_pages", (None, "1")),
+        ("provider", (None, "anthropic")),
+        ("model", (None, "anthropic/claude-sonnet-5")),
+        ("reasoning", (None, "low")),
+        ("stage2_instruction_source", (None, "file")),
+        (field, (None, "pass1" if "scope" in field else "true")),
+        (field, (None, "pass2" if "scope" in field else "false")),
+    ]
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 422
+    assert "<strong>Stage2 Instruction File:</strong>" in response.text
+    assert not app.state.run_store.list_runs()
+
+
+def test_real_legacy_docx_preset_restores_typed_instruction_state(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    preset_root = app.state.inputs.presets_root / "legacy-docx" / "inputs"
+    pages = preset_root / "pages.pdf"
+    guide = preset_root / "instructions" / "stage1.docx"
+    guide.parent.mkdir(parents=True)
+    pages.write_bytes(_pdf_bytes())
+    document = Document()
+    document.add_paragraph("Restore this real DOCX instruction.")
+    document.save(str(guide))
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "legacy-docx-output"},
+            "pipeline": {"stage": "1", "stage1_guides": guide},
+        }
+    )
+    app.state.run_store.create_preset(
+        "legacy-docx",
+        name="Legacy DOCX preset",
+        provider="anthropic",
+        config=config,
+    )
+
+    loaded = client.get("/?preset=legacy-docx")
+    assert loaded.status_code == 200
+    state_match = re.search(
+        r'<script id="preset-form-state" type="application/json">(.*?)</script>',
+        loaded.text,
+        re.S,
+    )
+    assert state_match is not None
+    state = json.loads(state_match.group(1))
+    assert state["stage1_instruction_source"] == ["typed"]
+    assert state["stage1_additional_instructions"] == [
+        "Restore this real DOCX instruction."
+    ]
+
+    restored = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": "legacy-docx",
+            "output_directory": str(tmp_path / "restored-output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "typed",
+            "stage1_additional_instructions": "Restore this real DOCX instruction.",
+        },
+    )
+    assert restored.status_code == 200
+    run_match = re.search(r'action="/runs/([^/]+)/start"', restored.text)
+    assert run_match is not None
+    restored_config = app.state.job_controller.load_inference_config(run_match.group(1))
+    assert restored_config.pipeline.stage1_guides is not None
+    assert (
+        restored_config.pipeline.stage1_guides.read_text(encoding="utf-8")
+        == "Restore this real DOCX instruction."
+    )

@@ -466,6 +466,12 @@ def create_app(
                         file_field,
                         "Stage 2 instruction scope is invalid.",
                     )
+            payload[source_field] = source
+            payload[text_field] = text or None
+            payload[pages_field] = page_spec
+            payload[keep_field] = keep_existing
+            if stage == "stage2":
+                payload["stage2_instruction_scope"] = scope
             files = uploaded(file_field)
             relevant = bool(
                 files
