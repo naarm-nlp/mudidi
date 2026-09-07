@@ -63,7 +63,7 @@ def instruction_review_summary(
         mode = str(metadata.get("source_mode") or "file")
         suffix = str(metadata.get("suffix") or "").lower()
         kind = str(metadata.get("kind") or ("pdf" if suffix == ".pdf" else "text"))
-        original_filename = metadata.get("original_filename")
+        original_filename = metadata.get("original_filename") if mode == "file" else None
         selected_pages = _metadata_pages(metadata.get("selected_pages"))
         pdf_page_count = _metadata_int(metadata.get("pdf_page_count"))
         if stage2_scope is None:
@@ -77,7 +77,7 @@ def instruction_review_summary(
         suffix = path.suffix.lower()
         mode = "typed" if suffix in {".txt", ".md", ".docx"} else "file"
         kind = "pdf" if suffix == ".pdf" else "text"
-        original_filename = path.name
+        original_filename = path.name if mode == "file" else None
         selected_pages = []
         pdf_page_count = None
     else:
@@ -113,6 +113,9 @@ def instruction_review_summary(
             ".pdf": "PDF",
         }.get(suffix, kind.title()),
     }[mode]
+    selected_page_count = len(selected_pages)
+    if kind == "pdf" and not selected_pages and page_spec is None:
+        selected_page_count = pdf_page_count or 0
     return {
         "source": source_label,
         "source_mode": mode,
@@ -120,7 +123,7 @@ def instruction_review_summary(
         "suffix": suffix or None,
         "original_filename": original_filename,
         "selected_pages": selected_pages,
-        "selected_page_count": len(selected_pages),
+        "selected_page_count": selected_page_count,
         "pdf_page_count": pdf_page_count,
         "selected_pages_label": page_label,
         "scope": stage2_scope,

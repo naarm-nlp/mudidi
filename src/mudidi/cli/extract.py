@@ -21,7 +21,11 @@ from mudidi.ocr.mathpix import MathpixBackend
 from mudidi.ocr.vlm.prompts import find_ocr_hint_file
 from mudidi.schemas.ocr_result import OCRPageResult
 from mudidi.extraction.llm_two_stage import TwoStageLLMExtraction
-from mudidi.instructions import PreparedInstructionContext, prepare_instruction_context
+from mudidi.instructions import (
+    PreparedInstructionContext,
+    instruction_identity_projection,
+    prepare_instruction_context,
+)
 from mudidi.evaluation.stage2.mdf_lexical_repair import (
     repair_mdf_text,
     normalize_stage1_text_for_repair,
@@ -618,43 +622,15 @@ def _per_page_inputs_stage2(
 
 
 def _instruction_manifest_identity(manifest: Dict[str, Any]) -> dict[str, Any]:
-    """Return only content identity fields used for resume compatibility."""
+    """Return only path-free semantic instruction identity fields."""
     stage1 = manifest.get("stage1_guides")
     stage2 = manifest.get("stage2_guides")
-    if not isinstance(stage1, dict):
-        stage1 = {}
-    if not isinstance(stage2, dict):
-        stage2 = {}
-
-    def compact(entry: dict[str, Any], *, default_scope: str | None = None) -> dict[str, Any]:
-        result = {
-            key: entry.get(key)
-            for key in (
-                "source_path",
-                "kind",
-                "original_filename",
-                "byte_count",
-                "sha256",
-                "pdf_page_count",
-                "selected_pages",
-                "selected_path",
-                "selected_sha256",
-            )
-        }
-        if entry.get("used") is False:
-            result.update(
-                kind="none",
-                byte_count=0,
-                selected_pages=[],
-            )
-        if default_scope is not None:
-            result["scope"] = entry.get("scope", default_scope)
-        return result
-
     return {
-        "stage1": compact(stage1),
-        "stage2": compact(
-            stage2,
+        "stage1": instruction_identity_projection(
+            stage1 if isinstance(stage1, dict) else None,
+        ),
+        "stage2": instruction_identity_projection(
+            stage2 if isinstance(stage2, dict) else None,
             default_scope=str(manifest.get("stage2_guides_scope", "both")),
         ),
     }

@@ -22,7 +22,10 @@ from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.utils.image import file_content_part, image_data_url, mime_type_for_path
 from mudidi.utils.parse_rules_pages import format_sample_pages_block
-from mudidi.instructions import PreparedInstructionContext
+from mudidi.instructions import (
+    PreparedInstructionContext,
+    instruction_identity_projection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -221,16 +224,38 @@ def _parse_rules_cache_identity(
     instruction_context: PreparedInstructionContext | None,
     instruction_scope: str,
 ) -> dict[str, object]:
+    entry = (
+        instruction_context.manifest_entry(scope=instruction_scope)
+        if instruction_context is not None
+        else _empty_instruction_manifest()
+    )
     return {
         "scope": instruction_scope,
-        "instruction": (
-            instruction_context.manifest_entry(scope=instruction_scope)
-            if instruction_context is not None
-            else _empty_instruction_manifest()
+        "instruction": instruction_identity_projection(
+            entry,
+            default_scope=instruction_scope,
         ),
     }
 
 
+
+
+def _normalized_parse_rules_cache_identity(
+    value: object,
+    instruction_scope: str,
+) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return None
+    instruction = value.get("instruction")
+    if not isinstance(instruction, dict):
+        return None
+    return {
+        "scope": value.get("scope"),
+        "instruction": instruction_identity_projection(
+            instruction,
+            default_scope=instruction_scope,
+        ),
+    }
 def _write_parse_rules_cache_metadata(
     cache_path: Path,
     *,
@@ -273,7 +298,11 @@ def _ensure_parse_rules_cache_compatible(
             f"Cached parse-rule metadata is unreadable at {metadata_path}; "
             "pass --overwrite before reuse."
         ) from exc
-    if actual != expected:
+    actual_identity = _normalized_parse_rules_cache_identity(
+        actual,
+        instruction_scope,
+    )
+    if actual_identity != expected:
         raise ValueError(
             "Instruction attachment metadata changed for cached parse rules; "
             "pass --overwrite before reuse."
