@@ -193,31 +193,22 @@
               <fieldset id="api-credentials" class="choice-group credential-entry">
                 <legend>API credentials</legend>
                 <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
-                <div class="credential-management">
-                  <div class="selected-credential-panel">
-                    <div class="credential-panel-heading"><span class="eyebrow">Selected provider</span><strong data-selected-provider-badge>Google Gemini · Not saved</strong></div>
-                    <div data-selected-credential></div>
-                  </div>
-                  <details data-credential-manager>
-                    <summary>Manage keys</summary>
-                    <div data-other-credentials>
-                      {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
-                        {% set status = credential_statuses[provider] %}
-                        {% set source = status.source.value %}
-                        <div class="credential-card" data-credential-card data-provider="{{ provider }}" data-key-saved="{{ 'true' if source == 'persistent' else 'false' }}" data-key-available="{{ 'true' if status.available else 'false' }}" data-key-source="{{ source }}">
-                          <label for="credential-{{ provider }}">{{ label }} API key
-                            <span class="input-row">
-                              <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if source == 'persistent' else 'Environment key available — enter a key to save an override' if source == 'environment' else 'Session key available — enter a key to save an override' if source == 'temporary' else 'Paste provider API key' }}">
-                              <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
-                              <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
-                            </span>
-                            <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if source == 'persistent' else 'Available from environment' if source == 'environment' else 'Available for this session' if source == 'temporary' else 'Not saved' }}</span>
-                            {% if source == 'persistent' %}<button type="button" class="credential-delete" data-delete-key data-provider="{{ provider }}">Remove saved key</button>{% endif %}
-                          </label>
-                        </div>
-                      {% endfor %}
+                <div class="credential-grid">
+                  {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
+                    {% set status = credential_statuses[provider] %}
+                    {% set source = status.source.value %}
+                    <div class="credential-card" data-credential-card data-provider="{{ provider }}" data-key-saved="{{ 'true' if source == 'persistent' else 'false' }}" data-key-available="{{ 'true' if status.available else 'false' }}" data-key-source="{{ source }}">
+                      <label for="credential-{{ provider }}">{{ label }} API key
+                        <span class="input-row">
+                          <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if source == 'persistent' else 'Environment key available — enter a key to save an override' if source == 'environment' else 'Session key available — enter a key to save an override' if source == 'temporary' else 'Paste provider API key' }}">
+                          <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
+                          <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
+                        </span>
+                        <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if source == 'persistent' else 'Available from environment' if source == 'environment' else 'Available for this session' if source == 'temporary' else 'Not saved' }}</span>
+                        {% if source == 'persistent' %}<button type="button" class="credential-delete" data-delete-key data-provider="{{ provider }}">Remove saved key</button>{% endif %}
+                      </label>
                     </div>
-                  </details>
+                  {% endfor %}
                 </div>
                 <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
               </fieldset>
@@ -249,6 +240,9 @@
                 <datalist id="openrouter-provider-catalog">
                   <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
                 </datalist>
+                <section class="stage1-settings" data-stage-control data-pipeline-stages="stage1">
+                  <div class="stage-settings-heading"><div><span class="eyebrow">Stage 1</span><h3>Model and reasoning</h3></div></div>
+                  <div class="form-grid">
                 <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_model %} class="field-invalid" data-field-error="stage1_model"{% endif %}><span class="field-heading">Stage 1 model <button class="info-button" type="button" aria-label="About Stage 1 model" data-help="Stage 1 transcribes the selected dictionary pages into faithful flat text.">i</button></span>
                   <select name="stage1_model" data-model-select required>
                     {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
@@ -266,12 +260,14 @@
                   </select>
                   {% if errors_by_field.stage1_reasoning %}<small class="field-error-message">{{ errors_by_field.stage1_reasoning }}</small>{% endif %}
                 </label>
+                  </div>
+                </section>
                 <section class="stage2-settings" data-stage2-container data-stage2-mode="shared">
-                  <div class="stage2-settings-heading">
+                  <div class="stage-settings-heading">
                     <div><span class="eyebrow">Stage 2</span><h3>Model and reasoning</h3></div>
                     <button type="button" class="stage2-toggle" data-stage2-toggle aria-expanded="false">Advanced · split passes</button>
                   </div>
-                  <p class="stage2-explanation">Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for review. Pass 2 applies the approved guide to each transcription.</p>
+                  <p class="stage2-explanation" data-stage2-explanation hidden>Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for review. Pass 2 applies the approved guide to each transcription.</p>
                   {% for pass_name, field, custom_field, reasoning_field, label, help_text in [
                     ('pass1', 'stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
                     ('pass2', 'stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
@@ -323,8 +319,8 @@
                 <legend>Custom verification</legend>
                 <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
                 <div class="form-grid">
-                  <label{% if errors_by_field.verify_stage1 %} class="field-invalid" data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
-                  <label{% if errors_by_field.verify_stage2 %} class="field-invalid" data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
+                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage1 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage1 %} data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
+                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage2 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage2 %} data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
                   <label{% if errors_by_field.max_iterations %} class="field-invalid" data-field-error="max_iterations"{% endif %}>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2" disabled>{% if errors_by_field.max_iterations %}<small class="field-error-message">{{ errors_by_field.max_iterations }}</small>{% endif %}</label>
                   <label{% if errors_by_field.min_retry_confidence %} class="field-invalid" data-field-error="min_retry_confidence"{% endif %}>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55" disabled>{% if errors_by_field.min_retry_confidence %}<small class="field-error-message">{{ errors_by_field.min_retry_confidence }}</small>{% endif %}</label>
                   {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
@@ -385,5 +381,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-4" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-5" defer></script>
 {% endblock %}

@@ -80,8 +80,18 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Advanced · split passes" in response.text
     assert 'data-stage2-pass="pass1"' in response.text
     assert 'data-stage2-pass="pass2"' in response.text
-    assert 'data-selected-credential' in response.text
-    assert 'data-other-credentials' in response.text
+    assert '<p class="stage2-explanation" data-stage2-explanation hidden>' in response.text
+    assert 'class="stage1-settings"' in response.text
+    assert (
+        '<div class="stage-settings-heading"><div><span class="eyebrow">Stage 1</span>'
+        "<h3>Model and reasoning</h3></div></div>"
+        in response.text
+    )
+    assert 'class="credential-grid"' in response.text
+    assert response.text.count("data-credential-card") == 4
+    assert 'data-selected-credential' not in response.text
+    assert 'data-other-credentials' not in response.text
+    assert "Manage keys" not in response.text
     assert "◉" not in response.text
     assert 'name="stage1_reasoning"' in response.text
     assert 'name="stage2_pass1_reasoning"' in response.text
@@ -205,7 +215,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-4" in response.text
+    assert "/static/app.js?v=dashboard-ui-5" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
@@ -624,6 +634,8 @@ const runForm = {
 };
 const summary = new Field();
 summary.textContent = "";
+const explanation = new Field();
+explanation.hidden = false;
 const document = {
   body: {append() {}},
   addEventListener() {},
@@ -631,6 +643,7 @@ const document = {
   querySelector(selector) {
     if (selector === "form.run-form") return runForm;
     if (selector === "[data-stage2-summary-model]") return summary;
+    if (selector === "[data-stage2-explanation]") return explanation;
     return null;
   },
   querySelectorAll(selector) {
@@ -672,6 +685,7 @@ const assert = (condition, message) => {
 
 sync.synchronizePipeline();
 assert(summary.textContent === "Shared model · shared-model", "complete should show shared Stage 2");
+assert(explanation.hidden, "shared mode should hide the pass explanation");
 
 complete.checked = false;
 transcription.checked = true;
@@ -688,6 +702,7 @@ assert(
   summary.textContent === "Separate pass models · Pass 1: shared-model · Pass 2: shared-model",
   "split mode should show both pass models",
 );
+assert(!explanation.hidden, "split mode should show the pass explanation");
 pass1Model.value = "pass-one-model";
 pass2Model.value = "pass-two-model";
 sync.synchronizeStage2Pass("pass1");
@@ -698,6 +713,7 @@ assert(
 );
 sync.enterSharedStage2();
 assert(summary.textContent === "Shared model · shared-model", "shared mode should restore shared model");
+assert(explanation.hidden, "returning to shared mode should hide the pass explanation");
 """
     result = subprocess.run(
         ["node", "-e", harness, str(app_js)],
@@ -757,9 +773,6 @@ class Element {
 
 const providerValue = new Element();
 providerValue.value = "anthropic";
-const selectedProviderBadge = new Element();
-const selectedCredential = new Element();
-const otherCredentials = new Element();
 const card = new Element();
 card.dataset.provider = "anthropic";
 card.dataset.keySaved = "true";
@@ -800,9 +813,6 @@ const document = {
   createElement() { return new Element(); },
   querySelector(selector) {
     if (selector === "[data-provider-value]") return providerValue;
-    if (selector === "[data-selected-credential]") return selectedCredential;
-    if (selector === "[data-other-credentials]") return otherCredentials;
-    if (selector === "[data-selected-provider-badge]") return selectedProviderBadge;
     if (selector === "#credential-anthropic") return input;
     if (selector === "#credential-status-anthropic") return status;
     return null;
@@ -856,7 +866,6 @@ const assert = (condition, message) => {
   assert(status.textContent === "Available from environment", "fallback status was not rendered");
   assert(input.placeholder.toLowerCase().includes("environment"), "fallback placeholder was not rendered");
   assert(!card.querySelector("[data-delete-key]"), "environment fallback must not be deletable");
-  assert(selectedProviderBadge.textContent.endsWith("Environment key"), "fallback badge was not rendered");
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
@@ -1242,6 +1251,34 @@ def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
     assert "Temperature" in response.text
     assert "greater than or equal to 0" in response.text
     assert "Submitted values are not echoed" not in response.text
+
+
+def test_preview_marks_invalid_agentic_stage_toggle(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "agentic": "true",
+            "verify_stage1": "sometimes",
+            "verify_stage2": "true",
+            "dictionary_pages": "1",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
+        },
+    )
+
+    assert response.status_code == 422
+    assert (
+        'class="agentic-stage-toggle field-invalid" data-field-error="verify_stage1"'
+        in response.text
+    )
 
 
 def test_preview_ignores_retired_controls_from_a_stale_browser_tab(

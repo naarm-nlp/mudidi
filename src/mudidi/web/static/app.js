@@ -273,6 +273,7 @@ const modelSelects = [...document.querySelectorAll("[data-model-select]")];
 const openRouterProvider = document.querySelector("[data-openrouter-provider]");
 const stage2Container = document.querySelector("[data-stage2-container]");
 const stage2Toggle = document.querySelector("[data-stage2-toggle]");
+const stage2Explanation = document.querySelector("[data-stage2-explanation]");
 const pipelineStages = {
   complete: new Set(["stage1", "pass1", "pass2"]),
   transcription: new Set(["stage1"]),
@@ -291,29 +292,16 @@ const providerLabels = {
   openrouter: "OpenRouter",
   custom: "your selected provider",
 };
-const credentialProviderLabels = {
-  ...providerLabels,
-  custom: "Other / advanced provider",
-};
 const customModelPlaceholder = (provider) => provider === "openrouter"
   ? "e.g. qwen/qwen3-235b-a22b"
   : `Enter a model name supported by ${providerLabels[provider] || "your selected provider"}`;
 
 const credentialCards = [...document.querySelectorAll("[data-credential-card]")];
-const selectedCredential = document.querySelector("[data-selected-credential]");
-const otherCredentials = document.querySelector("[data-other-credentials]");
-const selectedProviderBadge = document.querySelector("[data-selected-provider-badge]");
 
 const credentialStatusLabels = {
   persistent: "Stored",
   environment: "Available from environment",
   temporary: "Available for this session",
-  missing: "Not saved",
-};
-const credentialBadgeLabels = {
-  persistent: "Key saved",
-  environment: "Environment key",
-  temporary: "Session key",
   missing: "Not saved",
 };
 const credentialPlaceholders = {
@@ -340,18 +328,6 @@ const ensureDeleteButton = (card, provider, saved) => {
   }
 };
 
-const renderCredentialSelection = (provider = providerValue?.value) => {
-  if (!provider) return;
-  const selected = credentialCards.find((card) => card.dataset.provider === provider);
-  if (selected && selectedCredential) selectedCredential.append(selected);
-  credentialCards
-    .filter((card) => card !== selected)
-    .forEach((card) => otherCredentials?.append(card));
-  const source = selected?.dataset.keySource || "missing";
-  if (selectedProviderBadge) {
-    selectedProviderBadge.textContent = `${credentialProviderLabels[provider] || provider} · ${credentialBadgeLabels[source] || credentialBadgeLabels.missing}`;
-  }
-};
 const applyCredentialStatus = (card, provider, payload) => {
   const source = payload?.source;
   const available = payload?.available;
@@ -370,7 +346,6 @@ const applyCredentialStatus = (card, provider, payload) => {
   if (input) input.placeholder = credentialPlaceholders[source];
   if (status) status.textContent = credentialStatusLabels[source];
   ensureDeleteButton(card, provider, source === "persistent");
-  renderCredentialSelection(providerValue?.value);
   return true;
 };
 
@@ -553,6 +528,7 @@ const renderStage2Mode = () => {
   if (!stage2State) return;
   const split = stage2State.mode === "split";
   if (stage2Container) stage2Container.dataset.stage2Mode = stage2State.mode;
+  if (stage2Explanation) stage2Explanation.hidden = !split;
   const pass1Card = stage2Container?.querySelector('[data-stage2-pass="pass1"]');
   const pass2Card = stage2Container?.querySelector('[data-stage2-pass="pass2"]');
   if (pass1Card) {
@@ -675,7 +651,6 @@ providerChoices.forEach((choice) => {
     synchronizeModels(true);
     migrateStage2CachesForProvider();
     updateStage2Summary();
-    renderCredentialSelection(choice.value);
   });
 });
 stage2Toggle?.addEventListener("click", () => {
@@ -791,7 +766,6 @@ renderStage2Mode();
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
-renderCredentialSelection();
 
 const beginWizardInvalidAttempt = () => {
   firstInvalidWizardField = null;

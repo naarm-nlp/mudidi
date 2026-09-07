@@ -643,12 +643,18 @@ def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
         r"\.pipeline-choices\s+\.task-card:last-child\s*\{(?P<body>[^}]*)\}",
         css,
     )
+    radio_alignment = re.search(
+        r"\.task-card\s*>\s*input\[type=\"radio\"\],\s*"
+        r"\.choice-card\s*>\s*input\[type=\"radio\"\]\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
 
     assert workspace is not None
     assert "max-width: 1320px" in workspace.group("body")
     assert pipeline_card is not None
     assert "align-items: start" in pipeline_card.group("body")
     assert "padding: 18px 18px 64px" in pipeline_card.group("body")
+    assert "column-gap: 8px" in pipeline_card.group("body")
     assert card_help is not None
     assert "position: absolute" in card_help.group("body")
     assert "right: 8px" in card_help.group("body")
@@ -658,6 +664,8 @@ def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in responsive_grid.group("body")
     assert responsive_last_card is not None
     assert "grid-column: 1 / -1" in responsive_last_card.group("body")
+    assert radio_alignment is not None
+    assert "margin: 2px 0 0" in radio_alignment.group("body")
 
 
 def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
@@ -669,6 +677,15 @@ def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
     )
     stage2 = re.search(r"\.stage2-settings\s*\{(?P<body>[^}]*)\}", css)
     stage2_pass = re.search(r"\.stage2-pass-card\s*\{(?P<body>[^}]*)\}", css)
+    stage1 = re.search(r"\.stage1-settings\s*\{(?P<body>[^}]*)\}", css)
+    stage2_labels = re.search(
+        r"\.stage2-pass-card\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    credential_grids = re.findall(
+        r"\.credential-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
 
     assert model_grid is not None
     assert "margin-top: 16px" in model_grid.group("body")
@@ -677,6 +694,14 @@ def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
     assert stage2_pass is not None
     assert "margin-top: 12px" in stage2_pass.group("body")
     assert "gap: 16px 18px" in stage2_pass.group("body")
+    assert stage1 is not None
+    assert "background: var(--color-accent-soft)" in stage1.group("body")
+    assert stage2_labels is not None
+    assert "display: grid" in stage2_labels.group("body")
+    assert "gap: 8px" in stage2_labels.group("body")
+    assert len(credential_grids) == 2
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in credential_grids[0]
+    assert "grid-template-columns: 1fr" in credential_grids[1]
 
 
 def test_agentic_choices_fill_two_columns_and_stack_on_mobile(tmp_path: Path) -> None:
@@ -690,6 +715,28 @@ def test_agentic_choices_fill_two_columns_and_stack_on_mobile(tmp_path: Path) ->
     assert len(agentic_rules) == 2
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in agentic_rules[0]
     assert "grid-template-columns: 1fr" in agentic_rules[1]
+    checkbox_row = re.search(
+        r"\.agentic-stage-toggle\s*>\s*span\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    checkbox_input = re.search(
+        r"\.agentic-stage-toggle\s+input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    nested_model_label = re.search(
+        r"\.agentic-model-group\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert '.form-grid input:not([type="checkbox"]):not([type="radio"])' in css
+    assert checkbox_row is not None
+    assert "display: flex" in checkbox_row.group("body")
+    assert "gap: 8px" in checkbox_row.group("body")
+    assert checkbox_input is not None
+    assert "margin: 0" in checkbox_input.group("body")
+    assert nested_model_label is not None
+    assert "margin: 0" in nested_model_label.group("body")
+    assert "gap: 8px" in nested_model_label.group("body")
 
 
 def test_run_summary_keeps_long_model_names_readable(tmp_path: Path) -> None:
@@ -722,7 +769,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-2" in layout
+    assert "app.css') }}?v=dashboard-ui-3" in layout
 
 
 
@@ -737,7 +784,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-4"}
+    assert versions == {"dashboard-ui-5"}
 
 
 def _relative_luminance(hex_color: str) -> float:
