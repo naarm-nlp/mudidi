@@ -104,15 +104,23 @@
                   <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>{% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}<input name="existing_mdf_guide_file" type="file" accept=".json"></label>
                   <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
                 </div>
-                <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
-                  <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
-                  <label><input type="radio" name="mdf_manual_source" value="upload" required> Upload my own MDF manual</label>
-                  <label data-custom-mdf-manual hidden>MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
-                  <div class="mdf-manual-official">
-                    <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>
-                    <small>Official PDF: fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small>
+                <fieldset class="choice-group mdf-manual" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                  <legend>MDF manual (optional)</legend>
+                  <div class="mdf-manual-heading">
+                    <p>Optional reference material for Stage 2 parsing-guide inference.</p>
+                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button>
                   </div>
-                  <label><input type="radio" name="mdf_manual_source" value="none" checked> Continue without an MDF manual</label>
+                  <div class="choice-card-grid mdf-manual-options">
+                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="upload" required><span><strong>Upload my own MDF manual</strong><small>Use selected reference pages for Stage 2 marker interpretation.</small></span></label>
+                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="none" checked><span><strong>Continue without an MDF manual</strong><small>Let Stage 2 infer the parsing guide from the dictionary pages.</small></span></label>
+                  </div>
+                  <div class="mdf-manual-upload" data-custom-mdf-manual hidden>
+                    <label class="mdf-manual-file">MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                  </div>
+                  <div class="mdf-manual-official">
+                    <span><strong>Official SIL MDF manual</strong><small>fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small></span>
+                    <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer">Open official SIL MDF manual <span aria-hidden="true">↗</span></a>
+                  </div>
                 </fieldset>
               </div>
 

@@ -298,9 +298,19 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .credential-blocked > .back-link { display: inline-block; margin-top: 2px; }
 .back-link { display: inline-flex; align-items: center; min-height: 42px; color: var(--color-accent-text); font-weight: 700; }
 .link-button { display: inline-block; margin-top: 18px; }
-.mdf-manual-official { margin: 14px 0 16px; }
-.mdf-manual-link { margin: 0; color: var(--color-on-accent); text-decoration: none; }
-.mdf-manual-official small { display: block; margin-top: 7px; color: var(--color-muted); overflow-wrap: anywhere; }
+.mdf-manual-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 16px; margin-bottom: 12px; }
+.mdf-manual-heading p { margin: 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
+.mdf-manual-heading .info-button { margin-top: -7px; }
+.mdf-manual-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mdf-manual-options .choice-card { grid-template-columns: auto minmax(0, 1fr); }
+.mdf-manual-upload { margin-top: 12px; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.mdf-manual-file { display: grid; gap: 8px; margin: 0; }
+.mdf-manual-file input { width: 100%; }
+.mdf-manual-official { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0 0; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
+.mdf-manual-official > span { display: grid; gap: 4px; min-width: 0; }
+.mdf-manual-official strong { font-size: 13px; font-weight: 900; text-transform: uppercase; }
+.mdf-manual-link { flex: 0 0 auto; margin: 0; color: var(--color-on-accent); font-size: 12px; text-decoration: none; white-space: nowrap; }
+.mdf-manual-official small { display: block; margin: 0; color: var(--color-muted); overflow-wrap: anywhere; }
 .error-card { border-top: 10px solid var(--color-danger); }
 .validation-errors { margin: 18px 0; padding: 0; list-style: none; }
 .validation-errors li { display: grid; grid-template-columns: minmax(120px, .35fr) minmax(0, 1fr); gap: 12px; padding: 11px 0; border-bottom: var(--divider-width) solid var(--color-line); }
@@ -611,6 +621,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .summary, .review-actions { position: static; }
   .stage2-pass-card { grid-template-columns: 1fr; }
   .form-grid, .preset-grid { grid-template-columns: 1fr; }
+  .mdf-manual-options { grid-template-columns: 1fr; }
   .active-progress-summary { flex-wrap: wrap; }
   .active-progress-summary .elapsed-time { margin-left: 0; text-align: left; }
   .history-table-panel .table-scroll { overflow-x: auto; }
@@ -634,6 +645,9 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .credential-card .input-row input { grid-column: 1 / -1; }
   .credential-card .key-reveal { grid-column: 1; }
   .credential-card .credential-save { grid-column: 2; }
+  .mdf-manual-official { align-items: stretch; flex-direction: column; }
+  .mdf-manual-link { width: 100%; text-align: center; white-space: normal; }
+  .mdf-manual-help::after { width: min(440px, 70vw); }
   .wizard-actions > span { order: 3; min-height: 0; text-align: center; }
   .active-progress-summary { gap: 8px 16px; }
   .activity-list li { align-items: flex-start; flex-direction: column; gap: 4px; }
