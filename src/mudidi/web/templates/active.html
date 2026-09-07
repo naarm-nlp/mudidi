@@ -1,7 +1,7 @@
 {% extends "_layout.html" %}
 {% block title %}Active run · MUDIDI{% endblock %}
 {% block head_meta %}{% if runs %}<meta name="mudidi-events" content="/runs/{{ runs[0].run_id }}/events?after={{ runs[0].last_event_sequence }}">{% endif %}{% endblock %}
-{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-3" defer></script>{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-4" defer></script>{% endblock %}
 {% block main %}
 <div class="page-shell active-page">
   <div class="providers-page">

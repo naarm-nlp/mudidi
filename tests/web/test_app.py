@@ -37,12 +37,16 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "Input" in response.text
     assert "Pipeline" in response.text
     assert "MDF parsing guide" in response.text
-    assert 'data-new-run-wizard' in response.text
+    assert '<section class="workspace" data-new-run-wizard>' in response.text
+    assert '<form class="panel run-form" data-new-run-wizard' not in response.text
     for step in ("input", "pipeline", "model", "agentic"):
         assert f'id="wizard-{step}"' in response.text
         assert f'data-wizard-panel="{step}"' in response.text
+        assert f'data-wizard-go="{step}"' in response.text
     assert response.text.count('aria-current="step"') == 1
     assert 'data-wizard-marker="input" aria-current="step"' in response.text
+    assert response.text.count("data-wizard-go=") == 4
+    assert 'data-wizard-marker="review" aria-disabled="true"' in response.text
     assert 'action="/runs/preview"' in response.text
     assert 'data-wizard-submit' in response.text
     panel_order = [
@@ -201,7 +205,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-3" in response.text
+    assert "/static/app.js?v=dashboard-ui-4" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 

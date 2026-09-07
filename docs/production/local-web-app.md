@@ -98,15 +98,16 @@ The **New Run** screen is a five-step wizard:
 5. **Review** — submit the complete form for authoritative server validation,
    then inspect the server-rendered, non-secret review before starting the run.
 
-The client validates only the visible, enabled controls in the current wizard
-step. **Continue** checks that current panel, focuses the first invalid control,
-and shows field explanations and a summary when several controls need attention.
-**Back** does not validate or clear values. At final **Review run**, the browser
-performs whole-form constraint validation across all enabled fields before
-sending the complete multipart form to `/runs/preview`. Browser checks are only
-an early convenience: the server remains authoritative for required fields,
-PDF page bounds, profile completeness, model settings, and the rest of the
-production configuration.
+The Input, Pipeline, Model, and Agentic step buttons, **Continue**, and **Back**
+move between configuration panels without validating or clearing values. This
+allows the four configuration steps to be completed in any order. At final
+**Review run**, the browser performs whole-form constraint validation across
+all enabled fields before sending the complete multipart form to
+`/runs/preview`. If a field is invalid, the wizard opens its panel, displays
+the validation message, and focuses the first invalid control. Browser checks
+are only an early convenience: the server remains authoritative for required
+fields, PDF page bounds, profile completeness, model settings, and the rest of
+the production configuration.
 A rejected submission always returns to **New Run** with safe, user-facing validation details. Only errors rendered in wrappers marked for automatic routing open their panels; selecting that panel does not move keyboard focus. Provider errors and all other errors without automatic routing remain in the **New Run** summary.
 
 The **Input** step asks for:

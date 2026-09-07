@@ -570,6 +570,162 @@ def test_stylesheet_exposes_the_brutalist_theme(tmp_path: Path) -> None:
     assert "border-radius" not in response.text
 
 
+def test_form_grid_aligns_mixed_controls_and_info_buttons_keep_compact_visuals(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
+    assert form_grid is not None
+    assert "align-items: start" in form_grid.group("body")
+
+    info_button = re.search(r"(?:^|\n)\.info-button\s*\{(?P<body>[^}]*)\}", css)
+    assert info_button is not None
+    assert "width: 44px" in info_button.group("body")
+    assert "height: 44px" in info_button.group("body")
+    assert "background: transparent" in info_button.group("body")
+
+    compact_visual = re.search(r"\.info-button::before\s*\{(?P<body>[^}]*)\}", css)
+    assert compact_visual is not None
+    assert "inset: 7px" in compact_visual.group("body")
+
+
+def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
+    direct_labels = re.search(
+        r"\.form-grid\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    field_heading = re.search(r"\.field-heading\s*\{(?P<body>[^}]*)\}", css)
+    field_help = re.search(
+        r"\.field-heading\s+\.info-button\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    subsection = re.search(r"\.wizard-subsection\s*\{(?P<body>[^}]*)\}", css)
+
+    assert form_grid is not None
+    assert "gap: 16px 18px" in form_grid.group("body")
+    assert direct_labels is not None
+    assert "margin: 0" in direct_labels.group("body")
+    assert field_heading is not None
+    assert "min-height: 30px" in field_heading.group("body")
+    assert "padding-right: 37px" in field_heading.group("body")
+    assert field_help is not None
+    assert "position: absolute" in field_help.group("body")
+    assert subsection is not None
+    assert "margin-top: 24px" in subsection.group("body")
+    assert "padding-top: 18px" in subsection.group("body")
+
+
+def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    workspace = re.search(r"\.workspace\s*\{(?P<body>[^}]*)\}", css)
+    pipeline_card = re.search(
+        r"\.pipeline-choices\s+\.task-card\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    card_help = re.search(
+        r"\.pipeline-choices\s+\.task-card\s+\.info-button\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    policy_copy = re.search(
+        r"\.choice-card\s*>\s*span\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    responsive_grid = re.search(
+        r"\.pipeline-choices\s+\.task-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    responsive_last_card = re.search(
+        r"\.pipeline-choices\s+\.task-card:last-child\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert workspace is not None
+    assert "max-width: 1320px" in workspace.group("body")
+    assert pipeline_card is not None
+    assert "align-items: start" in pipeline_card.group("body")
+    assert "padding: 18px 18px 64px" in pipeline_card.group("body")
+    assert card_help is not None
+    assert "position: absolute" in card_help.group("body")
+    assert "right: 8px" in card_help.group("body")
+    assert policy_copy is not None
+    assert "display: grid" in policy_copy.group("body")
+    assert responsive_grid is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in responsive_grid.group("body")
+    assert responsive_last_card is not None
+    assert "grid-column: 1 / -1" in responsive_last_card.group("body")
+
+
+def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    model_grid = re.search(
+        r"#wizard-model\s*>\s*\.form-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    stage2 = re.search(r"\.stage2-settings\s*\{(?P<body>[^}]*)\}", css)
+    stage2_pass = re.search(r"\.stage2-pass-card\s*\{(?P<body>[^}]*)\}", css)
+
+    assert model_grid is not None
+    assert "margin-top: 16px" in model_grid.group("body")
+    assert stage2 is not None
+    assert "margin-top: 0" in stage2.group("body")
+    assert stage2_pass is not None
+    assert "margin-top: 12px" in stage2_pass.group("body")
+    assert "gap: 16px 18px" in stage2_pass.group("body")
+
+
+def test_agentic_choices_fill_two_columns_and_stack_on_mobile(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    agentic_rules = re.findall(
+        r"\.agentic-choice\s+\.task-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert len(agentic_rules) == 2
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in agentic_rules[0]
+    assert "grid-template-columns: 1fr" in agentic_rules[1]
+
+
+def test_run_summary_keeps_long_model_names_readable(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    summary_row = re.search(
+        r"\.summary\s+dl\s+div\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    summary_value = re.search(
+        r"\.summary\s+dd\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert summary_row is not None
+    assert "grid-template-columns: 90px minmax(0, 1fr)" in summary_row.group("body")
+    assert "gap: 16px" in summary_row.group("body")
+    assert summary_value is not None
+    assert "overflow-wrap: anywhere" in summary_value.group("body")
+
+
+def test_layout_uses_current_dashboard_stylesheet_version() -> None:
+    layout = (
+        Path(__file__).resolve().parents[2]
+        / "src"
+        / "mudidi"
+        / "web"
+        / "templates"
+        / "_layout.html"
+    ).read_text(encoding="utf-8")
+
+    assert "app.css') }}?v=dashboard-ui-2" in layout
+
+
+
 def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
     templates_dir = Path(__file__).resolve().parents[2] / "src/mudidi/web/templates"
     versions = {
@@ -581,7 +737,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-3"}
+    assert versions == {"dashboard-ui-4"}
 
 
 def _relative_luminance(hex_color: str) -> float:
