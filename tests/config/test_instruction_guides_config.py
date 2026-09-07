@@ -116,6 +116,25 @@ def test_instruction_pdf_guides_are_not_silently_discarded_by_ocr_backends(
             validate_config_paths(_inference_config(pipeline))
 
 
+def test_instruction_pdf_requires_a_leading_pdf_signature(tmp_path: Path) -> None:
+    guide = tmp_path / "guide.pdf"
+    _write_pdf(guide, 1)
+    guide.write_bytes(b"not-a-pdf-header\n" + guide.read_bytes())
+    with pymupdf.open(str(guide)) as document:
+        assert document.page_count == 1
+
+    with pytest.raises(ValueError, match="pipeline.stage1_guides"):
+        validate_config_paths(
+            _inference_config(PipelineConfig(stage1_guides=guide))
+        )
+
+
+@pytest.mark.parametrize("value", [1, ["1"], {"page": 1}])
+def test_instruction_page_spec_non_strings_are_field_scoped(value: object) -> None:
+    with pytest.raises(ValidationError, match="stage1_guides_pages"):
+        PipelineConfig(stage1_guides_pages=value)
+
+
 def test_text_only_guide_configuration_remains_compatible(tmp_path: Path) -> None:
     guide = tmp_path / "guide.md"
     guide.write_text("guide text", encoding="utf-8")

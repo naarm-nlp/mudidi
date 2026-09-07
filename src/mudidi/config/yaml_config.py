@@ -109,6 +109,15 @@ def _readable_instruction_guide(
             )
         if path.stat().st_size == 0:
             raise ValueError(f"{label} PDF is empty")
+        try:
+            with path.open("rb") as handle:
+                signature = handle.read(5)
+        except OSError as exc:
+            raise ValueError(f"{label} PDF is not readable: {exc}") from exc
+        if signature != b"%PDF-":
+            raise ValueError(
+                f"{label} PDF has an invalid signature; expected %PDF-"
+            )
         import pymupdf
 
         try:
@@ -198,8 +207,12 @@ class PipelineConfig(_StrictModel):
 
     @field_validator("stage1_guides_pages", "stage2_guides_pages", mode="before")
     @classmethod
-    def normalize_guide_pages(cls, value: str | None) -> str | None:
-        if value is None or not value.strip():
+    def normalize_guide_pages(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("page specification must be a string")
+        if not value.strip():
             return None
         return _normalize_guide_page_spec(value)
     @model_validator(mode="after")
