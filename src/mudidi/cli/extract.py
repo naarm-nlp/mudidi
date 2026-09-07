@@ -532,18 +532,11 @@ def _alphabet_manifest_entry(alphabet_path: Optional[str]) -> Dict[str, Any]:
 
 
 def _guides_manifest_entry(
-    context: PreparedInstructionContext | Path | str | None,
-    legacy_text: str | None = None,
+    context: PreparedInstructionContext | None,
     *,
     scope: str | None = None,
 ) -> Dict[str, Any]:
     """Serialize guide metadata without embedding instruction contents."""
-    if legacy_text is not None:
-        return {
-            "used": True,
-            "path": str(context),
-            "text": legacy_text,
-        }
     if context is None:
         entry: Dict[str, Any] = {
             "source_path": None,
@@ -648,6 +641,12 @@ def _instruction_manifest_identity(manifest: Dict[str, Any]) -> dict[str, Any]:
                 "selected_sha256",
             )
         }
+        if entry.get("used") is False:
+            result.update(
+                kind="none",
+                byte_count=0,
+                selected_pages=[],
+            )
         if default_scope is not None:
             result["scope"] = entry.get("scope", default_scope)
         return result
@@ -846,6 +845,21 @@ def _instruction_models(args) -> list[str]:
     return list(dict.fromkeys(value for value in values if value))
 
 
+def _reject_unsupported_pdf_instruction_guides(
+    args,
+    parser: argparse.ArgumentParser,
+) -> None:
+    """Reject PDF guides before OCR-only single or batch workers dispatch."""
+    if getattr(args, "strategy", None) not in {"vlm_ocr", "mathpix_ocr"}:
+        return
+    for label, value in (
+        ("stage-1-guides", getattr(args, "stage1_guides_path", None)),
+        ("stage-2-guides", getattr(args, "stage2_guides_path", None)),
+    ):
+        if value and Path(value).suffix.lower() == ".pdf":
+            parser.error(f"{label} PDF guides are not supported by {args.strategy}")
+
+
 def _prepare_instruction_contexts(
     args,
     output_dir: Path,
@@ -854,12 +868,7 @@ def _prepare_instruction_contexts(
     """Prepare immutable guide payloads once before any page/cache reuse."""
     stage1_path = getattr(args, "stage1_guides_path", None)
     stage2_path = getattr(args, "stage2_guides_path", None)
-    for label, value in (("stage-1-guides", stage1_path), ("stage-2-guides", stage2_path)):
-        if value and Path(value).suffix.lower() == ".pdf" and args.strategy in {
-            "vlm_ocr",
-            "mathpix_ocr",
-        }:
-            parser.error(f"{label} PDF guides are not supported by {args.strategy}")
+    _reject_unsupported_pdf_instruction_guides(args, parser)
 
     models = _instruction_models(args)
     try:
@@ -1766,6 +1775,7 @@ Examples:
     if not prompts_path.is_file():
         parser.error(f"Prompts file not found: {prompts_path}")
     configure_prompts(prompts_path)
+    _reject_unsupported_pdf_instruction_guides(args, parser)
 
     # ── Dispatch: samples-dir batch mode vs. single-entry mode ────────────────
     if args.strategy == "vlm_ocr":

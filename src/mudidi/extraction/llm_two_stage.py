@@ -783,18 +783,22 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         if self.stage2_guides_scope in ("pass2", "both"):
             return self.stage2_instruction_context
         return None
-
     def _stage2_guide_values(
-        self, context: PreparedInstructionContext | None
+        self,
+        context: PreparedInstructionContext | None,
+        *,
+        pass_name: str = "pass2",
     ) -> tuple[str, str]:
         if context is None:
-            if self.stage2_guides_scope in ("pass2", "both"):
+            if self.stage2_guides_scope in (pass_name, "both"):
                 return self.stage2_guides, ""
             return "", ""
         return context.text, context.metadata.original_filename or ""
     def _stage2_agentic_guide_block(self) -> str:
         context = self._stage2_context_for_pass2()
-        guide_text, guide_source = self._stage2_guide_values(context)
+        guide_text, guide_source = self._stage2_guide_values(
+            context, pass_name="pass2"
+        )
         if not guide_text:
             return ""
         source = f' source="{guide_source}"' if guide_source else ""
@@ -861,6 +865,15 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     self.transcribe_model, stage_label="Stage 1"
                 )
             )
+        content.append(
+            {
+                "type": "text",
+                "text": (
+                    "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final "
+                    "image is the page to transcribe, not an instruction reference."
+                ),
+            }
+        )
         content.append({"type": "image_url", "image_url": {"url": page_data_url}})
 
         if self.stage1_mode == "flat":
@@ -950,7 +963,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 instruction_scope=self.stage2_guides_scope,
                 force_refresh=self.overwrite,
             )
-            pass1_guides, _pass1_guide_source = self._stage2_guide_values(pass1_context)
+            pass1_guides, _pass1_guide_source = self._stage2_guide_values(
+                pass1_context, pass_name="pass1"
+            )
             if self.approved_parse_rules is not None:
                 # Web approval loads and authenticates immutable bytes before
                 # construction. Never resolve a path/cache again for Pass 2.
@@ -1072,7 +1087,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
     ) -> tuple[str, str, dict, list]:
         """Pass 2: direct MDF extraction using a field map."""
         pass2_context = self._stage2_context_for_pass2()
-        guide_text, _guide_source = self._stage2_guide_values(pass2_context)
+        guide_text, _guide_source = self._stage2_guide_values(
+            pass2_context, pass_name="pass2"
+        )
         mdf_text, raw, usage, messages = extract_direct_mdf(
             transcription=transcribed_text,
             image_path=image_path,
@@ -1248,6 +1265,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         *,
         image_path: str,
         ocr_result: OCRPageResult,
+        page_context: PageContext | None,
         attempt: int,
     ) -> tuple[AgenticVerifierDecision, Dict[str, Any]]:
         mime = mime_type_for_path(image_path)
@@ -1261,8 +1279,17 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     page_context=page_context,
                     attempt=attempt,
                 ),
-            },
+            }
         ]
+        content.append(
+            {
+                "type": "text",
+                "text": (
+                    "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final "
+                    "image is the page under evaluation, not an instruction reference."
+                ),
+            }
+        )
         if self.stage1_instruction_context is not None:
             content.extend(
                 self.stage1_instruction_context.content_parts(
@@ -1331,6 +1358,15 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     rewriter_model, stage_label="Stage 1 rewriter"
                 )
             )
+        content.append(
+            {
+                "type": "text",
+                "text": (
+                    "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final "
+                    "image is the page for correction, not an instruction reference."
+                ),
+            }
+        )
         content.append(
             {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}}
         )

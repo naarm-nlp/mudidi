@@ -22,25 +22,34 @@ def test_resolved_config_is_written_beside_stage_manifest(tmp_path: Path) -> Non
     )
 
 
-def test_run_manifest_serializes_path_based_guides(tmp_path: Path) -> None:
+def test_run_manifest_serializes_path_based_guides_without_content(
+    tmp_path: Path,
+) -> None:
     stage_dir = tmp_path / "stage-1" / "experiment"
     guides_path = tmp_path / "stage1.txt"
+    guides_path.write_text("Preserve accents.", encoding="utf-8")
+    from mudidi.instructions import prepare_instruction_context
+
+    context = prepare_instruction_context(
+        guides_path,
+        page_spec=None,
+        cache_dir=tmp_path / "cache",
+        models=[],
+    )
 
     _write_run_config(
         stage_dir,
         {
             "stage": "1",
-            "stage1_guides": _guides_manifest_entry(guides_path, "Preserve accents."),
+            "stage1_guides": _guides_manifest_entry(context),
         },
         force=False,
     )
 
     manifest = json.loads((stage_dir / "run_config.json").read_text())
-    assert manifest["stage1_guides"] == {
-        "used": True,
-        "path": str(guides_path),
-        "text": "Preserve accents.",
-    }
+    assert manifest["stage1_guides"]["source_path"] == str(guides_path.resolve())
+    assert manifest["stage1_guides"]["sha256"]
+    assert "text" not in manifest["stage1_guides"]
 
 
 def test_resolved_config_resume_guard_preserves_existing_snapshot(tmp_path: Path) -> None:
