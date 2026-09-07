@@ -633,9 +633,12 @@ class InstructionPanel extends Node {
     this.typedPanel = new Node();
     this.textarea = new Node();
     this.filePanel = new Node();
+    this.keptFileContainer = new Node();
+    this.keptRadios = hasPreset ? [new Radio("keep", true), new Radio("replace", false)] : [];
+    this.uploadRow = new Node();
     this.fileInput = new FileInputNode();
     this.fileStatus = new Node();
-    this.fileStatus.dataset.emptyLabel = hasPreset ? "Using saved file unless replaced" : "No file selected";
+    this.fileStatus.dataset.emptyLabel = "No file selected";
     this.keepExisting = new Node();
     this.pdfPagesField = new Node();
     this.pdfPagesInput = new Node();
@@ -643,6 +646,7 @@ class InstructionPanel extends Node {
   }
   querySelectorAll(selector) {
     if (selector === "[data-instruction-source-radio]") return this.sourceRadios;
+    if (selector === "[data-instruction-kept-radio]") return this.keptRadios;
     return [];
   }
   querySelector(selector) {
@@ -650,6 +654,8 @@ class InstructionPanel extends Node {
       case "[data-instruction-typed-panel]": return this.typedPanel;
       case "[data-instruction-typed-panel] textarea": return this.textarea;
       case "[data-instruction-file-panel]": return this.filePanel;
+      case "[data-instruction-kept-file]": return this.keptFileContainer;
+      case "[data-instruction-upload-row]": return this.uploadRow;
       case "[data-instruction-file-input]": return this.fileInput;
       case "[data-instruction-file-status]": return this.fileStatus;
       case "[data-instruction-keep-existing]": return this.keepExisting;
@@ -667,7 +673,10 @@ const document = {
   body: { append() {} },
   addEventListener() {},
   createElement() { return new Node(); },
-  querySelector() { return null; },
+  querySelector(selector) {
+    if (selector === ".form-error-summary") return null;
+    return null;
+  },
   querySelectorAll(selector) {
     if (selector === "[data-instruction-source-panel]") return [freshPanel, keptPdfPanel];
     return [];
@@ -712,6 +721,10 @@ const selectRadio = (panel, value) => {
   sync.synchronizeInstructionPanels();
   panel.sourceRadios.find((radio) => radio.value === value).listeners.change();
 };
+const selectKeptRadio = (panel, value) => {
+  panel.keptRadios.forEach((radio) => { radio.checked = radio.value === value; });
+  panel.keptRadios.find((radio) => radio.value === value).listeners.change();
+};
 
 sync.wireInstructionPanel(freshPanel);
 sync.wireInstructionPanel(keptPdfPanel);
@@ -730,6 +743,8 @@ assert(!freshPanel.fileInput.disabled, "file input enables in file mode");
 assert(freshPanel.fileInput.required, "file input is required without a kept preset");
 assert(freshPanel.fileInput.focused, "switching to file mode focuses the file input");
 assert(freshPanel.fileStatus.textContent === "No file selected", "empty file mode shows the empty label");
+assert(freshPanel.keptFileContainer.hidden, "no kept preset means the kept-file block stays hidden");
+assert(!freshPanel.uploadRow.hidden, "no kept preset means the upload row is visible in file mode");
 
 freshPanel.fileInput.files = [{ name: "guide.pdf" }];
 freshPanel.fileInput.listeners.change();
@@ -777,16 +792,33 @@ assert(freshPanel.textarea.value === "", "accepting the confirmation clears type
 assert(freshPanel.fileInput.required, "file input remains required after re-entering file mode");
 
 selectRadio(keptPdfPanel, "file");
-assert(!keptPdfPanel.fileInput.required, "a kept preset means a fresh file is not required");
-assert(keptPdfPanel.keepExisting.value === "true", "keep-existing reports true while no replacement is chosen");
-assert(!keptPdfPanel.pdfPagesField.hidden, "a kept PDF preset shows the pages field before any new upload");
-assert(!keptPdfPanel.pdfWarning.hidden, "a kept PDF preset shows the persistent cost warning");
-assert(keptPdfPanel.fileStatus.textContent === "Using saved file unless replaced", "kept preset shows its saved-file status");
+assert(!keptPdfPanel.keptFileContainer.hidden, "a kept preset shows the explicit Keep/Replace block");
+assert(keptPdfPanel.keptRadios[0].checked, "Keep is the default selected action for a kept preset");
+assert(keptPdfPanel.uploadRow.hidden, "keeping the saved file hides the upload row");
+assert(keptPdfPanel.fileInput.disabled, "keeping the saved file disables the file input");
+assert(!keptPdfPanel.fileInput.required, "keeping the saved file means a fresh file is not required");
+assert(keptPdfPanel.keepExisting.value === "true", "keep-existing reports true while Keep is selected");
+assert(!keptPdfPanel.pdfPagesField.hidden, "a kept PDF preset shows the pages field while keeping");
+assert(!keptPdfPanel.pdfWarning.hidden, "a kept PDF preset shows the persistent cost warning while keeping");
+
+selectKeptRadio(keptPdfPanel, "replace");
+assert(!keptPdfPanel.uploadRow.hidden, "choosing Replace reveals the upload row");
+assert(!keptPdfPanel.fileInput.disabled, "choosing Replace enables the file input");
+assert(keptPdfPanel.fileInput.required, "choosing Replace requires a fresh file");
+assert(keptPdfPanel.fileInput.focused, "choosing Replace focuses the file input");
+assert(keptPdfPanel.keepExisting.value === "false", "choosing Replace clears keep-existing");
+assert(keptPdfPanel.pdfPagesField.hidden, "choosing Replace hides the pages field until a new PDF is chosen");
 
 keptPdfPanel.fileInput.files = [{ name: "replacement.txt" }];
 keptPdfPanel.fileInput.listeners.change();
-assert(keptPdfPanel.keepExisting.value === "false", "choosing a replacement file clears keep-existing");
+assert(keptPdfPanel.keepExisting.value === "false", "a chosen replacement keeps keep-existing false");
 assert(keptPdfPanel.pdfPagesField.hidden, "a TXT replacement hides the pages field even with a PDF preset");
+
+selectKeptRadio(keptPdfPanel, "keep");
+assert(keptPdfPanel.fileInput.files.length === 0, "returning to Keep clears any chosen replacement file");
+assert(keptPdfPanel.uploadRow.hidden, "returning to Keep hides the upload row again");
+assert(keptPdfPanel.keepExisting.value === "true", "returning to Keep restores keep-existing true");
+assert(!keptPdfPanel.pdfPagesField.hidden, "returning to Keep restores the saved PDF pages disclosure");
 
 keptPdfPanel.hidden = true;
 keptPdfPanel.fileInput.disabled = true;
@@ -794,6 +826,172 @@ keptPdfPanel.fileInput.required = true;
 sync.synchronizeInstructionPanel(keptPdfPanel);
 assert(keptPdfPanel.fileInput.disabled, "a hidden panel excluded by the pipeline stays disabled");
 assert(keptPdfPanel.fileInput.required, "a hidden panel excluded by the pipeline is not re-enabled by our own sync");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(app_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_instruction_panel_restore_prefers_submitted_replace_state_over_stale_preset_on_validation_recovery() -> None:
+    app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+class Field {
+  constructor({ name = "", value = "", type = "text", checked = false } = {}) {
+    this.name = name;
+    this._value = value;
+    this.type = type;
+    this.checked = checked;
+    this.disabled = false;
+    this.required = false;
+    this.hidden = false;
+    this.dataset = {};
+    this.listeners = {};
+    this._files = [];
+  }
+  get files() { return this._files; }
+  set files(list) { this._files = list; }
+  get value() { return this.type === "file" ? (this._files[0]?.name || "") : this._value; }
+  set value(next) {
+    if (this.type === "file" && next === "") { this._files = []; return; }
+    this._value = next;
+  }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+  closest() { return null; }
+  focus() {}
+}
+class Fields extends Array {
+  namedItem(name) { return this.find((field) => field.name === name) || null; }
+}
+
+// A run-owned PDF instruction attachment was saved to a preset with Keep
+// semantics (source=file, keep_existing=true). The user then loaded that
+// preset, switched Stage 1 to Replace, and submitted; the server rejected an
+// unrelated field, forcing a 422 re-render. That re-render always recomputes
+// preset_state fresh from the ORIGINAL saved preset (still keep=true), but
+// sessionStorage holds exactly what was live in the form at submit time.
+const sourceTyped = new Field({ name: "stage1_instruction_source", value: "typed", type: "radio" });
+const sourceFile = new Field({ name: "stage1_instruction_source", value: "file", type: "radio", checked: true });
+const textarea = new Field({ name: "stage1_additional_instructions", type: "textarea" });
+const keptKeep = new Field({ name: "stage1_instruction_kept_choice", value: "keep", type: "radio" });
+const keptReplace = new Field({ name: "stage1_instruction_kept_choice", value: "replace", type: "radio", checked: true });
+const fileInput = new Field({ name: "stage1_instruction_file", type: "file" });
+const keepExisting = new Field({ name: "stage1_instruction_keep_existing", value: "false", type: "hidden" });
+const pdfPagesInput = new Field({ name: "stage1_instruction_pdf_pages", type: "text" });
+const typedPanelEl = new Field({});
+const filePanelEl = new Field({});
+const keptFileContainer = new Field({});
+const uploadRow = new Field({});
+const fileStatus = new Field({});
+const pdfPagesField = new Field({});
+const pdfWarning = new Field({});
+
+const panel = {
+  hidden: false,
+  dataset: { instructionHasPreset: "true", instructionPresetKind: "pdf" },
+  querySelectorAll(selector) {
+    if (selector === "[data-instruction-source-radio]") return [sourceTyped, sourceFile];
+    if (selector === "[data-instruction-kept-radio]") return [keptKeep, keptReplace];
+    return [];
+  },
+  querySelector(selector) {
+    switch (selector) {
+      case "[data-instruction-typed-panel]": return typedPanelEl;
+      case "[data-instruction-typed-panel] textarea": return textarea;
+      case "[data-instruction-file-panel]": return filePanelEl;
+      case "[data-instruction-kept-file]": return keptFileContainer;
+      case "[data-instruction-upload-row]": return uploadRow;
+      case "[data-instruction-file-input]": return fileInput;
+      case "[data-instruction-file-status]": return fileStatus;
+      case "[data-instruction-keep-existing]": return keepExisting;
+      case "[data-instruction-pdf-pages]": return pdfPagesField;
+      case "[data-instruction-pdf-pages] input": return pdfPagesInput;
+      case "[data-instruction-pdf-warning]": return pdfWarning;
+      default: return null;
+    }
+  },
+};
+
+const runForm = {
+  elements: new Fields(sourceTyped, sourceFile, textarea, keptKeep, keptReplace, fileInput, keepExisting, pdfPagesInput),
+  addEventListener() {},
+  querySelectorAll() { return []; },
+};
+
+// The stale server-rendered preset_state script tag: still reports the
+// ORIGINAL saved-preset semantics (Keep, keep_existing=true).
+const presetStateElement = {
+  textContent: JSON.stringify({
+    stage1_instruction_source: ["file"],
+    stage1_instruction_keep_existing: ["true"],
+    stage1_instruction_kept_choice: ["keep"],
+  }),
+};
+// sessionStorage: exactly what was live in the form at submit time (Replace,
+// keep_existing=false), captured by the "submit" listener's persistRunForm().
+const sessionStorageState = JSON.stringify({
+  stage1_instruction_source: ["file"],
+  stage1_instruction_keep_existing: ["false"],
+  stage1_instruction_kept_choice: ["replace"],
+});
+const errorSummary = { textContent: "1 issue prevented this run from being prepared." };
+
+const formErrorField = new Field({});
+const document = {
+  body: { append() {} },
+  addEventListener() {},
+  createElement() { return new Field({}); },
+  querySelector(selector) {
+    if (selector === "form.run-form") return runForm;
+    if (selector === "#preset-form-state") return presetStateElement;
+    if (selector === ".form-error-summary") return errorSummary;
+    if (selector === "[data-field-error]") return formErrorField;
+    return null;
+  },
+  querySelectorAll(selector) {
+    if (selector === "[data-instruction-source-panel]") return [panel];
+    return [];
+  },
+};
+const window = {
+  confirm: () => true,
+  fetch: async () => { throw new Error("not used"); },
+  location: { origin: "http://test" },
+  addEventListener() {},
+  sessionStorage: { getItem: () => sessionStorageState, setItem() {} },
+};
+const context = vm.createContext({
+  URL,
+  URLSearchParams,
+  console,
+  document,
+  queueMicrotask,
+  window,
+});
+const source = fs.readFileSync(process.argv[1], "utf8");
+// restoreRunForm() and wireInstructionPanel() run automatically as the
+// script's own top-level statements, exactly as they do on a real page load.
+vm.runInContext(source, context);
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+
+assert(sourceFile.checked, "recovery must keep Stage 1 in file mode");
+assert(keptReplace.checked, "recovery must restore the submitted Replace choice, not fall back to Keep");
+assert(!keptKeep.checked, "recovery must not silently revert to Keep");
+assert(keepExisting.value === "false", "recovery must not silently keep the old preset attachment");
+assert(!uploadRow.hidden, "recovery in Replace mode must show the upload row for reselection");
+assert(!fileInput.disabled, "recovery in Replace mode must enable the file input");
+assert(fileInput.required, "recovery in Replace mode must require a freshly reselected file");
+assert(fileInput.files.length === 0, "browsers cannot restore a previously chosen file after navigation");
 """
     result = subprocess.run(
         ["node", "-e", harness, str(app_js)],
@@ -1348,8 +1546,56 @@ def test_new_run_wizard_shows_kept_instruction_state_for_a_loaded_preset(
     assert 'data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1" data-instruction-has-preset="true" data-instruction-preset-kind="pdf"' in text
     assert 'data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2" data-instruction-has-preset="false"' in text
     assert '<input type="hidden" name="stage1_instruction_keep_existing" value="true" data-instruction-keep-existing disabled>' in text
-    assert "Using saved file unless replaced" in text
+    assert 'data-instruction-kept-file' in text
+    assert 'name="stage1_instruction_kept_choice" value="keep" checked' in text
+    assert 'name="stage1_instruction_kept_choice" value="replace"' in text
+    assert '<strong>Keep saved file</strong>' in text
+    assert '<strong>Replace file</strong>' in text
     assert "stage1.pdf" in text
+    assert "<dt>Kind</dt><dd>PDF</dd>" in text
+    assert "<dt>Selected pages</dt><dd>1, 2 (2 pages)</dd>" in text
+
+
+def test_instruction_file_error_from_a_final_step_submission_marks_field_error_for_wizard_routing(
+    tmp_path: Path,
+) -> None:
+    # Simulates a user who filled every earlier wizard step correctly (Input,
+    # Pipeline, Model) and only submits from the final Agentic step — the
+    # rejected `stage1_instruction_file` is the sole problem, not something
+    # already visible on the Input step in the browser's remembered wizard
+    # position (sessionStorage would otherwise keep the wizard on "agentic").
+    client = TestClient(create_app(data_dir=tmp_path / "app-data", offline_inference=True))
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+        },
+        files=[("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf"))],
+    )
+
+    assert response.status_code == 422
+    text = response.text
+    assert "Upload exactly one instruction file" in text
+    assert 'data-instruction-stage="stage1"' in text
+    stage1_start = text.index('data-instruction-stage="stage1"')
+    stage1_tag_start = text.rindex("<fieldset", 0, stage1_start)
+    stage1_tag_end = text.index(">", stage1_tag_start)
+    stage1_open_tag = text[stage1_tag_start:stage1_tag_end]
+    assert 'data-field-error="stage1_instruction_file"' in stage1_open_tag
+    assert "field-invalid" in stage1_open_tag
+
+    stage2_start = text.index('data-instruction-stage="stage2"')
+    stage2_tag_start = text.rindex("<fieldset", 0, stage2_start)
+    stage2_tag_end = text.index(">", stage2_tag_start)
+    stage2_open_tag = text[stage2_tag_start:stage2_tag_end]
+    assert "data-field-error" not in stage2_open_tag
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:

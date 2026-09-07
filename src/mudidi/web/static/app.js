@@ -183,9 +183,17 @@ const persistRunForm = () => {
 
 const restoreRunForm = () => {
   if (!runForm) return;
+  // A validation-error re-render (POST /runs/preview -> 422) always re-derives
+  // preset_state from the ORIGINAL saved preset, ignoring in-progress edits such
+  // as switching a kept file attachment to Replace. sessionStorage instead holds
+  // exactly what was live in the form the moment it was submitted (persisted by
+  // the "submit" listener below), so prefer it whenever a `.form-error-summary`
+  // shows this render is a recovery from a rejected submission.
+  const recoveringFromValidationError = !!document.querySelector(".form-error-summary");
+  const usingPresetState = Boolean(presetStateElement) && !recoveringFromValidationError;
   let state;
   try {
-    state = presetStateElement
+    state = usingPresetState
       ? JSON.parse(presetStateElement.textContent || "null")
       : JSON.parse(window.sessionStorage.getItem(runFormStorageKey) || "null");
   } catch (_error) {
@@ -215,7 +223,7 @@ const restoreRunForm = () => {
       if (field.type === "file" || field.type === "password") return;
       if (field.type === "checkbox" || field.type === "radio") {
         field.checked = values.includes(field.value);
-        if (presetStateElement && ["verify_stage1", "verify_stage2"].includes(name)) {
+        if (usingPresetState && ["verify_stage1", "verify_stage2"].includes(name)) {
           field.dataset.userTouched = "true";
         }
       } else if (values[index] !== undefined) {
@@ -338,6 +346,9 @@ const instructionPanelRefs = (panel) => ({
   typedPanel: panel.querySelector("[data-instruction-typed-panel]"),
   textarea: panel.querySelector("[data-instruction-typed-panel] textarea"),
   filePanel: panel.querySelector("[data-instruction-file-panel]"),
+  keptFileContainer: panel.querySelector("[data-instruction-kept-file]"),
+  keptRadios: [...panel.querySelectorAll("[data-instruction-kept-radio]")],
+  uploadRow: panel.querySelector("[data-instruction-upload-row]"),
   fileInput: panel.querySelector("[data-instruction-file-input]"),
   fileStatus: panel.querySelector("[data-instruction-file-status]"),
   keepExisting: panel.querySelector("[data-instruction-keep-existing]"),
@@ -357,24 +368,29 @@ const synchronizeInstructionPanel = (panel) => {
   if (refs.textarea) refs.textarea.disabled = isFile;
 
   if (refs.filePanel) refs.filePanel.hidden = !isFile;
-  const hasKept = instructionPanelHasKeptPreset(panel);
+  const hasKeptPreset = instructionPanelHasKeptPreset(panel);
+  const keptSelected = refs.keptRadios.find((radio) => radio.checked);
+  const isKeeping = hasKeptPreset && keptSelected?.value === "keep";
+  refs.keptRadios.forEach((radio) => {
+    radio.disabled = !isFile;
+  });
+  if (refs.keptFileContainer) refs.keptFileContainer.hidden = !hasKeptPreset;
+  if (refs.uploadRow) refs.uploadRow.hidden = isFile && isKeeping;
   const selectedFile = refs.fileInput?.files?.[0] || null;
   if (refs.fileInput) {
-    refs.fileInput.disabled = !isFile;
-    refs.fileInput.required = isFile && !hasKept;
+    refs.fileInput.disabled = !isFile || isKeeping;
+    refs.fileInput.required = isFile && !isKeeping;
   }
   if (refs.keepExisting) {
     refs.keepExisting.disabled = !isFile;
-    refs.keepExisting.value = isFile && hasKept && !selectedFile ? "true" : "false";
+    refs.keepExisting.value = isFile && isKeeping ? "true" : "false";
   }
   if (refs.fileStatus) {
-    const emptyLabel = hasKept ? "Using saved file unless replaced" : "No file selected";
-    refs.fileStatus.dataset.emptyLabel = emptyLabel;
-    refs.fileStatus.textContent = selectedFile ? `Selected: ${selectedFile.name}` : emptyLabel;
+    refs.fileStatus.textContent = selectedFile ? `Selected: ${selectedFile.name}` : "No file selected";
   }
   const currentIsPdf = selectedFile
     ? selectedFile.name.toLowerCase().endsWith(".pdf")
-    : hasKept && instructionPanelPresetIsPdf(panel);
+    : isKeeping && instructionPanelPresetIsPdf(panel);
   const showPdfPages = isFile && currentIsPdf;
   if (refs.pdfPagesField) refs.pdfPagesField.hidden = !showPdfPages;
   if (refs.pdfPagesInput) refs.pdfPagesInput.disabled = !showPdfPages;
@@ -411,14 +427,19 @@ const wireInstructionPanel = (panel) => {
           return;
         }
         if (previousMode === "typed" && refs.textarea) refs.textarea.value = "";
-        if (previousMode === "file") {
-          if (refs.fileInput) refs.fileInput.value = "";
-          panel.dataset.instructionHasPreset = "false";
-        }
+        if (previousMode === "file" && refs.fileInput) refs.fileInput.value = "";
       }
       panel.dataset.instructionActiveSource = newMode;
       synchronizeInstructionPanel(panel);
       (newMode === "typed" ? refs.textarea : refs.fileInput)?.focus();
+    });
+  });
+  refs.keptRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      if (radio.value === "keep" && refs.fileInput) refs.fileInput.value = "";
+      synchronizeInstructionPanel(panel);
+      if (radio.value === "replace") refs.fileInput?.focus();
     });
   });
   refs.fileInput?.addEventListener("change", () => synchronizeInstructionPanel(panel));

@@ -6,9 +6,12 @@
 {% set pages_field = stage ~ '_instruction_pdf_pages' %}
 {% set keep_field = stage ~ '_instruction_keep_existing' %}
 {% set text_field = stage ~ '_additional_instructions' %}
+{% set kept_choice_field = stage ~ '_instruction_kept_choice' %}
 {% set status_id = stage ~ '-instruction-file-status' %}
 {% set has_kept = asset and asset.source_mode == 'file' %}
-<fieldset class="form-field instruction-source-panel{% if errors_by_field[file_field] or errors_by_field[pages_field] %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}>
+{% set scope_labels = {'pass1': 'Pass 1 only', 'pass2': 'Pass 2 only', 'both': 'Both passes'} %}
+{% set field_error_key = file_field if errors_by_field[file_field] else (pages_field if errors_by_field[pages_field] else '') %}
+<fieldset class="form-field instruction-source-panel{% if field_error_key %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}{% if field_error_key %} data-field-error="{{ field_error_key }}"{% endif %}>
   <legend>{{ stage_label }} instructions</legend>
   <div class="choice-card-grid instruction-source-choices">
     <label class="choice-card"><input type="radio" name="{{ source_field }}" value="typed" checked data-instruction-source-radio><span><strong>Type instructions</strong><small>Write instructions directly for this run.</small></span></label>
@@ -18,8 +21,21 @@
     <label><span class="field-heading">Typed instructions <button class="info-button" type="button" aria-label="About {{ stage_label }} additional instructions" data-help="Optional instructions appended to the {{ stage_label }} prompt for this run.">i</button></span><textarea name="{{ text_field }}" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
   </div>
   <div class="instruction-source-body instruction-file-panel" data-instruction-file-panel hidden>
-    {% if has_kept %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a></span>{% endif %}
-    <div class="mdf-guide-file-row instruction-file-row">
+    {% if has_kept %}
+    <div class="instruction-kept-file" data-instruction-kept-file>
+      <span class="saved-inputs"><strong>Saved file</strong><a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a></span>
+      <dl class="instruction-kept-meta">
+        <div><dt>Kind</dt><dd>{{ 'PDF' if asset.kind == 'pdf' else 'Text' }}</dd></div>
+        {% if asset.kind == 'pdf' %}<div><dt>Selected pages</dt><dd>{% if asset.selected_pages %}{{ asset.selected_pages|join(', ') }} ({{ asset.selected_pages|length }} pages){% else %}All pages{% if asset.pdf_page_count %} ({{ asset.pdf_page_count }}){% endif %}{% endif %}</dd></div>{% endif %}
+        {% if stage == 'stage2' and asset.stage2_scope %}<div><dt>Stage 2 scope</dt><dd>{{ scope_labels.get(asset.stage2_scope, asset.stage2_scope) }}</dd></div>{% endif %}
+      </dl>
+      <div class="choice-card-grid instruction-kept-choices">
+        <label class="choice-card"><input type="radio" name="{{ kept_choice_field }}" value="keep" checked data-instruction-kept-radio><span><strong>Keep saved file</strong><small>Reuse the saved attachment for this run.</small></span></label>
+        <label class="choice-card"><input type="radio" name="{{ kept_choice_field }}" value="replace" data-instruction-kept-radio><span><strong>Replace file</strong><small>Upload a new file instead.</small></span></label>
+      </div>
+    </div>
+    {% endif %}
+    <div class="mdf-guide-file-row instruction-file-row" data-instruction-upload-row{% if has_kept %} hidden{% endif %}>
       <label class="primary mdf-guide-upload-trigger instruction-upload-trigger">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
           <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
@@ -27,7 +43,7 @@
         <span>Choose file</span>
         <input class="mdf-guide-file-input" data-instruction-file-input name="{{ file_field }}" type="file" accept=".txt,.md,.pdf" disabled aria-describedby="{{ status_id }}{% if errors_by_field[file_field] %} {{ stage }}-instruction-file-error{% endif %}"{% if errors_by_field[file_field] %} aria-invalid="true"{% endif %}>
       </label>
-      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="{% if has_kept %}Using saved file unless replaced{% else %}No file selected{% endif %}">{% if has_kept %}Using saved file unless replaced{% else %}No file selected{% endif %}</span>
+      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="No file selected">No file selected</span>
     </div>
     {% if errors_by_field[file_field] %}<small id="{{ stage }}-instruction-file-error" class="field-error-message">{{ errors_by_field[file_field] }}</small>{% endif %}
     <input type="hidden" name="{{ keep_field }}" value="{{ 'true' if has_kept else 'false' }}" data-instruction-keep-existing disabled>
