@@ -340,11 +340,19 @@ def create_app(
             "stage1_instruction_keep_existing",
             "stage2_instruction_keep_existing",
         }
+        client_only_fields = {
+            # Browser-only Keep/Replace radio for a preset's saved attachment;
+            # process_instruction_stage() derives keep_existing itself and
+            # NewRunForm has no such field (extra="forbid").
+            "stage1_instruction_kept_choice",
+            "stage2_instruction_kept_choice",
+        }
         payload = {
             key: value
             for key, value in submitted.items()
             if key not in upload_fields
             and key not in retired_dashboard_fields
+            and key not in client_only_fields
             and key != "pages"
             and isinstance(value, str)
             and value.strip() != ""
