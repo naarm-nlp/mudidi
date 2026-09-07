@@ -64,6 +64,9 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert '<span class="sr-only">Choose dictionary PDF</span>' in response.text
     assert 'class="dictionary-file-input"' in response.text
     assert 'data-dictionary-file-status aria-live="polite"' in response.text
+    assert 'class="primary mdf-guide-upload-trigger"' in response.text
+    assert 'data-mdf-guide-file-input' in response.text
+    assert 'data-mdf-guide-file-status aria-live="polite"' in response.text
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
     assert 'name="stage2_pass2_model"' in response.text
@@ -221,7 +224,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-6" in response.text
+    assert "/static/app.js?v=dashboard-ui-7" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 

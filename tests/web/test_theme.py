@@ -594,8 +594,9 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
-    direct_labels = re.search(
-        r"\.form-grid\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+    direct_fields = re.search(
+        r"\.form-grid\s*>\s*label,\s*\.form-grid\s*>\s*\.form-field\s*"
+        r"\{(?P<body>[^}]*)\}",
         css,
     )
     field_heading = re.search(r"\.field-heading\s*\{(?P<body>[^}]*)\}", css)
@@ -607,8 +608,8 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
 
     assert form_grid is not None
     assert "gap: 16px 18px" in form_grid.group("body")
-    assert direct_labels is not None
-    assert "margin: 0" in direct_labels.group("body")
+    assert direct_fields is not None
+    assert "margin: 0" in direct_fields.group("body")
     assert field_heading is not None
     assert "min-height: 30px" in field_heading.group("body")
     assert "padding-right: 37px" in field_heading.group("body")
@@ -648,6 +649,34 @@ def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
     assert "box-shadow: var(--shadow-sm)" in upload_trigger.group("body")
     assert dragover is not None
     assert "background: var(--color-accent-soft)" in dragover.group("body")
+
+
+def test_existing_mdf_guide_uses_a_compact_themed_file_control(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    file_row = re.search(r"\.mdf-guide-file-row\s*\{(?P<body>[^}]*)\}", css)
+    upload_trigger = re.search(
+        r"\.form-grid\s+\.mdf-guide-upload-trigger\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    hidden_input = re.search(
+        r"\.form-grid\s+\.mdf-guide-file-input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    status = re.search(r"\.mdf-guide-file-status\s*\{(?P<body>[^}]*)\}", css)
+
+    assert file_row is not None
+    assert "flex-wrap: wrap" in file_row.group("body")
+    assert upload_trigger is not None
+    assert "display: inline-flex" in upload_trigger.group("body")
+    assert "align-items: center" in upload_trigger.group("body")
+    assert hidden_input is not None
+    assert "min-height: 0" in hidden_input.group("body")
+    assert "opacity: 0" in hidden_input.group("body")
+    assert status is not None
+    assert "font-family: var(--font-mono)" in status.group("body")
 
 
 def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> None:
@@ -845,7 +874,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-6" in layout
+    assert "app.css') }}?v=dashboard-ui-7" in layout
 
 
 
@@ -860,7 +889,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-6"}
+    assert versions == {"dashboard-ui-7"}
 
 
 def _relative_luminance(hex_color: str) -> float:
