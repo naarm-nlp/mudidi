@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from mudidi.web.app import create_app
+from mudidi.web.app import _preset_asset_links, create_app
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
@@ -102,30 +102,22 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     assert "openai/gpt-5.4" in response.text
 
 @pytest.mark.parametrize(
-    ("pipeline", "stage1_instructions", "stage2_instructions", "expected"),
+    ("pipeline", "stage1_instructions", "stage2_instructions"),
     [
-        ("transcription", "Mark uncertain letters.", None, "Stage 1"),
-        ("structure", None, "Use the custom nt marker.", "Stage 2"),
+        ("transcription", "Mark uncertain letters.", None),
+        ("structure", None, "Use the custom nt marker."),
         (
             "complete",
             "Mark uncertain letters.",
             "Use the custom nt marker.",
-            "Stage 1, Stage 2",
-        ),
-        (
-            "transcription",
-            "Mark uncertain letters.",
-            "Do not claim this disabled instruction.",
-            "Stage 1",
         ),
     ],
 )
-def test_preview_review_summarizes_enabled_additional_instructions(
+def test_preview_review_summarizes_enabled_instruction_metadata(
     tmp_path: Path,
     pipeline: str,
     stage1_instructions: str | None,
     stage2_instructions: str | None,
-    expected: str,
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
@@ -149,15 +141,32 @@ def test_preview_review_summarizes_enabled_additional_instructions(
     )
 
     assert response.status_code == 200
-    match = re.search(
-        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
+    stage1_match = re.search(
+        r"<dt>Stage 1 Instructions</dt>\s*<dd>(.*?)</dd>",
         response.text,
+        re.S,
     )
-    assert match is not None
-    assert match.group(1) == expected
+    stage2_match = re.search(
+        r"<dt>Stage 2 Instructions</dt>\s*<dd>(.*?)</dd>",
+        response.text,
+        re.S,
+    )
+    assert stage1_match is not None
+    assert stage2_match is not None
+    assert ("Source: Typed" in stage1_match.group(1)) == (
+        stage1_instructions is not None
+    )
+    assert ("Source: Typed" in stage2_match.group(1)) == (
+        stage2_instructions is not None
+    )
+    assert all(
+        text not in response.text
+        for text in (stage1_instructions, stage2_instructions)
+        if text
+    )
 
 
-def test_prepared_review_preserves_additional_instructions_summary(
+def test_prepared_review_preserves_instruction_metadata_summary(
     tmp_path: Path,
 ) -> None:
     app = create_app(
@@ -176,30 +185,30 @@ def test_prepared_review_preserves_additional_instructions_summary(
     recovered = client.get(f"/runs/{run_id}/review")
 
     assert recovered.status_code == 200
-    assert "Additional Instructions" in recovered.text
-    assert "Stage 1, Stage 2" in recovered.text
+    assert "Stage 1 Instructions" in recovered.text
+    assert "Stage 2 Instructions" in recovered.text
+    assert "Source: Typed" in recovered.text
+    assert "Keep uncertain letters marked." not in recovered.text
+    assert "Use the custom nt marker." not in recovered.text
 @pytest.mark.parametrize(
-    ("inherited_stage1", "inherited_stage2", "pipeline", "expected"),
+    ("inherited_stage1", "inherited_stage2", "pipeline"),
     [
-        ("Saved Stage 1 instructions", None, "complete", "Stage 1"),
-        (None, "Saved Stage 2 instructions", "complete", "Stage 2"),
+        ("Saved Stage 1 instructions", None, "complete"),
+        (None, "Saved Stage 2 instructions", "complete"),
         (
             "Saved Stage 1 instructions",
             "Saved Stage 2 instructions",
             "complete",
-            "Stage 1, Stage 2",
         ),
         (
             "Saved Stage 1 instructions",
             "Saved Stage 2 instructions",
             "transcription",
-            "Stage 1",
         ),
         (
             "Saved Stage 1 instructions",
             "Saved Stage 2 instructions",
             "structure",
-            "Stage 2",
         ),
     ],
 )
@@ -208,7 +217,6 @@ def test_reused_preset_cleared_instructions_match_recovered_review(
     inherited_stage1: str | None,
     inherited_stage2: str | None,
     pipeline: str,
-    expected: str,
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
@@ -244,22 +252,33 @@ def test_reused_preset_cleared_instructions_match_recovered_review(
     )
 
     assert immediate.status_code == 200
-    immediate_match = re.search(
-        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
-        immediate.text,
-    )
-    assert immediate_match is not None
     recovered_run = next(
         run for run in app.state.run_store.list_runs() if run.run_id != source_run_id
     )
     recovered = client.get(f"/runs/{recovered_run.run_id}/review")
     assert recovered.status_code == 200
-    recovered_match = re.search(
-        r"<dt>Additional Instructions</dt>\s*<dd>([^<]+)</dd>",
-        recovered.text,
+
+    def instruction_rows(html: str) -> dict[str, str]:
+        rows: dict[str, str] = {}
+        for stage in ("Stage 1", "Stage 2"):
+            match = re.search(
+                rf"<dt>{stage} Instructions</dt>\s*<dd>(.*?)</dd>",
+                html,
+                re.S,
+            )
+            assert match is not None
+            rows[stage] = match.group(1)
+        return rows
+
+    immediate_rows = instruction_rows(immediate.text)
+    recovered_rows = instruction_rows(recovered.text)
+    assert immediate_rows == recovered_rows
+    assert all("Source: None" in row for row in immediate_rows.values())
+    assert all(
+        text not in immediate.text and text not in recovered.text
+        for text in (inherited_stage1, inherited_stage2)
+        if text
     )
-    assert recovered_match is not None
-    assert immediate_match.group(1) == recovered_match.group(1) == expected
 
 
 
@@ -868,3 +887,261 @@ def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> No
         app.state.run_store.get_run(run_id).status
         is RunStatus.AWAITING_PARSE_RULES_REVIEW
     )
+
+
+def test_preview_materializes_instruction_uploads_and_review_metadata(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    stage1_text = "PRIVATE stage one instruction"
+    stage2_pdf = _pdf_bytes(3)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage1_instruction_pdf_pages": "",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_pdf_pages": "2-3,2",
+            "stage2_instruction_scope": "pass1",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage1_instruction_file",
+                ("notes.txt", stage1_text.encode(), "text/plain"),
+            ),
+            (
+                "stage2_instruction_file",
+                ("reference.pdf", stage2_pdf, "application/pdf"),
+            ),
+        ],
+    )
+
+    assert response.status_code == 200
+    assert stage1_text not in response.text
+    assert "notes.txt" in response.text
+    assert "reference.pdf" in response.text
+    assert "Pass 1 only" in response.text
+    run_id = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_id is not None
+    config = app.state.job_controller.load_inference_config(run_id.group(1))
+    assert config.pipeline.stage1_guides is not None
+    assert config.pipeline.stage1_guides.parent.name == "stage1"
+    assert config.pipeline.stage2_guides is not None
+    assert config.pipeline.stage2_guides.parent.name == "stage2"
+    assert config.pipeline.stage2_guides_pages == "2-3"
+    assert config.pipeline.stage2_guides_scope == "pass1"
+
+
+@pytest.mark.parametrize(
+    ("source", "text", "filename"),
+    [
+        ("typed", "typed text", "forbidden.txt"),
+        ("file", "typed text", "guide.txt"),
+    ],
+)
+def test_preview_rejects_instruction_source_mixing(
+    tmp_path: Path,
+    source: str,
+    text: str,
+    filename: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    data = {
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": "complete",
+        "dictionary_pages": "1",
+        "provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "stage1_instruction_source": source,
+        "stage1_additional_instructions": text,
+    }
+    files = {"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")}
+    if source == "typed":
+        files["stage1_instruction_file"] = (filename, b"uploaded", "text/plain")
+
+    response = client.post("/runs/preview", data=data, files=files)
+
+    assert response.status_code == 422
+    assert "Remove the uploaded file" in response.text or (
+        "Clear typed instructions" in response.text
+    )
+    assert not app.state.run_store.list_runs()
+
+
+def test_preview_rejects_forged_stage2_values_when_pipeline_is_inactive(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_scope": "pass1",
+            "stage2_instruction_pdf_pages": "1",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            ("stage2_instruction_file", ("guide.txt", b"forbidden", "text/plain")),
+        ],
+    )
+
+    assert response.status_code == 422
+    assert not app.state.run_store.list_runs()
+
+
+def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "source-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_scope": "both",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            ("stage1_instruction_file", ("stage1.txt", b"one", "text/plain")),
+            ("stage2_instruction_file", ("stage2.md", b"two", "text/markdown")),
+        ],
+    )
+    assert response.status_code == 200
+    source_run_id = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert source_run_id is not None
+    source_run_id = source_run_id.group(1)
+
+    saved = client.post(
+        f"/runs/{source_run_id}/presets",
+        data={"name": "Instruction preset"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    preset = app.state.run_store.list_presets()[0]
+    preset_root = app.state.inputs.presets_root / preset.preset_id / "inputs"
+    stage1_source = preset_root / "instructions" / "stage1" / "stage1.txt"
+    stage2_source = preset_root / "instructions" / "stage2" / "stage2.md"
+    assert (stage1_source.parent / "metadata.json").is_file()
+    assert (stage2_source.parent / "metadata.json").is_file()
+    loaded = client.get(f"/?preset={preset.preset_id}")
+    assert loaded.status_code == 200
+    assert "stage1_instruction_source" in loaded.text
+    assert "stage2_instruction_source" in loaded.text
+    links = _preset_asset_links(
+        preset,
+        presets_root=app.state.inputs.presets_root,
+    )
+    assert links["stage1_instruction"]["name"] == "stage1.txt"
+    assert links["stage2_instruction"]["name"] == "stage2.md"
+
+    kept = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "kept-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage1_instruction_keep_existing": "true",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_keep_existing": "true",
+            "stage2_instruction_scope": "both",
+        },
+    )
+    assert kept.status_code == 200
+    kept_run_id = re.search(r'action="/runs/([^/]+)/start"', kept.text)
+    assert kept_run_id is not None
+    kept_config = app.state.job_controller.load_inference_config(kept_run_id.group(1))
+    assert kept_config.pipeline.stage1_guides is not None
+    assert kept_config.pipeline.stage1_guides.read_text(encoding="utf-8") == "one"
+    assert kept_config.pipeline.stage2_guides is not None
+    assert kept_config.pipeline.stage2_guides.read_text(encoding="utf-8") == "two"
+    assert (kept_config.pipeline.stage1_guides.parent / "metadata.json").is_file()
+
+    replaced = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "replaced-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_keep_existing": "true",
+            "stage2_instruction_scope": "both",
+        },
+        files={
+            "stage1_instruction_file": (
+                "replacement.txt",
+                b"replacement",
+                "text/plain",
+            )
+        },
+    )
+    assert replaced.status_code == 200
+    replaced_run_id = re.search(r'action="/runs/([^/]+)/start"', replaced.text)
+    assert replaced_run_id is not None
+    replaced_config = app.state.job_controller.load_inference_config(
+        replaced_run_id.group(1)
+    )
+    assert replaced_config.pipeline.stage1_guides is not None
+    assert replaced_config.pipeline.stage1_guides.name == "replacement.txt"
+    assert replaced_config.pipeline.stage1_guides.read_text(encoding="utf-8") == "replacement"
+
+    cleared = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "cleared-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "typed",
+            "stage1_additional_instructions": "",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_keep_existing": "true",
+            "stage2_instruction_scope": "both",
+        },
+    )
+    assert cleared.status_code == 200
+    cleared_run_id = re.search(r'action="/runs/([^/]+)/start"', cleared.text)
+    assert cleared_run_id is not None
+    cleared_config = app.state.job_controller.load_inference_config(
+        cleared_run_id.group(1)
+    )
+    assert cleared_config.pipeline.stage1_guides is None
+    assert cleared_config.pipeline.stage2_guides is not None

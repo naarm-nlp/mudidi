@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -30,10 +31,15 @@ from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import (
     FormFieldError,
     NewRunForm,
-    additional_instructions_summary,
+    instruction_review_summary,
 )
 from mudidi.web.jobs import JobController
-from mudidi.web.inputs import InputMaterializer, _MAX_UPLOAD_BYTES, rebase_managed_config
+from mudidi.web.inputs import (
+    InputMaterializer,
+    _MAX_UPLOAD_BYTES,
+    read_managed_instruction_metadata,
+    rebase_managed_config,
+)
 from mudidi.web.models import (
     ModelCatalog,
     ModelDiscovery,
@@ -266,6 +272,7 @@ def create_app(
             preset_state = _preset_form_state(
                 selected_preset,
                 known_models={model.model_id for model in _all_models(app)},
+                presets_root=app.state.inputs.presets_root,
             )
             preset_assets = _preset_asset_links(
                 selected_preset,
@@ -321,11 +328,15 @@ def create_app(
             "alphabet_file",
             "existing_mdf_guide_file",
             "custom_mdf_manual",
+            "stage1_instruction_file",
+            "stage2_instruction_file",
         }
         retired_dashboard_fields = {
             "page_limit",
             "media_reference",
             "prompt_cache",
+            "stage1_instruction_keep_existing",
+            "stage2_instruction_keep_existing",
         }
         payload = {
             key: value
@@ -379,6 +390,158 @@ def create_app(
                 for value in submitted.getlist(field)
                 if getattr(value, "filename", "")
             ]
+        async def process_instruction_stage(stage: str, *, active: bool) -> None:
+            """Apply one stage's typed/file instruction state to ``payload``."""
+
+            source_field = f"{stage}_instruction_source"
+            file_field = f"{stage}_instruction_file"
+            text_field = f"{stage}_additional_instructions"
+            pages_field = f"{stage}_instruction_pdf_pages"
+            keep_field = f"{stage}_instruction_keep_existing"
+            guide_field = f"{stage}_guides"
+            scope = (
+                str(submitted.get("stage2_instruction_scope", "both")).strip()
+                or "both"
+                if stage == "stage2"
+                else None
+            )
+            source = str(submitted.get(source_field, "typed")).strip() or "typed"
+            text = str(submitted.get(text_field, "") or "").strip()
+            page_was_submitted = pages_field in submitted
+            page_spec = str(submitted.get(pages_field, "") or "").strip() or None
+            files = uploaded(file_field)
+            keep_existing = (
+                str(submitted.get(keep_field, "")).strip().lower() == "true"
+            )
+            relevant = bool(
+                files
+                or text
+                or page_spec
+                or keep_existing
+                or source != "typed"
+                or (
+                    stage == "stage2"
+                    and scope not in {None, "both"}
+                )
+            )
+            if source not in {"typed", "file"}:
+                raise FormFieldError(source_field, "Choose typed or file instructions.")
+            if not active:
+                if relevant:
+                    raise FormFieldError(
+                        source_field,
+                        f"{stage.title()} instructions are not used by this pipeline.",
+                    )
+                return
+
+            inherited = (
+                getattr(preset_config.pipeline, guide_field)
+                if preset_config is not None
+                else None
+            )
+            inherited_page_spec = (
+                getattr(preset_config.pipeline, f"{stage}_guides_pages")
+                if preset_config is not None
+                else None
+            )
+            run_bundle = app.state.inputs.bundle(run_id).resolve()
+
+            def managed_inherited_file() -> bool:
+                if inherited is None or inherited.is_symlink():
+                    return False
+                try:
+                    resolved = inherited.expanduser().resolve()
+                except OSError:
+                    return False
+                if not resolved.is_relative_to(run_bundle) or not resolved.is_file():
+                    return False
+                metadata = read_managed_instruction_metadata(resolved)
+                return bool(metadata and metadata.get("source_mode") == "file")
+
+            def discard_inherited() -> None:
+                if inherited is None or inherited.is_symlink():
+                    return
+                try:
+                    resolved = inherited.expanduser().resolve()
+                except OSError:
+                    return
+                instructions_root = run_bundle / "inputs" / "instructions"
+                stage_dir = instructions_root / stage
+                if resolved.is_relative_to(stage_dir) and stage_dir.is_dir():
+                    shutil.rmtree(stage_dir, ignore_errors=True)
+                elif (
+                    resolved.is_relative_to(instructions_root)
+                    and resolved.is_file()
+                ):
+                    resolved.unlink(missing_ok=True)
+            if source == "typed":
+                if files:
+                    raise FormFieldError(
+                        file_field,
+                        "Remove the uploaded file before using typed instructions.",
+                    )
+                if page_spec is not None:
+                    raise FormFieldError(
+                        pages_field,
+                        "Instruction PDF page selection requires a PDF source.",
+                    )
+                if text:
+                    payload[guide_field] = app.state.inputs.materialize_instruction(
+                        run_id,
+                        stage,
+                        text,
+                        replace=preset_config is not None,
+                        stage2_scope=scope,
+                    )
+                elif preset_config is not None:
+                    discard_inherited()
+                    payload[guide_field] = None
+                return
+
+            if text:
+                raise FormFieldError(
+                    file_field,
+                    "Clear typed instructions before using an uploaded file.",
+                )
+            if len(files) > 1:
+                raise FormFieldError(file_field, "Upload exactly one instruction file.")
+            if files:
+                try:
+                    payload[guide_field] = (
+                        await app.state.inputs.materialize_instruction_upload(
+                            run_id,
+                            stage,
+                            files[0],
+                            page_spec=page_spec,
+                            stage2_scope=scope,
+                            replace=preset_config is not None,
+                        )
+                    )
+                except ValueError as exc:
+                    message = str(exc)
+                    error_field = (
+                        pages_field
+                        if "page" in message.lower()
+                        else file_field
+                    )
+                    raise FormFieldError(error_field, message) from exc
+                return
+            if (
+                keep_existing
+                and managed_inherited_file()
+                and (
+                    not page_was_submitted
+                    or page_spec == (inherited_page_spec or "").strip()
+                )
+            ):
+                payload[guide_field] = inherited
+                if not page_was_submitted and inherited_page_spec:
+                    payload[pages_field] = inherited_page_spec
+                return
+            raise FormFieldError(
+                file_field,
+                "Upload exactly one instruction file, or explicitly keep the saved file.",
+            )
 
         try:
             preset_config = None
@@ -455,30 +618,8 @@ def create_app(
             elif preset_config is not None and runs_stage2:
                 payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
 
-            stage1_instructions = str(
-                payload.get("stage1_additional_instructions", "")
-            ).strip()
-            if stage1_instructions and runs_stage1:
-                payload["stage1_guides"] = app.state.inputs.materialize_instruction(
-                    run_id,
-                    "stage1",
-                    stage1_instructions,
-                    replace=preset_config is not None,
-                )
-            elif preset_config is not None and runs_stage1:
-                payload["stage1_guides"] = preset_config.pipeline.stage1_guides
-            stage2_instructions = str(
-                payload.get("stage2_additional_instructions", "")
-            ).strip()
-            if stage2_instructions and runs_stage2:
-                payload["stage2_guides"] = app.state.inputs.materialize_instruction(
-                    run_id,
-                    "stage2",
-                    stage2_instructions,
-                    replace=preset_config is not None,
-                )
-            elif preset_config is not None and runs_stage2:
-                payload["stage2_guides"] = preset_config.pipeline.stage2_guides
+            await process_instruction_stage("stage1", active=runs_stage1)
+            await process_instruction_stage("stage2", active=runs_stage2)
 
             manual_source = str(payload.get("mdf_manual_source", "none"))
             manual_files = uploaded("custom_mdf_manual")
@@ -536,7 +677,7 @@ def create_app(
             request=request,
             name="review.html",
             context={
-                "summary": run_form.to_summary(),
+                "summary": _config_summary(config),
                 "run_id": run_id,
                 "continuation_action": f"/runs/{run_id}/start",
                 "continuation_label": "Start run",
@@ -1349,6 +1490,7 @@ def _preset_form_state(
     preset: PresetRecord,
     *,
     known_models: set[str],
+    presets_root: Path | None = None,
 ) -> dict[str, list[str]]:
     """Translate a typed preset into browser-form values without secrets."""
 
@@ -1387,6 +1529,12 @@ def _preset_form_state(
         ],
     }
 
+    assets = (
+        _preset_asset_paths(preset, presets_root=presets_root)
+        if presets_root is not None
+        else {}
+    )
+
     def put(name: str, value: object | None) -> None:
         if value is not None and str(value) != "":
             state[name] = [str(value)]
@@ -1407,6 +1555,44 @@ def _preset_form_state(
         provider = prefix if prefix in {item.value for item in Provider} else preset.provider
         put(f"{role}_provider", provider)
         put_model(f"{role}_model", f"{role}_custom_model", model)
+
+    def managed_guide(path: Path | None, key: str) -> Path | None:
+        if presets_root is None:
+            return path if path is not None else None
+        return assets.get(key)
+
+    def put_instruction_state(
+        stage: str,
+        path: Path | None,
+        *,
+        page_spec: str | None,
+        scope: str | None,
+    ) -> None:
+        asset_key = f"{stage}-instruction"
+        managed = managed_guide(path, asset_key)
+        metadata = read_managed_instruction_metadata(managed)
+        text = _read_preset_text(managed)
+        source_field = f"{stage}_instruction_source"
+        pages_field = f"{stage}_instruction_pdf_pages"
+        keep_field = f"{stage}_instruction_keep_existing"
+        text_field = f"{stage}_additional_instructions"
+        if metadata and metadata.get("source_mode") == "file":
+            put(source_field, "file")
+            put(pages_field, page_spec)
+            put(keep_field, "true")
+            return
+        if managed is not None and text is not None:
+            # Sidecar-free legacy TXT/MD/DOCX guides retain typed semantics.
+            put(source_field, "typed")
+            put(text_field, text)
+            return
+        if metadata and metadata.get("source_mode") == "typed":
+            put(source_field, "typed")
+            put(pages_field, page_spec)
+            return
+        if path is not None and managed is None:
+            put(source_field, "typed")
+        put(pages_field, page_spec)
 
     put("dictionary_pages", config.input.dictionary_pages)
     put("introduction_pages", config.input.introduction_pages)
@@ -1432,15 +1618,25 @@ def _preset_form_state(
     put("rewriter_reasoning", config.agentic.rewriter_reasoning)
     if config.pipeline.parse_rules_pages:
         put("parse_rules_pages", ",".join(config.pipeline.parse_rules_pages))
-    put("character_inventory", _read_preset_text(config.input.alphabet))
     put(
-        "stage1_additional_instructions",
-        _read_preset_text(config.pipeline.stage1_guides),
+        "character_inventory",
+        _read_preset_text(
+            managed_guide(config.input.alphabet, "character-inventory")
+        ),
     )
-    put(
-        "stage2_additional_instructions",
-        _read_preset_text(config.pipeline.stage2_guides),
+    put_instruction_state(
+        "stage1",
+        config.pipeline.stage1_guides,
+        page_spec=config.pipeline.stage1_guides_pages,
+        scope=None,
     )
+    put_instruction_state(
+        "stage2",
+        config.pipeline.stage2_guides,
+        page_spec=config.pipeline.stage2_guides_pages,
+        scope=config.pipeline.stage2_guides_scope,
+    )
+    put("stage2_instruction_scope", config.pipeline.stage2_guides_scope)
 
     profile = config.input.dictionary_profile
     if profile is not None:
@@ -1484,7 +1680,9 @@ def _read_preset_text(path: Path | None) -> str | None:
         return None
 
 
-def _config_summary(config: InferenceConfig) -> dict[str, str]:
+def _config_summary(config: InferenceConfig) -> dict[str, object]:
+    """Build the same metadata-only Review summary for every route."""
+
     verified_stages = [
         label
         for enabled, label in (
@@ -1527,11 +1725,21 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
         "stage_2_pass_1_model": pass1_summary,
         "stage_2_pass_2_model": pass2_summary,
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",
-        "additional_instructions": additional_instructions_summary(
+        "stage_1_instructions": instruction_review_summary(
             config.pipeline.stage1_guides,
+            page_spec=(
+                config.pipeline.stage1_guides_pages if runs_stage1 else None
+            ),
+            stage2_scope=None,
+        ),
+        "stage_2_instructions": instruction_review_summary(
             config.pipeline.stage2_guides,
-            runs_stage1=runs_stage1,
-            runs_stage2=runs_stage2,
+            page_spec=(
+                config.pipeline.stage2_guides_pages if runs_stage2 else None
+            ),
+            stage2_scope=(
+                config.pipeline.stage2_guides_scope if runs_stage2 else None
+            ),
         ),
         "mdf_parsing_guide": (
             "Human approval required"
@@ -1621,6 +1829,16 @@ def _preset_asset_paths(
     manual = owned_file(preset.config.input.toolbox_pdf)
     if manual is not None:
         assets["mdf-manual"] = manual
+    alphabet = owned_file(preset.config.input.alphabet)
+    if alphabet is not None:
+        assets["character-inventory"] = alphabet
+    for stage, guide_path in (
+        ("stage1", preset.config.pipeline.stage1_guides),
+        ("stage2", preset.config.pipeline.stage2_guides),
+    ):
+        guide = owned_file(guide_path)
+        if guide is not None:
+            assets[f"{stage}-instruction"] = guide
     return assets
 
 
@@ -1632,6 +1850,32 @@ def _preset_asset_links(
     """Build template-safe labels and local URLs for saved preset inputs."""
 
     paths = _preset_asset_paths(preset, presets_root=presets_root)
+    def link_for(key: str) -> dict[str, object] | None:
+        path = paths.get(key)
+        if path is None:
+            return None
+        metadata = read_managed_instruction_metadata(path)
+        suffix = path.suffix.lower()
+        return {
+            "name": (
+                str(metadata["original_filename"])
+                if metadata and metadata.get("original_filename")
+                else path.name
+            ),
+            "url": f"/presets/{preset.preset_id}/files/{key}",
+            "source_mode": metadata.get("source_mode") if metadata else "typed",
+            "kind": (
+                metadata.get("kind")
+                if metadata
+                else ("pdf" if suffix == ".pdf" else "text")
+            ),
+            "pdf_page_count": metadata.get("pdf_page_count") if metadata else None,
+            "selected_pages": metadata.get("selected_pages", []) if metadata else [],
+            "stage2_scope": metadata.get("stage2_scope") if metadata else None,
+        }
+
+    stage1_instruction = link_for("stage1-instruction")
+    stage2_instruction = link_for("stage2-instruction")
     return {
         "pages": [
             {
@@ -1657,6 +1901,12 @@ def _preset_asset_links(
             if "mdf-manual" in paths
             else None
         ),
+        "stage1_instruction": stage1_instruction,
+        "stage2_instruction": stage2_instruction,
+        "instructions": {
+            "stage1": stage1_instruction,
+            "stage2": stage2_instruction,
+        },
     }
 
 

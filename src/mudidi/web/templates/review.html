@@ -17,7 +17,7 @@
           <p>These values were validated through MUDIDI's production configuration schema.</p>
           {% set review_groups = [
             ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
-            ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'additional_instructions']),
+            ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'stage_1_instructions', 'stage_2_instructions']),
             ('Model', ['stage_1_model', 'stage_2_pass_1_model', 'stage_2_pass_2_model']),
             ('Agentic', ['agentic'])
           ] %}
@@ -27,7 +27,23 @@
               <h2 id="review-{{ heading | lower }}-title">{{ heading }}</h2>
               <dl class="review-grid">
                 {% for key in keys if key in summary %}
+                {% if key in ['stage_1_instructions', 'stage_2_instructions'] %}
+                {% set metadata = summary[key] %}
+                <div class="review-instruction-row">
+                  <dt>{{ key.replace('_', ' ') | title }}</dt>
+                  <dd>
+                    <span>Source: {{ metadata.source }}</span>
+                    {% if metadata.original_filename %}<span>Original filename: {{ metadata.original_filename }}</span>{% endif %}
+                    {% if metadata.kind == 'pdf' %}
+                    <span>Selected PDF pages: {{ metadata.selected_pages_label }}</span>
+                    <span>PDF page count: {{ metadata.pdf_page_count if metadata.pdf_page_count is not none else 'Unavailable' }}</span>
+                    {% endif %}
+                    {% if key == 'stage_2_instructions' %}<span>Scope: {{ metadata.scope_label }}</span>{% endif %}
+                  </dd>
+                </div>
+                {% else %}
                 <div><dt>{{ key.replace('_', ' ') | title }}</dt><dd>{{ summary[key] }}</dd></div>
+                {% endif %}
                 {% endfor %}
               </dl>
             </section>

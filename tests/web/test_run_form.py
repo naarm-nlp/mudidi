@@ -170,7 +170,18 @@ def test_review_summary_uses_effective_instruction_source(
         stage2_additional_instructions=stage2_instructions,
     ).to_summary()
 
-    assert summary["additional_instructions"] == expected
+    assert "additional_instructions" not in summary
+    assert summary["stage_1_instructions"]["source"] == (
+        "Typed" if stage1_path is not None else "None"
+    )
+    assert summary["stage_2_instructions"]["source"] == (
+        "Typed" if stage2_path is not None else "None"
+    )
+    assert all(
+        text not in repr(summary)
+        for text in (stage1_instructions, stage2_instructions)
+        if text
+    )
 
 
 
@@ -426,3 +437,41 @@ def test_resume_is_the_safe_default_for_existing_output(tmp_path: Path) -> None:
 
     assert config.runtime.overwrite is False
     assert previous.read_text(encoding="utf-8") == "resume me"
+
+
+def test_instruction_browser_fields_default_to_typed_and_both(
+    tmp_path: Path,
+) -> None:
+    form = _form(tmp_path)
+
+    assert form.stage1_instruction_source == "typed"
+    assert form.stage2_instruction_source == "typed"
+    assert form.stage1_instruction_pdf_pages is None
+    assert form.stage2_instruction_pdf_pages is None
+    assert form.stage2_instruction_scope == "both"
+    config = form.to_inference_config()
+    assert config.pipeline.stage1_guides_pages is None
+    assert config.pipeline.stage2_guides_pages is None
+    assert config.pipeline.stage2_guides_scope == "both"
+
+
+def test_instruction_pdf_page_fields_normalize_before_config_mapping(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        stage1_guides=tmp_path / "stage1.pdf",
+        stage2_guides=tmp_path / "stage2.pdf",
+        stage1_instruction_source="file",
+        stage2_instruction_source="file",
+        stage1_instruction_pdf_pages="2-3, 2",
+        stage2_instruction_pdf_pages="4, 4-5",
+        stage2_instruction_scope="pass2",
+    )
+
+    assert form.stage1_instruction_pdf_pages == "2-3,2"
+    assert form.stage2_instruction_pdf_pages == "4,4-5"
+    config = form.to_inference_config()
+    assert config.pipeline.stage1_guides_pages == "2-3"
+    assert config.pipeline.stage2_guides_pages == "4,5"
+    assert config.pipeline.stage2_guides_scope == "pass2"
