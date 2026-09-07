@@ -7,23 +7,31 @@
         <div class="provider-status"><span></span> {% if credential_ready_count %}{{ credential_ready_count }} provider key{{ '' if credential_ready_count == 1 else 's' }} saved{% else %}API key setup required{% endif %}</div>
       </header>
 
-      <section class="workspace">
+      <section class="workspace" data-new-run-wizard>
         <ol class="wizard-stepper" aria-label="New run progress">
           <li data-wizard-marker="input" aria-current="step" aria-label="Input">
-            <span class="wizard-marker" aria-hidden="true">1</span>
-            <span class="wizard-marker-copy"><strong>Input</strong><small>Files and context</small></span>
+            <button class="wizard-step-button" type="button" data-wizard-go="input" aria-controls="wizard-input">
+              <span class="wizard-marker" aria-hidden="true">1</span>
+              <span class="wizard-marker-copy"><strong>Input</strong><small>Files and context</small></span>
+            </button>
           </li>
           <li data-wizard-marker="pipeline" aria-label="Pipeline">
-            <span class="wizard-marker" aria-hidden="true">2</span>
-            <span class="wizard-marker-copy"><strong>Pipeline</strong><small>Workflow choice</small></span>
+            <button class="wizard-step-button" type="button" data-wizard-go="pipeline" aria-controls="wizard-pipeline">
+              <span class="wizard-marker" aria-hidden="true">2</span>
+              <span class="wizard-marker-copy"><strong>Pipeline</strong><small>Workflow choice</small></span>
+            </button>
           </li>
           <li data-wizard-marker="model" aria-label="Model">
-            <span class="wizard-marker" aria-hidden="true">3</span>
-            <span class="wizard-marker-copy"><strong>Model</strong><small>Provider settings</small></span>
+            <button class="wizard-step-button" type="button" data-wizard-go="model" aria-controls="wizard-model">
+              <span class="wizard-marker" aria-hidden="true">3</span>
+              <span class="wizard-marker-copy"><strong>Model</strong><small>Provider settings</small></span>
+            </button>
           </li>
           <li data-wizard-marker="agentic" aria-label="Agentic">
-            <span class="wizard-marker" aria-hidden="true">4</span>
-            <span class="wizard-marker-copy"><strong>Agentic</strong><small>Verification</small></span>
+            <button class="wizard-step-button" type="button" data-wizard-go="agentic" aria-controls="wizard-agentic">
+              <span class="wizard-marker" aria-hidden="true">4</span>
+              <span class="wizard-marker-copy"><strong>Agentic</strong><small>Verification</small></span>
+            </button>
           </li>
           <li data-wizard-marker="review" aria-disabled="true" aria-label="Review">
             <span class="wizard-marker" aria-hidden="true">5</span>
@@ -45,7 +53,7 @@
         {% endif %}
 
         <div class="content-grid">
-          <form class="panel run-form" data-new-run-wizard method="post" action="/runs/preview" enctype="multipart/form-data">
+          <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
             {% if validation_errors %}
             <section class="form-error-summary" role="alert" aria-labelledby="form-error-title">
               <h2 id="form-error-title">Check the highlighted configuration</h2>
@@ -151,7 +159,7 @@
                   </label>
                 </section>
               </fieldset>
-              <div class="wizard-actions"><span>Configuration is saved only after validation.</span><button class="primary" type="button" data-wizard-next="pipeline">Continue to Pipeline →</button></div>
+              <div class="wizard-actions"><span>Configure these steps in any order.</span><button class="primary" type="button" data-wizard-next="pipeline">Continue to Pipeline →</button></div>
             </section>
 
             <section id="wizard-pipeline" data-wizard-panel="pipeline" aria-labelledby="wizard-pipeline-title" hidden>
@@ -377,5 +385,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-3" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-4" defer></script>
 {% endblock %}

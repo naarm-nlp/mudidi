@@ -130,7 +130,7 @@ const updateWizardValidationSummary = (panel, invalidFields) => {
   summary.hidden = invalidFields.length === 0;
   if (!invalidFields.length) return;
   const heading = document.createElement("strong");
-  heading.textContent = "Complete the highlighted fields before continuing.";
+  heading.textContent = "Complete the highlighted fields before reviewing the run.";
   summary.append(heading);
   if (invalidFields.length > 1) {
     const list = document.createElement("ul");
@@ -150,30 +150,15 @@ const setWizardStep = (step, { focus = true } = {}) => {
     panel.hidden = panel.dataset.wizardPanel !== step;
   });
   document.querySelectorAll("[data-wizard-marker]").forEach((marker) => {
-    const markerIndex = [...marker.parentElement.children].indexOf(marker);
-    const activeIndex = wizardOrder.indexOf(step);
-    if (marker.dataset.wizardMarker === step) marker.setAttribute("aria-current", "step");
+    const isActive = marker.dataset.wizardMarker === step;
+    if (isActive) marker.setAttribute("aria-current", "step");
     else marker.removeAttribute("aria-current");
-    marker.classList.toggle("is-active", marker.dataset.wizardMarker === step);
-    marker.classList.toggle("is-complete", markerIndex < activeIndex);
+    marker.classList.toggle("is-active", isActive);
   });
   persistWizardStep();
   if (focus) document.querySelector(`#wizard-${step}-title`)?.focus();
 };
 
-const validateWizardPanel = (panel) => {
-  const fields = [...panel.querySelectorAll("input, select, textarea")]
-    .filter((field) => !field.disabled && !field.closest("[hidden]"));
-  const invalidFields = fields.filter((field) => !field.checkValidity());
-  if (!invalidFields.length) {
-    updateWizardValidationSummary(panel, []);
-    return true;
-  }
-  invalidFields.forEach(markWizardFieldInvalid);
-  updateWizardValidationSummary(panel, invalidFields);
-  invalidFields[0].focus();
-  return false;
-};
 
 const persistRunForm = () => {
   if (!runForm) return;
@@ -817,6 +802,12 @@ const scheduleWizardInvalidAttemptReset = () => {
   if (invalidAttemptResetScheduled) return;
   invalidAttemptResetScheduled = true;
   queueMicrotask(() => {
+    wizardPanels.forEach((panel) => {
+      const panelInvalidFields = invalidWizardFields.filter(
+        (field) => wizardPanelForField(field) === panel,
+      );
+      updateWizardValidationSummary(panel, panelInvalidFields);
+    });
     firstInvalidWizardField = invalidWizardFields.reduce((candidate, field) => {
       if (!candidate) return field;
       return candidate.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -847,12 +838,20 @@ if (wizard) {
     }
   }
   setWizardStep(initialWizardStep, { focus: false });
+  wizard.querySelectorAll("[data-wizard-go]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const step = button.dataset.wizardGo;
+      if (!wizardOrder.includes(step)) return;
+      persistRunForm();
+      setWizardStep(step);
+    });
+  });
+
 
   wizard.querySelectorAll("[data-wizard-next]").forEach((button) => {
     button.addEventListener("click", () => {
-      const panel = button.closest("[data-wizard-panel]");
       const nextStep = button.dataset.wizardNext;
-      if (!panel || !nextStep || !validateWizardPanel(panel)) return;
+      if (!wizardOrder.includes(nextStep)) return;
       persistRunForm();
       setWizardStep(nextStep);
     });
@@ -866,13 +865,7 @@ if (wizard) {
     });
   });
   wizard.querySelectorAll("[data-wizard-submit]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      beginWizardInvalidAttempt();
-      const panel = button.closest("[data-wizard-panel]");
-      if (!panel || validateWizardPanel(panel)) return;
-      event.preventDefault();
-      runForm?.reportValidity();
-    });
+    button.addEventListener("click", beginWizardInvalidAttempt);
   });
 }
 
