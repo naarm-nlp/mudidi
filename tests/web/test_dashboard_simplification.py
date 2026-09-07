@@ -272,13 +272,24 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "Representative MDF parsing guide pages" in response.text
     assert response.text.count('class="field-heading"') >= 5
     assert (
-        '<span class="field-heading">Stage 1 additional instructions '
+        '<fieldset class="form-field instruction-source-panel" '
+        'data-instruction-source-panel data-instruction-stage="stage1"'
+        in response.text
+    )
+    assert '<legend>Stage 1 instructions</legend>' in response.text
+    assert '<legend>Stage 2 instructions</legend>' in response.text
+    assert (
+        'name="stage1_instruction_source" value="typed" checked '
+        'data-instruction-source-radio'
         in response.text
     )
     assert (
-        '<span class="field-heading">Stage 2 additional instructions '
+        'name="stage2_instruction_source" value="typed" checked '
+        'data-instruction-source-radio'
         in response.text
     )
+    assert '<textarea name="stage1_additional_instructions"' in response.text
+    assert '<textarea name="stage2_additional_instructions"' in response.text
     assert (
         '<span class="field-heading">Representative MDF parsing guide pages '
         in response.text
