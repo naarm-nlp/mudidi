@@ -1029,12 +1029,34 @@ def test_preview_materializes_instruction_uploads_and_review_metadata(
     run_id = re.search(r'action="/runs/([^/]+)/start"', response.text)
     assert run_id is not None
     config = app.state.job_controller.load_inference_config(run_id.group(1))
-    assert config.pipeline.stage1_guides is not None
-    assert config.pipeline.stage1_guides.parent.name == "stage1"
-    assert config.pipeline.stage2_guides is not None
-    assert config.pipeline.stage2_guides.parent.name == "stage2"
+    stage1_guide = config.pipeline.stage1_guides
+    assert stage1_guide is not None
+    assert stage1_guide.parent.name == "stage1"
+    assert stage1_guide.read_text(encoding="utf-8") == stage1_text
+    stage1_metadata = json.loads(
+        (stage1_guide.parent / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert stage1_metadata["source_mode"] == "file"
+    assert stage1_metadata["kind"] == "text"
+    assert stage1_metadata["original_filename"] == "notes.txt"
+    assert stage1_metadata["selected_pages"] == []
+    assert stage1_metadata["pdf_page_count"] is None
+    assert stage1_metadata["stage2_scope"] is None
+    stage2_guide = config.pipeline.stage2_guides
+    assert stage2_guide is not None
+    assert stage2_guide.parent.name == "stage2"
+    assert stage2_guide.read_bytes() == stage2_pdf
     assert config.pipeline.stage2_guides_pages == "2-3"
     assert config.pipeline.stage2_guides_scope == "pass1"
+    stage2_metadata = json.loads(
+        (stage2_guide.parent / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert stage2_metadata["source_mode"] == "file"
+    assert stage2_metadata["kind"] == "pdf"
+    assert stage2_metadata["original_filename"] == "reference.pdf"
+    assert stage2_metadata["pdf_page_count"] == 3
+    assert stage2_metadata["selected_pages"] == [2, 3]
+    assert stage2_metadata["stage2_scope"] == "pass1"
 
 
 @pytest.mark.parametrize(
@@ -1556,6 +1578,7 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     client = TestClient(app)
+    selected_pdf = _pdf_bytes(3)
 
     selected = client.post(
         "/runs/preview",
@@ -1574,13 +1597,28 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
             (
                 "stage2_instruction_file",
-                ("selected.pdf", _pdf_bytes(3), "application/pdf"),
+                ("selected.pdf", selected_pdf, "application/pdf"),
             ),
         ],
     )
     assert selected.status_code == 200
     selected_run = re.search(r'action="/runs/([^/]+)/start"', selected.text)
     assert selected_run is not None
+    selected_config = app.state.job_controller.load_inference_config(
+        selected_run.group(1)
+    )
+    selected_guide = selected_config.pipeline.stage2_guides
+    assert selected_guide is not None
+    assert selected_guide.read_bytes() == selected_pdf
+    selected_metadata = json.loads(
+        (selected_guide.parent / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert selected_metadata["source_mode"] == "file"
+    assert selected_metadata["kind"] == "pdf"
+    assert selected_metadata["original_filename"] == "selected.pdf"
+    assert selected_metadata["pdf_page_count"] == 3
+    assert selected_metadata["selected_pages"] == [2]
+    assert selected_metadata["stage2_scope"] == "pass2"
     saved = client.post(
         f"/runs/{selected_run.group(1)}/presets",
         data={"name": "Selected PDF preset"},
@@ -1623,7 +1661,19 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
     kept_config = app.state.job_controller.load_inference_config(kept_run.group(1))
     assert kept_config.pipeline.stage2_guides_pages == "2"
     assert kept_config.pipeline.stage2_guides_scope == "pass2"
+    kept_guide = kept_config.pipeline.stage2_guides
+    assert kept_guide is not None
+    assert kept_guide.read_bytes() == selected_pdf
+    kept_metadata = json.loads(
+        (kept_guide.parent / "metadata.json").read_text(encoding="utf-8")
+    )
+    assert kept_metadata["source_mode"] == "file"
+    assert kept_metadata["kind"] == "pdf"
+    assert kept_metadata["pdf_page_count"] == 3
+    assert kept_metadata["selected_pages"] == [2]
+    assert kept_metadata["stage2_scope"] == "pass2"
 
+    all_pdf = _pdf_bytes(3)
     all_pages = client.post(
         "/runs/preview",
         data={
@@ -1639,7 +1689,7 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
             (
                 "stage2_instruction_file",
-                ("all.pdf", _pdf_bytes(3), "application/pdf"),
+                ("all.pdf", all_pdf, "application/pdf"),
             ),
         ],
     )
@@ -1679,13 +1729,18 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
     assert blank_run is not None
     blank_config = app.state.job_controller.load_inference_config(blank_run.group(1))
     assert blank_config.pipeline.stage2_guides_pages is None
-    assert blank_config.pipeline.stage2_guides_scope == "both"
+    blank_guide = blank_config.pipeline.stage2_guides
+    assert blank_guide is not None
+    assert blank_guide.read_bytes() == all_pdf
     metadata = json.loads(
-        (
-            blank_config.pipeline.stage2_guides.parent / "metadata.json"
-        ).read_text(encoding="utf-8")
+        (blank_guide.parent / "metadata.json").read_text(encoding="utf-8")
     )
+    assert metadata["source_mode"] == "file"
+    assert metadata["kind"] == "pdf"
+    assert metadata["original_filename"] == "all.pdf"
+    assert metadata["pdf_page_count"] == 3
     assert metadata["selected_pages"] == [1, 2, 3]
+    assert metadata["stage2_scope"] == "both"
 
 
 def test_typed_blank_deletes_managed_and_legacy_instruction_paths(
