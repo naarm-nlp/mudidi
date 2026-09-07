@@ -244,6 +244,78 @@ document.addEventListener("click", (event) => {
   }
 });
 
+const dictionaryDropzone = document.querySelector("[data-dictionary-dropzone]");
+const dictionaryFileInput = dictionaryDropzone?.querySelector("#dictionary-pdf");
+const dictionaryFileStatus = dictionaryDropzone?.querySelector("[data-dictionary-file-status]");
+
+if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
+  let dragDepth = 0;
+
+  const resetDictionaryDragState = () => {
+    dragDepth = 0;
+    dictionaryDropzone.classList.remove("is-dragover");
+  };
+  const showDictionaryFileError = (message) => {
+    dictionaryFileInput.value = "";
+    dictionaryFileInput.setCustomValidity(message);
+    dictionaryDropzone.classList.add("is-drop-invalid");
+    dictionaryFileStatus.textContent = message;
+  };
+  const validateDictionaryFiles = (files) => {
+    if (files.length !== 1) return "Choose exactly one PDF file.";
+    return files[0].name.toLowerCase().endsWith(".pdf")
+      ? ""
+      : "Choose a file with a .pdf extension.";
+  };
+  const updateDictionaryFileSelection = () => {
+    const files = [...dictionaryFileInput.files];
+    const error = files.length ? validateDictionaryFiles(files) : "";
+    if (error) {
+      showDictionaryFileError(error);
+      return;
+    }
+    dictionaryFileInput.setCustomValidity("");
+    dictionaryDropzone.classList.remove("is-drop-invalid");
+    dictionaryFileStatus.textContent = files.length
+      ? `Selected: ${files[0].name}`
+      : dictionaryFileStatus.dataset.emptyLabel;
+    clearWizardFieldInvalid(dictionaryFileInput);
+  };
+
+  dictionaryFileInput.addEventListener("change", updateDictionaryFileSelection);
+  dictionaryDropzone.addEventListener("dragenter", (event) => {
+    if (![...(event.dataTransfer?.types || [])].includes("Files")) return;
+    event.preventDefault();
+    dragDepth += 1;
+    dictionaryDropzone.classList.add("is-dragover");
+  });
+  dictionaryDropzone.addEventListener("dragover", (event) => {
+    if (![...(event.dataTransfer?.types || [])].includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  });
+  dictionaryDropzone.addEventListener("dragleave", () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dictionaryDropzone.classList.remove("is-dragover");
+  });
+  dictionaryDropzone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    resetDictionaryDragState();
+    const files = [...(event.dataTransfer?.files || [])];
+    const error = validateDictionaryFiles(files);
+    if (error) {
+      showDictionaryFileError(error);
+      return;
+    }
+    try {
+      dictionaryFileInput.files = event.dataTransfer.files;
+      dictionaryFileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (_error) {
+      showDictionaryFileError("This browser could not attach the dropped PDF.");
+    }
+  });
+}
+
 const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
 const otherInformationField = document.querySelector("#profile-other-information");
 if (otherInformationToggle && otherInformationField) {
