@@ -187,6 +187,193 @@ def test_instruction_upload_validation_rejects_unsafe_content(
         / "instructions"
         / "stage1"
     ).exists()
+
+
+def test_typed_instruction_accepts_exact_character_limit(tmp_path: Path) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+
+    path = materializer.materialize_instruction(
+        "run-boundary",
+        "stage1",
+        "x" * 20_000,
+    )
+
+    assert len(path.read_text(encoding="utf-8")) == 20_000
+
+
+def test_instruction_replacement_rolls_back_after_validation_failure(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    original = UploadFile(filename="original.txt", file=BytesIO(b"original"))
+    path = asyncio.run(
+        materializer.materialize_instruction_upload(
+            "run-replace",
+            "stage1",
+            original,
+            page_spec=None,
+            stage2_scope=None,
+        )
+    )
+    metadata_before = read_managed_instruction_metadata(path)
+
+    invalid = UploadFile(filename="replacement.txt", file=BytesIO(b" \n"))
+    with pytest.raises(ValueError, match="blank"):
+        asyncio.run(
+            materializer.materialize_instruction_upload(
+                "run-replace",
+                "stage1",
+                invalid,
+                page_spec=None,
+                stage2_scope=None,
+                replace=True,
+            )
+        )
+
+    assert path.read_bytes() == b"original"
+    assert read_managed_instruction_metadata(path) == metadata_before
+    assert not list(path.parent.parent.glob(".stage1.*"))
+
+
+def test_instruction_uploads_enforce_aggregate_limit_across_stages(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path, max_total_bytes=10)
+    first = UploadFile(filename="first.txt", file=BytesIO(b"123456"))
+    materializer_path = asyncio.run(
+        materializer.materialize_instruction_upload(
+            "run-total",
+            "stage1",
+            first,
+            page_spec=None,
+            stage2_scope=None,
+        )
+    )
+    second = UploadFile(filename="second.txt", file=BytesIO(b"12345"))
+
+    with pytest.raises(ValueError, match="too large"):
+        asyncio.run(
+            materializer.materialize_instruction_upload(
+                "run-total",
+                "stage2",
+                second,
+                page_spec=None,
+                stage2_scope="both",
+            )
+        )
+
+    assert materializer_path.read_bytes() == b"123456"
+    assert not (tmp_path / "runs" / "run-total" / "inputs" / "instructions" / "stage2").exists()
+
+
+def test_instruction_upload_rejects_duplicate_files_without_state(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    uploads = [
+        UploadFile(filename="one.txt", file=BytesIO(b"one")),
+        UploadFile(filename="two.txt", file=BytesIO(b"two")),
+    ]
+
+    with pytest.raises(ValueError, match="exactly one"):
+        asyncio.run(
+            materializer.materialize_instruction_upload(
+                "run-duplicate-instruction",
+                "stage1",
+                uploads,  # type: ignore[arg-type]
+                page_spec=None,
+                stage2_scope=None,
+            )
+        )
+
+    assert not (
+        tmp_path
+        / "runs"
+        / "run-duplicate-instruction"
+        / "inputs"
+        / "instructions"
+    ).exists()
+
+
+def test_instruction_pdf_blank_selection_records_all_pages(tmp_path: Path) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    upload = UploadFile(filename="all-pages.pdf", file=BytesIO(_pdf_bytes(3)))
+
+    path = asyncio.run(
+        materializer.materialize_instruction_upload(
+            "run-all-pages",
+            "stage2",
+            upload,
+            page_spec=" ",
+            stage2_scope="both",
+        )
+    )
+
+    metadata = read_managed_instruction_metadata(path)
+    assert metadata is not None
+    assert metadata["pdf_page_count"] == 3
+    assert metadata["selected_pages"] == [1, 2, 3]
+
+
+@pytest.mark.parametrize(
+    ("content", "page_spec", "message"),
+    [
+        (b"%PDF-", None, "not readable"),
+        (
+            b"%PDF-1.4\n"
+            b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"
+            b"2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n"
+            b"trailer\n<< /Root 1 0 R >>\n%%EOF\n",
+            None,
+            "no pages",
+        ),
+        (_pdf_bytes(2), "3", "outside"),
+    ],
+)
+def test_instruction_pdf_validation_categories(
+    tmp_path: Path,
+    content: bytes,
+    page_spec: str | None,
+    message: str,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    upload = UploadFile(filename="guide.pdf", file=BytesIO(content))
+
+    with pytest.raises(ValueError, match=message):
+        asyncio.run(
+            materializer.materialize_instruction_upload(
+                "run-pdf-category",
+                "stage1",
+                upload,
+                page_spec=page_spec,
+                stage2_scope=None,
+            )
+        )
+
+
+def test_instruction_upload_rejects_stage_symlink_without_touching_target(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    stage_root = materializer.bundle("run-symlink") / "instructions"
+    stage_root.mkdir(parents=True)
+    (stage_root / "stage1").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="not safe"):
+        asyncio.run(
+            materializer.materialize_instruction_upload(
+                "run-symlink",
+                "stage1",
+                UploadFile(filename="guide.txt", file=BytesIO(b"no")),
+                page_spec=None,
+                stage2_scope=None,
+                replace=True,
+            )
+        )
+
+    assert not (outside / "guide.txt").exists()
 def test_materializer_rejects_spoofed_image_content(tmp_path: Path) -> None:
     materializer = InputMaterializer(data_dir=tmp_path)
     upload = UploadFile(filename="page_1.png", file=BytesIO(b"not an image"))

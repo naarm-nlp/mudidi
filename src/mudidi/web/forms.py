@@ -552,10 +552,18 @@ class NewRunForm(BaseModel):
                         stage == "stage2"
                         and self.stage2_instruction_scope != "both"
                     )
+                    or (
+                        stage == "stage1"
+                        and self.stage1_instruction_keep_existing
+                    )
+                    or (
+                        stage == "stage2"
+                        and self.stage2_instruction_keep_existing
+                    )
                 )
                 if inactive:
                     raise FormFieldError(
-                        source_field,
+                        file_field,
                         f"{stage.title()} instructions are not used by this pipeline.",
                     )
                 continue

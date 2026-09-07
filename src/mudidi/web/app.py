@@ -25,6 +25,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from mudidi.instructions import read_instruction_text
 from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
 from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
@@ -36,6 +37,7 @@ from mudidi.web.forms import (
 from mudidi.web.jobs import JobController
 from mudidi.web.inputs import (
     InputMaterializer,
+    InstructionMaterializationError,
     _MAX_UPLOAD_BYTES,
     read_managed_instruction_metadata,
     rebase_managed_config,
@@ -390,6 +392,28 @@ def create_app(
                 for value in submitted.getlist(field)
                 if getattr(value, "filename", "")
             ]
+
+        def instruction_scalar(
+            field: str,
+            *,
+            default: str,
+            error_field: str,
+        ) -> tuple[str, bool]:
+            values = submitted.getlist(field)
+            if len(values) > 1:
+                raise FormFieldError(
+                    error_field,
+                    f"Submit only one value for {field.replace('_', ' ')}.",
+                )
+            if not values:
+                return default, False
+            value = values[0]
+            if not isinstance(value, str):
+                raise FormFieldError(
+                    error_field,
+                    f"{field.replace('_', ' ').title()} must be a text value.",
+                )
+            return value, True
         async def process_instruction_stage(stage: str, *, active: bool) -> None:
             """Apply one stage's typed/file instruction state to ``payload``."""
 
@@ -399,20 +423,50 @@ def create_app(
             pages_field = f"{stage}_instruction_pdf_pages"
             keep_field = f"{stage}_instruction_keep_existing"
             guide_field = f"{stage}_guides"
-            scope = (
-                str(submitted.get("stage2_instruction_scope", "both")).strip()
-                or "both"
-                if stage == "stage2"
-                else None
+            source_raw, _source_submitted = instruction_scalar(
+                source_field,
+                default="typed",
+                error_field=file_field,
             )
-            source = str(submitted.get(source_field, "typed")).strip() or "typed"
-            text = str(submitted.get(text_field, "") or "").strip()
-            page_was_submitted = pages_field in submitted
-            page_spec = str(submitted.get(pages_field, "") or "").strip() or None
+            source = source_raw.strip() or "typed"
+            text_raw, _text_submitted = instruction_scalar(
+                text_field,
+                default="",
+                error_field=file_field,
+            )
+            text = text_raw.strip()
+            page_raw, page_was_submitted = instruction_scalar(
+                pages_field,
+                default="",
+                error_field=pages_field,
+            )
+            page_spec = page_raw.strip() or None
+            keep_raw, _keep_submitted = instruction_scalar(
+                keep_field,
+                default="",
+                error_field=file_field,
+            )
+            keep_value = keep_raw.strip().lower()
+            if keep_value not in {"", "true", "false"}:
+                raise FormFieldError(
+                    file_field,
+                    "Instruction keep-existing state is invalid.",
+                )
+            keep_existing = keep_value == "true"
+            scope = None
+            if stage == "stage2":
+                scope_raw, _scope_submitted = instruction_scalar(
+                    "stage2_instruction_scope",
+                    default="both",
+                    error_field=file_field,
+                )
+                scope = scope_raw.strip() or "both"
+                if scope not in {"pass1", "pass2", "both"}:
+                    raise FormFieldError(
+                        file_field,
+                        "Stage 2 instruction scope is invalid.",
+                    )
             files = uploaded(file_field)
-            keep_existing = (
-                str(submitted.get(keep_field, "")).strip().lower() == "true"
-            )
             relevant = bool(
                 files
                 or text
@@ -425,11 +479,14 @@ def create_app(
                 )
             )
             if source not in {"typed", "file"}:
-                raise FormFieldError(source_field, "Choose typed or file instructions.")
+                raise FormFieldError(
+                    file_field,
+                    "Choose typed or file instructions.",
+                )
             if not active:
                 if relevant:
                     raise FormFieldError(
-                        source_field,
+                        file_field,
                         f"{stage.title()} instructions are not used by this pipeline.",
                     )
                 return
@@ -440,7 +497,15 @@ def create_app(
                 else None
             )
             inherited_page_spec = (
-                getattr(preset_config.pipeline, f"{stage}_guides_pages")
+                str(
+                    getattr(
+                        preset_config.pipeline,
+                        f"{stage}_guides_pages",
+                        "",
+                    )
+                    or ""
+                ).strip()
+                or None
                 if preset_config is not None
                 else None
             )
@@ -465,7 +530,7 @@ def create_app(
                     resolved = inherited.expanduser().resolve()
                 except OSError:
                     return
-                instructions_root = run_bundle / "inputs" / "instructions"
+                instructions_root = run_bundle / "instructions"
                 stage_dir = instructions_root / stage
                 if resolved.is_relative_to(stage_dir) and stage_dir.is_dir():
                     shutil.rmtree(stage_dir, ignore_errors=True)
@@ -486,13 +551,16 @@ def create_app(
                         "Instruction PDF page selection requires a PDF source.",
                     )
                 if text:
-                    payload[guide_field] = app.state.inputs.materialize_instruction(
-                        run_id,
-                        stage,
-                        text,
-                        replace=preset_config is not None,
-                        stage2_scope=scope,
-                    )
+                    try:
+                        payload[guide_field] = app.state.inputs.materialize_instruction(
+                            run_id,
+                            stage,
+                            text,
+                            replace=preset_config is not None,
+                            stage2_scope=scope,
+                        )
+                    except ValueError as exc:
+                        raise FormFieldError(file_field, str(exc)) from exc
                 elif preset_config is not None:
                     discard_inherited()
                     payload[guide_field] = None
@@ -517,21 +585,20 @@ def create_app(
                             replace=preset_config is not None,
                         )
                     )
-                except ValueError as exc:
-                    message = str(exc)
+                except InstructionMaterializationError as exc:
                     error_field = (
-                        pages_field
-                        if "page" in message.lower()
-                        else file_field
+                        pages_field if exc.category == "pages" else file_field
                     )
-                    raise FormFieldError(error_field, message) from exc
+                    raise FormFieldError(error_field, str(exc)) from exc
+                except ValueError as exc:
+                    raise FormFieldError(file_field, str(exc)) from exc
                 return
             if (
                 keep_existing
                 and managed_inherited_file()
                 and (
                     not page_was_submitted
-                    or page_spec == (inherited_page_spec or "").strip()
+                    or page_spec == inherited_page_spec
                 )
             ):
                 payload[guide_field] = inherited
@@ -1670,13 +1737,18 @@ def _review_continuation(run: RunRecord) -> tuple[str, str]:
 
 
 def _read_preset_text(path: Path | None) -> str | None:
-    """Read a bounded UTF-8 text field from a validated preset bundle."""
+    """Read and validate one sidecar-free legacy text guide."""
 
-    if path is None or not path.is_file() or path.is_symlink():
+    if (
+        path is None
+        or path.is_symlink()
+        or not path.is_file()
+        or path.suffix.lower() not in {".txt", ".md", ".docx"}
+    ):
         return None
     try:
-        return path.read_text(encoding="utf-8")[:20_000]
-    except (OSError, UnicodeDecodeError):
+        return read_instruction_text(path)
+    except Exception:
         return None
 
 
@@ -1757,8 +1829,6 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
             else "Custom upload"
         ),
     }
-
-
 def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, bool]:
     if not path.is_file() or path.is_symlink():
         return "", False
