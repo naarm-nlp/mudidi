@@ -7,10 +7,12 @@ import re
 import shutil
 from pathlib import Path
 
+from docx import Document
+
 import pytest
 from fastapi.testclient import TestClient
 
-from mudidi.web.app import _preset_asset_links, create_app
+from mudidi.web.app import _preset_asset_links, _read_preset_text, create_app
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
@@ -1145,3 +1147,163 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
     )
     assert cleared_config.pipeline.stage1_guides is None
     assert cleared_config.pipeline.stage2_guides is not None
+
+
+def test_sidecar_free_legacy_docx_preset_restores_extracted_text(
+    tmp_path: Path,
+) -> None:
+    legacy = tmp_path / "legacy-guide.docx"
+    document = Document()
+    document.add_paragraph("Restore this extracted instruction.")
+    document.save(str(legacy))
+
+    assert _read_preset_text(legacy) == "Restore this extracted instruction."
+
+
+@pytest.mark.parametrize(
+    ("data", "files", "expected_field"),
+    [
+        (
+            [
+                ("stage1_instruction_source", "typed"),
+                ("stage1_instruction_source", "file"),
+            ],
+            {},
+            "Stage1 Instruction File",
+        ),
+        (
+            [
+                ("stage1_additional_instructions", "first"),
+                ("stage1_additional_instructions", "second"),
+            ],
+            {},
+            "Stage1 Instruction File",
+        ),
+        (
+            [
+                ("stage1_instruction_source", "file"),
+                ("stage1_instruction_pdf_pages", "1"),
+                ("stage1_instruction_pdf_pages", "2"),
+            ],
+            {
+                "stage1_instruction_file": (
+                    "guide.pdf",
+                    _pdf_bytes(2),
+                    "application/pdf",
+                )
+            },
+            "Stage1 Instruction Pdf Pages",
+        ),
+    ],
+)
+def test_preview_rejects_ambiguous_instruction_scalars(
+    tmp_path: Path,
+    data: list[tuple[str, str]],
+    files: dict[str, tuple[str, bytes, str]],
+    expected_field: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+        ("output_directory", (None, str(tmp_path / "output"))),
+        ("pipeline", (None, "complete")),
+        ("dictionary_pages", (None, "1")),
+        ("provider", (None, "anthropic")),
+        ("model", (None, "anthropic/claude-sonnet-5")),
+        ("reasoning", (None, "low")),
+    ]
+    multipart.extend((field, (None, value)) for field, value in data)
+    multipart.extend(files.items())
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 422
+    assert f"<strong>{expected_field}:</strong>" in response.text
+    assert not app.state.run_store.list_runs()
+
+
+@pytest.mark.parametrize(
+    ("pipeline", "source", "page_spec", "content", "expected_field"),
+    [
+        (
+            "transcription",
+            "file",
+            None,
+            b"forbidden",
+            "Stage2 Instruction File",
+        ),
+        (
+            "complete",
+            "file",
+            None,
+            b"%PDF-",
+            "Stage1 Instruction File",
+        ),
+        (
+            "complete",
+            "file",
+            "3",
+            _pdf_bytes(2),
+            "Stage1 Instruction Pdf Pages",
+        ),
+        (
+            "complete",
+            "file",
+            "1",
+            b"typed guide",
+            "Stage1 Instruction Pdf Pages",
+        ),
+    ],
+)
+def test_preview_instruction_failures_use_safe_error_key(
+    tmp_path: Path,
+    pipeline: str,
+    source: str,
+    page_spec: str | None,
+    content: bytes,
+    expected_field: str,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    data: list[tuple[str, str]] = [
+        ("output_directory", str(tmp_path / "output")),
+        ("pipeline", pipeline),
+        ("dictionary_pages", "1"),
+        ("provider", "anthropic"),
+        ("model", "anthropic/claude-sonnet-5"),
+        ("reasoning", "low"),
+        ("stage1_instruction_source", source),
+        ("stage2_instruction_source", source if pipeline == "transcription" else "typed"),
+    ]
+    if page_spec is not None:
+        data.append(("stage1_instruction_pdf_pages", page_spec))
+    stage = "stage2" if pipeline == "transcription" else "stage1"
+    file_field = f"{stage}_instruction_file"
+    filename = "guide.pdf" if content.startswith(b"%PDF-") else "guide.txt"
+    if stage == "stage2":
+        data = [
+            item
+            for item in data
+            if item[0] != "stage1_instruction_source"
+        ]
+    multipart: list[tuple[str, object]] = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+    ]
+    multipart.extend((field, (None, value)) for field, value in data)
+    multipart.append(
+        (
+            file_field,
+            (
+                filename,
+                content,
+                "application/pdf"
+                if filename.endswith(".pdf")
+                else "text/plain",
+            ),
+        )
+    )
+    response = client.post("/runs/preview", files=multipart)
+
+    assert response.status_code == 422
+    assert f"<strong>{expected_field}:</strong>" in response.text
+    assert not app.state.run_store.list_runs()

@@ -9,6 +9,7 @@ import time
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
+from uuid import uuid4
 
 from starlette.datastructures import UploadFile
 
@@ -21,6 +22,14 @@ _MAX_FILES = 5_000
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 _INSTRUCTION_SUFFIXES = {".txt", ".md", ".pdf"}
 _TEXT_CHARS = 20_000
+
+
+class InstructionMaterializationError(ValueError):
+    """A managed instruction failure with a stable browser error category."""
+
+    def __init__(self, message: str, *, category: Literal["file", "pages"]) -> None:
+        super().__init__(message)
+        self.category = category
 
 
 class InputMaterializer:
@@ -184,47 +193,57 @@ class InputMaterializer:
         suffix = Path(name).suffix.lower()
         if suffix not in _INSTRUCTION_SUFFIXES:
             allowed = ", ".join(sorted(_INSTRUCTION_SUFFIXES))
-            raise ValueError(f"instruction files must use: {allowed}")
+            raise InstructionMaterializationError(
+                f"instruction files must use: {allowed}",
+                category="file",
+            )
         normalized_page_spec = page_spec.strip() if page_spec else None
         if normalized_page_spec == "":
             normalized_page_spec = None
         if suffix != ".pdf" and normalized_page_spec is not None:
-            raise ValueError("instruction PDF page selection requires a PDF source")
+            raise InstructionMaterializationError(
+                "instruction PDF page selection requires a PDF source",
+                category="pages",
+            )
         normalized_scope = _instruction_scope(stage, stage2_scope)
-        destination = self._new_instruction_dir(run_id, stage, replace=replace)
-        temporary = destination / f".{name}.part{suffix}"
+        working = self._new_instruction_dir(run_id, stage, replace=replace)
+        destination = working.parent / stage
+        temporary = working / f".{name}.part{suffix}"
         digest = hashlib.sha256()
         byte_count = 0
         try:
             with temporary.open("wb") as stream:
                 while chunk := await upload.read(1024 * 1024):
-                    self._check_total(run_id, len(chunk))
+                    self._check_total(
+                        run_id,
+                        len(chunk),
+                        exclude=(
+                            (destination, working.parent / f"{stage}.txt")
+                            if replace
+                            else None
+                        ),
+                    )
                     digest.update(chunk)
                     byte_count += len(chunk)
                     stream.write(chunk)
             if byte_count == 0:
-                raise ValueError("instruction upload is empty")
+                raise InstructionMaterializationError(
+                    "instruction upload is empty",
+                    category="file",
+                )
             if suffix in {".txt", ".md"}:
-                # The shared runtime validator owns UTF-8, blank, and
-                # character-count semantics for textual instructions.
-                read_instruction_text(temporary)
+                _read_instruction_text(temporary)
                 pdf_page_count: int | None = None
                 selected_pages: list[int] = []
             else:
-                _validate_pdf_signature(temporary)
-                selected = resolve_instruction_pdf_pages(
+                pdf_page_count, selected_pages = _read_instruction_pdf(
                     temporary,
                     normalized_page_spec,
                 )
-                import pymupdf
-
-                with pymupdf.open(str(temporary)) as document:
-                    pdf_page_count = document.page_count
-                selected_pages = list(selected)
-            target = destination / name
+            target = working / name
             temporary.replace(target)
             self._write_instruction_metadata(
-                destination,
+                working,
                 source_mode="file",
                 original_filename=name,
                 suffix=suffix,
@@ -235,11 +254,18 @@ class InputMaterializer:
                 selected_pages=selected_pages,
                 stage2_scope=normalized_scope,
             )
+            self._commit_instruction_dir(
+                working,
+                destination,
+                replace=replace,
+            )
+            if replace:
+                _remove_path(working.parent / f"{stage}.txt")
         except Exception:
-            shutil.rmtree(destination, ignore_errors=True)
+            shutil.rmtree(working, ignore_errors=True)
             self._remove_empty_bundle(run_id)
             raise
-        return target
+        return destination / name
 
     def _materialize_instruction_bytes(
         self,
@@ -254,42 +280,56 @@ class InputMaterializer:
         replace: bool,
     ) -> Path:
         normalized_scope = _instruction_scope(stage, stage2_scope)
-        destination = self._new_instruction_dir(run_id, stage, replace=replace)
-        target = destination / filename
-        temporary = destination / f".{filename}.part{Path(filename).suffix.lower()}"
+        working = self._new_instruction_dir(run_id, stage, replace=replace)
+        destination = working.parent / stage
+        target = working / filename
+        temporary = working / f".{filename}.part{Path(filename).suffix.lower()}"
         try:
-            self._check_total(run_id, len(content))
+            self._check_total(
+                run_id,
+                len(content),
+                exclude=(
+                    (destination, working.parent / f"{stage}.txt")
+                    if replace
+                    else None
+                ),
+            )
             temporary.write_bytes(content)
-            if Path(filename).suffix.lower() in {".txt", ".md"}:
-                read_instruction_text(temporary)
+            suffix = Path(filename).suffix.lower()
+            if suffix in {".txt", ".md"}:
+                _read_instruction_text(temporary)
                 pdf_page_count: int | None = None
                 selected_pages: list[int] = []
             else:
-                _validate_pdf_signature(temporary)
-                selected = resolve_instruction_pdf_pages(temporary, page_spec)
-                import pymupdf
-
-                with pymupdf.open(str(temporary)) as document:
-                    pdf_page_count = document.page_count
-                selected_pages = list(selected)
+                pdf_page_count, selected_pages = _read_instruction_pdf(
+                    temporary,
+                    page_spec,
+                )
             temporary.replace(target)
             self._write_instruction_metadata(
-                destination,
+                working,
                 source_mode=source_mode,
                 original_filename=filename,
-                suffix=Path(filename).suffix.lower(),
-                kind=_instruction_kind(Path(filename).suffix.lower()),
+                suffix=suffix,
+                kind=_instruction_kind(suffix),
                 byte_count=len(content),
                 sha256=hashlib.sha256(content).hexdigest(),
                 pdf_page_count=pdf_page_count,
                 selected_pages=selected_pages,
                 stage2_scope=normalized_scope,
             )
+            self._commit_instruction_dir(
+                working,
+                destination,
+                replace=replace,
+            )
+            if replace:
+                _remove_path(working.parent / f"{stage}.txt")
         except Exception:
-            shutil.rmtree(destination, ignore_errors=True)
+            shutil.rmtree(working, ignore_errors=True)
             self._remove_empty_bundle(run_id)
             raise
-        return target
+        return destination / filename
 
     def _new_instruction_dir(
         self,
@@ -299,13 +339,59 @@ class InputMaterializer:
         replace: bool,
     ) -> Path:
         _validate_instruction_stage(stage)
-        destination = self.bundle(run_id) / "instructions" / stage
-        if destination.exists():
-            if not replace:
-                raise ValueError(f"{stage} additional instructions already exist")
-            shutil.rmtree(destination)
-        destination.mkdir(parents=True, exist_ok=False)
-        return destination
+        bundle = self.bundle(run_id)
+        run_root = bundle.parent
+        if any(path.is_symlink() for path in (self.runs_root, run_root, bundle)):
+            raise ValueError("managed instruction directory is not safe")
+        if run_root.exists() and not run_root.is_dir():
+            raise ValueError("managed instruction directory is not safe")
+        if bundle.exists() and not bundle.is_dir():
+            raise ValueError("managed instruction directory is not safe")
+        instructions_root = bundle / "instructions"
+        if instructions_root.is_symlink():
+            raise ValueError("managed instruction directory is not safe")
+        instructions_root.mkdir(parents=True, exist_ok=True)
+        if not instructions_root.is_dir():
+            raise ValueError("managed instruction directory is not safe")
+        destination = instructions_root / stage
+        if destination.is_symlink() or (
+            destination.exists() and not destination.is_dir()
+        ):
+            raise ValueError("managed instruction stage is not safe")
+        legacy = instructions_root / f"{stage}.txt"
+        if legacy.is_symlink() or (legacy.exists() and not legacy.is_file()):
+            raise ValueError("managed instruction stage is not safe")
+        if destination.exists() and not replace:
+            raise ValueError(f"{stage} additional instructions already exist")
+        working = instructions_root / f".{stage}.part-{uuid4().hex}"
+        working.mkdir()
+        return working
+
+    def _commit_instruction_dir(
+        self,
+        working: Path,
+        destination: Path,
+        *,
+        replace: bool,
+    ) -> None:
+        backup: Path | None = None
+        try:
+            if destination.exists() or destination.is_symlink():
+                if not replace:
+                    raise ValueError("managed instruction stage already exists")
+                backup = destination.parent / f".{destination.name}.old-{uuid4().hex}"
+                destination.replace(backup)
+            working.replace(destination)
+        except Exception:
+            if backup is not None and (
+                not destination.exists() and not destination.is_symlink()
+            ):
+                backup.replace(destination)
+            raise
+        finally:
+            if backup is not None:
+                _remove_path(backup)
+
 
     def _write_instruction_metadata(
         self,
@@ -475,11 +561,30 @@ class InputMaterializer:
         destination.mkdir(parents=True)
         return destination
 
-    def _check_total(self, run_id: str, incoming: int) -> None:
+    def _check_total(
+        self,
+        run_id: str,
+        incoming: int,
+        *,
+        exclude: Path | tuple[Path, ...] | None = None,
+    ) -> None:
+        excludes = (
+            tuple(item.expanduser().resolve() for item in exclude)
+            if isinstance(exclude, tuple)
+            else (
+                (exclude.expanduser().resolve(),)
+                if exclude is not None
+                else ()
+            )
+        )
         current = sum(
             path.stat().st_size
             for path in self.bundle(run_id).rglob("*")
             if path.is_file()
+            and not any(
+                path.resolve().is_relative_to(item)
+                for item in excludes
+            )
         )
         if current + incoming > self.max_total_bytes:
             raise ValueError("uploaded input is too large")
@@ -508,10 +613,68 @@ def read_managed_instruction_metadata(path: Path | None) -> dict[str, object] | 
     return payload if isinstance(payload, dict) else None
 
 
+def _remove_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink(missing_ok=True)
+    elif path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def _read_instruction_text(path: Path) -> str:
+    try:
+        return read_instruction_text(path)
+    except Exception as exc:
+        raise InstructionMaterializationError(str(exc), category="file") from exc
+
+
+def _read_instruction_pdf(
+    path: Path,
+    page_spec: str | None,
+) -> tuple[int, list[int]]:
+    _validate_pdf_signature(path)
+    try:
+        selected = resolve_instruction_pdf_pages(path, page_spec)
+    except ValueError as exc:
+        try:
+            import pymupdf
+
+            with pymupdf.open(str(path)) as document:
+                page_count = document.page_count
+        except Exception as file_exc:
+            raise InstructionMaterializationError(
+                str(exc),
+                category="file",
+            ) from file_exc
+        if page_count < 1:
+            raise InstructionMaterializationError(
+                str(exc),
+                category="file",
+            ) from exc
+        raise InstructionMaterializationError(
+            str(exc),
+            category="pages",
+        ) from exc
+    try:
+        import pymupdf
+
+        with pymupdf.open(str(path)) as document:
+            page_count = document.page_count
+    except Exception as exc:
+        raise InstructionMaterializationError(
+            "instruction PDF is unreadable",
+            category="file",
+        ) from exc
+    if page_count < 1:
+        raise InstructionMaterializationError(
+            "instruction PDF contains no pages",
+            category="file",
+        )
+    return page_count, list(selected)
+
+
 def _validate_instruction_stage(stage: str) -> None:
     if stage not in {"stage1", "stage2"}:
         raise ValueError("instruction stage must be stage1 or stage2")
-
 
 def _instruction_scope(
     stage: str,
@@ -520,9 +683,18 @@ def _instruction_scope(
     _validate_instruction_stage(stage)
     if stage == "stage1":
         if scope is not None:
-            raise ValueError("Stage 2 scope is only valid for Stage 2 instructions")
+            raise InstructionMaterializationError(
+                "Stage 2 scope is only valid for Stage 2 instructions",
+                category="file",
+            )
         return None
-    return scope or "both"
+    normalized = scope or "both"
+    if not isinstance(normalized, str) or normalized not in {"pass1", "pass2", "both"}:
+        raise InstructionMaterializationError(
+            "Stage 2 instruction scope is invalid",
+            category="file",
+        )
+    return normalized
 
 
 def _instruction_kind(suffix: str) -> Literal["text", "pdf"]:
@@ -534,11 +706,15 @@ def _validate_pdf_signature(path: Path) -> None:
         with path.open("rb") as stream:
             signature = stream.read(5)
     except OSError as exc:
-        raise ValueError("uploaded PDF is unreadable") from exc
+        raise InstructionMaterializationError(
+            "uploaded PDF is unreadable",
+            category="file",
+        ) from exc
     if signature != b"%PDF-":
-        raise ValueError("uploaded PDF signature is invalid")
-
-
+        raise InstructionMaterializationError(
+            "uploaded PDF signature is invalid",
+            category="file",
+        )
 def _stream_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
