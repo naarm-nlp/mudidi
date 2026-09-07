@@ -1597,6 +1597,96 @@ def test_instruction_file_error_from_a_final_step_submission_marks_field_error_f
     stage2_open_tag = text[stage2_tag_start:stage2_tag_end]
     assert "data-field-error" not in stage2_open_tag
 
+def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submission(
+    tmp_path: Path,
+) -> None:
+    # A real browser submits the checked `stage{N}_instruction_kept_choice`
+    # radio (only disabled when Stage instructions are in typed mode), so a
+    # loaded preset's Keep AND Replace submissions must both reach Review
+    # without NewRunForm's `extra="forbid"` rejecting the client-only field.
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "source-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+        },
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage1_instruction_file",
+                ("stage1.pdf", _pdf_bytes(2), "application/pdf"),
+            ),
+        ],
+    )
+    assert response.status_code == 200
+    run_id = response.text.split('action="/runs/', 1)[1].split("/start", 1)[0]
+    saved = client.post(
+        f"/runs/{run_id}/presets",
+        data={"name": "Kept choice regression preset"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    preset = app.state.run_store.list_presets()[0]
+
+    kept = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "kept-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage1_instruction_keep_existing": "true",
+            "stage1_instruction_kept_choice": "keep",
+        },
+    )
+    assert kept.status_code == 200
+    kept_run_id = kept.text.split('action="/runs/', 1)[1].split("/start", 1)[0]
+    kept_config = app.state.job_controller.load_inference_config(kept_run_id)
+    assert kept_config.pipeline.stage1_guides is not None
+    assert kept_config.pipeline.stage1_guides.name == "stage1.pdf"
+
+    replaced = client.post(
+        "/runs/preview",
+        data={
+            "preset_id": preset.preset_id,
+            "output_directory": str(tmp_path / "replaced-output"),
+            "pipeline": "complete",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage1_instruction_kept_choice": "replace",
+        },
+        files=[
+            (
+                "stage1_instruction_file",
+                ("replacement.txt", b"replacement text", "text/plain"),
+            ),
+        ],
+    )
+    assert replaced.status_code == 200
+    replaced_run_id = replaced.text.split('action="/runs/', 1)[1].split("/start", 1)[0]
+    replaced_config = app.state.job_controller.load_inference_config(replaced_run_id)
+    assert replaced_config.pipeline.stage1_guides is not None
+    assert replaced_config.pipeline.stage1_guides.name == "replacement.txt"
+    assert (
+        replaced_config.pipeline.stage1_guides.read_text(encoding="utf-8")
+        == "replacement text"
+    )
+
+
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
