@@ -201,6 +201,25 @@ def test_typed_instruction_accepts_exact_character_limit(tmp_path: Path) -> None
     assert len(path.read_text(encoding="utf-8")) == 20_000
 
 
+def test_typed_instruction_rejects_one_character_over_limit(tmp_path: Path) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+
+    with pytest.raises(ValueError, match="at most 20000"):
+        materializer.materialize_instruction(
+            "run-over-limit",
+            "stage1",
+            "x" * 20_001,
+        )
+
+    assert not (
+        tmp_path
+        / "runs"
+        / "run-over-limit"
+        / "inputs"
+        / "instructions"
+        / "stage1"
+    ).exists()
+
 def test_instruction_replacement_rolls_back_after_validation_failure(
     tmp_path: Path,
 ) -> None:
