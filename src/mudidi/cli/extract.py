@@ -531,12 +531,12 @@ def _alphabet_manifest_entry(alphabet_path: Optional[str]) -> Dict[str, Any]:
 
 
 def _guides_manifest_entry(
-    path: Optional[str], loaded_text: str
+    path: Optional[str | Path], loaded_text: str
 ) -> Dict[str, Any]:
     """Describe an inline guides file (stage-1 or stage-2 guides)."""
     if not path:
         return {"used": False, "path": None, "text": None}
-    return {"used": True, "path": path, "text": loaded_text or ""}
+    return {"used": True, "path": str(path), "text": loaded_text or ""}
 
 
 def _per_page_inputs_stage1(
