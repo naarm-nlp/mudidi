@@ -528,7 +528,7 @@ def test_credentials_required_page_has_one_provider_recovery_card(
     assert f'data-continue-action="/runs/{run_id}/start"' in response.text
     assert f'href="/runs/{run_id}/review"' in response.text
     assert "Save and continue" in response.text
-    assert "/static/app.js?v=dashboard-ui-7" in response.text
+    assert "/static/app.js?v=dashboard-ui-8" in response.text
     assert "api_key" not in response.text
 
 

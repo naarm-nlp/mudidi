@@ -703,6 +703,36 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
     assert "white-space: nowrap" in resource_link.group("body")
 
 
+def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    panel = re.search(r"\.instruction-source-panel\s*\{(?P<body>[^}]*)\}", css)
+    legend = re.search(r"\.instruction-source-panel\s*>\s*legend\s*\{(?P<body>[^}]*)\}", css)
+    warning = re.search(r"\.instruction-pdf-warning\s*\{(?P<body>[^}]*)\}", css)
+    scope_group = re.search(r"\.instruction-scope-group\s*\{(?P<body>[^}]*)\}", css)
+
+    assert panel is not None
+    assert "border: var(--border-width) solid var(--color-line)" in panel.group("body")
+    assert legend is not None
+    assert "text-transform: uppercase" in legend.group("body")
+    assert warning is not None
+    assert "background: var(--color-warning-soft)" in warning.group("body")
+    assert "overflow-wrap: anywhere" in warning.group("body")
+    assert scope_group is not None
+
+    upload_trigger = re.search(
+        r"\.form-grid\s+\.mdf-guide-upload-trigger\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    assert upload_trigger is not None
+
+    home = TestClient(create_app(data_dir=tmp_path)).get("/").text
+    assert home.count('class="primary mdf-guide-upload-trigger instruction-upload-trigger"') == 2
+    assert home.count('class="mdf-guide-file-input" data-instruction-file-input') == 2
+
+
 def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
@@ -874,7 +904,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-7" in layout
+    assert "app.css') }}?v=dashboard-ui-8" in layout
 
 
 
@@ -889,7 +919,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-7"}
+    assert versions == {"dashboard-ui-8"}
 
 
 def _relative_luminance(hex_color: str) -> float:
