@@ -668,6 +668,27 @@ def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
     assert "margin: 2px 0 0" in radio_alignment.group("body")
 
 
+def test_hovered_choice_card_stacks_its_tooltip_above_later_cards(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    hovered_card = re.search(
+        r"\.choice-card:has\(\.info-button\.is-tooltip-hovered\)\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    tooltip = re.search(
+        r"\.info-button::after\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert hovered_card is not None
+    assert "z-index: 2" in hovered_card.group("body")
+    assert tooltip is not None
+    assert "box-sizing: border-box" in tooltip.group("body")
+
+
 def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
@@ -769,7 +790,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-3" in layout
+    assert "app.css') }}?v=dashboard-ui-4" in layout
 
 
 

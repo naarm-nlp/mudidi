@@ -108,6 +108,7 @@ h1, h2, h3 { text-transform: uppercase; font-weight: 900; letter-spacing: -.02em
 .choice-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 8px; margin: 0; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
 .choice-card > span { display: grid; gap: 4px; min-width: 0; }
 .choice-card:focus-within, .choice-card:has(input:checked) { background: var(--color-accent-soft); }
+.choice-card:has(.info-button.is-tooltip-hovered) { z-index: 2; }
 .task-card > input[type="radio"],
 .choice-card > input[type="radio"] { margin: 2px 0 0; }
 
@@ -234,7 +235,7 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 #wizard-model > .form-grid { margin-top: 16px; }
 .info-button { position: relative; isolation: isolate; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 0; color: var(--color-on-accent); background: transparent; font-size: 12px; font-weight: 900; cursor: help; }
 .info-button::before { content: ""; position: absolute; z-index: -1; inset: 7px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent); }
-.info-button::after { content: attr(data-help); position: absolute; z-index: 3; right: 0; top: 36px; width: min(330px, 70vw); padding: 10px 12px; border: var(--border-width) solid var(--color-line); color: var(--color-bg); background: var(--color-ink); box-shadow: var(--shadow-sm); font-weight: 500; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
+.info-button::after { box-sizing: border-box; content: attr(data-help); position: absolute; z-index: 3; right: 0; top: 36px; width: min(330px, 70vw); padding: 10px 12px; border: var(--border-width) solid var(--color-line); color: var(--color-bg); background: var(--color-ink); box-shadow: var(--shadow-sm); font-weight: 500; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
 .info-button.is-tooltip-hovered::after { opacity: 1; transform: translateY(0); }
 .mdf-manual-help::after { width: min(440px, 80vw); }
 .profile-layout-question,
