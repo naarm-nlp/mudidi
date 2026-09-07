@@ -316,6 +316,17 @@ if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
   });
 }
 
+const mdfGuideFileInput = document.querySelector("[data-mdf-guide-file-input]");
+const mdfGuideFileStatus = document.querySelector("[data-mdf-guide-file-status]");
+if (mdfGuideFileInput && mdfGuideFileStatus) {
+  mdfGuideFileInput.addEventListener("change", () => {
+    const file = mdfGuideFileInput.files[0];
+    mdfGuideFileStatus.textContent = file
+      ? `Selected: ${file.name}`
+      : mdfGuideFileStatus.dataset.emptyLabel;
+  });
+}
+
 const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
 const otherInformationField = document.querySelector("#profile-other-information");
 if (otherInformationToggle && otherInformationField) {
