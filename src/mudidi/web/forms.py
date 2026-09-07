@@ -48,23 +48,6 @@ _PIPELINE_STAGE = {
 }
 
 
-def additional_instructions_summary(
-    stage1_source: Path | str | None,
-    stage2_source: Path | str | None,
-    *,
-    runs_stage1: bool,
-    runs_stage2: bool,
-) -> str:
-    """Summarize only the instruction files applied by enabled stages."""
-
-    return ", ".join(
-        label
-        for enabled, source, label in (
-            (runs_stage1, stage1_source, "Stage 1"),
-            (runs_stage2, stage2_source, "Stage 2"),
-        )
-        if enabled and source is not None
-) or "None"
 
 
 def instruction_review_summary(

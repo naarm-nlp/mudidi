@@ -891,6 +891,100 @@ def test_interrupted_stage1_run_can_resume_from_run_detail(tmp_path: Path) -> No
     )
 
 
+def test_preview_materializes_stage1_selected_pdf_instruction(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "transcription",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage1_instruction_source": "file",
+            "stage1_instruction_pdf_pages": "2-3",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf"),
+            "stage1_instruction_file": (
+                "stage1-reference.pdf",
+                _pdf_bytes(3),
+                "application/pdf",
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    run_match = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_match is not None
+    run_id = run_match.group(1)
+    config = app.state.job_controller.load_inference_config(run_id)
+    assert config.pipeline.stage1_guides is not None
+    assert config.pipeline.stage1_guides.parent.name == "stage1"
+    assert config.pipeline.stage1_guides_pages == "2-3"
+    metadata = json.loads(
+        (config.pipeline.stage1_guides.parent / "metadata.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert metadata["source_mode"] == "file"
+    assert metadata["kind"] == "pdf"
+    assert metadata["pdf_page_count"] == 3
+    assert metadata["selected_pages"] == [2, 3]
+
+
+def test_preview_materializes_stage2_markdown_for_pass1_only(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    guide_text = "# Parse-guide discovery\\nKeep field roles explicit."
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "structure",
+            "dictionary_pages": "1",
+            "provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "stage2_instruction_source": "file",
+            "stage2_instruction_scope": "pass1",
+        },
+        files={
+            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf"),
+            "stage2_instruction_file": (
+                "stage2-guide.md",
+                guide_text.encode(),
+                "text/markdown",
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    run_match = re.search(r'action="/runs/([^/]+)/start"', response.text)
+    assert run_match is not None
+    run_id = run_match.group(1)
+    config = app.state.job_controller.load_inference_config(run_id)
+    assert config.pipeline.stage2_guides is not None
+    assert config.pipeline.stage2_guides.parent.name == "stage2"
+    assert config.pipeline.stage2_guides.read_text(encoding="utf-8") == guide_text
+    assert config.pipeline.stage2_guides_scope == "pass1"
+    metadata = json.loads(
+        (config.pipeline.stage2_guides.parent / "metadata.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert metadata["source_mode"] == "file"
+    assert metadata["kind"] == "text"
+    assert metadata["selected_pages"] == []
+    assert metadata["stage2_scope"] == "pass1"
+
+
 def test_preview_materializes_instruction_uploads_and_review_metadata(
     tmp_path: Path,
 ) -> None:

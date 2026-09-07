@@ -69,7 +69,10 @@ pipeline:  # PipelineConfig; optional
   parse_rules_gold: false  # boolean; default: false
   stage2_lexical_repair: false  # boolean; default: false
   stage1_guides: null  # path | null; default: null
+  stage1_guides_pages: null  # string | null; default: null
   stage2_guides: null  # path | null; default: null
+  stage2_guides_pages: null  # string | null; default: null
+  stage2_guides_scope: "both"  # one of "pass1", "pass2", "both"; default: "both"
 models:  # ModelsConfig; optional
   default: "gemini/gemini-3-flash-preview"  # string; default: "gemini/gemini-3-flash-preview"
   stage1: null  # string | null; default: null
@@ -179,7 +182,10 @@ pipeline:  # PipelineConfig; optional
   parse_rules_gold: false  # boolean; default: false
   stage2_lexical_repair: false  # boolean; default: false
   stage1_guides: null  # path | null; default: null
+  stage1_guides_pages: null  # string | null; default: null
   stage2_guides: null  # path | null; default: null
+  stage2_guides_pages: null  # string | null; default: null
+  stage2_guides_scope: "both"  # one of "pass1", "pass2", "both"; default: "both"
 models:  # ModelsConfig; optional
   default: "gemini/gemini-3-flash-preview"  # string; default: "gemini/gemini-3-flash-preview"
   stage1: null  # string | null; default: null
@@ -293,7 +299,10 @@ base:  # BenchmarkRunConfig; required
     parse_rules_gold: false  # boolean; default: false
     stage2_lexical_repair: false  # boolean; default: false
     stage1_guides: null  # path | null; default: null
+    stage1_guides_pages: null  # string | null; default: null
     stage2_guides: null  # path | null; default: null
+    stage2_guides_pages: null  # string | null; default: null
+    stage2_guides_scope: "both"  # one of "pass1", "pass2", "both"; default: "both"
   models:  # ModelsConfig; optional
     default: "gemini/gemini-3-flash-preview"  # string; default: "gemini/gemini-3-flash-preview"
     stage1: null  # string | null; default: null

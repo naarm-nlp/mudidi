@@ -1,8 +1,9 @@
 # Stage Instruction Attachments Design
 
 **Date:** 2026-09-07  
-**Status:** Awaiting written-spec review
+**Status:** Implemented
 **Branch:** `features/brutalist-dashboard-reskin`
+**Implementation commits:** Tasks 1–4 are implemented through commit `e0d3f5c` (inclusive).
 
 ## Decision summary
 
