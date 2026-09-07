@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 import inspect
+import pymupdf
 
 from mudidi.extraction.llm_two_stage import TwoStageLLMExtraction
 from mudidi.schemas.ocr_result import OCRPageResult
@@ -104,49 +105,12 @@ def test_pass1_single_and_multi_include_shared_context_before_samples(
         parts = messages[1]["content"]
         assert "Keep reference only." in parts[0]["text"]
         assert parts[-1]["type"] == "image_url"
-def test_stage1_target_label_is_immediately_before_final_image(
-    tmp_path: Path, monkeypatch
-) -> None:
-    image = tmp_path / "page.png"
-    image.write_bytes(
-        bytes.fromhex(
-            "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
-            "0000000d49444154789c6360f8cfc000000301010018dd8db40000000049454e44ae426082"
-        )
-    )
-    context = SimpleNamespace(
-        text="guide",
-        metadata=SimpleNamespace(original_filename="guide.pdf"),
-        content_parts=lambda model, stage_label: [
-            {"type": "text", "text": "REFERENCE PDF"},
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,ref"}},
-        ],
-    )
-    strategy = TwoStageLLMExtraction(stage1_mode="flat", stage1_instruction_context=context)
-    captured = {}
-
-    def fake_complete_structured(**kwargs):
-        captured.update(kwargs)
-        return SimpleNamespace(header=[], lines=[], footer=[]), "{}", {}
-
-    monkeypatch.setattr(
-        "mudidi.extraction.llm_two_stage.llm.complete_structured",
-        fake_complete_structured,
-    )
-    strategy._stage1_transcribe(
-        OCRPageResult(source_image=str(image), backend="test", raw_text=""),
-        str(image),
-        page_context=None,
-    )
-    content = captured["messages"][1]["content"]
-    assert content[-1]["type"] == "image_url"
-    assert "TRANSCRIPTION TARGET" in content[-2]["text"]
-
-
-def test_stage1_agentic_evaluator_and_rewriter_use_selected_context(
+def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
     tmp_path: Path, monkeypatch
 ) -> None:
     from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+    from mudidi.instructions import prepare_instruction_context
+    import mudidi.instructions as instructions
 
     image = tmp_path / "page.png"
     image.write_bytes(
@@ -155,73 +119,131 @@ def test_stage1_agentic_evaluator_and_rewriter_use_selected_context(
             "0000000d49444154789c6360f8cfc000000301010018dd8db40000000049454e44ae426082"
         )
     )
-    content_calls = []
+    guide = tmp_path / "guide.pdf"
+    document = pymupdf.open()
+    document.new_page().insert_text((72, 72), "Reference page one")
+    document.new_page().insert_text((72, 72), "Reference page two")
+    document.save(str(guide))
+    document.close()
 
-    def content_parts(model, stage_label):
-        content_calls.append((model, stage_label))
-        return [
-            {"type": "text", "text": f"{stage_label} PDF reference"},
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,ref"}},
-        ]
+    original_file_content_part = instructions.file_content_part
+    original_image_data_url = instructions.image_data_url
+    original_render_pdf_pages = instructions.render_pdf_pages
+    file_calls = []
+    image_calls = []
+    render_calls = []
 
-    context = SimpleNamespace(
-        text="selected guide",
-        metadata=SimpleNamespace(original_filename="selected.pdf"),
-        content_parts=content_parts,
+    def spy_file_content_part(*args, **kwargs):
+        file_calls.append((args, kwargs))
+        return original_file_content_part(*args, **kwargs)
+
+    def spy_image_data_url(*args, **kwargs):
+        image_calls.append((args, kwargs))
+        return original_image_data_url(*args, **kwargs)
+
+    def spy_render_pdf_pages(*args, **kwargs):
+        render_calls.append((args, kwargs))
+        return original_render_pdf_pages(*args, **kwargs)
+
+    monkeypatch.setattr(instructions, "file_content_part", spy_file_content_part)
+    monkeypatch.setattr(instructions, "image_data_url", spy_image_data_url)
+    monkeypatch.setattr(instructions, "render_pdf_pages", spy_render_pdf_pages)
+    context = prepare_instruction_context(
+        guide,
+        page_spec="1-2",
+        cache_dir=tmp_path / "cache",
+        models=("gemini/gemini-2.5-flash", "unknown/model"),
     )
+    assert context.metadata.selected_pages == (1, 2)
+    assert context.pdf_data_url is not None
+    assert len(context.raster_data_urls) == 2
+    preparation_counts = (len(file_calls), len(image_calls), len(render_calls))
+    assert preparation_counts == (1, 2, 1)
+
     strategy = TwoStageLLMExtraction(
+        transcribe_model="gemini/gemini-2.5-flash",
         stage1_mode="flat",
         stage1_instruction_context=context,
-        agentic_evaluator_model="provider/evaluator",
-        agentic_rewriter_model="provider/rewriter",
+        agentic_evaluator_model="unknown/model",
+        agentic_rewriter_model="unknown/model",
+        prompt_mode="inference",
     )
     structured_calls = []
+
     def fake_structured(**kwargs):
         structured_calls.append(kwargs)
         if kwargs["response_schema"].__name__ == "AgenticVerifierDecision":
-            result = AgenticVerifierDecision(decision="retry", confidence=1.0)
+            result = AgenticVerifierDecision(decision="accept", confidence=1.0)
         else:
-            result = SimpleNamespace(header=[], lines=[], footer=[])
+            result = SimpleNamespace(header=[], lines=["rewritten"], footer=[])
         return result, "{}", {}
 
-
     monkeypatch.setattr(
-        "mudidi.extraction.llm_two_stage.llm.complete_structured", fake_structured
+        "mudidi.extraction.llm_two_stage.llm.complete_structured",
+        fake_structured,
     )
     ocr = OCRPageResult(source_image=str(image), backend="test", raw_text="ocr")
+    transcribed, _raw, _usage, _messages = strategy._stage1_transcribe(
+        ocr, str(image), page_context=None
+    )
     strategy._verify_stage1_output(
-        "output",
+        transcribed,
         image_path=str(image),
         ocr_result=ocr,
         page_context=None,
-        attempt=1,
+        attempt=0,
     )
     strategy._rewrite_stage1_output(
-        "output",
+        transcribed,
         decision=AgenticVerifierDecision(decision="retry", confidence=1.0),
         image_path=str(image),
         ocr_result=ocr,
         page_context=None,
         attempt=1,
     )
-    assert structured_calls[0]["model"] == "provider/evaluator"
-    assert structured_calls[1]["model"] == "provider/rewriter"
-    assert content_calls == [
-        ("provider/evaluator", "Stage 1 evaluator"),
-        ("provider/rewriter", "Stage 1 rewriter"),
+
+    assert [call["model"] for call in structured_calls] == [
+        "gemini/gemini-2.5-flash",
+        "unknown/model",
+        "unknown/model",
     ]
-    for call in structured_calls:
+    assert (len(file_calls), len(image_calls), len(render_calls)) == preparation_counts
+    assert len(structured_calls) == 3
+
+    for call, stage_label in zip(
+        structured_calls,
+        ("Stage 1", "Stage 1 evaluator", "Stage 1 rewriter"),
+    ):
         content = call["messages"][1]["content"]
-        assert any(
-            "selected guide" in part["text"]
+        reference_text = [
+            part["text"]
             for part in content
-            if part["type"] == "text"
-        )
+            if part["type"] == "text" and "reference instructions" in part["text"]
+        ]
+        assert len(reference_text) == 1
+        assert reference_text[0].startswith(stage_label)
         assert content[-2]["type"] == "text"
         assert "TRANSCRIPTION TARGET" in content[-2]["text"]
         assert content[-1]["type"] == "image_url"
-        assert any(part["type"] == "image_url" and part["image_url"]["url"].endswith("ref") for part in content)
 
+    direct_content = structured_calls[0]["messages"][1]["content"]
+    file_parts = [part for part in direct_content if part["type"] == "file"]
+    assert len(file_parts) == 1
+    assert file_parts[0]["file"]["file_data"] == context.pdf_data_url
+
+    raster_payloads = []
+    for call in structured_calls[1:]:
+        content = call["messages"][1]["content"]
+        assert not any(part["type"] == "file" for part in content)
+        raster_payloads.append(
+            [
+                part["image_url"]["url"]
+                for part in content
+                if part["type"] == "image_url"
+                and part["image_url"]["url"] in context.raster_data_urls
+            ]
+        )
+    assert raster_payloads == [list(context.raster_data_urls)] * 2
 
 def test_stage2_agentic_scope_routes_context_for_evaluator_and_rewriter(
     monkeypatch,

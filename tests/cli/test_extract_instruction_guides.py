@@ -4,8 +4,10 @@ import argparse
 import json
 from pathlib import Path
 from types import SimpleNamespace
+import pymupdf
 
 import pytest
+import mudidi.instructions as instruction_module
 from mudidi.cli import extract
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import register_run_arguments
@@ -161,39 +163,113 @@ def test_manifest_declares_dictionary_profile_variable() -> None:
         item["name"] for item in manifest["stage_1_user_inference"]["variables"]
     }
     assert "dictionary_profile" in variables
-def test_context_preparation_is_once_before_multiple_page_calls(
+def test_real_single_entry_prepares_guides_once_before_two_page_workers(
     tmp_path: Path, monkeypatch
 ) -> None:
-    calls = []
-
-    def prepare(path, *, page_spec, cache_dir, models):
-        calls.append((path, page_spec, cache_dir, tuple(models)))
-        return SimpleNamespace(
-            text="prepared",
-            metadata=SimpleNamespace(original_filename="guide.txt"),
-            content_parts=lambda model, stage_label: [
-                {"type": "text", "text": "prepared"}
-            ],
-        )
-
-    monkeypatch.setattr("mudidi.cli.extract.prepare_instruction_context", prepare)
-    args = SimpleNamespace(
-        strategy="two_stage",
-        stage1_guides_path=tmp_path / "stage1.txt",
-        stage2_guides_path=tmp_path / "stage2.txt",
-        stage1_guides_pages=None,
-        stage2_guides_pages=None,
-        stage_models=SimpleNamespace(
-            stage_1="provider/generation",
-            stage_2_pass_1="provider/pass1",
-            stage_2_pass_2="provider/pass2",
-        ),
-        agentic_evaluator_model="provider/evaluator",
-        agentic_rewriter_model="provider/rewriter",
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489"
+        "0000000d49444154789c6360f8cfc000000301010018dd8db40000000049454e44ae426082"
     )
-    extract._prepare_instruction_contexts(args, tmp_path / "output", argparse.ArgumentParser())
-    for _ in range(3):
-        args.stage1_instruction_context.content_parts(
-            "provider/generation", stage_label="Stage 1"
-        )
-    assert len(calls) == 2
+    (pages / "page_1.png").write_bytes(png)
+    (pages / "page_2.png").write_bytes(png)
+    guide = tmp_path / "guide.pdf"
+    document = pymupdf.open()
+    document.new_page()
+    document.new_page()
+    document.save(str(guide))
+    document.close()
+
+    original_prepare = extract.prepare_instruction_context
+    prepared_contexts = []
+    prepare_calls = []
+
+    def spy_prepare(*args, **kwargs):
+        prepare_calls.append((args, kwargs))
+        context = original_prepare(*args, **kwargs)
+        prepared_contexts.append(context)
+        return context
+    original_file_content_part = instruction_module.file_content_part
+    original_image_data_url = instruction_module.image_data_url
+    original_render_pdf_pages = instruction_module.render_pdf_pages
+    file_calls = []
+    image_calls = []
+    render_calls = []
+
+    def spy_file_content_part(*args, **kwargs):
+        file_calls.append((args, kwargs))
+        return original_file_content_part(*args, **kwargs)
+
+    def spy_image_data_url(*args, **kwargs):
+        image_calls.append((args, kwargs))
+        return original_image_data_url(*args, **kwargs)
+
+    def spy_render_pdf_pages(*args, **kwargs):
+        render_calls.append((args, kwargs))
+        return original_render_pdf_pages(*args, **kwargs)
+
+    completion_calls = []
+
+    def fake_complete_structured(*args, **kwargs):
+        completion_calls.append((args, kwargs))
+        return SimpleNamespace(header=[], lines=["line"], footer=[]), "{}", {}
+
+    monkeypatch.setattr(extract, "prepare_instruction_context", spy_prepare)
+    monkeypatch.setattr(instruction_module, "file_content_part", spy_file_content_part)
+    monkeypatch.setattr(instruction_module, "image_data_url", spy_image_data_url)
+    monkeypatch.setattr(instruction_module, "render_pdf_pages", spy_render_pdf_pages)
+    monkeypatch.setattr(
+        "mudidi.extraction.llm_two_stage.llm.complete_structured",
+        fake_complete_structured,
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "mudidi-extract",
+            "--input-image",
+            str(pages),
+            "--output",
+            str(tmp_path / "output"),
+            "--strategy",
+            "two_stage",
+            "--stage",
+            "1",
+            "--stage1-mode",
+            "flat",
+            "--model",
+            "gemini/gemini-2.5-flash",
+            "--agentic-evaluator-model",
+            "gemini/gemini-2.5-flash",
+            "--agentic-rewriter-model",
+            "unknown/model",
+            "--stage-1-guides",
+            str(guide),
+            "--stage-1-guides-pages",
+            "1-2",
+            "--no-alphabet",
+            "--no-ocr-hint",
+            "--no-intro",
+        ],
+    )
+    assert extract.main() == 0
+    assert len(completion_calls) == 2
+    assert len(prepare_calls) == 2
+    pdf_calls = [call for call in prepare_calls if call[0][0] == guide.resolve()]
+    assert len(pdf_calls) == 1
+    context = next(
+        context
+        for context in prepared_contexts
+        if context.metadata.source_path == guide.resolve()
+    )
+    assert context.raster_data_urls
+    assert context.pdf_data_url is not None
+    assert len(file_calls) == 1
+    assert len(render_calls) == 1
+    assert len(image_calls) == 2
+    first_parts = completion_calls[0][1]["messages"][-1]["content"]
+    second_parts = completion_calls[1][1]["messages"][-1]["content"]
+    first_file = next(part["file"]["file_data"] for part in first_parts if "file" in part)
+    second_file = next(part["file"]["file_data"] for part in second_parts if "file" in part)
+    assert first_file == second_file == context.pdf_data_url
