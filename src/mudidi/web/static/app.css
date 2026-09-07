@@ -331,6 +331,12 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .instruction-pdf-pages { margin-top: 14px; }
 .instruction-pdf-warning { margin: 10px 0 0; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-size: 12px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .instruction-scope-group { margin: 14px 0 0; }
+.instruction-kept-file { margin: 0 0 14px; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.instruction-kept-meta { display: grid; gap: 6px; margin: 10px 0; padding: 0; }
+.instruction-kept-meta div { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 10px; font-size: 12px; }
+.instruction-kept-meta dt { margin: 0; color: var(--color-muted); font-weight: 700; }
+.instruction-kept-meta dd { margin: 0; overflow-wrap: anywhere; }
+.instruction-kept-choices { margin-top: 10px; }
 .error-card { border-top: 10px solid var(--color-danger); }
 .validation-errors { margin: 18px 0; padding: 0; list-style: none; }
 .validation-errors li { display: grid; grid-template-columns: minmax(120px, .35fr) minmax(0, 1fr); gap: 12px; padding: 11px 0; border-bottom: var(--divider-width) solid var(--color-line); }
