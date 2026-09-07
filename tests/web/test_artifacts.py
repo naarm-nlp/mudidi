@@ -182,6 +182,96 @@ def test_run_usage_summary_derives_page_totals_without_run_token_total(
     assert [row.total_tokens for row in usage.breakdown] == [4, 3, 5]
 
 
+def test_run_usage_summary_includes_earlier_stage_page_usage(tmp_path: Path) -> None:
+    app, _client, run_id, output = _prepared_app(tmp_path)
+    stage1_usage = output / "stage-1/page_1/page_1_usage.json"
+    stage1_usage.write_text(
+        json.dumps({"stage1": {"total_tokens": 40, "cost_usd": 0.004}}),
+        encoding="utf-8",
+    )
+    (output / "run_usage.json").write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "page": "page_1",
+                        "stage1": None,
+                        "stage2": {"total_tokens": 50, "cost_usd": 0.005},
+                    }
+                ],
+                "field_discovery": {
+                    "total_tokens": 30,
+                    "cost_usd": 0.003,
+                },
+                "run_total_cost_usd": 0.008,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 120
+    assert usage.total_cost_usd == 0.012
+    assert [row.total_tokens for row in usage.breakdown] == [40, 30, 50]
+
+
+def test_complete_run_summary_ignores_irrelevant_malformed_page_usage(
+    tmp_path: Path,
+) -> None:
+    app, _client, run_id, output = _prepared_app(tmp_path)
+    (output / "run_usage.json").write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "page": "page_1",
+                        "stage1": {"total_tokens": 40, "cost_usd": 0.004},
+                    }
+                ],
+                "run_total_tokens": 40,
+                "run_total_cost_usd": 0.004,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (output / "stage-2/page_1/page_1_usage.json").write_text(
+        "{truncated",
+        encoding="utf-8",
+    )
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 40
+    assert usage.total_cost_usd == 0.004
+    assert usage.files_scanned == 1
+
+
+def test_usage_summary_preserves_direct_page_totals(tmp_path: Path) -> None:
+    app, _client, run_id, output = _prepared_app(tmp_path)
+    (output / "stage-2/page_1/page_1_usage.json").write_text(
+        json.dumps({"total_tokens": 12, "total_cost_usd": 0.004}),
+        encoding="utf-8",
+    )
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 12
+    assert usage.total_cost_usd == 0.004
+    assert usage.files_scanned == 1
+
+
+def test_usage_stage_classification_is_relative_to_output_root(
+    tmp_path: Path,
+) -> None:
+    app, _client, run_id, _output = _prepared_app(tmp_path / "stage-1")
+
+    usage = ArtifactService(controller=app.state.job_controller).usage_summary(run_id)
+
+    assert usage.total_tokens == 120
+    assert [row.total_tokens for row in usage.breakdown] == [40, 30, 50]
+
+
 def test_output_pages_usage_and_download_routes(tmp_path: Path) -> None:
     _app, client, run_id, _output = _prepared_app(tmp_path)
 

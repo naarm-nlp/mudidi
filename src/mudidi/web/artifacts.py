@@ -10,6 +10,11 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 from mudidi.paths import MDF_PARSING_GUIDE_USAGE_FILENAME
+from mudidi.config.run_config import (
+    runs_stage1,
+    runs_stage2_pass1,
+    runs_stage2_pass2,
+)
 from mudidi.web.jobs import JobController
 
 _TEXT_SUFFIXES = {".txt", ".tsv", ".mdf", ".json", ".jsonl", ".log"}
@@ -246,58 +251,82 @@ class ArtifactService:
     def usage_summary(self, run_id: str) -> UsageSummary:
         """Aggregate page usage JSON without double-counting run summaries."""
 
-        root = self.output_root(run_id)
+        config = self.controller.load_inference_config(run_id)
+        root = config.output.directory.resolve()
         run_summary = root / "run_usage.json"
         if run_summary.is_file() and not run_summary.is_symlink():
             payload = _read_json_object(run_summary)
             page_payloads = _run_page_payloads(payload)
-            run_tokens = _optional_int(payload.get("run_total_tokens"))
-            total_tokens = (
-                run_tokens
-                if run_tokens is not None
-                else sum(_page_total_tokens(page) for page in page_payloads)
-            )
-            run_cost = _optional_float(payload.get("run_total_cost_usd"))
-            if run_cost is None:
-                page_costs = [
-                    _page_total_cost(page)
-                    for page in page_payloads
-                ]
-                run_cost = _sum_optional(page_costs)
+            summary_keys = {
+                key
+                for key in _USAGE_PAYLOAD_KEYS
+                if any(isinstance(page.get(key), dict) for page in page_payloads)
+            }
+            expected_keys: set[str] = set()
+            if runs_stage1(config.pipeline.stage):
+                expected_keys.add("stage1")
+                if config.agentic.stage1:
+                    expected_keys.add("stage1_agentic")
+            if runs_stage2_pass1(config.pipeline.stage):
+                expected_keys.add("field_discovery")
+            if runs_stage2_pass2(config.pipeline.stage):
+                expected_keys.add("stage2")
+                if config.agentic.stage2:
+                    expected_keys.add("stage2_agentic")
+            missing_keys = expected_keys - summary_keys
+            supplemental_payloads = []
+            for page_usage in _canonical_page_usage_payloads(
+                root,
+                keys=missing_keys,
+            ):
+                supplemental = {
+                    key: value
+                    for key, value in page_usage.items()
+                    if key in missing_keys and isinstance(value, dict)
+                }
+                if supplemental:
+                    supplemental_payloads.append(supplemental)
+
+            if supplemental_payloads:
+                page_payloads.extend(supplemental_payloads)
+                total_tokens = sum(
+                    _page_total_tokens(page) for page in page_payloads
+                )
+                run_cost = _sum_optional(
+                    [_page_total_cost(page) for page in page_payloads]
+                )
+            else:
+                run_tokens = _optional_int(payload.get("run_total_tokens"))
+                total_tokens = (
+                    run_tokens
+                    if run_tokens is not None
+                    else sum(_page_total_tokens(page) for page in page_payloads)
+                )
+                run_cost = _optional_float(payload.get("run_total_cost_usd"))
+                if run_cost is None:
+                    run_cost = _sum_optional(
+                        [_page_total_cost(page) for page in page_payloads]
+                    )
             return UsageSummary(
                 total_tokens=total_tokens,
                 total_cost_usd=(
                     round(run_cost, 8) if run_cost is not None else None
                 ),
-                files_scanned=1,
+                files_scanned=1 + len(supplemental_payloads),
                 breakdown=_breakdown_from_payloads(page_payloads),
             )
 
-        total_tokens = 0
-        costs: list[float | None] = []
-        payloads: list[dict[str, object]] = []
-        files_scanned = 0
-        if root.is_dir():
-            for path in sorted(root.rglob("*_usage.json")):
-                if path.is_symlink() or path.name in {
-                    MDF_PARSING_GUIDE_USAGE_FILENAME,
-                    "run_usage.json",
-                }:
-                    continue
-                if path.name != f"{path.parent.name}_usage.json":
-                    continue
-                payload = _read_json_object(path)
-                payloads.append(payload)
-                total_tokens += _page_total_tokens(payload)
-                costs.append(_page_total_cost(payload))
-                files_scanned += 1
-        total_cost = _sum_optional(costs)
+        payloads = _canonical_page_usage_payloads(root)
+        total_tokens = sum(_page_total_tokens(payload) for payload in payloads)
+        total_cost = _sum_optional(
+            [_page_total_cost(payload) for payload in payloads]
+        )
         return UsageSummary(
             total_tokens=total_tokens,
             total_cost_usd=(
                 round(total_cost, 8) if total_cost is not None else None
             ),
-            files_scanned=files_scanned,
+            files_scanned=len(payloads),
             breakdown=_breakdown_from_payloads(payloads),
         )
 
@@ -313,6 +342,70 @@ _AGENTIC_STAGE_OWNERS = {
 }
 _GENERIC_AGENTIC_KEY = "agentic"
 _GENERIC_AGENTIC_LABEL = "Agentic"
+_USAGE_PAYLOAD_KEYS = (
+    *(key for key, _label in _USAGE_STAGE_SPECS),
+    *_AGENTIC_STAGE_OWNERS,
+    _GENERIC_AGENTIC_KEY,
+)
+
+
+def _canonical_page_usage_payloads(
+    root: Path,
+    *,
+    keys: set[str] | None = None,
+) -> list[dict[str, object]]:
+    if not root.is_dir():
+        return []
+
+    page_payloads: dict[str, dict[str, object]] = {}
+    direct_payloads: dict[str, dict[str, object]] = {}
+    for path in sorted(root.rglob("*_usage.json")):
+        if path.is_symlink() or path.name in {
+            MDF_PARSING_GUIDE_USAGE_FILENAME,
+            "run_usage.json",
+        }:
+            continue
+        if path.name != f"{path.parent.name}_usage.json":
+            continue
+        path_keys = _usage_keys_for_path(path.relative_to(root))
+        selected_keys = set(_USAGE_PAYLOAD_KEYS) if keys is None else path_keys & keys
+        if not selected_keys:
+            continue
+        source = _read_json_object(path)
+        page_id = path.parent.name
+        page = page_payloads.setdefault(page_id, {})
+        for key in selected_keys:
+            value = source.get(key)
+            if key not in page and isinstance(value, dict):
+                page[key] = value
+        if keys is None and not page:
+            direct = {
+                key: source[key]
+                for key in ("total_tokens", "total_cost_usd", "cost_usd")
+                if key in source
+            }
+            if direct:
+                direct_payloads.setdefault(page_id, direct)
+
+    return [payload for payload in page_payloads.values() if payload] + [
+        payload
+        for page_id, payload in direct_payloads.items()
+        if page_id not in page_payloads or not page_payloads[page_id]
+    ]
+
+
+def _usage_keys_for_path(path: Path) -> set[str]:
+    top_level = path.parts[0] if path.parts else ""
+    if top_level == "stage-1":
+        return {"stage1", "stage1_agentic", _GENERIC_AGENTIC_KEY}
+    if top_level == "stage-2":
+        return {
+            "field_discovery",
+            "stage2",
+            "stage2_agentic",
+            _GENERIC_AGENTIC_KEY,
+        }
+    return set(_USAGE_PAYLOAD_KEYS)
 
 
 def _run_page_payloads(payload: dict[str, object]) -> list[dict[str, object]]:
