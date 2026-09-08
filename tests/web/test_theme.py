@@ -679,6 +679,45 @@ def test_additional_context_uses_semantic_single_column_spacing(
     assert "additional-context-column" not in home
     assert "additional-context-column" not in css
 
+def test_dictionary_context_and_profile_use_matching_bordered_panels(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    home = client.get("/").text
+    css = client.get("/static/app.css").text
+
+    assert 'class="form-grid dictionary-page-context-panel"' in home
+    context_panel = re.search(
+        r"\.dictionary-page-context-panel\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    profile_panel = re.search(r"\.profile-panel\s*\{(?P<body>[^}]*)\}", css)
+
+    assert context_panel is not None
+    assert profile_panel is not None
+    for panel in (context_panel, profile_panel):
+        assert "padding: 20px" in panel.group("body")
+        assert "border: var(--border-width) solid var(--color-line)" in panel.group(
+            "body"
+        )
+        assert "background: var(--color-panel)" in panel.group("body")
+
+
+def test_output_directory_uses_input_title_typography(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    home = client.get("/").text
+    css = client.get("/static/app.css").text
+
+    assert '<label class="path-label" for="output">Output directory</label>' in home
+    path_label = re.search(r"\.path-label\s*\{(?P<body>[^}]*)\}", css)
+
+    assert path_label is not None
+    assert "color: var(--color-ink)" in path_label.group("body")
+    assert "font-size: 13px" in path_label.group("body")
+    assert "font-weight: 900" in path_label.group("body")
+    assert "letter-spacing: -.02em" in path_label.group("body")
+    assert "text-transform: uppercase" in path_label.group("body")
+
 
 def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
     tmp_path: Path,
