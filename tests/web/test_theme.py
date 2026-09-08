@@ -890,6 +890,11 @@ def test_hovered_choice_card_stacks_its_tooltip_above_later_cards(
         r"\{(?P<body>[^}]*)\}",
         css,
     )
+    hovered_button = re.search(
+        r"(?:^|\n)\.info-button\.is-tooltip-hovered\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
     tooltip = re.search(
         r"\.info-button::after\s*\{(?P<body>[^}]*)\}",
         css,
@@ -897,6 +902,8 @@ def test_hovered_choice_card_stacks_its_tooltip_above_later_cards(
 
     assert hovered_card is not None
     assert "z-index: 2" in hovered_card.group("body")
+    assert hovered_button is not None
+    assert "z-index: 100" in hovered_button.group("body")
     assert tooltip is not None
     assert "box-sizing: border-box" in tooltip.group("body")
 
