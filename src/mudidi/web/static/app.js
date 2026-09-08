@@ -325,16 +325,24 @@ if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
   });
 }
 
-const mdfGuideFileInput = document.querySelector("[data-mdf-guide-file-input]");
-const mdfGuideFileStatus = document.querySelector("[data-mdf-guide-file-status]");
-if (mdfGuideFileInput && mdfGuideFileStatus) {
-  mdfGuideFileInput.addEventListener("change", () => {
-    const file = mdfGuideFileInput.files[0];
-    mdfGuideFileStatus.textContent = file
+const bindSingleFileStatus = (input, status) => {
+  if (!input || !status) return;
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    status.textContent = file
       ? `Selected: ${file.name}`
-      : mdfGuideFileStatus.dataset.emptyLabel;
+      : status.dataset.emptyLabel;
   });
-}
+};
+
+bindSingleFileStatus(
+  document.querySelector("[data-mdf-guide-file-input]"),
+  document.querySelector("[data-mdf-guide-file-status]"),
+);
+bindSingleFileStatus(
+  document.querySelector("[data-mdf-manual-file-input]"),
+  document.querySelector("[data-mdf-manual-file-status]"),
+);
 
 const instructionPanels = [...document.querySelectorAll("[data-instruction-source-panel]")];
 

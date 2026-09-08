@@ -204,7 +204,20 @@
                     <label class="choice-card"><input type="radio" name="mdf_manual_source" value="none" checked><span><strong>Continue without an MDF manual</strong><small>Let Stage 2 infer the parsing guide from the dictionary pages.</small></span></label>
                   </div>
                   <div class="mdf-manual-upload" data-custom-mdf-manual hidden>
-                    <label class="mdf-manual-file">MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
+                    <div class="mdf-manual-file">
+                      <span class="mdf-manual-file-title">MDF manual PDF</span>
+                      {% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}
+                      <div class="mdf-guide-file-row">
+                        <label class="primary mdf-guide-upload-trigger">
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                            <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+                          </svg>
+                          <span>Choose PDF</span>
+                          <input class="mdf-guide-file-input" data-mdf-manual-file-input name="custom_mdf_manual" type="file" accept=".pdf" disabled aria-describedby="mdf-manual-file-status">
+                        </label>
+                        <span id="mdf-manual-file-status" class="mdf-guide-file-status" data-mdf-manual-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}">{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}</span>
+                      </div>
+                    </div>
                   </div>
                   <div class="mdf-manual-official">
                     <span><strong>Official SIL MDF manual</strong><small>fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small></span>

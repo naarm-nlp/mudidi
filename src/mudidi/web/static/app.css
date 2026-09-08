@@ -328,6 +328,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-options .choice-card { grid-template-columns: auto minmax(0, 1fr); }
 .mdf-manual-upload { margin-top: 12px; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
 .mdf-manual-file { display: grid; gap: 8px; margin: 0; }
+.mdf-manual-file-title { color: var(--color-ink); font-size: 13px; font-weight: 700; }
 .mdf-manual-file input { width: 100%; }
 .mdf-manual-official { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 14px 0 0; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
 .mdf-manual-official > span { display: grid; gap: 4px; min-width: 0; }

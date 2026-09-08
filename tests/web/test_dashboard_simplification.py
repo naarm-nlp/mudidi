@@ -298,6 +298,15 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="mdf_manual_source" value="bundled"' not in response.text
     assert 'name="custom_mdf_manual" type="file"' in response.text
     assert (
+        'class="mdf-guide-file-input" data-mdf-manual-file-input' in response.text
+    )
+    assert "<span>Choose PDF</span>" in response.text
+    assert (
+        'id="mdf-manual-file-status" class="mdf-guide-file-status" '
+        "data-mdf-manual-file-status"
+        in response.text
+    )
+    assert (
         '<fieldset class="choice-group mdf-manual additional-context-group"'
         in response.text
     )
