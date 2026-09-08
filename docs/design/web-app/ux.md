@@ -8,20 +8,28 @@ Internal database/config keys such as `parse_rules` and routes such as
 ## Application shell
 
 The desktop layout uses a fixed left navigation, compact header, central work
-area, and optional right summary rail. The baseline wireframe is
-`assets/new-run-wireframe.png`.
+area, and optional right summary rail. This is the shipped New Run interface:
 
-![MUDIDI New Run desktop wireframe](assets/new-run-wireframe.png)
+![MUDIDI New Run desktop dashboard](../../assets/dashboard-home.png)
+
+At narrow widths the navigation and wizard controls stack without horizontal
+page overflow:
+
+![MUDIDI New Run mobile dashboard](../../assets/dashboard-mobile.png)
+
+The original planning wireframe remains available at
+[`assets/new-run-wireframe.png`](assets/new-run-wireframe.png).
 
 ## Input
 
 The browser selects exactly one dictionary PDF. The dashboard rejects page
 images, multiple source files, and page-image folders; those input modes remain
 available through YAML and the CLI. The existing MDF parsing guide and custom
-MDF manual remain optional file uploads. Character inventory and additional
-instructions are direct text inputs. Uploaded files are copied into run-owned
-local storage. The output directory remains typed because browser file APIs do
-not provide an arbitrary absolute path to a localhost server.
+MDF manual remain optional file uploads. Stage 1 and Stage 2 instructions may
+be typed directly or uploaded as TXT, Markdown, or PDF attachments. Uploaded
+files are copied into run-owned local storage. The output directory remains
+typed because browser file APIs do not provide an arbitrary absolute path to a
+localhost server.
 
 The dictionary PDF and **PDF dictionary pages** are required. Page fields accept
 positive, 1-based Arabic page numbers in any of these forms: one number (`5`),
@@ -79,8 +87,9 @@ offers an optional **OpenRouter Provider** routing slug.
 
 ## Agentic verification
 
-Agentic verification is a Yes/No choice and defaults to No. Selecting Yes opens
-**Custom verification** directly below it. Applicable Stage 1 and Stage 2 boxes
+Agentic verification is an On/Off choice and defaults to Off. Selecting On
+opens **Custom verification** directly below it. Applicable Stage 1 and Stage 2
+boxes
 are initially checked and may be unchecked. The backend intersects these values
 with active stages and ignores forged inactive values.
 
@@ -90,9 +99,23 @@ that verification adds model calls and cost.
 
 ## Additional instructions
 
-Stage 1 and Stage 2 additional instructions are multiline text areas with
-accessible help. The server materializes non-empty text as bounded UTF-8 files
-inside the run input bundle and uses the existing guide-file execution contract.
+Each active stage presents one instruction source at a time:
+
+1. **Type instructions** uses a bounded multiline UTF-8 text value.
+2. **Upload instruction file** accepts exactly one `.txt`, `.md`, or `.pdf`
+   attachment.
+
+TXT and Markdown attachments must decode as UTF-8, contain non-blank text, and
+stay within the same 20,000-character limit as typed instructions. PDF
+attachments remain document or visual context rather than being flattened to
+plain text. Their optional page selector uses the dashboard's positive
+1-based page/range grammar; blank means every attachment page.
+
+Stage 2 adds a Pass 1, Pass 2, or Both-passes scope. Both is the default.
+Changing sources after selecting a file requires confirmation because the
+browser cannot retain that file after it is cleared. Review and preset screens
+display attachment metadata, while the worker supplies the resolved content to
+the selected stage and agentic evaluator/rewriter paths.
 
 ## MDF parsing guide and MDF manual
 

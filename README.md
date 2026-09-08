@@ -37,6 +37,8 @@ credentials, presets, uploaded files, and generated outputs persist in the
 local `mudidi-data/` directory. This directory is excluded from Git; keep it
 private and back it up as one unit.
 
+![MUDIDI web dashboard New Run screen](docs/assets/dashboard-home.png)
+
 The Compose configuration publishes MUDIDI only on `127.0.0.1`, so other
 computers on the network cannot connect to it. Do not change this binding to a
 public interface: the local dashboard is not designed as a multi-user or
