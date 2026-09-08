@@ -3,9 +3,167 @@
 const runForm = document.querySelector("form.run-form");
 const runFormStorageKey = "mudidi:new-run-form:v1";
 const presetStateElement = document.querySelector("#preset-form-state");
+const wizard = document.querySelector("[data-new-run-wizard]");
+const wizardPanels = wizard ? [...wizard.querySelectorAll("[data-wizard-panel]")] : [];
+const wizardOrder = ["input", "pipeline", "model", "agentic"];
+const wizardStorageKey = "mudidi:new-run-wizard:v1";
+const readWizardSessionState = () => {
+  try {
+    const raw = window.sessionStorage.getItem(wizardStorageKey);
+    if (!raw) return {};
+    if (raw.startsWith("{")) return JSON.parse(raw) || {};
+    return { step: raw };
+  } catch (_error) {
+    return {};
+  }
+};
+const wizardSessionState = readWizardSessionState();
+let activeWizardStep = "input";
+let wizardErrorSequence = 0;
+let firstInvalidWizardField = null;
+let invalidWizardFields = [];
+let invalidAttemptResetScheduled = false;
+
+const persistWizardStep = () => {
+  if (!wizard) return;
+  try {
+    window.sessionStorage.setItem(wizardStorageKey, JSON.stringify({
+      step: activeWizardStep,
+      stage2Mode: stage2State?.mode || "shared",
+    }));
+  } catch (_error) {
+    // Storage may be unavailable in privacy-restricted browser contexts.
+  }
+};
+
+const wizardPanelForField = (field) => field.closest("[data-wizard-panel]");
+
+const wizardFieldOwner = (field) => (
+  field.closest("[data-wizard-field], .dropzone, label, fieldset, .input-row")
+  || field.parentElement
+);
+
+const wizardFieldErrorAnchor = (field) => field.closest(".input-row") || field;
+
+const wizardFieldErrorScope = (field) => (
+  wizardFieldErrorAnchor(field).parentElement || wizardFieldOwner(field)
+);
+
+const wizardFieldErrorId = (field) => {
+  if (!field.dataset.wizardErrorId) {
+    const base = (field.id || field.name || "field").replace(/[^a-z0-9_-]+/gi, "-");
+    field.dataset.wizardErrorId = `wizard-field-error-${base}-${++wizardErrorSequence}`;
+  }
+  return field.dataset.wizardErrorId;
+};
+
+const wizardClientError = (field) => {
+  const scope = wizardFieldErrorScope(field);
+  if (!scope) return null;
+  const id = field.dataset.wizardErrorId;
+  return id
+    ? [...scope.querySelectorAll(".field-error-message")]
+      .find((message) => message.dataset.wizardFieldErrorFor === id)
+    : null;
+};
+
+const markWizardFieldInvalid = (field) => {
+  const owner = wizardFieldOwner(field);
+  if (!owner) return;
+  owner.classList.add("field-invalid");
+  const errorId = wizardFieldErrorId(field);
+  let message = wizardClientError(field);
+  if (!message) {
+    message = document.createElement("small");
+    message.className = "field-error-message";
+    message.dataset.wizardFieldErrorFor = errorId;
+    wizardFieldErrorAnchor(field).insertAdjacentElement("afterend", message);
+  }
+  message.id = errorId;
+  message.textContent = field.validationMessage;
+  const describedBy = new Set((field.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+  describedBy.add(errorId);
+  field.setAttribute("aria-describedby", [...describedBy].join(" "));
+  field.setAttribute("aria-invalid", "true");
+};
+
+const clearWizardFieldInvalid = (field) => {
+  const owner = wizardFieldOwner(field);
+  if (!owner) return;
+  wizardClientError(field)?.remove();
+  const errorId = field.dataset.wizardErrorId;
+  if (errorId) {
+    const describedBy = (field.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((id) => id && id !== errorId);
+    if (describedBy.length) field.setAttribute("aria-describedby", describedBy.join(" "));
+    else field.removeAttribute("aria-describedby");
+  }
+  if (!owner.hasAttribute("data-field-error")) {
+    owner.classList.remove("field-invalid");
+    field.removeAttribute("aria-invalid");
+  }
+};
+
+const wizardFieldLabel = (field) => {
+  const heading = field.closest("label")?.querySelector(".field-heading");
+  const headingText = heading
+    ? [...heading.childNodes]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent.trim())
+      .join(" ")
+      .trim()
+    : "";
+  return (
+    field.getAttribute("aria-label")
+    || headingText
+    || field.name
+    || field.id
+    || "Field"
+  );
+};
+
+const updateWizardValidationSummary = (panel, invalidFields) => {
+  const summary = panel.querySelector("[data-wizard-validation-summary]");
+  if (!summary) return;
+  summary.replaceChildren();
+  summary.hidden = invalidFields.length === 0;
+  if (!invalidFields.length) return;
+  const heading = document.createElement("strong");
+  heading.textContent = "Complete the highlighted fields before reviewing the run.";
+  summary.append(heading);
+  if (invalidFields.length > 1) {
+    const list = document.createElement("ul");
+    invalidFields.forEach((field) => {
+      const item = document.createElement("li");
+      item.textContent = `${wizardFieldLabel(field)}: ${field.validationMessage}`;
+      list.append(item);
+    });
+    summary.append(list);
+  }
+};
+
+const setWizardStep = (step, { focus = true } = {}) => {
+  if (!wizard || !wizardOrder.includes(step)) return;
+  activeWizardStep = step;
+  wizardPanels.forEach((panel) => {
+    panel.hidden = panel.dataset.wizardPanel !== step;
+  });
+  document.querySelectorAll("[data-wizard-marker]").forEach((marker) => {
+    const isActive = marker.dataset.wizardMarker === step;
+    if (isActive) marker.setAttribute("aria-current", "step");
+    else marker.removeAttribute("aria-current");
+    marker.classList.toggle("is-active", isActive);
+  });
+  persistWizardStep();
+  if (focus) document.querySelector(`#wizard-${step}-title`)?.focus();
+};
+
 
 const persistRunForm = () => {
   if (!runForm) return;
+  if (stage2State?.mode === "shared") synchronizeSharedStage2();
+  synchronizeInstructionPanels();
   const state = {};
   [...runForm.elements].forEach((field) => {
     if (!field.name || ["file", "password", "submit", "button"].includes(field.type)) return;
@@ -25,9 +183,17 @@ const persistRunForm = () => {
 
 const restoreRunForm = () => {
   if (!runForm) return;
+  // A validation-error re-render (POST /runs/preview -> 422) always re-derives
+  // preset_state from the ORIGINAL saved preset, ignoring in-progress edits such
+  // as switching a kept file attachment to Replace. sessionStorage instead holds
+  // exactly what was live in the form the moment it was submitted (persisted by
+  // the "submit" listener below), so prefer it whenever a `.form-error-summary`
+  // shows this render is a recovery from a rejected submission.
+  const recoveringFromValidationError = !!document.querySelector(".form-error-summary");
+  const usingPresetState = Boolean(presetStateElement) && !recoveringFromValidationError;
   let state;
   try {
-    state = presetStateElement
+    state = usingPresetState
       ? JSON.parse(presetStateElement.textContent || "null")
       : JSON.parse(window.sessionStorage.getItem(runFormStorageKey) || "null");
   } catch (_error) {
@@ -57,7 +223,7 @@ const restoreRunForm = () => {
       if (field.type === "file" || field.type === "password") return;
       if (field.type === "checkbox" || field.type === "radio") {
         field.checked = values.includes(field.value);
-        if (presetStateElement && ["verify_stage1", "verify_stage2"].includes(name)) {
+        if (usingPresetState && ["verify_stage1", "verify_stage2"].includes(name)) {
           field.dataset.userTouched = "true";
         }
       } else if (values[index] !== undefined) {
@@ -87,6 +253,206 @@ document.addEventListener("click", (event) => {
   }
 });
 
+const dictionaryDropzone = document.querySelector("[data-dictionary-dropzone]");
+const dictionaryFileInput = dictionaryDropzone?.querySelector("#dictionary-pdf");
+const dictionaryFileStatus = dictionaryDropzone?.querySelector("[data-dictionary-file-status]");
+
+if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
+  let dragDepth = 0;
+
+  const resetDictionaryDragState = () => {
+    dragDepth = 0;
+    dictionaryDropzone.classList.remove("is-dragover");
+  };
+  const showDictionaryFileError = (message) => {
+    dictionaryFileInput.value = "";
+    dictionaryFileInput.setCustomValidity(message);
+    dictionaryDropzone.classList.add("is-drop-invalid");
+    dictionaryFileStatus.textContent = message;
+  };
+  const validateDictionaryFiles = (files) => {
+    if (files.length !== 1) return "Choose exactly one PDF file.";
+    return files[0].name.toLowerCase().endsWith(".pdf")
+      ? ""
+      : "Choose a file with a .pdf extension.";
+  };
+  const updateDictionaryFileSelection = () => {
+    const files = [...dictionaryFileInput.files];
+    const error = files.length ? validateDictionaryFiles(files) : "";
+    if (error) {
+      showDictionaryFileError(error);
+      return;
+    }
+    dictionaryFileInput.setCustomValidity("");
+    dictionaryDropzone.classList.remove("is-drop-invalid");
+    dictionaryFileStatus.textContent = files.length
+      ? `Selected: ${files[0].name}`
+      : dictionaryFileStatus.dataset.emptyLabel;
+    clearWizardFieldInvalid(dictionaryFileInput);
+  };
+
+  dictionaryFileInput.addEventListener("change", updateDictionaryFileSelection);
+  dictionaryDropzone.addEventListener("dragenter", (event) => {
+    if (![...(event.dataTransfer?.types || [])].includes("Files")) return;
+    event.preventDefault();
+    dragDepth += 1;
+    dictionaryDropzone.classList.add("is-dragover");
+  });
+  dictionaryDropzone.addEventListener("dragover", (event) => {
+    if (![...(event.dataTransfer?.types || [])].includes("Files")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  });
+  dictionaryDropzone.addEventListener("dragleave", () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dictionaryDropzone.classList.remove("is-dragover");
+  });
+  dictionaryDropzone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    resetDictionaryDragState();
+    const files = [...(event.dataTransfer?.files || [])];
+    const error = validateDictionaryFiles(files);
+    if (error) {
+      showDictionaryFileError(error);
+      return;
+    }
+    try {
+      dictionaryFileInput.files = event.dataTransfer.files;
+      dictionaryFileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (_error) {
+      showDictionaryFileError("This browser could not attach the dropped PDF.");
+    }
+  });
+}
+
+const bindSingleFileStatus = (input, status) => {
+  if (!input || !status) return;
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    status.textContent = file
+      ? `Selected: ${file.name}`
+      : status.dataset.emptyLabel;
+  });
+};
+
+bindSingleFileStatus(
+  document.querySelector("[data-mdf-guide-file-input]"),
+  document.querySelector("[data-mdf-guide-file-status]"),
+);
+bindSingleFileStatus(
+  document.querySelector("[data-mdf-manual-file-input]"),
+  document.querySelector("[data-mdf-manual-file-status]"),
+);
+
+const instructionPanels = [...document.querySelectorAll("[data-instruction-source-panel]")];
+
+const instructionPanelHasKeptPreset = (panel) => panel.dataset.instructionHasPreset === "true";
+const instructionPanelPresetIsPdf = (panel) => panel.dataset.instructionPresetKind === "pdf";
+
+const instructionPanelRefs = (panel) => ({
+  sourceRadios: [...panel.querySelectorAll("[data-instruction-source-radio]")],
+  typedPanel: panel.querySelector("[data-instruction-typed-panel]"),
+  textarea: panel.querySelector("[data-instruction-typed-panel] textarea"),
+  filePanel: panel.querySelector("[data-instruction-file-panel]"),
+  keptFileContainer: panel.querySelector("[data-instruction-kept-file]"),
+  keptRadios: [...panel.querySelectorAll("[data-instruction-kept-radio]")],
+  uploadRow: panel.querySelector("[data-instruction-upload-row]"),
+  fileInput: panel.querySelector("[data-instruction-file-input]"),
+  fileStatus: panel.querySelector("[data-instruction-file-status]"),
+  keepExisting: panel.querySelector("[data-instruction-keep-existing]"),
+  pdfPagesField: panel.querySelector("[data-instruction-pdf-pages]"),
+  pdfPagesInput: panel.querySelector("[data-instruction-pdf-pages] input"),
+  pdfWarning: panel.querySelector("[data-instruction-pdf-warning]"),
+});
+
+const synchronizeInstructionPanel = (panel) => {
+  if (panel.hidden) return;
+  const refs = instructionPanelRefs(panel);
+  const selected = refs.sourceRadios.find((radio) => radio.checked) || refs.sourceRadios[0];
+  if (!selected) return;
+  const isFile = selected.value === "file";
+
+  if (refs.typedPanel) refs.typedPanel.hidden = isFile;
+  if (refs.textarea) refs.textarea.disabled = isFile;
+
+  if (refs.filePanel) refs.filePanel.hidden = !isFile;
+  const hasKeptPreset = instructionPanelHasKeptPreset(panel);
+  const keptSelected = refs.keptRadios.find((radio) => radio.checked);
+  const isKeeping = hasKeptPreset && keptSelected?.value === "keep";
+  refs.keptRadios.forEach((radio) => {
+    radio.disabled = !isFile;
+  });
+  if (refs.keptFileContainer) refs.keptFileContainer.hidden = !hasKeptPreset;
+  if (refs.uploadRow) refs.uploadRow.hidden = isFile && isKeeping;
+  const selectedFile = refs.fileInput?.files?.[0] || null;
+  if (refs.fileInput) {
+    refs.fileInput.disabled = !isFile || isKeeping;
+    refs.fileInput.required = isFile && !isKeeping;
+  }
+  if (refs.keepExisting) {
+    refs.keepExisting.disabled = !isFile;
+    refs.keepExisting.value = isFile && isKeeping ? "true" : "false";
+  }
+  if (refs.fileStatus) {
+    refs.fileStatus.textContent = selectedFile ? `Selected: ${selectedFile.name}` : "No file selected";
+  }
+  const currentIsPdf = selectedFile
+    ? selectedFile.name.toLowerCase().endsWith(".pdf")
+    : isKeeping && instructionPanelPresetIsPdf(panel);
+  const showPdfPages = isFile && currentIsPdf;
+  if (refs.pdfPagesField) refs.pdfPagesField.hidden = !showPdfPages;
+  if (refs.pdfPagesInput) refs.pdfPagesInput.disabled = !showPdfPages;
+  if (refs.pdfWarning) refs.pdfWarning.hidden = !showPdfPages;
+};
+
+const synchronizeInstructionPanels = () => instructionPanels.forEach(synchronizeInstructionPanel);
+
+const wireInstructionPanel = (panel) => {
+  const refs = instructionPanelRefs(panel);
+  panel.dataset.instructionActiveSource = (
+    refs.sourceRadios.find((radio) => radio.checked) || refs.sourceRadios[0]
+  )?.value || "typed";
+  synchronizeInstructionPanel(panel);
+  refs.sourceRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      const previousMode = panel.dataset.instructionActiveSource;
+      const newMode = radio.value;
+      if (previousMode === newMode) {
+        synchronizeInstructionPanel(panel);
+        return;
+      }
+      const clearing = previousMode === "typed"
+        ? Boolean(refs.textarea?.value.trim())
+        : Boolean(refs.fileInput?.files?.length) || instructionPanelHasKeptPreset(panel);
+      if (clearing) {
+        const label = previousMode === "typed" ? "the typed instructions" : "the uploaded instruction file";
+        if (!window.confirm(`Switching sources clears ${label}. Continue?`)) {
+          refs.sourceRadios.forEach((other) => {
+            other.checked = other.value === previousMode;
+          });
+          synchronizeInstructionPanel(panel);
+          return;
+        }
+        if (previousMode === "typed" && refs.textarea) refs.textarea.value = "";
+        if (previousMode === "file" && refs.fileInput) refs.fileInput.value = "";
+      }
+      panel.dataset.instructionActiveSource = newMode;
+      synchronizeInstructionPanel(panel);
+      (newMode === "typed" ? refs.textarea : refs.fileInput)?.focus();
+    });
+  });
+  refs.keptRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!radio.checked) return;
+      if (radio.value === "keep" && refs.fileInput) refs.fileInput.value = "";
+      synchronizeInstructionPanel(panel);
+      if (radio.value === "replace") refs.fileInput?.focus();
+    });
+  });
+  refs.fileInput?.addEventListener("change", () => synchronizeInstructionPanel(panel));
+};
+
 const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
 const otherInformationField = document.querySelector("#profile-other-information");
 if (otherInformationToggle && otherInformationField) {
@@ -110,9 +476,13 @@ document.querySelectorAll(".info-button").forEach((button) => {
 });
 
 const pipelineChoices = [...document.querySelectorAll('input[name="pipeline"]')];
-const providerSelect = document.querySelector("[data-provider-select]");
+const providerValue = document.querySelector("[data-provider-value]");
+const providerChoices = [...document.querySelectorAll("[data-provider-choice]")];
 const modelSelects = [...document.querySelectorAll("[data-model-select]")];
 const openRouterProvider = document.querySelector("[data-openrouter-provider]");
+const stage2Container = document.querySelector("[data-stage2-container]");
+const stage2Toggle = document.querySelector("[data-stage2-toggle]");
+const stage2Explanation = document.querySelector("[data-stage2-explanation]");
 const pipelineStages = {
   complete: new Set(["stage1", "pass1", "pass2"]),
   transcription: new Set(["stage1"]),
@@ -135,6 +505,59 @@ const customModelPlaceholder = (provider) => provider === "openrouter"
   ? "e.g. qwen/qwen3-235b-a22b"
   : `Enter a model name supported by ${providerLabels[provider] || "your selected provider"}`;
 
+const credentialCards = [...document.querySelectorAll("[data-credential-card]")];
+
+const credentialStatusLabels = {
+  persistent: "Stored",
+  environment: "Available from environment",
+  temporary: "Available for this session",
+  missing: "Not saved",
+};
+const credentialPlaceholders = {
+  persistent: "Saved key — leave blank to keep it",
+  environment: "Environment key available — enter a key to save an override",
+  temporary: "Session key available — enter a key to save an override",
+  missing: "Paste provider API key",
+};
+
+const ensureDeleteButton = (card, provider, saved) => {
+  const label = card?.querySelector("label");
+  if (!label) return;
+  let button = card.querySelector("[data-delete-key]");
+  if (saved && !button) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.className = "credential-delete";
+    button.dataset.deleteKey = "";
+    button.dataset.provider = provider;
+    button.textContent = "Remove saved key";
+    label.append(button);
+  } else if (!saved && button) {
+    button.remove();
+  }
+};
+
+const applyCredentialStatus = (card, provider, payload) => {
+  const source = payload?.source;
+  const available = payload?.available;
+  if (
+    typeof source !== "string"
+    || typeof available !== "boolean"
+    || !Object.prototype.hasOwnProperty.call(credentialStatusLabels, source)
+  ) {
+    return false;
+  }
+  card.dataset.keySaved = String(source === "persistent");
+  card.dataset.keyAvailable = String(available);
+  card.dataset.keySource = source;
+  const input = card.querySelector(`#credential-${provider}`);
+  const status = card.querySelector(`#credential-status-${provider}`);
+  if (input) input.placeholder = credentialPlaceholders[source];
+  if (status) status.textContent = credentialStatusLabels[source];
+  ensureDeleteButton(card, provider, source === "persistent");
+  return true;
+};
+
 const synchronizeCustomModel = (select) => {
   const custom = select.parentElement.querySelector("[data-custom-model]");
   if (!custom) return;
@@ -146,8 +569,11 @@ const synchronizeCustomModel = (select) => {
 };
 
 const synchronizeModels = (providerChanged = false) => {
-  if (!providerSelect) return;
-  const provider = providerSelect.value;
+  if (!providerValue) return;
+  const provider = providerValue.value;
+  providerChoices.forEach((choice) => {
+    choice.value = provider;
+  });
   modelSelects.forEach((select) => {
     const active = !select.closest("[data-stage-control]").hidden;
     const manualEntry = provider === "openrouter" || provider === "custom";
@@ -168,6 +594,7 @@ const synchronizeModels = (providerChanged = false) => {
     select.disabled = !active || manualEntry;
     const custom = select.parentElement.querySelector("[data-custom-model]");
     if (custom) {
+      if (providerChanged) custom.value = "";
       custom.placeholder = customModelPlaceholder(provider);
     }
     synchronizeCustomModel(select);
@@ -208,6 +635,169 @@ const synchronizeAgenticModelGroup = (group, providerChanged = false) => {
   custom.disabled = !agenticEnabled || !customSelected;
   custom.placeholder = customModelPlaceholder(provider);
 };
+const stage2FieldNames = {
+  pass1: {
+    model: "stage2_pass1_model",
+    customModel: "stage2_pass1_custom_model",
+    reasoning: "stage2_pass1_reasoning",
+  },
+  pass2: {
+    model: "stage2_pass2_model",
+    customModel: "stage2_pass2_custom_model",
+    reasoning: "stage2_pass2_reasoning",
+  },
+};
+
+const stage2Field = (pass, key) => runForm?.elements.namedItem(stage2FieldNames[pass]?.[key]);
+const readStage2Pass = (pass) => ({
+  model: stage2Field(pass, "model")?.value || "",
+  customModel: stage2Field(pass, "customModel")?.value || "",
+  reasoning: stage2Field(pass, "reasoning")?.value || "",
+});
+const synchronizeStage2CustomModels = () => {
+  ["pass1", "pass2"].forEach((pass) => {
+    const model = stage2Field(pass, "model");
+    if (model) synchronizeCustomModel(model);
+  });
+};
+const writeStage2Pass = (pass, state) => {
+  const model = stage2Field(pass, "model");
+  const customModel = stage2Field(pass, "customModel");
+  const reasoning = stage2Field(pass, "reasoning");
+  if (model && state.model !== undefined) model.value = state.model;
+  if (customModel && state.customModel !== undefined) customModel.value = state.customModel;
+  if (reasoning && state.reasoning !== undefined) reasoning.value = state.reasoning;
+  synchronizeStage2CustomModels();
+};
+const stage2ValuesEqual = (left, right) => (
+  left.model === right.model
+  && left.customModel === right.customModel
+  && left.reasoning === right.reasoning
+);
+
+const synchronizeSharedStage2 = () => {
+  if (stage2State?.mode !== "shared") return;
+  stage2State.shared = readStage2Pass("pass1");
+  writeStage2Pass("pass2", stage2State.shared);
+  updateStage2Summary();
+};
+const providerCompatibleStage2State = (state) => ({
+  ...state,
+  customModel: state.model === "__other__" ? state.customModel : "",
+});
+const migrateProviderFields = (cachedState, activeState) => ({
+  ...cachedState,
+  model: activeState.model,
+  customModel: activeState.customModel,
+});
+
+const migrateStage2CachesForProvider = () => {
+  if (!stage2State) return;
+  const pass1 = providerCompatibleStage2State(readStage2Pass("pass1"));
+  const pass2 = providerCompatibleStage2State(readStage2Pass("pass2"));
+  stage2State.shared = migrateProviderFields(stage2State.shared, pass1);
+  stage2State.split.pass1 = migrateProviderFields(stage2State.split.pass1, pass1);
+  stage2State.split.pass2 = migrateProviderFields(stage2State.split.pass2, pass2);
+  if (stage2State.mode === "shared") {
+    writeStage2Pass("pass1", pass1);
+    writeStage2Pass("pass2", pass1);
+  } else {
+    synchronizeStage2CustomModels();
+  }
+};
+
+const modelDisplayName = (pass) => {
+  const state = readStage2Pass(pass);
+  if (state.model === "__other__") return state.customModel || "Custom model";
+  const selected = stage2Field(pass, "model")?.selectedOptions[0];
+  return selected?.textContent.trim() || state.model || "Not selected";
+};
+
+const stage2IsEnabled = () => {
+  const selected = pipelineChoices.find((choice) => choice.checked);
+  const active = selected ? pipelineStages[selected.value] : null;
+  return Boolean(active?.has("pass1") || active?.has("pass2"));
+};
+
+const updateStage2Summary = () => {
+  const summary = document.querySelector("[data-stage2-summary-model]");
+  if (!summary || !stage2State) return;
+  if (!stage2IsEnabled()) {
+    summary.textContent = "Not used";
+    return;
+  }
+  if (stage2State.mode === "shared") {
+    summary.textContent = `Shared model · ${modelDisplayName("pass1")}`;
+  } else {
+    summary.textContent = `Separate pass models · Pass 1: ${modelDisplayName("pass1")} · Pass 2: ${modelDisplayName("pass2")}`;
+  }
+};
+
+const renderStage2Mode = () => {
+  if (!stage2State) return;
+  const split = stage2State.mode === "split";
+  if (stage2Container) stage2Container.dataset.stage2Mode = stage2State.mode;
+  if (stage2Explanation) stage2Explanation.hidden = !split;
+  const pass1Card = stage2Container?.querySelector('[data-stage2-pass="pass1"]');
+  const pass2Card = stage2Container?.querySelector('[data-stage2-pass="pass2"]');
+  if (pass1Card) {
+    pass1Card.querySelectorAll("[data-stage2-model-label]").forEach((label) => {
+      label.textContent = split ? "Stage 2 Pass 1 model" : "Stage 2 model";
+    });
+    pass1Card.querySelectorAll("[data-stage2-reasoning-label]").forEach((label) => {
+      label.textContent = split ? "Stage 2 Pass 1 reasoning" : "Stage 2 reasoning";
+    });
+    pass1Card.querySelectorAll(".info-button").forEach((button) => {
+      const currentLabel = button.getAttribute("aria-label") || "";
+      const kind = currentLabel.includes("reasoning") ? "model reasoning" : "model";
+      button.setAttribute("aria-label", `About ${split ? "Stage 2 Pass 1" : "Stage 2"} ${kind}`);
+    });
+  }
+  if (pass2Card) pass2Card.hidden = !split;
+  if (stage2Toggle) {
+    stage2Toggle.textContent = split ? "Use one Stage 2 model" : "Advanced · split passes";
+    stage2Toggle.setAttribute("aria-expanded", String(split));
+  }
+  if (!split) synchronizeSharedStage2();
+  else updateStage2Summary();
+  synchronizeStage2CustomModels();
+};
+
+const enterSplitStage2 = () => {
+  stage2State.shared = readStage2Pass("pass1");
+  if (stage2HasVisitedSplit) {
+    writeStage2Pass("pass1", stage2State.split.pass1);
+    writeStage2Pass("pass2", stage2State.split.pass2);
+  } else {
+    writeStage2Pass("pass1", stage2State.shared);
+    writeStage2Pass("pass2", stage2State.shared);
+    stage2State.split.pass1 = readStage2Pass("pass1");
+    stage2State.split.pass2 = readStage2Pass("pass2");
+    stage2HasVisitedSplit = true;
+  }
+  stage2State.mode = "split";
+  renderStage2Mode();
+};
+
+const enterSharedStage2 = () => {
+  stage2State.split.pass1 = readStage2Pass("pass1");
+  stage2State.split.pass2 = readStage2Pass("pass2");
+  writeStage2Pass("pass1", stage2State.shared);
+  writeStage2Pass("pass2", stage2State.shared);
+  stage2State.mode = "shared";
+  renderStage2Mode();
+};
+
+const synchronizeStage2Pass = (pass) => {
+  const model = stage2Field(pass, "model");
+  if (model) synchronizeCustomModel(model);
+  if (stage2State?.mode === "shared" && pass === "pass1") {
+    synchronizeSharedStage2();
+  } else if (stage2State?.mode === "split" && pass) {
+    stage2State.split[pass] = readStage2Pass(pass);
+    updateStage2Summary();
+  }
+};
 
 agenticModelGroups.forEach((group) => {
   group.querySelector("[data-agentic-provider]")?.addEventListener("change", () => {
@@ -226,30 +816,59 @@ const synchronizePipeline = () => {
     const stages = control.dataset.pipelineStages.split(/\s+/);
     const visible = stages.some((stage) => active.has(stage));
     control.hidden = !visible;
-    control.querySelectorAll("input, select").forEach((input) => {
+    control.querySelectorAll("input, select, textarea").forEach((input) => {
       input.disabled = !visible;
     });
   });
+  synchronizeInstructionPanels();
+  if (stage2Container) {
+    stage2Container.hidden = !(active.has("pass1") || active.has("pass2"));
+  }
+  const agenticEnabled = [...document.querySelectorAll('input[name="agentic"]')]
+    .some((choice) => choice.checked && choice.value === "true");
   [
     ["verify_stage1", active.has("stage1")],
     ["verify_stage2", active.has("pass1") || active.has("pass2")],
   ].forEach(([name, enabled]) => {
     const input = document.querySelector(`input[name="${name}"]`);
     if (!input) return;
-    input.disabled = !enabled;
+    input.disabled = !agenticEnabled || !enabled;
     if (!enabled) input.checked = false;
     else if (input.dataset.userTouched !== "true") input.checked = true;
   });
   synchronizeModels();
   if (typeof synchronizeManual === "function") synchronizeManual();
+  updateStage2Summary();
+  if (typeof synchronizeAgenticAvailability === "function") {
+    synchronizeAgenticAvailability(agenticEnabled);
+  }
 };
 
 modelSelects.forEach((select) => {
-  select.addEventListener("change", () => synchronizeCustomModel(select));
+  select.addEventListener("change", () => {
+    const pass = select.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
+    else synchronizeCustomModel(select);
+  });
 });
-if (providerSelect) {
-  providerSelect.addEventListener("change", () => synchronizeModels(true));
-}
+providerChoices.forEach((choice) => {
+  choice.addEventListener("change", () => {
+    if (!providerValue) return;
+    providerValue.value = choice.value;
+    providerChoices.forEach((other) => {
+      other.value = choice.value;
+    });
+    synchronizeModels(true);
+    migrateStage2CachesForProvider();
+    updateStage2Summary();
+  });
+});
+stage2Toggle?.addEventListener("click", () => {
+  if (stage2State.mode === "shared") enterSplitStage2();
+  else enterSharedStage2();
+  persistRunForm();
+  persistWizardStep();
+});
 pipelineChoices.forEach((choice) => choice.addEventListener("change", synchronizePipeline));
 
 document.querySelectorAll('input[name="verify_stage1"], input[name="verify_stage2"]').forEach((input) => {
@@ -260,19 +879,20 @@ document.querySelectorAll('input[name="verify_stage1"], input[name="verify_stage
 
 const agenticChoices = [...document.querySelectorAll('input[name="agentic"]')];
 const agenticSettings = document.querySelector("[data-agentic-settings]");
-const synchronizeAgentic = () => {
+const synchronizeAgenticAvailability = (enabled) => {
   if (!agenticSettings) return;
-  const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
-  agenticSettings.hidden = !enabled;
-  if (enabled) agenticSettings.open = true;
   agenticSettings.querySelectorAll("input, select, textarea").forEach((input) => {
     const stageDisabled = input.name === "verify_stage1" || input.name === "verify_stage2";
     input.disabled = !enabled || (stageDisabled && input.disabled);
   });
-  if (enabled) {
-    synchronizePipeline();
-    agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));
-  }
+  agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group));
+};
+const synchronizeAgentic = () => {
+  if (!agenticSettings) return;
+  const enabled = agenticChoices.some((choice) => choice.checked && choice.value === "true");
+  agenticSettings.hidden = !enabled;
+  synchronizeAgenticAvailability(enabled);
+  if (enabled) synchronizePipeline();
 };
 agenticChoices.forEach((choice) => choice.addEventListener("change", synchronizeAgentic));
 
@@ -292,6 +912,35 @@ document.querySelectorAll("[data-confirm-delete-all]").forEach((form) => {
   });
 });
 
+const formatElapsed = (elapsedSeconds) => {
+  if (elapsedSeconds < 60) return `${elapsedSeconds}s`;
+  const minutes = Math.floor(elapsedSeconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ${minutes % 60}m`;
+  return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+};
+
+document.querySelectorAll("[data-elapsed-from]").forEach((element) => {
+  const startedAt = Date.parse(element.dataset.elapsedFrom || "");
+  if (!Number.isFinite(startedAt)) return;
+  const updateElapsed = () => {
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+    element.textContent = `Elapsed ${formatElapsed(elapsedSeconds)}`;
+  };
+  updateElapsed();
+  window.setInterval(updateElapsed, 1000);
+});
+
+document.querySelectorAll("[data-confirm-preset-delete]").forEach((form) => {
+  form.addEventListener("submit", (event) => {
+    const name = form.dataset.confirmPresetDelete || "this preset";
+    if (!window.confirm(`Remove preset "${name}"? Its managed inputs will also be removed.`)) {
+      event.preventDefault();
+    }
+  });
+});
+
 const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
 const customManual = document.querySelector("[data-custom-mdf-manual]");
 const synchronizeManual = () => {
@@ -306,29 +955,124 @@ const synchronizeManual = () => {
 };
 manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 restoreRunForm();
+instructionPanels.forEach(wireInstructionPanel);
+const restoredPass1 = readStage2Pass("pass1");
+const restoredPass2 = readStage2Pass("pass2");
+const restoredPassesUnequal = !stage2ValuesEqual(restoredPass1, restoredPass2);
+const stage2State = {
+  mode: restoredPassesUnequal
+    ? "split"
+    : (wizardSessionState.stage2Mode === "split" ? "split" : "shared"),
+  shared: restoredPass1,
+  split: {
+    pass1: restoredPass1,
+    pass2: restoredPass2,
+  },
+};
+let stage2HasVisitedSplit = stage2State.mode === "split";
 if (presetStateElement && otherInformationToggle) {
   otherInformationToggle.dispatchEvent(new Event("change"));
 }
+renderStage2Mode();
 synchronizePipeline();
 synchronizeAgentic();
 synchronizeManual();
+
+const beginWizardInvalidAttempt = () => {
+  firstInvalidWizardField = null;
+  invalidWizardFields = [];
+};
+
+const scheduleWizardInvalidAttemptReset = () => {
+  if (invalidAttemptResetScheduled) return;
+  invalidAttemptResetScheduled = true;
+  queueMicrotask(() => {
+    wizardPanels.forEach((panel) => {
+      const panelInvalidFields = invalidWizardFields.filter(
+        (field) => wizardPanelForField(field) === panel,
+      );
+      updateWizardValidationSummary(panel, panelInvalidFields);
+    });
+    firstInvalidWizardField = invalidWizardFields.reduce((candidate, field) => {
+      if (!candidate) return field;
+      return candidate.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING
+        ? candidate
+        : field;
+    }, null);
+    if (firstInvalidWizardField) {
+      const panel = wizardPanelForField(firstInvalidWizardField);
+      if (panel?.dataset.wizardPanel && panel.dataset.wizardPanel !== activeWizardStep) {
+        setWizardStep(panel.dataset.wizardPanel, { focus: false });
+      }
+      firstInvalidWizardField.focus();
+    }
+    invalidWizardFields = [];
+    invalidAttemptResetScheduled = false;
+  });
+};
+
+if (wizard) {
+  let initialWizardStep = "input";
+  const firstServerError = wizard.querySelector("[data-field-error]");
+  const firstServerPanel = firstServerError && wizardPanelForField(firstServerError);
+  if (firstServerPanel?.dataset.wizardPanel) {
+    initialWizardStep = firstServerPanel.dataset.wizardPanel;
+  } else {
+    if (wizardOrder.includes(wizardSessionState.step)) {
+      initialWizardStep = wizardSessionState.step;
+    }
+  }
+  setWizardStep(initialWizardStep, { focus: false });
+  wizard.querySelectorAll("[data-wizard-go]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const step = button.dataset.wizardGo;
+      if (!wizardOrder.includes(step)) return;
+      persistRunForm();
+      setWizardStep(step);
+    });
+  });
+
+
+  wizard.querySelectorAll("[data-wizard-next]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextStep = button.dataset.wizardNext;
+      if (!wizardOrder.includes(nextStep)) return;
+      persistRunForm();
+      setWizardStep(nextStep);
+    });
+  });
+  wizard.querySelectorAll("[data-wizard-back]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const previousStep = button.dataset.wizardBack;
+      if (!wizardOrder.includes(previousStep)) return;
+      persistRunForm();
+      setWizardStep(previousStep);
+    });
+  });
+  wizard.querySelectorAll("[data-wizard-submit]").forEach((button) => {
+    button.addEventListener("click", beginWizardInvalidAttempt);
+  });
+}
+
 if (runForm) {
   runForm.addEventListener("input", (event) => {
+    const pass = event.target.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
     persistRunForm();
-    if (event.target.validity?.valid) {
-      const section = event.target.closest(".dropzone, label, .input-row, fieldset");
-      if (section && !section.hasAttribute("data-field-error")) {
-        section.classList.remove("field-invalid");
-      }
-    }
+    if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
   });
-  runForm.addEventListener("change", persistRunForm);
+  runForm.addEventListener("change", (event) => {
+    const pass = event.target.closest("[data-stage2-pass]")?.dataset.stage2Pass;
+    if (pass) synchronizeStage2Pass(pass);
+    persistRunForm();
+    if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
+  });
   runForm.addEventListener("invalid", (event) => {
     runForm.classList.add("was-validated");
-    const invalidSection = event.target.closest(".dropzone, label, .input-row, fieldset");
-    if (invalidSection) invalidSection.classList.add("field-invalid");
-    const details = event.target.closest("details");
-    if (details) details.open = true;
+    const field = event.target;
+    invalidWizardFields.push(field);
+    markWizardFieldInvalid(field);
+    scheduleWizardInvalidAttemptReset();
   }, true);
   runForm.addEventListener("submit", () => {
     runForm.classList.add("was-validated");
@@ -369,6 +1113,7 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
     const target = button.dataset.credentialTarget || `credential-${provider}`;
     const input = document.querySelector(`#${target}`);
     const status = document.querySelector(`#credential-status-${provider}`);
+    const card = button.closest("[data-credential-card]");
     if (!input || !status) return;
 
     const apiKey = input.value.trim();
@@ -395,8 +1140,27 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
       }
       input.value = "";
       input.type = "password";
-      input.placeholder = "Saved key — leave blank to keep it";
-      status.textContent = "Saved";
+      if (card) {
+        applyCredentialStatus(card, provider, {source: "persistent", available: true});
+        status.textContent = "Saved";
+      } else {
+        input.placeholder = credentialPlaceholders.persistent;
+        status.textContent = "Saved";
+      }
+      const continueAction = button.dataset.continueAction;
+      if (continueAction) {
+        const continuationUrl = new URL(continueAction, window.location.origin);
+        if (continuationUrl.origin !== window.location.origin) {
+          status.textContent = "Could not continue safely";
+          return;
+        }
+        const continuation = document.createElement("form");
+        continuation.method = "post";
+        continuation.action = continuationUrl.pathname + continuationUrl.search;
+        continuation.hidden = true;
+        document.body.append(continuation);
+        continuation.submit();
+      }
     } catch (_error) {
       status.textContent = "Could not save key";
     } finally {
@@ -405,20 +1169,167 @@ document.querySelectorAll("[data-save-key]").forEach((button) => {
   });
 });
 
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-key]");
+  if (!button) return;
+  event.preventDefault();
+  const provider = button.dataset.provider;
+  const card = button.closest("[data-credential-card]");
+  const input = card?.querySelector(`#credential-${provider}`);
+  const status = card?.querySelector(`#credential-status-${provider}`);
+  if (!card || !input || !status) return;
+  button.disabled = true;
+  try {
+    const response = await window.fetch(`/credentials/${provider}/delete`, {
+      method: "POST",
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) {
+      status.textContent = "Could not remove key";
+      return;
+    }
+    const payload = await response.json();
+    if (!applyCredentialStatus(card, provider, payload)) {
+      status.textContent = "Could not remove key";
+      return;
+    }
+    input.value = "";
+    input.type = "password";
+    const reveal = card.querySelector("[data-reveal-key]");
+    reveal?.setAttribute("aria-pressed", "false");
+    reveal?.setAttribute("aria-label", `Show ${provider} API key`);
+  } catch (_error) {
+    status.textContent = "Could not remove key";
+  } finally {
+    if (button.isConnected) button.disabled = false;
+  }
+});
+
 const liveRun = document.querySelector('meta[name="mudidi-events"]');
-if (liveRun && window.EventSource) {
-  const eventSource = new EventSource(liveRun.content);
-  ["stage.started", "page.started", "page.completed", "parse_rules.generated", "run.completed", "run.failed"].forEach((eventName) => {
-    eventSource.addEventListener(eventName, () => {
-      eventSource.close();
+const streamStatus = document.querySelector("[data-stream-status]");
+const liveToggle = document.querySelector("[data-live-toggle]");
+const livePauseLabel = liveToggle?.querySelector("[data-live-pause-label]");
+const liveResumeLabel = liveToggle?.querySelector("[data-live-resume-label]");
+const liveEventNames = [
+  "stage.started",
+  "page.started",
+  "page.completed",
+  "parse_rules.generated",
+  "run.completed",
+  "run.failed",
+  "run.cancelled",
+];
+let liveEventSource = null;
+
+const setStreamStatus = (text) => {
+  if (streamStatus) streamStatus.textContent = text;
+};
+
+const setLiveToggleState = (paused) => {
+  if (!liveToggle) return;
+  liveToggle.dataset.livePaused = String(paused);
+  liveToggle.setAttribute("aria-pressed", String(paused));
+  if (livePauseLabel) livePauseLabel.hidden = paused;
+  if (liveResumeLabel) liveResumeLabel.hidden = !paused;
+};
+
+const stopLiveUpdates = () => {
+  if (!liveEventSource) return;
+  liveEventSource.close();
+  liveEventSource = null;
+};
+
+const startLiveUpdates = () => {
+  if (!liveRun || !window.EventSource || liveEventSource) return false;
+  setStreamStatus("Connecting…");
+  const source = new EventSource(liveRun.content);
+  liveEventSource = source;
+  source.addEventListener("open", () => {
+    if (source === liveEventSource) setStreamStatus("Live");
+  });
+  source.addEventListener("error", () => {
+    if (source === liveEventSource) setStreamStatus("Reconnecting…");
+  });
+  liveEventNames.forEach((eventName) => {
+    source.addEventListener(eventName, () => {
+      if (source !== liveEventSource) return;
+      stopLiveUpdates();
       window.location.reload();
     });
   });
+  return true;
+};
+
+if (liveRun && window.EventSource) startLiveUpdates();
+if (liveToggle) {
+  const initiallyPaused = liveResumeLabel ? !liveResumeLabel.hidden : false;
+  setLiveToggleState(initiallyPaused);
+  liveToggle.addEventListener("click", () => {
+    const paused = liveToggle.dataset.livePaused === "true";
+    if (paused) {
+      const started = startLiveUpdates();
+      if (!started) {
+        setLiveToggleState(true);
+        setStreamStatus("Unavailable");
+        return;
+      }
+      setLiveToggleState(false);
+      setStreamStatus("Connecting…");
+      return;
+    }
+    stopLiveUpdates();
+    setLiveToggleState(true);
+    setStreamStatus("Paused");
+  });
+}
+window.addEventListener("pageshow", () => {
+  if (liveToggle?.dataset.livePaused === "true") return;
+  startLiveUpdates();
+});
+window.addEventListener("pagehide", stopLiveUpdates);
+
+const artifactFilters = document.querySelector("[data-artifact-filters]");
+if (artifactFilters) {
+  const pathFilter = artifactFilters.querySelector("[data-artifact-path-filter]");
+  const stageFilter = artifactFilters.querySelector("[data-artifact-stage-filter]");
+  const artifactRows = [...document.querySelectorAll("[data-artifact-row]")];
+  const emptyState = document.querySelector("[data-artifact-filter-empty]");
+  const applyArtifactFilters = () => {
+    const pathQuery = (pathFilter?.value || "").trim().toLowerCase();
+    const stage = stageFilter?.value || "";
+    let visible = 0;
+    artifactRows.forEach((row) => {
+      const matchesPath = (row.dataset.artifactPath || "").toLowerCase().includes(pathQuery);
+      const matchesStage = !stage || row.dataset.artifactStage === stage;
+      row.hidden = !(matchesPath && matchesStage);
+      if (!row.hidden) visible += 1;
+    });
+    if (emptyState) emptyState.hidden = visible !== 0;
+  };
+  pathFilter?.addEventListener("input", applyArtifactFilters);
+  stageFilter?.addEventListener("change", applyArtifactFilters);
+  applyArtifactFilters();
 }
 
-const pageSlider = document.querySelector("[data-page-slider]");
+const logConsole = document.querySelector("[data-log-console]");
+const copyLogButton = document.querySelector("[data-log-copy]");
+const copyLogStatus = document.querySelector("[data-log-copy-status]");
+if (logConsole && copyLogButton) {
+  copyLogButton.addEventListener("click", async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(logConsole.innerText);
+      if (copyLogStatus) copyLogStatus.textContent = "Copied visible text";
+    } catch (_error) {
+      if (copyLogStatus) copyLogStatus.textContent = "Copy failed";
+    }
+  });
+}
+
+const pageEditor = document.querySelector("[data-page-editor]");
+const pageSlider = pageEditor?.querySelector("[data-page-slider]");
 if (pageSlider) {
-  const position = document.querySelector("[data-page-position]");
+  const position = pageEditor.querySelector("[data-page-position]");
   let pageUrls = [];
   let pageLabels = [];
   try {
@@ -440,7 +1351,7 @@ if (pageSlider) {
   });
 }
 
-const pageTextEditor = document.querySelector("form.page-text-editor");
+const pageTextEditor = pageEditor?.querySelector("form.page-text-editor");
 if (pageTextEditor) {
   let hasUnsavedChanges = false;
   pageTextEditor.querySelectorAll("textarea").forEach((textarea) => {

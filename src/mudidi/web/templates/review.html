@@ -1,30 +1,73 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Review run · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
-  </head>
-  <body class="standalone">
-    <main class="review-page">
+{% extends "_layout.html" %}
+{% block title %}Review run · MUDIDI{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="review-page">
       <a class="back-link" href="/">← Edit configuration</a>
-      <section class="panel review-card">
-        <span class="eyebrow">Step 5 of 5</span>
-        <h1>Review your run</h1>
-        <p>These values were validated through MUDIDI's production configuration schema.</p>
-        <dl>
-          {% for label, value in summary.items() %}
-          <div><dt>{{ label.replace('_', ' ') | title }}</dt><dd>{{ value }}</dd></div>
-          {% endfor %}
-        </dl>
-        <div class="checkpoint">
-          <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
-          <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/review" aria-current="page">Review</a>
         </div>
-        <form class="actions" method="post" action="/runs/{{ run_id }}/start"><span>The run pauses for MDF parsing guide review before parsing pages into MDF.</span><button class="primary" type="submit">Start run</button></form>
-        <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets"><label for="preset-name">Save these non-secret settings as a preset</label><div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div></form>
-      </section>
-    </main>
-  </body>
-</html>
+      </nav>
+      <div class="review-layout">
+        <section class="panel review-card" aria-labelledby="review-title">
+          <span class="eyebrow">Step 5 of 5</span>
+          <h1 id="review-title">Review your run</h1>
+          <p>These values were validated through MUDIDI's production configuration schema.</p>
+          {% set review_groups = [
+            ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
+            ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'stage_1_instructions', 'stage_2_instructions']),
+            ('Model', ['stage_1_model', 'stage_2_pass_1_model', 'stage_2_pass_2_model']),
+            ('Agentic', ['agentic'])
+          ] %}
+          <div class="review-groups">
+            {% for heading, keys in review_groups %}
+            <section class="review-group" aria-labelledby="review-{{ heading | lower }}-title">
+              <h2 id="review-{{ heading | lower }}-title">{{ heading }}</h2>
+              <dl class="review-grid">
+                {% for key in keys if key in summary %}
+                {% if key in ['stage_1_instructions', 'stage_2_instructions'] %}
+                {% set metadata = summary[key] %}
+                <div class="review-instruction-row">
+                  <dt>{{ key.replace('_', ' ') | title }}</dt>
+                  <dd>
+                    <span>Source: {{ metadata.source }}</span>
+                    {% if metadata.original_filename %}<span>Original filename: {{ metadata.original_filename }}</span>{% endif %}
+                    {% if metadata.kind == 'pdf' %}
+                    <span>Selected PDF pages: {{ metadata.selected_pages_label }}</span>
+                    <span>Selected PDF page count: {{ metadata.selected_page_count }}</span>
+                    <span>PDF page count: {{ metadata.pdf_page_count if metadata.pdf_page_count is not none else 'Unavailable' }}</span>
+                    {% endif %}
+                    {% if key == 'stage_2_instructions' %}<span>Scope: {{ metadata.scope_label }}</span>{% endif %}
+                  </dd>
+                </div>
+                {% else %}
+                <div><dt>{{ key.replace('_', ' ') | title }}</dt><dd>{{ summary[key] }}</dd></div>
+                {% endif %}
+                {% endfor %}
+              </dl>
+            </section>
+            {% endfor %}
+          </div>
+        </section>
+        <aside class="review-actions panel">
+          <span class="eyebrow">Run readiness</span>
+          <h2>Ready to start</h2>
+          <div class="checkpoint">
+            <strong>MDF parsing guide: {{ summary.mdf_parsing_guide }}</strong>
+            <p>Complete and MDF parsing runs pause for explicit review before page parsing.</p>
+          </div>
+          <p class="local-data">Files and credentials stay on this computer. Secrets are never included in this review.</p>
+          <form class="actions review-start-form" method="post" action="{{ continuation_action | default('/runs/' ~ run_id ~ '/start', true) }}">
+            <button class="primary" type="submit">{{ continuation_label | default('Start run', true) }}</button>
+          </form>
+        </aside>
+      </div>
+      <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets">
+        <label for="preset-name">Save these non-secret settings as a preset</label>
+        <div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div>
+      </form>
+      </div>
+    </div>
+{% endblock %}

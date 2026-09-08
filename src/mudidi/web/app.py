@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -24,12 +25,23 @@ from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from mudidi.instructions import read_instruction_text
 from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
 from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
-from mudidi.web.forms import FormFieldError, NewRunForm
+from mudidi.web.forms import (
+    FormFieldError,
+    NewRunForm,
+    instruction_review_summary,
+)
 from mudidi.web.jobs import JobController
-from mudidi.web.inputs import InputMaterializer, _MAX_UPLOAD_BYTES, rebase_managed_config
+from mudidi.web.inputs import (
+    InputMaterializer,
+    InstructionMaterializationError,
+    _MAX_UPLOAD_BYTES,
+    read_managed_instruction_metadata,
+    rebase_managed_config,
+)
 from mudidi.web.models import (
     ModelCatalog,
     ModelDiscovery,
@@ -59,6 +71,10 @@ _LIVE_RUN_STATUSES = {
     RunStatus.DISCOVERING_PARSE_RULES,
     RunStatus.RUNNING_STAGE2,
 }
+
+_TERMINAL_EVENT_TYPES = frozenset(
+    {"run.completed", "run.failed", "run.cancelled"}
+)
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
@@ -258,6 +274,7 @@ def create_app(
             preset_state = _preset_form_state(
                 selected_preset,
                 known_models={model.model_id for model in _all_models(app)},
+                presets_root=app.state.inputs.presets_root,
             )
             preset_assets = _preset_asset_links(
                 selected_preset,
@@ -266,7 +283,6 @@ def create_app(
         errors = validation_errors or []
         return {
             "request": request,
-            "active_page": "new-run",
             "models": _all_models(app),
             "presets": presets,
             "selected_preset": selected_preset,
@@ -314,17 +330,29 @@ def create_app(
             "alphabet_file",
             "existing_mdf_guide_file",
             "custom_mdf_manual",
+            "stage1_instruction_file",
+            "stage2_instruction_file",
         }
         retired_dashboard_fields = {
             "page_limit",
             "media_reference",
             "prompt_cache",
+            "stage1_instruction_keep_existing",
+            "stage2_instruction_keep_existing",
+        }
+        client_only_fields = {
+            # Browser-only Keep/Replace radio for a preset's saved attachment;
+            # process_instruction_stage() derives keep_existing itself and
+            # NewRunForm has no such field (extra="forbid").
+            "stage1_instruction_kept_choice",
+            "stage2_instruction_kept_choice",
         }
         payload = {
             key: value
             for key, value in submitted.items()
             if key not in upload_fields
             and key not in retired_dashboard_fields
+            and key not in client_only_fields
             and key != "pages"
             and isinstance(value, str)
             and value.strip() != ""
@@ -372,6 +400,240 @@ def create_app(
                 for value in submitted.getlist(field)
                 if getattr(value, "filename", "")
             ]
+
+        def instruction_scalar(
+            field: str,
+            *,
+            default: str,
+            error_field: str,
+        ) -> tuple[str, bool]:
+            values = submitted.getlist(field)
+            if len(values) > 1:
+                raise FormFieldError(
+                    error_field,
+                    f"Submit only one value for {field.replace('_', ' ')}.",
+                )
+            if not values:
+                return default, False
+            value = values[0]
+            if not isinstance(value, str):
+                raise FormFieldError(
+                    error_field,
+                    f"{field.replace('_', ' ').title()} must be a text value.",
+                )
+            return value, True
+        async def process_instruction_stage(stage: str, *, active: bool) -> None:
+            """Apply one stage's typed/file instruction state to ``payload``."""
+
+            source_field = f"{stage}_instruction_source"
+            file_field = f"{stage}_instruction_file"
+            text_field = f"{stage}_additional_instructions"
+            pages_field = f"{stage}_instruction_pdf_pages"
+            keep_field = f"{stage}_instruction_keep_existing"
+            guide_field = f"{stage}_guides"
+            source_raw, _source_submitted = instruction_scalar(
+                source_field,
+                default="typed",
+                error_field=file_field,
+            )
+            source = source_raw.strip() or "typed"
+            text_raw, _text_submitted = instruction_scalar(
+                text_field,
+                default="",
+                error_field=file_field,
+            )
+            text = text_raw.strip()
+            page_raw, page_was_submitted = instruction_scalar(
+                pages_field,
+                default="",
+                error_field=pages_field,
+            )
+            page_spec = page_raw.strip() or None
+            keep_raw, _keep_submitted = instruction_scalar(
+                keep_field,
+                default="",
+                error_field=file_field,
+            )
+            keep_value = keep_raw.strip().lower()
+            if keep_value not in {"", "true", "false"}:
+                raise FormFieldError(
+                    file_field,
+                    "Instruction keep-existing state is invalid.",
+                )
+            keep_existing = keep_value == "true"
+            scope = None
+            if stage == "stage2":
+                scope_raw, _scope_submitted = instruction_scalar(
+                    "stage2_instruction_scope",
+                    default="both",
+                    error_field=file_field,
+                )
+                scope = scope_raw.strip() or "both"
+                if scope not in {"pass1", "pass2", "both"}:
+                    raise FormFieldError(
+                        file_field,
+                        "Stage 2 instruction scope is invalid.",
+                    )
+            payload[source_field] = source
+            payload[text_field] = text or None
+            payload[pages_field] = page_spec
+            payload[keep_field] = keep_existing
+            if stage == "stage2":
+                payload["stage2_instruction_scope"] = scope
+            files = uploaded(file_field)
+            relevant = bool(
+                files
+                or text
+                or page_spec
+                or keep_existing
+                or source != "typed"
+                or (
+                    stage == "stage2"
+                    and scope not in {None, "both"}
+                )
+            )
+            if source not in {"typed", "file"}:
+                raise FormFieldError(
+                    file_field,
+                    "Choose typed or file instructions.",
+                )
+            if not active:
+                if relevant:
+                    raise FormFieldError(
+                        file_field,
+                        f"{stage.title()} instructions are not used by this pipeline.",
+                    )
+                return
+
+            inherited = (
+                getattr(preset_config.pipeline, guide_field)
+                if preset_config is not None
+                else None
+            )
+            inherited_page_spec = (
+                str(
+                    getattr(
+                        preset_config.pipeline,
+                        f"{stage}_guides_pages",
+                        "",
+                    )
+                    or ""
+                ).strip()
+                or None
+                if preset_config is not None
+                else None
+            )
+            run_bundle = app.state.inputs.bundle(run_id).resolve()
+
+            def managed_inherited_file() -> bool:
+                if inherited is None or inherited.is_symlink():
+                    return False
+                try:
+                    resolved = inherited.expanduser().resolve()
+                except OSError:
+                    return False
+                if not resolved.is_relative_to(run_bundle) or not resolved.is_file():
+                    return False
+                metadata = read_managed_instruction_metadata(resolved)
+                return bool(metadata and metadata.get("source_mode") == "file")
+
+            def discard_inherited() -> None:
+                if inherited is None or inherited.is_symlink():
+                    return
+                try:
+                    resolved = inherited.expanduser().resolve()
+                except OSError:
+                    return
+                instructions_root = run_bundle / "instructions"
+                stage_dir = instructions_root / stage
+                if resolved.is_relative_to(stage_dir) and stage_dir.is_dir():
+                    shutil.rmtree(stage_dir, ignore_errors=True)
+                elif (
+                    resolved.is_relative_to(instructions_root)
+                    and resolved.is_file()
+                ):
+                    resolved.unlink(missing_ok=True)
+            if source == "typed":
+                if files:
+                    raise FormFieldError(
+                        file_field,
+                        "Remove the uploaded file before using typed instructions.",
+                    )
+                if page_spec is not None:
+                    raise FormFieldError(
+                        pages_field,
+                        "Instruction PDF page selection requires a PDF source.",
+                    )
+                if text:
+                    try:
+                        payload[guide_field] = app.state.inputs.materialize_instruction(
+                            run_id,
+                            stage,
+                            text,
+                            replace=preset_config is not None,
+                            stage2_scope=scope,
+                        )
+                    except ValueError as exc:
+                        raise FormFieldError(file_field, str(exc)) from exc
+                elif preset_config is not None:
+                    discard_inherited()
+                    payload[guide_field] = None
+                return
+
+            if text:
+                raise FormFieldError(
+                    file_field,
+                    "Clear typed instructions before using an uploaded file.",
+                )
+            if len(files) > 1:
+                raise FormFieldError(file_field, "Upload exactly one instruction file.")
+            if files:
+                try:
+                    payload[guide_field] = (
+                        await app.state.inputs.materialize_instruction_upload(
+                            run_id,
+                            stage,
+                            files[0],
+                            page_spec=page_spec,
+                            stage2_scope=scope,
+                            replace=preset_config is not None,
+                        )
+                    )
+                except InstructionMaterializationError as exc:
+                    error_field = (
+                        pages_field if exc.category == "pages" else file_field
+                    )
+                    raise FormFieldError(error_field, str(exc)) from exc
+                except ValueError as exc:
+                    raise FormFieldError(file_field, str(exc)) from exc
+                return
+            if keep_existing and managed_inherited_file():
+                effective_page_spec = (
+                    page_spec if page_was_submitted else inherited_page_spec
+                )
+                try:
+                    payload[guide_field] = (
+                        app.state.inputs.refresh_managed_instruction(
+                            run_id,
+                            stage,
+                            inherited,
+                            page_spec=effective_page_spec,
+                            stage2_scope=scope,
+                        )
+                    )
+                except InstructionMaterializationError as exc:
+                    error_field = (
+                        pages_field if exc.category == "pages" else file_field
+                    )
+                    raise FormFieldError(error_field, str(exc)) from exc
+                except ValueError as exc:
+                    raise FormFieldError(file_field, str(exc)) from exc
+                payload[pages_field] = effective_page_spec
+                return
+            raise FormFieldError(
+                file_field,
+                "Upload exactly one instruction file, or explicitly keep the saved file.",
+            )
 
         try:
             preset_config = None
@@ -448,30 +710,8 @@ def create_app(
             elif preset_config is not None and runs_stage2:
                 payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
 
-            stage1_instructions = str(
-                payload.get("stage1_additional_instructions", "")
-            ).strip()
-            if stage1_instructions and runs_stage1:
-                payload["stage1_guides"] = app.state.inputs.materialize_instruction(
-                    run_id,
-                    "stage1",
-                    stage1_instructions,
-                    replace=preset_config is not None,
-                )
-            elif preset_config is not None and runs_stage1:
-                payload["stage1_guides"] = preset_config.pipeline.stage1_guides
-            stage2_instructions = str(
-                payload.get("stage2_additional_instructions", "")
-            ).strip()
-            if stage2_instructions and runs_stage2:
-                payload["stage2_guides"] = app.state.inputs.materialize_instruction(
-                    run_id,
-                    "stage2",
-                    stage2_instructions,
-                    replace=preset_config is not None,
-                )
-            elif preset_config is not None and runs_stage2:
-                payload["stage2_guides"] = preset_config.pipeline.stage2_guides
+            await process_instruction_stage("stage1", active=runs_stage1)
+            await process_instruction_stage("stage2", active=runs_stage2)
 
             manual_source = str(payload.get("mdf_manual_source", "none"))
             manual_files = uploaded("custom_mdf_manual")
@@ -528,8 +768,34 @@ def create_app(
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": run_form.to_summary(), "run_id": run_id},
+            context={
+                "summary": _config_summary(config),
+                "run_id": run_id,
+                "continuation_action": f"/runs/{run_id}/start",
+                "continuation_label": "Start run",
+            },
         )
+    @app.get("/runs/{run_id}/review", response_class=HTMLResponse)
+    async def review_prepared_run(request: Request, run_id: str) -> HTMLResponse:
+        """Render the persisted non-secret review for a prepared run."""
+
+        try:
+            run = app.state.run_store.get_run(run_id)
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError, ValueError) as exc:
+            raise HTTPException(status_code=404, detail="run not found") from exc
+        continuation_action, continuation_label = _review_continuation(run)
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={
+                "summary": _config_summary(config),
+                "run_id": run_id,
+                "continuation_action": continuation_action,
+                "continuation_label": continuation_label,
+            },
+        )
+
 
     @app.post("/runs/{run_id}/start")
     async def start_prepared_run(request: Request, run_id: str) -> HTMLResponse:
@@ -550,7 +816,11 @@ def create_app(
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="credential_required.html",
-                context={"run_id": run_id, "provider": provider.value},
+                context={
+                    "run_id": run_id,
+                    "provider": provider.value,
+                    "continue_action": f"/runs/{run_id}/start",
+                },
                 status_code=409,
             )
         try:
@@ -612,8 +882,14 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=404, detail="unknown provider") from exc
         app.state.credential_vault.clear_persistent(provider)
+        status = app.state.credential_vault.status(provider)
         return JSONResponse(
-            {"status": "deleted", "provider": provider.value},
+            {
+                "status": "deleted",
+                "provider": provider.value,
+                "available": status.available,
+                "source": status.source.value,
+            },
             headers={"Cache-Control": "no-store"},
         )
 
@@ -647,11 +923,15 @@ def create_app(
     async def active_run(request: Request) -> HTMLResponse:
         """Render the currently active worker, if any."""
 
-        active = app.state.run_store.list_active_runs()
+        active = [
+            view
+            for run in app.state.run_store.list_active_runs()
+            if (view := _run_view(app.state.run_store, run))["is_active"]
+        ]
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="active.html",
-            context={"runs": [_run_view(app.state.run_store, run) for run in active]},
+            context={"runs": active},
         )
 
     @app.get("/history", response_class=HTMLResponse)
@@ -672,11 +952,18 @@ def create_app(
             runs = [run for run in runs if run.status.value == status]
         if provider:
             runs = [run for run in runs if run.provider == provider]
+        history_views = []
+        for run in runs:
+            view = _run_view(app.state.run_store, run)
+            view["output_directory"] = _history_output_directory(
+                app.state.job_controller, run.run_id
+            )
+            history_views.append(view)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="history.html",
             context={
-                "runs": [_run_view(app.state.run_store, run) for run in runs],
+                "runs": history_views,
                 "filters": {"q": q, "status": status, "provider": provider},
                 "statuses": tuple(RunStatus),
                 "status_label": _status_label,
@@ -697,6 +984,17 @@ def create_app(
             context={"presets": app.state.run_store.list_presets()},
         )
 
+    @app.post("/presets/{preset_id}/delete")
+    async def delete_preset(preset_id: str) -> RedirectResponse:
+        """Delete preset metadata and its managed input bundle."""
+
+        try:
+            app.state.run_store.delete_preset(preset_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="preset not found") from exc
+        app.state.inputs.discard_preset(preset_id)
+        return RedirectResponse("/presets", status_code=303)
+
     @app.get("/presets/{preset_id}/files/{asset_key:path}")
     async def preset_file(preset_id: str, asset_key: str) -> FileResponse:
         """Serve one allowlisted file owned by a local preset."""
@@ -713,6 +1011,7 @@ def create_app(
         if path is None:
             raise HTTPException(status_code=404, detail="preset file not found")
         return FileResponse(path, headers={"Cache-Control": "private, no-store"})
+
 
     @app.post("/runs/{run_id}/presets")
     async def save_run_preset(request: Request, run_id: str) -> RedirectResponse:
@@ -790,10 +1089,15 @@ def create_app(
             run = app.state.run_store.get_run(run_id)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
+        run_view = _run_view(app.state.run_store, run)
+        run_view["workspace_available"] = _managed_config_available(
+            app.state.job_controller,
+            run_id,
+        )
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="run_detail.html",
-            context={"run": _run_view(app.state.run_store, run)},
+            context={"run": run_view},
         )
 
     @app.get("/runs/{run_id}/parse-rules", response_class=HTMLResponse)
@@ -838,7 +1142,7 @@ def create_app(
             name="pages.html",
             context={
                 "run_id": run_id,
-                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "is_active": _run_is_active(run, events),
                 "last_event_sequence": max(
                     (int(event.get("sequence", 0)) for event in events),
                     default=0,
@@ -905,7 +1209,7 @@ def create_app(
                     pages[page_index + 1] if page_index + 1 < len(pages) else None
                 ),
                 "saved": request.query_params.get("saved") == "1",
-                "is_active": run.status in _LIVE_RUN_STATUSES,
+                "is_active": _run_is_active(run, events),
                 "last_event_sequence": max(
                     (int(event.get("sequence", 0)) for event in events),
                     default=0,
@@ -987,16 +1291,16 @@ def create_app(
         """Render a bounded, redacted view of the app-managed worker log."""
 
         try:
+            run = app.state.run_store.get_run(run_id)
             log_path = app.state.job_controller.log_path(run_id)
-        except KeyError as exc:
+            events = app.state.run_store.list_events(run_id)
+        except (KeyError, OSError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
         content, truncated = _read_log_tail(
             log_path,
             redactions=app.state.credential_vault.redaction_values(),
         )
-        failure_message = _failure_message(
-            app.state.run_store.list_events(run_id)
-        )
+        failure_message = _failure_message(events)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="logs.html",
@@ -1005,6 +1309,11 @@ def create_app(
                 "content": content,
                 "truncated": truncated,
                 "failure_message": failure_message,
+                "is_active": _run_is_active(run, events),
+                "last_event_sequence": max(
+                    (int(event.get("sequence", 0)) for event in events),
+                    default=0,
+                ),
             },
         )
 
@@ -1135,7 +1444,11 @@ def create_app(
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="credential_required.html",
-                context={"run_id": run_id, "provider": provider.value},
+                context={
+                    "run_id": run_id,
+                    "provider": provider.value,
+                    "continue_action": f"/runs/{run_id}/resume",
+                },
                 status_code=409,
             )
         try:
@@ -1177,12 +1490,8 @@ def create_app(
                 for event in new_events:
                     last_sequence = int(event["sequence"])
                     yield _sse_event(event)
-                status = app.state.run_store.get_run(run_id).status
-                if status in {
-                    RunStatus.COMPLETED,
-                    RunStatus.FAILED,
-                    RunStatus.CANCELLED,
-                }:
+                current_run = app.state.run_store.get_run(run_id)
+                if not _run_is_active(current_run, events):
                     return
                 if await request.is_disconnected():
                     return
@@ -1273,6 +1582,7 @@ def _preset_form_state(
     preset: PresetRecord,
     *,
     known_models: set[str],
+    presets_root: Path | None = None,
 ) -> dict[str, list[str]]:
     """Translate a typed preset into browser-form values without secrets."""
 
@@ -1311,6 +1621,12 @@ def _preset_form_state(
         ],
     }
 
+    assets = (
+        _preset_asset_paths(preset, presets_root=presets_root)
+        if presets_root is not None
+        else {}
+    )
+
     def put(name: str, value: object | None) -> None:
         if value is not None and str(value) != "":
             state[name] = [str(value)]
@@ -1331,6 +1647,44 @@ def _preset_form_state(
         provider = prefix if prefix in {item.value for item in Provider} else preset.provider
         put(f"{role}_provider", provider)
         put_model(f"{role}_model", f"{role}_custom_model", model)
+
+    def managed_guide(path: Path | None, key: str) -> Path | None:
+        if presets_root is None:
+            return path if path is not None else None
+        return assets.get(key)
+
+    def put_instruction_state(
+        stage: str,
+        path: Path | None,
+        *,
+        page_spec: str | None,
+        scope: str | None,
+    ) -> None:
+        asset_key = f"{stage}-instruction"
+        managed = managed_guide(path, asset_key)
+        metadata = read_managed_instruction_metadata(managed)
+        text = _read_preset_text(managed)
+        source_field = f"{stage}_instruction_source"
+        pages_field = f"{stage}_instruction_pdf_pages"
+        keep_field = f"{stage}_instruction_keep_existing"
+        text_field = f"{stage}_additional_instructions"
+        if metadata and metadata.get("source_mode") == "file":
+            put(source_field, "file")
+            put(pages_field, page_spec)
+            put(keep_field, "true")
+            return
+        if managed is not None and text is not None:
+            # Sidecar-free legacy TXT/MD/DOCX guides retain typed semantics.
+            put(source_field, "typed")
+            put(text_field, text)
+            return
+        if metadata and metadata.get("source_mode") == "typed":
+            put(source_field, "typed")
+            put(pages_field, page_spec)
+            return
+        if path is not None and managed is None:
+            put(source_field, "typed")
+        put(pages_field, page_spec)
 
     put("dictionary_pages", config.input.dictionary_pages)
     put("introduction_pages", config.input.introduction_pages)
@@ -1356,15 +1710,25 @@ def _preset_form_state(
     put("rewriter_reasoning", config.agentic.rewriter_reasoning)
     if config.pipeline.parse_rules_pages:
         put("parse_rules_pages", ",".join(config.pipeline.parse_rules_pages))
-    put("character_inventory", _read_preset_text(config.input.alphabet))
     put(
-        "stage1_additional_instructions",
-        _read_preset_text(config.pipeline.stage1_guides),
+        "character_inventory",
+        _read_preset_text(
+            managed_guide(config.input.alphabet, "character-inventory")
+        ),
     )
-    put(
-        "stage2_additional_instructions",
-        _read_preset_text(config.pipeline.stage2_guides),
+    put_instruction_state(
+        "stage1",
+        config.pipeline.stage1_guides,
+        page_spec=config.pipeline.stage1_guides_pages,
+        scope=None,
     )
+    put_instruction_state(
+        "stage2",
+        config.pipeline.stage2_guides,
+        page_spec=config.pipeline.stage2_guides_pages,
+        scope=config.pipeline.stage2_guides_scope,
+    )
+    put("stage2_instruction_scope", config.pipeline.stage2_guides_scope)
 
     profile = config.input.dictionary_profile
     if profile is not None:
@@ -1381,18 +1745,41 @@ def _preset_form_state(
     return state
 
 
-def _read_preset_text(path: Path | None) -> str | None:
-    """Read a bounded UTF-8 text field from a validated preset bundle."""
+_RESUMABLE_REVIEW_PHASES = frozenset(
+    {"stage1", "parse_rule_review", "stage2_pass2"}
+)
 
-    if path is None or not path.is_file() or path.is_symlink():
+
+def _review_continuation(run: RunRecord) -> tuple[str, str]:
+    """Choose the safe continuation for a prepared run review."""
+
+    if (
+        run.status in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED}
+        and run.resume_phase in _RESUMABLE_REVIEW_PHASES
+    ):
+        return f"/runs/{run.run_id}/resume", "Resume run"
+    return f"/runs/{run.run_id}/start", "Start run"
+
+
+def _read_preset_text(path: Path | None) -> str | None:
+    """Read and validate one sidecar-free legacy text guide."""
+
+    if (
+        path is None
+        or path.is_symlink()
+        or not path.is_file()
+        or path.suffix.lower() not in {".txt", ".md", ".docx"}
+    ):
         return None
     try:
-        return path.read_text(encoding="utf-8")[:20_000]
-    except (OSError, UnicodeDecodeError):
+        return read_instruction_text(path)
+    except Exception:
         return None
 
 
-def _config_summary(config: InferenceConfig) -> dict[str, str]:
+def _config_summary(config: InferenceConfig) -> dict[str, object]:
+    """Build the same metadata-only Review summary for every route."""
+
     verified_stages = [
         label
         for enabled, label in (
@@ -1435,26 +1822,38 @@ def _config_summary(config: InferenceConfig) -> dict[str, str]:
         "stage_2_pass_1_model": pass1_summary,
         "stage_2_pass_2_model": pass2_summary,
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",
-        "additional_instructions": ", ".join(
-            label
-            for path, label in (
-                (config.pipeline.stage1_guides, "Stage 1"),
-                (config.pipeline.stage2_guides, "Stage 2"),
+        "stage_1_instructions": instruction_review_summary(
+            config.pipeline.stage1_guides,
+            page_spec=(
+                config.pipeline.stage1_guides_pages if runs_stage1 else None
+            ),
+            stage2_scope=None,
+        ),
+        "stage_2_instructions": instruction_review_summary(
+            config.pipeline.stage2_guides,
+            page_spec=(
+                config.pipeline.stage2_guides_pages if runs_stage2 else None
+            ),
+            stage2_scope=(
+                config.pipeline.stage2_guides_scope if runs_stage2 else None
+            ),
+        ),
+        "mdf_parsing_guide": (
+            "Human approval required"
+            if config.pipeline.stage != "1"
+            and config.pipeline.parse_rules_file is None
+            else (
+                "Uploaded guide used directly"
+                if config.pipeline.parse_rules_file is not None
+                else "Not used"
             )
-            if path is not None
-        )
-        or "None",
+        ),
         "mdf_manual": (
             "Not used"
             if manual is None
             else "Custom upload"
         ),
-        "mdf_parsing_guide": (
-            "Not used" if config.pipeline.stage == "1" else "Human approval required"
-        ),
     }
-
-
 def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, bool]:
     if not path.is_file() or path.is_symlink():
         return "", False
@@ -1525,6 +1924,16 @@ def _preset_asset_paths(
     manual = owned_file(preset.config.input.toolbox_pdf)
     if manual is not None:
         assets["mdf-manual"] = manual
+    alphabet = owned_file(preset.config.input.alphabet)
+    if alphabet is not None:
+        assets["character-inventory"] = alphabet
+    for stage, guide_path in (
+        ("stage1", preset.config.pipeline.stage1_guides),
+        ("stage2", preset.config.pipeline.stage2_guides),
+    ):
+        guide = owned_file(guide_path)
+        if guide is not None:
+            assets[f"{stage}-instruction"] = guide
     return assets
 
 
@@ -1536,6 +1945,32 @@ def _preset_asset_links(
     """Build template-safe labels and local URLs for saved preset inputs."""
 
     paths = _preset_asset_paths(preset, presets_root=presets_root)
+    def link_for(key: str) -> dict[str, object] | None:
+        path = paths.get(key)
+        if path is None:
+            return None
+        metadata = read_managed_instruction_metadata(path)
+        suffix = path.suffix.lower()
+        return {
+            "name": (
+                str(metadata["original_filename"])
+                if metadata and metadata.get("original_filename")
+                else path.name
+            ),
+            "url": f"/presets/{preset.preset_id}/files/{key}",
+            "source_mode": metadata.get("source_mode") if metadata else "typed",
+            "kind": (
+                metadata.get("kind")
+                if metadata
+                else ("pdf" if suffix == ".pdf" else "text")
+            ),
+            "pdf_page_count": metadata.get("pdf_page_count") if metadata else None,
+            "selected_pages": metadata.get("selected_pages", []) if metadata else [],
+            "stage2_scope": metadata.get("stage2_scope") if metadata else None,
+        }
+
+    stage1_instruction = link_for("stage1-instruction")
+    stage2_instruction = link_for("stage2-instruction")
     return {
         "pages": [
             {
@@ -1561,6 +1996,12 @@ def _preset_asset_links(
             if "mdf-manual" in paths
             else None
         ),
+        "stage1_instruction": stage1_instruction,
+        "stage2_instruction": stage2_instruction,
+        "instructions": {
+            "stage1": stage1_instruction,
+            "stage2": stage2_instruction,
+        },
     }
 
 
@@ -1572,8 +2013,39 @@ def _all_models(app: FastAPI) -> tuple[object, ...]:
     )
 
 
+def _history_output_directory(controller: JobController, run_id: str) -> str:
+    """Return a prepared run's output directory without breaking stale history."""
+
+    try:
+        config = controller.load_inference_config(run_id)
+    except (KeyError, OSError, ValidationError):
+        return "Unavailable"
+    return str(config.output.directory)
+
+def _managed_config_available(controller: JobController, run_id: str) -> bool:
+    """Return whether config-dependent run workspace views can load safely."""
+
+    try:
+        controller.load_inference_config(run_id)
+    except (KeyError, OSError, ValidationError, ValueError):
+        return False
+    return True
+
+
+def _run_is_active(
+    run: RunRecord,
+    events: list[dict[str, object]],
+) -> bool:
+    """Treat persisted terminal events as authoritative for live views."""
+
+    return run.status in _LIVE_RUN_STATUSES and not any(
+        str(event.get("type", "")) in _TERMINAL_EVENT_TYPES for event in events
+    )
+
+
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
     events = store.list_events(run.run_id)
+    is_active = _run_is_active(run, events)
     for event in events:
         event["display_type"] = _event_label(
             str(event.get("type", "")), str(event.get("stage", ""))
@@ -1584,7 +2056,23 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         RunStatus.AWAITING_PARSE_RULES_REVIEW: "stage2_pass1",
         RunStatus.RUNNING_STAGE2: "stage2_pass2",
     }.get(run.status)
-    stage_events = [event for event in events if event.get("stage") == active_stage]
+    progress_stage = active_stage
+    if progress_stage is None and run.status in {
+        RunStatus.COMPLETED,
+        RunStatus.FAILED,
+        RunStatus.CANCELLED,
+        RunStatus.INTERRUPTED,
+        RunStatus.CREDENTIALS_REQUIRED,
+    }:
+        progress_stage = next(
+            (
+                str(event["stage"])
+                for event in reversed(events)
+                if event.get("type") == "stage.started" and event.get("stage")
+            ),
+            None,
+        )
+    stage_events = [event for event in events if event.get("stage") == progress_stage]
     completed_pages = sum(
         event.get("type") == "page.completed" for event in stage_events
     )
@@ -1593,20 +2081,22 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         {},
     )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
-    current_page = next(
-        (
-            int(event["page"])
-            for event in reversed(stage_events)
-            if event.get("type") == "page.started"
-            and not any(
-                later.get("type") == "page.completed"
-                and later.get("stage") == active_stage
-                and later.get("page") == event.get("page")
-                for later in events[events.index(event) + 1 :]
-            )
-        ),
-        None,
-    )
+    current_page = None
+    if is_active:
+        current_page = next(
+            (
+                int(event["page"])
+                for event in reversed(stage_events)
+                if event.get("type") == "page.started"
+                and not any(
+                    later.get("type") == "page.completed"
+                    and later.get("stage") == progress_stage
+                    and later.get("page") == event.get("page")
+                    for later in events[events.index(event) + 1 :]
+                )
+            ),
+            None,
+        )
     try:
         review_row = store.get_parse_rule_review(run.run_id)
     except KeyError:
@@ -1632,7 +2122,8 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         ),
         "failure_message": _failure_message(events),
         "created_at": run.created_at,
-        "is_active": run.status in _LIVE_RUN_STATUSES,
+        "updated_at": run.updated_at,
+        "is_active": is_active,
         "is_terminal": run.status
         in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED},
         "delete_available": can_delete_run(run.status),

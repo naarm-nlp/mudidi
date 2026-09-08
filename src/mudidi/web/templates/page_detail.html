@@ -1,15 +1,10 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}
-    <title>Page {{ page_id.removeprefix('page_') }} editor · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=page-editor-1">
-    <script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>
-  </head>
-  <body class="standalone">
-    <main class="page-editor-page">
+{% extends "_layout.html" %}
+{% block title %}Page {{ page_id.removeprefix('page_') }} editor · MUDIDI{% endblock %}
+{% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="page-editor-page" data-page-editor>
       <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
 
       <header class="page-editor-heading">
@@ -21,6 +16,15 @@
         {% if saved %}<div class="save-confirmation" role="status">Changes saved</div>{% endif %}
       </header>
 
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/pages" aria-current="page">Page Viewer &amp; Editor</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+          <a href="/runs/{{ run_id }}/usage">Usage</a>
+        </div>
+      </nav>
       <nav class="panel page-navigator" aria-label="Processed page navigation">
         {% if previous_page %}
         <a class="page-step-button" href="/runs/{{ run_id }}/pages/{{ previous_page.page_id }}">← Previous</a>
@@ -117,6 +121,6 @@
           {% endfor %}
         </div>
       </details>
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}

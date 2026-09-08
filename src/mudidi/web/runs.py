@@ -628,6 +628,16 @@ class RunStore:
             raise KeyError(preset_id)
         return _preset_from_row(row)
 
+    def delete_preset(self, preset_id: str) -> None:
+        """Delete one preset metadata row or raise ``KeyError``."""
+
+        with self._connect() as connection:
+            result = connection.execute(
+                "DELETE FROM presets WHERE preset_id = ?", (preset_id,)
+            )
+            if result.rowcount != 1:
+                raise KeyError(preset_id)
+
     def list_presets(self) -> list[PresetRecord]:
         """Return presets ordered by name for a stable picker."""
 

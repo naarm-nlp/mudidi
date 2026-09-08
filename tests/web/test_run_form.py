@@ -106,6 +106,84 @@ def test_review_summary_lists_page_ranges_and_effective_stage_models(
     assert summary["stage_2_pass_1_model"] == "anthropic/claude-opus-4-6"
     assert summary["stage_2_pass_2_model"] == "openai/gpt-5.4"
 
+@pytest.mark.parametrize(
+    (
+        "pipeline",
+        "stage1_guide",
+        "stage2_guide",
+        "stage1_instructions",
+        "stage2_instructions",
+        "expected",
+    ),
+    [
+        ("complete", "saved Stage 1 guide", None, "   ", None, "Stage 1"),
+        ("complete", None, "saved Stage 2 guide", None, "", "Stage 2"),
+        (
+            "complete",
+            "saved Stage 1 guide",
+            "saved Stage 2 guide",
+            "",
+            "  ",
+            "Stage 1, Stage 2",
+        ),
+        (
+            "transcription",
+            "saved Stage 1 guide",
+            "saved Stage 2 guide",
+            "",
+            "",
+            "Stage 1",
+        ),
+        (
+            "structure",
+            "saved Stage 1 guide",
+            "saved Stage 2 guide",
+            "",
+            "",
+            "Stage 2",
+        ),
+        ("complete", None, None, "Fresh Stage 1 text", None, "Stage 1"),
+    ],
+)
+def test_review_summary_uses_effective_instruction_source(
+    tmp_path: Path,
+    pipeline: str,
+    stage1_guide: str | None,
+    stage2_guide: str | None,
+    stage1_instructions: str | None,
+    stage2_instructions: str | None,
+    expected: str,
+) -> None:
+    stage1_path = tmp_path / "stage1-guide.txt" if stage1_guide else None
+    stage2_path = tmp_path / "stage2-guide.txt" if stage2_guide else None
+    if stage1_path is not None:
+        stage1_path.write_text(stage1_guide, encoding="utf-8")
+    if stage2_path is not None:
+        stage2_path.write_text(stage2_guide, encoding="utf-8")
+
+    summary = _form(
+        tmp_path,
+        pipeline=pipeline,
+        stage1_guides=stage1_path,
+        stage2_guides=stage2_path,
+        stage1_additional_instructions=stage1_instructions,
+        stage2_additional_instructions=stage2_instructions,
+    ).to_summary()
+
+    assert "additional_instructions" not in summary
+    assert summary["stage_1_instructions"]["source"] == (
+        "Typed" if stage1_path is not None else "None"
+    )
+    assert summary["stage_2_instructions"]["source"] == (
+        "Typed" if stage2_path is not None else "None"
+    )
+    assert all(
+        text not in repr(summary)
+        for text in (stage1_instructions, stage2_instructions)
+        if text
+    )
+
+
 
 def test_stage_models_accept_provider_specific_other_values(tmp_path: Path) -> None:
     config = _form(
@@ -359,3 +437,59 @@ def test_resume_is_the_safe_default_for_existing_output(tmp_path: Path) -> None:
 
     assert config.runtime.overwrite is False
     assert previous.read_text(encoding="utf-8") == "resume me"
+
+
+def test_instruction_browser_fields_default_to_typed_and_both(
+    tmp_path: Path,
+) -> None:
+    form = _form(tmp_path)
+
+    assert form.stage1_instruction_source == "typed"
+    assert form.stage2_instruction_source == "typed"
+    assert form.stage1_instruction_pdf_pages is None
+    assert form.stage2_instruction_pdf_pages is None
+    assert form.stage2_instruction_scope == "both"
+    config = form.to_inference_config()
+    assert config.pipeline.stage1_guides_pages is None
+    assert config.pipeline.stage2_guides_pages is None
+    assert config.pipeline.stage2_guides_scope == "both"
+
+
+def test_instruction_pdf_page_fields_normalize_before_config_mapping(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        stage1_guides=tmp_path / "stage1.pdf",
+        stage2_guides=tmp_path / "stage2.pdf",
+        stage1_instruction_source="file",
+        stage2_instruction_source="file",
+        stage1_instruction_pdf_pages="2-3, 2",
+        stage2_instruction_pdf_pages="4, 4-5",
+        stage2_instruction_scope="pass2",
+    )
+
+    assert form.stage1_instruction_pdf_pages == "2-3,2"
+    assert form.stage2_instruction_pdf_pages == "4,4-5"
+    config = form.to_inference_config()
+    assert config.pipeline.stage1_guides_pages == "2-3"
+    assert config.pipeline.stage2_guides_pages == "4,5"
+    assert config.pipeline.stage2_guides_scope == "pass2"
+
+
+@pytest.mark.parametrize("scope", ["pass1", "pass2", "both"])
+def test_each_stage2_instruction_scope_maps_to_pipeline_config(
+    tmp_path: Path,
+    scope: str,
+) -> None:
+    form = _form(
+        tmp_path,
+        pipeline=PipelineChoice.STRUCTURE,
+        stage2_guides=tmp_path / "stage2.pdf",
+        stage2_instruction_source="file",
+        stage2_instruction_scope=scope,
+    )
+
+    config = form.to_inference_config()
+
+    assert config.pipeline.stage2_guides_scope == scope

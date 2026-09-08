@@ -1,73 +1,108 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Run history · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-3">
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-3" defer></script>
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
-      <a class="back-link" href="/">← New run</a>
-      <header class="page-heading">
-        <span class="eyebrow">Local metadata</span>
-        <h1>Run history</h1>
-        <p>Runs and events persist locally. Provider credentials are stored separately as encrypted values.</p>
-      </header>
-      <form class="panel history-filters" method="get" action="/history">
-        <label>Search<input name="q" value="{{ filters.q }}" placeholder="Run ID"></label>
-        <label>Status
-          <select name="status">
-            <option value="">All statuses</option>
-            {% for item in statuses %}
-            <option value="{{ item.value }}" {{ 'selected' if filters.status == item.value else '' }}>{{ status_label(item) }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>Provider
-          <select name="provider">
-            <option value="">All providers</option>
-            {% for item in providers %}
-            <option value="{{ item.value }}" {{ 'selected' if filters.provider == item.value else '' }}>{{ item.value | title }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <button class="primary" type="submit">Filter</button>
-      </form>
-      <section class="panel history-list">
-        {% if runs %}
-          {% for run in runs %}
-          <article class="run-row">
-            <a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a>
-            <span>{{ run.status_label }}</span>
-            <small>{{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }} · {{ run.provider }}</small>
-            <div class="history-actions">
-              {% if run.review_available and run.review_status == 'awaiting_review' %}
-              <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review</a>
-              {% elif run.resume_available %}
-              <a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>
-              {% else %}
-              <a class="back-link" href="/runs/{{ run.run_id }}">View</a>
-              {% endif %}
-              {% if run.delete_available %}
-              <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete>
-                <button class="history-delete" type="submit">Remove</button>
-              </form>
-              {% endif %}
-            </div>
-          </article>
+{% extends "_layout.html" %}
+{% block title %}Run history · MUDIDI{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block main %}
+<div class="page-shell">
+  <div class="providers-page">
+    <a class="back-link" href="/">← New run</a>
+    <header class="page-heading">
+      <span class="eyebrow">Local metadata</span>
+      <h1>Run history</h1>
+      <p>Runs and events persist locally. Provider credentials are stored separately as encrypted values.</p>
+    </header>
+    <form class="panel history-filters" method="get" action="/history">
+      <label for="history-query">Search<input id="history-query" name="q" value="{{ filters.q }}" placeholder="Run ID"></label>
+      <label for="history-status">Status
+        <select id="history-status" name="status">
+          <option value="">All statuses</option>
+          {% for item in statuses %}
+          <option value="{{ item.value }}" {{ 'selected' if filters.status == item.value else '' }}>{{ status_label(item) }}</option>
           {% endfor %}
-        {% else %}
-        <div class="empty-state"><h2>No matching runs</h2><p>Change the filters or configure a new production run.</p></div>
-        {% endif %}
-      </section>
-      {% if has_deletable_runs %}
-      <form class="history-delete-all" method="post" action="/history/delete-all" data-confirm-delete-all>
-        <button class="danger" type="submit">Delete all history</button>
-        <p>Removes inactive dashboard records and managed inputs. Generated output files are kept.</p>
-      </form>
+        </select>
+      </label>
+      <label for="history-provider">Provider
+        <select id="history-provider" name="provider">
+          <option value="">All providers</option>
+          {% for item in providers %}
+          <option value="{{ item.value }}" {{ 'selected' if filters.provider == item.value else '' }}>{{ item.value | title }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="primary" type="submit">Filter</button>
+    </form>
+    <section class="panel history-list history-table-panel">
+      {% if runs %}
+      <div class="table-scroll">
+        <table class="history-table">
+          <caption class="sr-only">Run history results</caption>
+          <thead>
+            <tr>
+              <th scope="col">Run</th>
+              <th scope="col">Status</th>
+              <th scope="col">Progress</th>
+              <th scope="col">Provider</th>
+              <th scope="col">Last update</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for run in runs %}
+          {% set progress_percent = 0 %}
+          {% if run.total_pages %}
+          {% set progress_percent = ((run.completed_pages / run.total_pages) * 100) | round | int %}
+          {% endif %}
+          {% if progress_percent < 0 %}{% set progress_percent = 0 %}{% endif %}
+          {% if progress_percent > 100 %}{% set progress_percent = 100 %}{% endif %}
+            <tr>
+              <td class="history-run">
+                <a href="/runs/{{ run.run_id }}"><strong>{{ run.run_id }}</strong></a>
+                <small class="history-output"><span>Output directory</span><code>{{ run.output_directory }}</code></small>
+              </td>
+              <td><span class="status-pill {{ 'ready' if run.status == 'completed' else 'running' if run.is_active else '' }}">{{ run.status_label }}</span></td>
+              <td class="history-progress">
+                <strong>{{ progress_percent }}%</strong>
+                <small>{{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}</small>
+              </td>
+              <td>{{ run.provider }}</td>
+              <td><time datetime="{{ run.updated_at.isoformat() }}">{{ run.updated_at.strftime("%Y-%m-%d %H:%M UTC") }}</time></td>
+              <td class="history-action-cell">
+                <div class="history-actions">
+                  {% if run.review_available and run.review_status == 'awaiting_review' %}
+                  <a class="back-link" href="/runs/{{ run.run_id }}/parse-rules">Review</a>
+                  {% elif run.resume_available %}
+                  <a class="back-link" href="/runs/{{ run.run_id }}">Resume</a>
+                  {% else %}
+                  <a class="back-link" href="/runs/{{ run.run_id }}">View</a>
+                  {% endif %}
+                  {% if run.delete_available %}
+                  <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete>
+                    <button class="history-delete" type="submit">Remove</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <h2>No matching runs</h2>
+        <p>Change the filters or configure a new production run.</p>
+        <div class="empty-actions">
+          <a class="primary" href="/">New run</a>
+          {% if filters.q or filters.status or filters.provider %}<a class="back-link" href="/history">Clear filters</a>{% endif %}
+        </div>
+      </div>
       {% endif %}
-    </main>
-  </body>
-</html>
+    </section>
+    {% if has_deletable_runs %}
+    <form class="history-delete-all" method="post" action="/history/delete-all" data-confirm-delete-all>
+      <button class="danger" type="submit">Delete all history</button>
+      <p>Removes inactive dashboard records and managed inputs. Generated output files are kept.</p>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

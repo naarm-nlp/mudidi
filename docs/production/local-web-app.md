@@ -84,61 +84,100 @@ for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ## Create a run
 
-The **New Run** screen asks you to:
+The **New Run** screen is a five-step wizard:
 
-1. Choose exactly one dictionary PDF.
-2. Enter the required **PDF dictionary pages** to process. You may enter one
-   page (`5`), one range (`10-20`), comma-separated pages (`1,5,9`), or a
-   combination (`1,5,10-20`).
-3. Enter an output directory on the same computer running MUDIDI.
-4. Select one pipeline:
-   - **Complete digitization**
-   - **Transcription only**
-   - **Parse transcription into MDF (Multi-Dictionary Formatter)**
-5. Choose a provider, model, and independent reasoning level for each active
-   stage.
-6. Optionally enable **Agentic verification**.
-7. Review the resolved configuration and start. The review includes the
-   selected dictionary pages, representative parsing-guide pages, Stage 1
-   model, Stage 2 Pass 1 model, and Stage 2 Pass 2 model.
+1. **Input** — upload exactly one dictionary PDF, enter the output directory and
+   dictionary pages, and optionally add introduction pages, additional context,
+   MDF inputs, and a **Dictionary Profile**.
+2. **Pipeline** — choose one of the three supported workflows and an existing
+   output policy.
+3. **Model** — manage the local provider credential, select the provider,
+   model, and reasoning settings, and configure temperature and batch size.
+4. **Agentic** — leave verification off or enable its evaluator and correction
+   settings.
+5. **Review** — submit the complete form for authoritative server validation,
+   then inspect the server-rendered, non-secret review before starting the run.
 
-The dashboard cannot continue unless the dictionary PDF, dictionary pages, and
-the other required fields in the form are present. Page numbers are 1-based:
-zero, negative numbers, descending ranges, and pages beyond the uploaded PDF's
-page count are rejected. Invalid submissions remain on **New Run** and show a
-red outline and explanation on each field that needs attention.
+The Input, Pipeline, Model, and Agentic step buttons, **Continue**, and **Back**
+move between configuration panels without validating or clearing values. This
+allows the four configuration steps to be completed in any order. At final
+**Review run**, the browser performs whole-form constraint validation across
+all enabled fields before sending the complete multipart form to
+`/runs/preview`. If a field is invalid, the wizard opens its panel, displays
+the validation message, and focuses the first invalid control. Browser checks
+are only an early convenience: the server remains authoritative for required
+fields, PDF page bounds, profile completeness, model settings, and the rest of
+the production configuration.
+A rejected submission always returns to **New Run** with safe, user-facing validation details. Only errors rendered in wrappers marked for automatic routing open their panels; selecting that panel does not move keyboard focus. Provider errors and all other errors without automatic routing remain in the **New Run** summary.
+
+The **Input** step asks for:
+
+1. one dictionary PDF;
+2. the required **PDF dictionary pages** to process. You may enter one page
+   (`5`), one range (`10-20`), comma-separated pages (`1,5,9`), or a
+   combination (`1,5,10-20`);
+3. an output directory on the same computer running MUDIDI;
+4. optional introduction pages and additional context;
+5. optional MDF parsing-guide pages, an existing guide JSON file, or a custom
+   MDF manual PDF.
+
+Page numbers are 1-based: zero, negative numbers, descending ranges, and pages
+beyond the uploaded PDF's page count are rejected. Browser-selected files are
+copied into an input bundle owned by the run so review, restart, and resume do
+not depend on the original browser selection. The output directory remains a
+text field because a standard browser cannot disclose an arbitrary absolute
+folder path to a localhost server.
+
+The **Pipeline** step presents these mutually exclusive choices:
+
+- **Complete digitization** — transcribes the dictionary, infers and reviews an
+  MDF parsing guide, then parses the transcription into MDF;
+- **Transcription only** — produces faithful flat Stage 1 text without MDF
+  parsing;
+- **Parse transcription into MDF (Multi-Dictionary Formatter)** — uses an
+  existing transcription, infers and reviews a dictionary-specific guide, and
+  emits MDF records.
+
+The existing output policy is separate: **Resume compatible existing
+artifacts** reuses compatible work, while **Overwrite existing artifacts**
+replaces it. The selected pipeline determines which later inputs and model
+controls are active. The dashboard always uses flat Stage 1 output and does not
+preserve typography. OCR hints, column mode, and expert OCR/VLM backends remain
+available through YAML and the CLI but are intentionally absent from the
+dashboard.
+
+The final **Review** page is rendered by the server, not another client-side
+wizard panel. It groups the validated non-secret values under **Input**,
+**Pipeline**, **Model**, and **Agentic**, reports MDF parsing-guide review
+requirements, and provides the start action. Complete and MDF-parsing runs
+pause later for explicit MDF parsing-guide approval; that human checkpoint is
+distinct from this pre-run configuration review.
 
 The grey values beginning with `ex:` are examples only; they are not submitted
 as values. The current examples are `ex: 30-35` for dictionary pages,
 `ex: 1-5` for introduction pages, and `ex: 30-32` for representative MDF
 parsing-guide pages.
 
-Browser-selected inputs are copied into an input bundle owned by the run. This
-allows review, restart, and resume without depending on the original browser
-selection. The output directory remains a text field because a standard browser
-cannot disclose an arbitrary absolute folder path to a localhost server.
-
 The web dashboard does not accept page images, multiple files, or a folder of
 images. Those input modes remain available through YAML and the CLI.
 
-Dashboard transcription always uses flat Stage 1 output and does not preserve
-typography. OCR hints, column mode, and expert OCR/VLM backends remain available
-through YAML and the CLI but are intentionally absent from the dashboard.
-
 ## Dictionary Profile
 
-The **Dictionary Profile** is optional and can improve extraction accuracy. It
-asks for:
+The optional **Dictionary Profile** can improve extraction accuracy. It asks
+for:
 
 - headword language and script;
-- translation, gloss, or definition languages and their scripts;
+- one or more paired translation, gloss, or definition languages and scripts;
 - a free-form description of the page arrangement;
 - the information types found in entries.
 
-Leave the whole section blank when you are unsure. The profile is guidance, not
+Leave the whole section blank when you are unsure. If you answer any profile
+question, complete the profile, including a matching script for every target
+language; the server rejects partial profiles. The profile is guidance, not
 source text, and MUDIDI still checks the scanned page. It does not strictly
 limit discovery to the information types you enter: the model may identify
 additional entry structures and rules visible in the dictionary.
+
 
 ## Additional context
 
@@ -192,17 +231,57 @@ and does not replace the dictionary-specific MDF parsing guide.
 
 ## Agentic verification
 
-Agentic verification defaults to **No** because it adds evaluator and correction
-model calls. Selecting **Yes** opens **Custom verification** directly below the
-control. Stage 1 and Stage 2 verification are checked initially; you can disable
-either applicable stage and configure correction iterations, confidence,
-evaluator/rewriter models, reasoning, deterministic patches, and concrete retry
-evidence.
+Agentic verification is the fourth wizard step and defaults to **Off** because
+it adds evaluator and correction-model calls and cost. Select **On** to reveal
+the **Custom verification** panel. The applicable Stage 1 and Stage 2 checks
+start enabled; you can disable either one, then configure maximum correction
+iterations, minimum retry confidence, evaluator and rewriter models, reasoning,
+deterministic patches, and concrete retry evidence.
 
-Inactive stages are never verified. For example, transcription-only ignores
-Stage 2 verification even if a forged form submission includes it.
+Only stages in the selected pipeline can be verified. Controls for inactive
+stages are disabled in the browser, and the server intersects submitted stage
+choices with the active pipeline rather than trusting a forged inactive value.
+The Stage 1 and Stage 2 production calls still use the one synchronized
+run-level provider described below; evaluator and rewriter settings retain
+their existing optional role-specific model controls.
 
 ## Models and providers
+
+The **Model** step begins with the selected provider's credential card, then
+shows model and reasoning controls for active stages, temperature, and batch
+size. There is one authoritative run-level `provider` form value. The Stage 1
+and Stage 2 provider selectors are synchronized presentations of that value,
+not independent per-stage providers: changing either selector updates the
+other, and the same single provider is submitted for the run. Existing
+multipart field names, including `provider`, `stage1_model`,
+`stage2_pass1_model`, `stage2_pass2_model`, and their reasoning fields, remain
+unchanged; the wizard changes visibility and presentation, not their meaning.
+
+Stage 1 exposes its model and reasoning when transcription is active. Stage 2
+uses one shared model and one shared reasoning selection by default. The
+shared values are written to both existing Pass 1 and Pass 2 controls, so both
+Stage 2 calls use the same choices. The summary identifies this as **Shared
+model**.
+
+For separate Stage 2 choices, select **Advanced · split passes**. The action
+copies the current shared model and reasoning into both pass cards and replaces
+the shared presentation with:
+
+- **Pass 1** — examines representative pages to infer the dictionary-specific
+  MDF markers and entry structure. Its generated guide is reviewed before
+  conversion;
+- **Pass 2** — applies the approved Pass 1 guide to each authoritative Stage 1
+  transcription and emits the per-page MDF records. This is the high-volume
+  conversion pass.
+
+Each split-pass card has its own model and reasoning controls, while the
+run-level provider remains shared. The summary changes to **Separate pass
+models** and shows both models. **Use one Stage 2 model** returns to shared mode
+and reuses the previous shared selections. Independently cached split-pass values
+survive toggling only within the current page instance; because shared values
+replace both pass controls before session storage persists them, a reload or
+navigation restores those shared replacement values rather than the independent
+split-pass choices.
 
 The provider-specific catalog is combined with optional live model discovery and
 an **Other model** entry. OpenRouter uses a manually entered model such as
@@ -212,6 +291,7 @@ uses automatic routing.
 
 Selecting **None / lowest supported** reasoning resolves to `low`; MUDIDI only
 sends reasoning controls to model families known to support them.
+
 
 ## Complete-digitization workflow
 
@@ -297,23 +377,41 @@ saved preset.
 
 ## Credentials and local data
 
-The **API credentials** section on **New Run** accepts Gemini, OpenAI,
-Anthropic, and OpenRouter keys. Click **Save key** to persist an entered value.
-Inputs are masked by default and the eye button explicitly reveals a saved
-value. Provider keys are encrypted before their ciphertext is written to
-SQLite. They never enter presets, resolved configuration, logs, command lines,
-or URLs.
+On the **Model** step, the selected run-level provider appears in a prominent
+credential card with its saved status, a masked input, a reveal button, and
+**Save key**. The other provider cards are inside the **Manage keys**
+disclosure. Selecting a different provider moves that provider's card into the
+selected position without duplicating the card or its field.
 
+The **API credentials** section accepts Gemini, OpenAI, Anthropic, and OpenRouter
+keys. Click **Save key** to persist an entered value. Inputs are masked by
+default and the eye button explicitly reveals a saved value. The existing
+credential contract is unchanged: the key is sent as the `api_key` field to
+`POST /credentials/{provider}`, a saved key is revealed only after the
+same-origin `POST /credentials/{provider}/reveal` action, and removal uses
+`POST /credentials/{provider}/delete`. These actions do not put keys into run
+form fields, presets, resolved configuration, logs, command lines, or URLs.
+
+Provider keys are encrypted before their ciphertext is written to SQLite.
 MUDIDI stores the encryption key separately at `.credential-key` in the same
 private data directory. This protects a copied database from exposing plaintext
 credentials, but anyone who can read both files as your local user can decrypt
 them. Keep the complete directory private. The dashboard does not fall back to
 `.env`; `.env` remains the credential mechanism for CLI and YAML workflows.
+The encrypted storage, field names, endpoint paths, and reveal semantics are
+unchanged by the wizard presentation.
 
 When MUDIDI uses LiteLLM directly, there is no separate LiteLLM API key. The
 model identifier selects a provider and LiteLLM uses that provider's key—for
 example, an OpenAI model uses the saved OpenAI key. A LiteLLM virtual or master
 key is relevant only when connecting to a separately hosted LiteLLM Proxy.
+
+The browser uses the existing session-storage behavior for wizard continuity:
+non-file, non-password form values persist only in the current browser tab.
+File inputs and password/key values are intentionally excluded, so session
+storage does not restore them and does not carry them across tabs or browser
+restarts. Wizard presentation state, including the shared/split Stage 2
+choice, is kept separately from the form values.
 
 Web data defaults to:
 

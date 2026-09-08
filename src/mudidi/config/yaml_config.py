@@ -12,10 +12,23 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, TypeAlias
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 
 from mudidi.cli.model_args import DEFAULT_MODEL
-from mudidi.config.run_config import RunStage
+from mudidi.config.run_config import (
+    RunStage,
+    runs_stage1,
+    runs_stage2_any,
+    runs_stage2_pass1,
+    runs_stage2_pass2,
+)
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.utils.pdf_split import parse_page_spec
 
@@ -51,6 +64,97 @@ _PATH_KEYS = {
     "paddle_server_python",
     "glm_server_python",
 }
+
+
+def _normalize_guide_page_spec(value: str) -> str:
+    """Normalize page syntax while preserving first-occurrence token order."""
+
+    normalized: list[str] = []
+    seen: set[int] = set()
+    for chunk in value.split(","):
+        token = chunk.strip()
+        if not token:
+            continue
+        expanded = parse_page_spec(token)
+        unique = [page for page in expanded if page not in seen]
+        if not unique:
+            continue
+        seen.update(unique)
+        index = 0
+        while index < len(unique):
+            end = index + 1
+            while end < len(unique) and unique[end] == unique[end - 1] + 1:
+                end += 1
+            if end - index >= 2:
+                normalized.append(f"{unique[index]}-{unique[end - 1]}")
+            else:
+                normalized.append(str(unique[index]))
+            index = end
+    return ",".join(normalized)
+
+
+def _readable_instruction_guide(
+    label: str,
+    path: Path,
+    page_spec: str | None,
+    *,
+    strategy: str,
+) -> None:
+    """Validate one optional instruction guide and its PDF page selection."""
+
+    suffix = path.suffix.lower()
+    allowed = {".txt", ".md", ".docx", ".pdf"}
+    if suffix not in allowed:
+        raise ValueError(
+            f"{label} must use one of: .txt, .md, .docx, .pdf"
+        )
+    if suffix == ".pdf":
+        if strategy in {"vlm_ocr", "mathpix_ocr"}:
+            raise ValueError(
+                f"{label} PDF guides are not supported by {strategy}"
+            )
+        if path.stat().st_size == 0:
+            raise ValueError(f"{label} PDF is empty")
+        try:
+            with path.open("rb") as handle:
+                signature = handle.read(5)
+        except OSError as exc:
+            raise ValueError(f"{label} PDF is not readable: {exc}") from exc
+        if signature != b"%PDF-":
+            raise ValueError(
+                f"{label} PDF has an invalid signature; expected %PDF-"
+            )
+        import pymupdf
+
+        try:
+            with pymupdf.open(str(path)) as document:
+                page_count = document.page_count
+        except Exception as exc:
+            raise ValueError(f"{label} PDF is not readable: {exc}") from exc
+        if page_count < 1:
+            raise ValueError(f"{label} PDF contains no pages")
+        if page_spec is None:
+            return
+        try:
+            selected = parse_page_spec(page_spec)
+        except ValueError as exc:
+            raise ValueError(f"invalid {label}_pages: {exc}") from exc
+        invalid = next((page for page in selected if page > page_count), None)
+        if invalid is not None:
+            raise ValueError(
+                f"invalid {label}_pages: page {invalid} is outside PDF "
+                f"(1-{page_count})"
+            )
+        return
+    if page_spec is not None:
+        pages_label = label.removesuffix("guides") + "guides_pages"
+        raise ValueError(f"{pages_label} requires a PDF guide")
+    from mudidi.instructions import read_instruction_text
+    try:
+        read_instruction_text(path)
+    except Exception as exc:
+        raise ValueError(f"{label} text is invalid: {exc}") from exc
+
 
 
 class _StrictModel(BaseModel):
@@ -95,8 +199,21 @@ class PipelineConfig(_StrictModel):
     parse_rules_gold: bool = False
     stage2_lexical_repair: bool = False
     stage1_guides: Path | None = None
+    stage1_guides_pages: str | None = None
     stage2_guides: Path | None = None
+    stage2_guides_pages: str | None = None
+    stage2_guides_scope: Literal["pass1", "pass2", "both"] = "both"
 
+    @field_validator("stage1_guides_pages", "stage2_guides_pages", mode="before")
+    @classmethod
+    def normalize_guide_pages(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("page specification must be a string")
+        if not value.strip():
+            return None
+        return _normalize_guide_page_spec(value)
     @model_validator(mode="after")
     def validate_strategy_stage(self) -> PipelineConfig:
         if self.strategy == "vlm_ocr" and self.stage != "1":
@@ -107,6 +224,35 @@ class PipelineConfig(_StrictModel):
             raise ValueError("mathpix_ocr requires pipeline.stage: '1'")
         if self.strategy == "mathpix_ocr" and self.stage1_mode != "flat":
             raise ValueError("mathpix_ocr requires pipeline.stage1_mode: flat")
+
+        stage1_selected = runs_stage1(self.stage)
+        if self.stage1_guides is not None and not stage1_selected:
+            raise ValueError(
+                "pipeline.stage1_guides is configured but selected pipeline "
+                "does not run Stage 1"
+            )
+
+        stage2_selected = runs_stage2_any(self.stage)
+        if self.stage2_guides is None:
+            return self
+        if not stage2_selected:
+            raise ValueError(
+                "pipeline.stage2_guides is configured but selected pipeline "
+                "does not run Stage 2"
+            )
+
+        scope_matches = {
+            "pass1": runs_stage2_pass1(self.stage),
+            "pass2": runs_stage2_pass2(self.stage),
+            "both": runs_stage2_pass1(self.stage)
+            or runs_stage2_pass2(self.stage),
+        }
+        if not scope_matches[self.stage2_guides_scope]:
+            raise ValueError(
+                "pipeline.stage2_guides_scope="
+                f"{self.stage2_guides_scope!r} does not intersect the "
+                f"selected Stage 2 pass ({self.stage})"
+            )
         return self
 
 
@@ -494,6 +640,7 @@ def validate_config_paths(config: MudidiConfig) -> None:
 
     paths: list[tuple[str, Path | None]]
     page_specs: list[tuple[str, str | None]] = []
+    guide_specs: list[tuple[str, Path | None, str | None]] = []
     if isinstance(config, BenchmarkSweepConfig):
         from mudidi.config.benchmark_sweep import expand_benchmark_sweep
 
@@ -516,6 +663,18 @@ def validate_config_paths(config: MudidiConfig) -> None:
             ("pipeline.stage2_guides", config.pipeline.stage2_guides),
             ("vlm.paddle_server_python", config.vlm.paddle_server_python),
             ("vlm.glm_server_python", config.vlm.glm_server_python),
+        ]
+        guide_specs = [
+            (
+                "pipeline.stage1_guides",
+                config.pipeline.stage1_guides,
+                config.pipeline.stage1_guides_pages,
+            ),
+            (
+                "pipeline.stage2_guides",
+                config.pipeline.stage2_guides,
+                config.pipeline.stage2_guides_pages,
+            ),
         ]
         page_specs = [
             ("input.dictionary_pages", config.input.dictionary_pages),
@@ -558,6 +717,20 @@ def validate_config_paths(config: MudidiConfig) -> None:
     missing = [label for label, path in paths if path is not None and not path.exists()]
     if missing:
         raise ValueError(f"{', '.join(missing)} does not exist")
+    if guide_specs:
+        strategy = config.pipeline.strategy
+        for label, path, spec in guide_specs:
+            pages_label = f"{label}_pages"
+            if path is None:
+                if spec is not None:
+                    raise ValueError(f"{pages_label} requires {label}")
+                continue
+            _readable_instruction_guide(
+                label,
+                path,
+                spec,
+                strategy=strategy,
+            )
     for label, spec in page_specs:
         if spec is None:
             continue

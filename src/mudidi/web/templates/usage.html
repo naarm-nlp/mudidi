@@ -1,1 +1,40 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Usage · MUDIDI</title><link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}"></head><body class="standalone"><main class="review-page"><a class="back-link" href="/runs/{{ run_id }}">← Run overview</a><section class="panel review-card"><span class="eyebrow">LLM accounting</span><h1>Usage</h1><div class="metric-grid"><article><span>Total tokens</span><strong>{{ usage.total_tokens }}</strong></article><article><span>Estimated cost</span><strong>{% if usage.total_cost_usd is not none %}${{ usage.total_cost_usd }}{% else %}Unavailable{% endif %}</strong></article><article><span>Usage files</span><strong>{{ usage.files_scanned }}</strong></article></div><p class="hint">Costs are provider-reported estimates from generated usage files.</p></section></main></body></html>
+{% extends "_layout.html" %}
+{% block title %}Usage · MUDIDI{% endblock %}
+{% block main %}
+<div class="page-shell">
+  <div class="review-page">
+    <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+    <section class="panel review-card" aria-labelledby="usage-title">
+      <span class="eyebrow">LLM accounting</span>
+      <h1 id="usage-title">Usage</h1>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/usage" aria-current="page">Usage</a>
+          <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+        </div>
+      </nav>
+      <div class="metric-grid">
+        <article><span>Total Tokens</span><strong>{{ usage.total_tokens }}</strong></article>
+        <article><span>Estimated Cost</span><strong>{% if usage.total_cost_usd is not none %}${{ "%.6f"|format(usage.total_cost_usd) }}{% else %}Unavailable{% endif %}</strong></article>
+        <article><span>Usage Files</span><strong>{{ usage.files_scanned }}</strong></article>
+      </div>
+      <p class="hint">Costs are provider-reported estimates from generated usage files.</p>
+      {% if usage.breakdown %}
+      <section class="usage-breakdown" aria-labelledby="usage-breakdown-title">
+        <h2 id="usage-breakdown-title">Usage by stage</h2>
+        <div class="usage-table-scroll">
+          <table class="usage-table">
+            <caption class="sr-only">Usage by stage</caption>
+            <thead><tr><th scope="col">Stage</th><th scope="col">Total tokens</th><th scope="col">Estimated cost</th></tr></thead>
+            <tbody>{% for row in usage.breakdown %}<tr><th scope="row">{{ row.stage }}</th><td>{{ row.total_tokens }}</td><td>{% if row.cost_usd is not none %}${{ "%.6f"|format(row.cost_usd) }}{% else %}Unavailable{% endif %}</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

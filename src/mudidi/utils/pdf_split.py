@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import re
+import tempfile
 from pathlib import Path
+from typing import Sequence
 
 import pymupdf
 
@@ -43,6 +48,83 @@ def parse_page_spec(spec: str) -> list[int]:
                 raise ValueError(f"Page numbers must be >= 1: {chunk!r}")
             pages.append(page)
     return pages
+
+
+def extract_pdf_subset(
+    source_pdf: Path,
+    page_numbers: Sequence[int],
+    output_pdf: Path,
+) -> Path:
+    """Write selected source pages to one atomically replaced PDF artifact."""
+
+    pages = tuple(page_numbers)
+    if not pages:
+        raise ValueError("at least one PDF page is required")
+    if not source_pdf.is_file():
+        raise ValueError(f"source PDF does not exist: {source_pdf}")
+    if source_pdf.stat().st_size == 0:
+        raise ValueError(f"source PDF is empty: {source_pdf}")
+
+    source_digest = hashlib.sha256(source_pdf.read_bytes()).hexdigest()
+    fingerprint = {
+        "source_sha256": source_digest,
+        "page_numbers": list(pages),
+    }
+    fingerprint_path = output_pdf.with_name(output_pdf.name + ".fingerprint")
+    encoded_fingerprint = json.dumps(
+        fingerprint, sort_keys=True, separators=(",", ":")
+    )
+    if output_pdf.is_file() and fingerprint_path.is_file():
+        try:
+            if fingerprint_path.read_text(encoding="utf-8") == encoded_fingerprint:
+                return output_pdf
+        except OSError:
+            pass
+
+    output_pdf.parent.mkdir(parents=True, exist_ok=True)
+    temporary_pdf: Path | None = None
+    temporary_fingerprint: Path | None = None
+    try:
+        with pymupdf.open(str(source_pdf)) as source:
+            for page in pages:
+                if not 1 <= page <= source.page_count:
+                    raise ValueError(
+                        f"page {page} is outside source PDF "
+                        f"(1-{source.page_count})"
+                    )
+            with pymupdf.open() as destination:
+                for page in pages:
+                    destination.insert_pdf(
+                        source,
+                        from_page=page - 1,
+                        to_page=page - 1,
+                    )
+                fd, temporary_name = tempfile.mkstemp(
+                    prefix=f".{output_pdf.name}.",
+                    suffix=".tmp",
+                    dir=str(output_pdf.parent),
+                )
+                os.close(fd)
+                temporary_pdf = Path(temporary_name)
+                destination.save(str(temporary_pdf))
+        fd, temporary_name = tempfile.mkstemp(
+            prefix=f".{fingerprint_path.name}.",
+            suffix=".tmp",
+            dir=str(output_pdf.parent),
+        )
+        os.close(fd)
+        temporary_fingerprint = Path(temporary_name)
+        temporary_fingerprint.write_text(encoded_fingerprint, encoding="utf-8")
+        os.replace(temporary_pdf, output_pdf)
+        os.replace(temporary_fingerprint, fingerprint_path)
+    finally:
+        for temporary in (temporary_pdf, temporary_fingerprint):
+            if temporary is not None:
+                try:
+                    temporary.unlink()
+                except FileNotFoundError:
+                    pass
+    return output_pdf
 
 
 def extract_pdf_pages(

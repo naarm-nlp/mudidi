@@ -139,6 +139,32 @@ def test_presets_round_trip_non_secret_typed_configuration(
     assert store.list_presets() == [loaded]
 
 
+def test_delete_preset_removes_metadata_and_raises_for_missing_id(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    preset = store.create_preset(
+        "preset-delete",
+        name="Delete me",
+        provider="offline",
+        config=InferenceConfig.model_validate(
+            {
+                "input": {"pages": pages},
+                "output": {"directory": tmp_path / "output"},
+            }
+        ),
+    )
+
+    store.delete_preset(preset.preset_id)
+
+    with pytest.raises(KeyError):
+        store.get_preset(preset.preset_id)
+    with pytest.raises(KeyError):
+        store.delete_preset(preset.preset_id)
+
+
 def test_saving_an_existing_preset_name_replaces_the_old_preset(
     store: RunStore,
     tmp_path: Path,
