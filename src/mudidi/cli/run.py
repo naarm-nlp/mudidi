@@ -91,6 +91,33 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "(e.g. '1-5'). Optional.",
     )
     parser.add_argument(
+        "--stage-1-guides",
+        dest="stage1_guides_path",
+        help="Stage 1 instruction guide path.",
+    )
+    parser.add_argument(
+        "--stage-1-guides-pages",
+        dest="stage1_guides_pages",
+        help="Selected pages when --stage-1-guides is a PDF.",
+    )
+    parser.add_argument(
+        "--stage-2-guides",
+        dest="stage2_guides_path",
+        help="Stage 2 instruction guide path.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-pages",
+        dest="stage2_guides_pages",
+        help="Selected pages when --stage-2-guides is a PDF.",
+    )
+    parser.add_argument(
+        "--stage-2-guides-scope",
+        dest="stage2_guides_scope",
+        choices=["pass1", "pass2", "both"],
+        default="both",
+        help="Stage 2 guide routing scope.",
+    )
+    parser.add_argument(
         "--alphabet",
         help="Path to alphabet list (.txt or markdown) or alphabet image.",
     )
@@ -351,6 +378,18 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
         argv.extend(["--intro", run_args.intro])
     if run_args.intro_pages:
         argv.extend(["--intro-pages", run_args.intro_pages])
+    if getattr(run_args, "stage1_guides_path", None):
+        argv.extend(["--stage-1-guides", run_args.stage1_guides_path])
+    if getattr(run_args, "stage1_guides_pages", None):
+        argv.extend(["--stage-1-guides-pages", run_args.stage1_guides_pages])
+    if getattr(run_args, "stage2_guides_path", None):
+        argv.extend(["--stage-2-guides", run_args.stage2_guides_path])
+    if getattr(run_args, "stage2_guides_pages", None):
+        argv.extend(["--stage-2-guides-pages", run_args.stage2_guides_pages])
+    if getattr(run_args, "stage2_guides_scope", "both") != "both":
+        argv.extend(
+            ["--stage-2-guides-scope", getattr(run_args, "stage2_guides_scope", "both")]
+        )
     if run_args.dict_pages:
         argv.extend(["--dict-pages", run_args.dict_pages])
     if run_args.alphabet:
@@ -435,6 +474,11 @@ _RUN_OVERRIDE_PATHS = {
     "ocr_text": "input.ocr_text",
     "dictionary_languages": "input.dictionary_languages",
     "toolbox_pdf": "input.toolbox_pdf",
+    "stage1_guides_path": "pipeline.stage1_guides",
+    "stage1_guides_pages": "pipeline.stage1_guides_pages",
+    "stage2_guides_path": "pipeline.stage2_guides",
+    "stage2_guides_pages": "pipeline.stage2_guides_pages",
+    "stage2_guides_scope": "pipeline.stage2_guides_scope",
     "dataset_dir": "input.dataset_dir",
     "samples_dir": "input.samples_dir",
     "languages": "input.languages",
@@ -568,6 +612,8 @@ def resolve_extraction_config(
             "ocr_text",
             "dictionary_languages",
             "toolbox_pdf",
+            "stage1_guides_path",
+            "stage2_guides_path",
             "dataset_dir",
             "samples_dir",
             "output_dir",
@@ -633,7 +679,10 @@ def execution_namespace_from_config(
         parse_rules_gold=pipeline.parse_rules_gold,
         stage2_lexical_repair=pipeline.stage2_lexical_repair,
         stage1_guides_path=pipeline.stage1_guides,
+        stage1_guides_pages=pipeline.stage1_guides_pages,
         stage2_guides_path=pipeline.stage2_guides,
+        stage2_guides_pages=pipeline.stage2_guides_pages,
+        stage2_guides_scope=pipeline.stage2_guides_scope,
         model=models.default,
         stage_1_model=models.stage1,
         stage_2_pass_1_model=models.stage2_pass1,

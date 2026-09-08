@@ -1,25 +1,20 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-2" defer></script>
-    <title>{{ run.run_id }} · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-2">
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
+{% extends "_layout.html" %}
+{% block title %}{{ run.run_id }} · MUDIDI{% endblock %}
+{% block head_meta %}{% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endif %}{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="providers-page run-overview">
       <div class="detail-nav">
         <a class="back-link" href="/history">← Run history</a>
         <span class="status-pill {{ 'ready' if run.status == 'completed' else '' }}">{{ run.status_label }}</span>
       </div>
-      <header class="page-heading">
+      <header class="page-heading run-heading">
         <span class="eyebrow">{{ run.provider }} · local worker</span>
-        <h1>{{ run.run_id }}</h1>
+        <h1 class="run-id">{{ run.run_id }}</h1>
         <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}{% endif %}</p>
       </header>
-      <div class="content-grid">
+      <div class="content-grid run-overview-grid">
         <section class="panel review-card run-progress-card">
           <div class="progress-heading">
             <div>
@@ -40,11 +35,11 @@
           <div class="pipeline-steps" role="list" aria-label="Pipeline stages">
             {% for step in run.pipeline_steps %}
             <article class="pipeline-step {{ step.state }}" role="listitem">
-              <span class="pipeline-marker" aria-hidden="true">{{ '✓' if step.state == 'completed' else '' }}</span>
+              <span class="pipeline-marker" aria-hidden="true">{{ '✓' if step.state == 'completed' else '→' if step.state == 'running' else '○' }}</span>
               <div class="pipeline-step-content">
                 <div class="pipeline-step-heading">
                   <strong>{{ step.label }}</strong>
-                  <span class="pipeline-state">{{ 'Complete' if step.state == 'completed' else 'In progress' if step.state == 'running' else 'Next' }}</span>
+                  <span class="pipeline-state">{{ 'Complete' if step.state == 'completed' else 'In progress' if step.state == 'running' else 'Future' }}</span>
                 </div>
                 {% if step.detail %}<p>{{ step.detail }}</p>{% endif %}
                 {% if step.label == 'Review parsing guide' and step.state == 'running' and run.review_available %}
@@ -72,19 +67,19 @@
           {% endif %}
           </div>
         </section>
-        <aside class="panel summary">
-          <span class="eyebrow">Run tabs</span>
-          <h2>Overview</h2>
-          <nav class="detail-tabs">
-            <a class="active" href="#">Overview</a>
+        <aside class="panel run-workspace-nav summary">
+          <span class="eyebrow">Run workspace</span>
+          <h2>Navigate this run</h2>
+          <nav class="detail-tabs" aria-label="Run workspace">
+            <a class="active" href="/runs/{{ run.run_id }}" aria-current="page">Overview</a>
             {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
-            <a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>{% else %}<span aria-disabled="true">Page Viewer &amp; Editor</span>{% endif %}
             <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
-            <a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>
-            <a href="/runs/{{ run.run_id }}/usage">Usage</a>
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>{% else %}<span aria-disabled="true">File Artifacts</span>{% endif %}
+            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/usage">Usage</a>{% else %}<span aria-disabled="true">Usage</span>{% endif %}
           </nav>
         </aside>
       </div>
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}

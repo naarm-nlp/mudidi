@@ -1,0 +1,1139 @@
+"""Integration tests for the shared dashboard theme shell."""
+
+from __future__ import annotations
+
+from html.parser import HTMLParser
+from pathlib import Path
+import subprocess
+from types import SimpleNamespace
+import re
+
+import pytest
+
+from fastapi import Request
+from fastapi.responses import HTMLResponse
+from fastapi.testclient import TestClient
+
+from mudidi.config.yaml_config import InferenceConfig
+from mudidi.web.app import _TEMPLATES, create_app
+from mudidi.web.models import Provider
+from mudidi.web.runs import RunStatus
+
+
+class _SemanticParser(HTMLParser):
+    """Collect response-level landmarks without depending on CSS classes."""
+
+    _CONTROL_TAGS = {"button", "input", "select", "textarea"}
+    _VOID_TAGS = {
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+    }
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._hidden_depth = 0
+        self._label_depth = 0
+        self._open_elements: list[dict[str, object]] = []
+        self._labels: list[dict[str, object]] = []
+        self._element_text: dict[str, str] = {}
+        self._open_workspace_nav = 0
+        self.mains = 0
+        self.headings: list[tuple[int, bool]] = []
+        self.controls: list[dict[str, object]] = []
+        self.workspace_current: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        own_hidden = "hidden" in attributes or attributes.get("aria-hidden") == "true"
+        hidden = self._hidden_depth > 0 or own_hidden
+        if tag == "main" and not hidden:
+            self.mains += 1
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            self.headings.append((int(tag[1]), not hidden))
+        label_index: int | None = None
+        if tag == "label":
+            self._label_depth += 1
+            label_index = len(self._labels)
+            self._labels.append(
+                {
+                    "for": str(attributes.get("for") or ""),
+                    "hidden": hidden,
+                    "text": "",
+                }
+            )
+        element_id = attributes.get("id")
+        if element_id:
+            self._element_text.setdefault(str(element_id), "")
+        control_index: int | None = None
+        if tag in self._CONTROL_TAGS:
+            control_index = len(self.controls)
+            nested_label_indices = tuple(
+                int(element["label_index"])
+                for element in self._open_elements
+                if element["label_index"] is not None
+            )
+            self.controls.append(
+                {
+                    "tag": tag,
+                    "hidden": hidden,
+                    "label_depth": self._label_depth,
+                    "nested_labels": nested_label_indices,
+                    "id": element_id or "",
+                    "aria_label": attributes.get("aria-label"),
+                    "aria_labelledby": attributes.get("aria-labelledby"),
+                    "type": str(attributes.get("type", "")).casefold(),
+                    "text": "",
+                }
+            )
+        if (
+            tag in {"a", "span"}
+            and not hidden
+            and self._open_workspace_nav
+            and attributes.get("aria-current") == "page"
+        ):
+            self.workspace_current.append(tag)
+        if (
+            tag == "nav"
+            and not hidden
+            and attributes.get("aria-label") == "Run workspace"
+        ):
+            self._open_workspace_nav += 1
+        if tag not in self._VOID_TAGS:
+            self._open_elements.append(
+                {
+                    "tag": tag,
+                    "own_hidden": own_hidden,
+                    "hidden": hidden,
+                    "id": str(element_id) if element_id else "",
+                    "control_index": control_index,
+                    "label_index": label_index,
+                }
+            )
+            if own_hidden:
+                self._hidden_depth += 1
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
+
+    def handle_data(self, data: str) -> None:
+        if not data:
+            return
+        for element in self._open_elements:
+            element_id = str(element["id"])
+            if element_id:
+                self._element_text[element_id] += data
+            label_index = element["label_index"]
+            if label_index is not None:
+                self._labels[int(label_index)]["text"] = (
+                    str(self._labels[int(label_index)]["text"]) + data
+                )
+            control_index = element["control_index"]
+            if (
+                element["tag"] == "button"
+                and control_index is not None
+                and not bool(element["hidden"])
+                and self._hidden_depth == 0
+            ):
+                self.controls[control_index]["text"] = (
+                    str(self.controls[control_index]["text"]) + data
+                )
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._VOID_TAGS:
+            return
+        for index in range(len(self._open_elements) - 1, -1, -1):
+            if self._open_elements[index]["tag"] != tag:
+                continue
+            closing_elements = self._open_elements[index:]
+            del self._open_elements[index:]
+            for element in closing_elements:
+                if bool(element["own_hidden"]):
+                    self._hidden_depth -= 1
+                if element["tag"] == "label":
+                    self._label_depth -= 1
+                if element["tag"] == "nav" and self._open_workspace_nav:
+                    self._open_workspace_nav -= 1
+            return
+
+    def labelledby_name(self, value: object) -> str:
+        references = str(value or "").split()
+        if not references or any(
+            reference not in self._element_text for reference in references
+        ):
+            return ""
+        name = " ".join(
+            self._element_text[reference].strip() for reference in references
+        )
+        return name.strip()
+
+    def explicit_label_name(self, value: object) -> str:
+        target = str(value or "")
+        if not target:
+            return ""
+        names = (
+            _normalise_accessible_text(label["text"])
+            for label in self._labels
+            if str(label["for"]) == target and not bool(label["hidden"])
+        )
+        return " ".join(name for name in names if name)
+
+    def nested_label_name(self, control: dict[str, object]) -> str:
+        names: list[str] = []
+        for index in tuple(control["nested_labels"]):
+            label = self._labels[int(index)]
+            if bool(label["hidden"]):
+                continue
+            name = _normalise_accessible_text(label["text"])
+            if name:
+                names.append(name)
+        return " ".join(names)
+
+
+def _normalise_accessible_text(value: object) -> str:
+    return " ".join(str(value or "").split())
+
+
+def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> None:
+    parser = _SemanticParser()
+    parser.feed(getattr(response, "text"))
+    assert parser.mains == 1
+    visible_headings = [level for level, visible in parser.headings if visible]
+    assert visible_headings and visible_headings[0] == 1
+    assert visible_headings.count(1) == 1
+    assert all(
+        right - left <= 1 for left, right in zip(visible_headings, visible_headings[1:])
+    )
+    for control in parser.controls:
+        if control["hidden"] or control["type"] == "hidden":
+            continue
+        tag = str(control["tag"])
+        aria_label = _normalise_accessible_text(control["aria_label"])
+        aria_labelledby = parser.labelledby_name(control["aria_labelledby"])
+        visible_text = _normalise_accessible_text(control["text"])
+        if tag == "button":
+            accessible_name = aria_label or aria_labelledby or visible_text
+            assert accessible_name, control
+            if visible_text and (aria_label or aria_labelledby):
+                # Single-character glyphs such as "i", "×", and "＋" are
+                # decorative button icons rather than visible text labels.
+                visible_label = visible_text.lstrip("＋+×✕←→↑↓ ")
+                if len(visible_label) > 1:
+                    assert visible_label.casefold() in accessible_name.casefold(), (
+                        control
+                    )
+            continue
+        has_nested_label = bool(parser.nested_label_name(control))
+        has_explicit_label = bool(parser.explicit_label_name(control["id"]))
+        assert (
+            aria_label or aria_labelledby or has_nested_label or has_explicit_label
+        ), control
+    if run_workspace:
+        assert len(parser.workspace_current) == 1
+
+
+def test_semantic_parser_handles_void_inputs_and_hidden_siblings() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<div hidden><input type="hidden"></div>'
+            '<label for="name">Name</label><input id="name">'
+            '<button aria-label="Save changes">Save</button>'
+            "</main>"
+        )
+    )
+
+    _assert_semantic_shell(response)
+
+
+def test_semantic_shell_accepts_exact_explicit_label_association() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<label for="display-name"> Display \n name </label>'
+            '<input id="display-name">'
+            "</main>"
+        )
+    )
+
+    _assert_semantic_shell(response)
+
+
+@pytest.mark.parametrize(
+    ("label_for", "control_id"),
+    (
+        (" display-name", "display-name"),
+        ("display-name ", "display-name"),
+        ("display-name", " display-name"),
+        ("display-name", "display-name "),
+    ),
+)
+def test_semantic_shell_rejects_whitespace_mismatched_explicit_label_association(
+    label_for: str, control_id: str
+) -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            f'<label for="{label_for}">Display name</label>'
+            f'<input id="{control_id}">'
+            "</main>"
+        )
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
+def test_semantic_parser_does_not_leak_hidden_depth_from_void_inputs() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<div hidden><input type="hidden"></div>'
+            '<input hidden type="hidden">'
+            '<input id="leaked-hidden-depth">'
+            "</main>"
+        )
+    )
+    parser = _SemanticParser()
+    parser.feed(response.text)
+
+    assert [control["hidden"] for control in parser.controls] == [True, True, False]
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
+@pytest.mark.parametrize(
+    "control",
+    (
+        '<input id="missing-label">',
+        '<select id="missing-label"><option>Choose</option></select>',
+        '<label for="empty-label"> \n </label><input id="empty-label">',
+        '<label><input id="empty-wrapper"></label>',
+    ),
+)
+def test_semantic_shell_rejects_unlabeled_form_controls(control: str) -> None:
+    response = SimpleNamespace(text=f"<main><h1>Workspace</h1>{control}</main>")
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
+def test_semantic_shell_rejects_mismatched_button_label_name() -> None:
+    response = SimpleNamespace(
+        text=(
+            "<main><h1>Workspace</h1>"
+            '<button aria-label="Delete item">Save item</button>'
+            "</main>"
+        )
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_semantic_shell(response)
+
+
+def _semantic_matrix(tmp_path: Path) -> list[tuple[str, object, bool]]:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    store = app.state.run_store
+
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    (pages / "page_1.png").write_bytes(b"source")
+    output = tmp_path / "output"
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": output},
+            "pipeline": {"stage": "all"},
+        }
+    )
+    app.state.job_controller.prepare_inference(
+        "workspace-run",
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+    stage1 = output / "stage-1/page_1"
+    stage1.mkdir(parents=True)
+    (stage1 / "page_1_stage1_flat.txt").write_text("source text", encoding="utf-8")
+    stage2 = output / "stage-2/page_1"
+    stage2.mkdir(parents=True)
+    (stage2 / "page_1.mdf.txt").write_text("\\lx source", encoding="utf-8")
+    (stage2 / "page_1_usage.json").write_text(
+        '{"stage1":{"total_tokens":1},"stage2":{"total_tokens":2}}',
+        encoding="utf-8",
+    )
+    store.create_preset(
+        "preset-one", name="One preset", provider="anthropic", config=config
+    )
+
+    empty_pages = tmp_path / "empty-pages"
+    empty_pages.mkdir()
+    empty_config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": empty_pages},
+            "output": {"directory": tmp_path / "empty-output"},
+            "pipeline": {"stage": "1"},
+        }
+    )
+    app.state.job_controller.prepare_inference(
+        "empty-pages-run",
+        config=empty_config,
+        provider=Provider.ANTHROPIC,
+    )
+
+    store.create_run("review-run", provider="offline")
+    store.transition("review-run", RunStatus.VALIDATED)
+    store.transition("review-run", RunStatus.QUEUED)
+    store.transition("review-run", RunStatus.DISCOVERING_PARSE_RULES)
+    app.state.parse_rule_reviews.create_generated(
+        "review-run",
+        {
+            "markers": [{"marker": "lx", "description": "Headword"}],
+            "rules": ["Begin each entry with a headword."],
+            "abbreviations": {},
+        },
+        sample_pages=["1"],
+    )
+
+    store.create_run("active-run", provider="offline")
+    store.transition("active-run", RunStatus.VALIDATED)
+    store.transition("active-run", RunStatus.QUEUED)
+    store.transition("active-run", RunStatus.RUNNING_STAGE1)
+    app.state.job_controller.prepare_inference(
+        "credential-run",
+        config=config,
+        provider=Provider.ANTHROPIC,
+    )
+    credential = client.post("/runs/credential-run/start")
+
+    @app.get("/form-error", response_class=HTMLResponse)
+    async def form_error(request: Request) -> HTMLResponse:
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="form_error.html",
+            context={
+                "validation_errors": [
+                    {
+                        "field": "Pages",
+                        "message": "Upload one dictionary PDF.",
+                    }
+                ]
+            },
+        )
+
+    responses = [
+        ("/", client.get("/"), False),
+        ("/form-error", client.get("/form-error"), False),
+        ("/active", client.get("/active"), False),
+        ("/history", client.get("/history"), False),
+        ("/presets", client.get("/presets"), False),
+        ("/runs/workspace-run", client.get("/runs/workspace-run"), True),
+        ("/review", client.get("/runs/workspace-run/review"), True),
+        ("/credential-required", credential, True),
+        ("/parse-rules", client.get("/runs/review-run/parse-rules"), True),
+        ("/pages", client.get("/runs/empty-pages-run/pages"), True),
+        ("/page-detail", client.get("/runs/workspace-run/pages/page_1"), True),
+        ("/logs", client.get("/runs/workspace-run/logs"), True),
+        ("/outputs", client.get("/runs/workspace-run/outputs"), True),
+        ("/usage", client.get("/runs/workspace-run/usage"), True),
+    ]
+    assert len(responses) == 14
+    return responses
+
+
+def test_every_reachable_template_variant_has_semantic_shell(tmp_path: Path) -> None:
+    for path, response, run_workspace in _semantic_matrix(tmp_path):
+        assert response.status_code in {200, 303, 409, 422}, path
+        if response.status_code == 303:
+            continue
+        _assert_semantic_shell(response, run_workspace=run_workspace)
+
+
+def test_every_page_renders_the_shared_shell(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    for path in ("/", "/history", "/presets", "/active"):
+        response = client.get(path)
+
+        assert response.status_code == 200
+        assert 'class="skip-link" href="#main-content"' in response.text
+        assert 'class="app-shell"' in response.text
+        assert '<main id="main-content" tabindex="-1">' in response.text
+        assert 'class="sidebar"' in response.text
+        assert 'aria-label="Primary navigation"' in response.text
+        assert 'href="/presets"' in response.text
+        assert "data-theme-toggle" in response.text
+        assert 'class="standalone"' not in response.text
+
+
+def test_nav_marks_only_the_current_section_active(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/history")
+
+    assert response.status_code == 200
+    assert 'class="active" href="/history"' in response.text
+    assert 'href="/history" aria-current="page"' in response.text
+    assert 'class="active" href="/"' not in response.text
+
+
+def test_theme_script_is_served_without_os_preference_fallback(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/static/theme.js")
+
+    assert response.status_code == 200
+    assert "mudidi:theme" in response.text
+    assert "prefers-color-scheme" not in response.text
+    assert "dataset.theme" in response.text
+
+
+def test_theme_script_defaults_to_light_and_honors_valid_storage() -> None:
+    theme_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/theme.js"
+    harness = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+const source = fs.readFileSync(process.argv[1], "utf8");
+const assert = (condition, message) => {
+  if (!condition) throw new Error(message);
+};
+
+const initialTheme = (storedValue, {storageThrows = false} = {}) => {
+  const root = {dataset: {}};
+  let domContentLoaded;
+  const storage = {
+    getItem(key) {
+      assert(key === "mudidi:theme", `unexpected storage key: ${key}`);
+      if (storageThrows) throw new Error("storage denied");
+      return storedValue;
+    },
+    setItem() {},
+  };
+  const document = {
+    documentElement: root,
+    addEventListener(type, listener) {
+      assert(type === "DOMContentLoaded", `unexpected event: ${type}`);
+      domContentLoaded = listener;
+    },
+    querySelectorAll() {
+      return [];
+    },
+  };
+  const context = vm.createContext({
+    document,
+    window: {
+      localStorage: storage,
+      matchMedia: () => ({matches: true}),
+    },
+  });
+
+  vm.runInContext(source, context);
+  assert(typeof domContentLoaded === "function", "theme bootstrap did not register DOMContentLoaded");
+  return root.dataset.theme;
+};
+
+assert(initialTheme(null) === "light", "unset storage should default to light");
+assert(initialTheme("system") === "light", "invalid storage should default to light");
+assert(initialTheme("dark") === "dark", "stored dark should win");
+assert(initialTheme("light") === "light", "stored light should win");
+assert(initialTheme(null, {storageThrows: true}) === "light", "storage errors should default to light");
+"""
+    result = subprocess.run(
+        ["node", "-e", harness, str(theme_js)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_stylesheet_exposes_the_brutalist_theme(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    response = client.get("/static/app.css")
+
+    assert response.status_code == 200
+    assert "--border-width: 3px" in response.text
+    assert '[data-theme="dark"]' in response.text
+    assert "8px 8px 0 0" in response.text
+    assert "border-radius" not in response.text
+
+
+def test_form_grid_aligns_mixed_controls_and_info_buttons_keep_compact_visuals(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
+    assert form_grid is not None
+    assert "align-items: start" in form_grid.group("body")
+
+    info_button = re.search(r"(?:^|\n)\.info-button\s*\{(?P<body>[^}]*)\}", css)
+    assert info_button is not None
+    assert "width: 44px" in info_button.group("body")
+    assert "height: 44px" in info_button.group("body")
+    assert "background: transparent" in info_button.group("body")
+    assert "display: grid" in info_button.group("body")
+    assert "place-items: center" in info_button.group("body")
+
+    compact_visual = re.search(
+        r"(?:^|\n)\.info-button::before\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    assert compact_visual is not None
+    assert "inset: 10px" in compact_visual.group("body")
+
+
+def test_additional_context_uses_semantic_single_column_spacing(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    css = client.get("/static/app.css").text
+
+    stack = re.search(
+        r"\.additional-context-stack\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    group = re.search(
+        r"\.additional-context-stack\s*>\s*\.additional-context-group\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    section_group = re.search(
+        r"\.additional-context-stack\s*>\s*section\.additional-context-group\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    group_fields = re.search(
+        r"\.additional-context-group\s*>\s*label,\s*"
+        r"\.additional-context-group\s*>\s*\.form-field\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    field_heading = re.search(r"\.field-heading\s*\{(?P<body>[^}]*)\}", css)
+    field_help = re.search(
+        r"\.field-heading\s+\.info-button\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    field_help_visual = re.search(
+        r"\.field-heading\s+\.info-button::before\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    instruction_body_label = re.search(
+        r"\.instruction-source-body\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert stack is not None
+    assert "grid-template-columns: minmax(0, 1fr)" in stack.group("body")
+    assert "max-width: 960px" in stack.group("body")
+    assert "gap: 24px" in stack.group("body")
+    assert group is not None
+    assert "padding: 20px" in group.group("body")
+    assert "border: var(--border-width) solid var(--color-line)" in group.group("body")
+    assert section_group is not None
+    assert "align-content: start" in section_group.group("body")
+    assert "gap: 18px" in section_group.group("body")
+    assert group_fields is not None
+    assert "margin: 0" in group_fields.group("body")
+    assert field_heading is not None
+    assert "min-height: 44px" in field_heading.group("body")
+    assert "padding-right: 37px" in field_heading.group("body")
+    assert "align-items: flex-end" in field_heading.group("body")
+    assert "font-size: 13px" in field_heading.group("body")
+    assert "font-weight: 900" in field_heading.group("body")
+    assert "letter-spacing: -.02em" in field_heading.group("body")
+    assert "text-transform: uppercase" in field_heading.group("body")
+    assert "color: var(--color-ink)" in field_heading.group("body")
+    assert field_help is not None
+    assert "position: absolute" in field_help.group("body")
+    assert "top: 0" in field_help.group("body")
+    assert "align-items: end" in field_help.group("body")
+    assert "line-height: 24px" in field_help.group("body")
+    assert field_help_visual is not None
+    assert "inset: 20px 10px 0" in field_help_visual.group("body")
+    assert instruction_body_label is not None
+    assert "display: grid" in instruction_body_label.group("body")
+    assert "gap: 8px" in instruction_body_label.group("body")
+
+    home = client.get("/").text
+    assert 'class="form-grid additional-context-stack"' in home
+    stage1 = home.index('id="stage1-context-title"')
+    stage2 = home.index('id="stage2-context-title"')
+    mdf_guide = home.index('id="mdf-guide-title"')
+    mdf_manual = home.index('class="choice-group mdf-manual additional-context-group"')
+    assert stage1 < stage2 < mdf_guide < mdf_manual
+    assert "additional-context-column" not in home
+    assert "additional-context-column" not in css
+
+def test_dictionary_context_and_profile_use_matching_bordered_panels(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    home = client.get("/").text
+    css = client.get("/static/app.css").text
+
+    assert 'class="form-grid dictionary-page-context-panel"' in home
+    context_panel = re.search(
+        r"\.dictionary-page-context-panel\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    profile_panel = re.search(r"\.profile-panel\s*\{(?P<body>[^}]*)\}", css)
+
+    assert context_panel is not None
+    assert profile_panel is not None
+    for panel in (context_panel, profile_panel):
+        assert "padding: 20px" in panel.group("body")
+        assert "border: var(--border-width) solid var(--color-line)" in panel.group(
+            "body"
+        )
+        assert "background: var(--color-panel)" in panel.group("body")
+
+
+def test_output_directory_uses_input_title_typography(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    home = client.get("/").text
+    css = client.get("/static/app.css").text
+
+    assert '<label class="path-label" for="output">Output directory</label>' in home
+    path_label = re.search(r"\.path-label\s*\{(?P<body>[^}]*)\}", css)
+
+    assert path_label is not None
+    assert "color: var(--color-ink)" in path_label.group("body")
+    assert "font-size: 13px" in path_label.group("body")
+    assert "font-weight: 900" in path_label.group("body")
+    assert "letter-spacing: -.02em" in path_label.group("body")
+    assert "text-transform: uppercase" in path_label.group("body")
+
+
+def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    hidden_input = re.search(
+        r"\.dropzone\s+\.dictionary-file-input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    upload_trigger = re.search(
+        r"\.dropzone\s+\.dictionary-upload-trigger\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    dragover = re.search(
+        r"\.dropzone\.is-dragover\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert hidden_input is not None
+    assert "min-height: 0" in hidden_input.group("body")
+    assert "opacity: 0" in hidden_input.group("body")
+    assert upload_trigger is not None
+    assert "place-items: center" in upload_trigger.group("body")
+    assert "margin: 0 auto" in upload_trigger.group("body")
+    assert "background: var(--color-accent)" in upload_trigger.group("body")
+    assert "box-shadow: var(--shadow-sm)" in upload_trigger.group("body")
+    assert dragover is not None
+    assert "background: var(--color-accent-soft)" in dragover.group("body")
+
+
+def test_existing_mdf_guide_uses_a_compact_themed_file_control(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    file_row = re.search(r"\.mdf-guide-file-row\s*\{(?P<body>[^}]*)\}", css)
+    framed_file_row = re.search(
+        r"\.mdf-guide-field\s*>\s*\.mdf-guide-file-row\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    upload_trigger = re.search(
+        r"\.form-grid\s+\.mdf-guide-upload-trigger\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    hidden_input = re.search(
+        r"\.form-grid\s+\.mdf-guide-file-input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    status = re.search(r"\.mdf-guide-file-status\s*\{(?P<body>[^}]*)\}", css)
+
+    assert file_row is not None
+    assert "flex-wrap: wrap" in file_row.group("body")
+    assert framed_file_row is not None
+    assert "padding: 14px" in framed_file_row.group("body")
+    assert (
+        "border: var(--divider-width) solid var(--color-line)"
+        in framed_file_row.group(
+            "body",
+        )
+    )
+    assert upload_trigger is not None
+    assert "display: inline-flex" in upload_trigger.group("body")
+    assert "align-items: center" in upload_trigger.group("body")
+    assert hidden_input is not None
+    assert "min-height: 0" in hidden_input.group("body")
+    assert "opacity: 0" in hidden_input.group("body")
+    assert status is not None
+    assert "font-family: var(--font-mono)" in status.group("body")
+
+
+def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    heading = re.search(r"\.mdf-manual-heading\s*\{(?P<body>[^}]*)\}", css)
+    choice_legend = re.search(
+        r"\.choice-group\s+legend\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    option_grid = re.search(
+        r"(?:^|\n)\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    resource = re.search(
+        r"(?:^|\n)\.mdf-manual-official\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    resource_link = re.search(
+        r"(?:^|\n)\.mdf-manual-link\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert heading is not None
+    assert "display: grid" in heading.group("body")
+    assert "grid-template-columns: minmax(0, 1fr) auto" in heading.group("body")
+    assert choice_legend is not None
+    assert "color: var(--color-ink)" in choice_legend.group("body")
+    assert "font-size: 13px" in choice_legend.group("body")
+    assert "font-weight: 900" in choice_legend.group("body")
+    assert "text-transform: uppercase" in choice_legend.group("body")
+    assert option_grid is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grid.group(
+        "body",
+    )
+    assert resource is not None
+    assert "display: flex" in resource.group("body")
+    assert "justify-content: space-between" in resource.group("body")
+    assert resource_link is not None
+    assert "white-space: nowrap" in resource_link.group("body")
+
+
+def test_instruction_source_panels_fit_semantic_context_groups(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    panel = re.search(
+        r"(?:^|\n)\.instruction-source-panel\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    grouped_panel = re.search(
+        r"\.additional-context-group\s*>\s*\.instruction-source-panel\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    legend = re.search(
+        r"(?:^|\n)\.instruction-source-panel\s*>\s*legend\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    source_choices = re.search(
+        r"\.additional-context-group\s+\.instruction-source-choices\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    scope_choices = re.search(
+        r"\.additional-context-group\s+\.instruction-scope-group\s*>\s*"
+        r"\.choice-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    warning = re.search(r"\.instruction-pdf-warning\s*\{(?P<body>[^}]*)\}", css)
+
+    assert panel is not None
+    assert "border: var(--border-width) solid var(--color-line)" in panel.group("body")
+    assert grouped_panel is not None
+    assert "padding: 0" in grouped_panel.group("body")
+    assert "border: 0" in grouped_panel.group("body")
+    assert legend is not None
+    assert "text-transform: uppercase" in legend.group("body")
+    assert "color: var(--color-ink)" in legend.group("body")
+    assert "font-size: 13px" in legend.group("body")
+    assert "font-weight: 900" in legend.group("body")
+    assert source_choices is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in source_choices.group(
+        "body",
+    )
+    assert scope_choices is not None
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in scope_choices.group(
+        "body",
+    )
+    assert warning is not None
+    assert "background: var(--color-warning-soft)" in warning.group("body")
+    assert "overflow-wrap: anywhere" in warning.group("body")
+
+    home = TestClient(create_app(data_dir=tmp_path)).get("/").text
+    assert (
+        home.count(
+            'class="primary mdf-guide-upload-trigger instruction-upload-trigger"'
+        )
+        == 2
+    )
+    assert home.count('class="mdf-guide-file-input" data-instruction-file-input') == 2
+
+
+def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    workspace = re.search(r"\.workspace\s*\{(?P<body>[^}]*)\}", css)
+    pipeline_card = re.search(
+        r"\.pipeline-choices\s+\.task-card\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    card_help = re.search(
+        r"\.pipeline-choices\s+\.task-card\s+\.info-button\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    policy_copy = re.search(
+        r"\.choice-card\s*>\s*span\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    responsive_grid = re.search(
+        r"\.pipeline-choices\s+\.task-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    responsive_last_card = re.search(
+        r"\.pipeline-choices\s+\.task-card:last-child\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    radio_alignment = re.search(
+        r"\.task-card\s*>\s*input\[type=\"radio\"\],\s*"
+        r"\.choice-card\s*>\s*input\[type=\"radio\"\]\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert workspace is not None
+    assert "max-width: 1320px" in workspace.group("body")
+    assert pipeline_card is not None
+    assert "align-items: start" in pipeline_card.group("body")
+    assert "padding: 18px 18px 64px" in pipeline_card.group("body")
+    assert "column-gap: 8px" in pipeline_card.group("body")
+    assert card_help is not None
+    assert "position: absolute" in card_help.group("body")
+    assert "right: 8px" in card_help.group("body")
+    assert policy_copy is not None
+    assert "display: grid" in policy_copy.group("body")
+    assert responsive_grid is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in responsive_grid.group(
+        "body"
+    )
+    assert responsive_last_card is not None
+    assert "grid-column: 1 / -1" in responsive_last_card.group("body")
+    assert radio_alignment is not None
+    assert "margin: 2px 0 0" in radio_alignment.group("body")
+
+
+def test_hovered_choice_card_stacks_its_tooltip_above_later_cards(
+    tmp_path: Path,
+) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    hovered_card = re.search(
+        r"\.choice-card:has\(\.info-button\.is-tooltip-hovered\)\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    hovered_button = re.search(
+        r"(?:^|\n)\.info-button\.is-tooltip-hovered\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    tooltip = re.search(
+        r"\.info-button::after\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert hovered_card is not None
+    assert "z-index: 2" in hovered_card.group("body")
+    assert hovered_button is not None
+    assert "z-index: 100" in hovered_button.group("body")
+    assert tooltip is not None
+    assert "box-sizing: border-box" in tooltip.group("body")
+
+
+def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    model_grid = re.search(
+        r"#wizard-model\s*>\s*\.form-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    stage2 = re.search(r"\.stage2-settings\s*\{(?P<body>[^}]*)\}", css)
+    stage2_pass = re.search(r"\.stage2-pass-card\s*\{(?P<body>[^}]*)\}", css)
+    stage1 = re.search(r"\.stage1-settings\s*\{(?P<body>[^}]*)\}", css)
+    stage2_labels = re.search(
+        r"\.stage2-pass-card\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    credential_grids = re.findall(
+        r"\.credential-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert model_grid is not None
+    assert "margin-top: 16px" in model_grid.group("body")
+    assert stage2 is not None
+    assert "margin-top: 0" in stage2.group("body")
+    assert stage2_pass is not None
+    assert "margin-top: 12px" in stage2_pass.group("body")
+    assert "gap: 16px 18px" in stage2_pass.group("body")
+    assert stage1 is not None
+    assert "background: var(--color-accent-soft)" in stage1.group("body")
+    assert stage2_labels is not None
+    assert "display: grid" in stage2_labels.group("body")
+    assert "gap: 8px" in stage2_labels.group("body")
+    assert len(credential_grids) == 2
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in credential_grids[0]
+    assert "grid-template-columns: 1fr" in credential_grids[1]
+
+
+def test_agentic_choices_fill_two_columns_and_stack_on_mobile(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    agentic_rules = re.findall(
+        r"\.agentic-choice\s+\.task-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert len(agentic_rules) == 2
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in agentic_rules[0]
+    assert "grid-template-columns: 1fr" in agentic_rules[1]
+    checkbox_row = re.search(
+        r"\.agentic-stage-toggle\s*>\s*span\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    checkbox_input = re.search(
+        r"\.agentic-stage-toggle\s+input\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    nested_model_label = re.search(
+        r"\.agentic-model-group\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert '.form-grid input:not([type="checkbox"]):not([type="radio"])' in css
+    assert checkbox_row is not None
+    assert "display: flex" in checkbox_row.group("body")
+    assert "gap: 8px" in checkbox_row.group("body")
+    assert checkbox_input is not None
+    assert "margin: 0" in checkbox_input.group("body")
+    assert nested_model_label is not None
+    assert "margin: 0" in nested_model_label.group("body")
+    assert "gap: 8px" in nested_model_label.group("body")
+
+
+def test_run_summary_keeps_long_model_names_readable(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    summary_row = re.search(
+        r"\.summary\s+dl\s+div\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    summary_value = re.search(
+        r"\.summary\s+dd\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert summary_row is not None
+    assert "grid-template-columns: 90px minmax(0, 1fr)" in summary_row.group("body")
+    assert "gap: 16px" in summary_row.group("body")
+    assert summary_value is not None
+    assert "overflow-wrap: anywhere" in summary_value.group("body")
+
+
+def test_layout_uses_current_dashboard_stylesheet_version() -> None:
+    layout = (
+        Path(__file__).resolve().parents[2]
+        / "src"
+        / "mudidi"
+        / "web"
+        / "templates"
+        / "_layout.html"
+    ).read_text(encoding="utf-8")
+
+    assert "app.css') }}?v=dashboard-ui-8" in layout
+
+
+def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
+    templates_dir = Path(__file__).resolve().parents[2] / "src/mudidi/web/templates"
+    versions = {
+        version
+        for template in templates_dir.glob("*.html")
+        for version in re.findall(
+            r"app\.js.*?\?v=([^\"&\s]+)",
+            template.read_text(encoding="utf-8"),
+        )
+    }
+
+    assert versions == {"dashboard-ui-8"}
+
+
+def _relative_luminance(hex_color: str) -> float:
+    channels = [int(hex_color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+        for channel in channels
+    ]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast_ratio(foreground: str, background: str) -> float:
+    lighter = max(
+        _relative_luminance(foreground),
+        _relative_luminance(background),
+    )
+    darker = min(
+        _relative_luminance(foreground),
+        _relative_luminance(background),
+    )
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def test_light_theme_semantic_text_tokens_meet_wcag_aa() -> None:
+    css_path = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.css"
+    css = css_path.read_text(encoding="utf-8")
+    light_block = re.search(r":root\s*\{([^}]*)\}", css)
+    assert light_block is not None
+    tokens = dict(
+        re.findall(
+            r"--(color-(?:accent-text|danger-text|panel|bg)):\s*(#[0-9a-fA-F]{6})",
+            light_block.group(1),
+        )
+    )
+
+    assert set(tokens) == {
+        "color-accent-text",
+        "color-danger-text",
+        "color-panel",
+        "color-bg",
+    }
+    for foreground in ("color-accent-text", "color-danger-text"):
+        for background in ("color-panel", "color-bg"):
+            assert _contrast_ratio(tokens[foreground], tokens[background]) >= 4.5
+
+    dark_block = re.search(r'\[data-theme="dark"\]\s*\{([^}]*)\}', css)
+    assert dark_block is not None
+    assert "--color-accent-text:" in dark_block.group(1)
+    assert "--color-danger-text:" in dark_block.group(1)

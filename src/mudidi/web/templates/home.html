@@ -1,43 +1,105 @@
+{% extends "_layout.html" %}
 {% from "_icons.html" import credential_eye %}
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MUDIDI Local</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}?v=dashboard-11">
-  </head>
-  <body>
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="MUDIDI home">
-        <span class="brand-mark">M</span>
-        <span><strong>MUDIDI</strong><small>Dictionary digitization</small></span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a class="active" href="/"><span>＋</span> New run</a>
-        <a href="/active"><span>●</span> Active run</a>
-        <a href="/history"><span>◷</span> Run history</a>
-        <a href="/presets"><span>★</span> Saved presets</a>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="https://naarm-nlp.github.io/mudidi/">Documentation</a>
-        <span class="local-badge">● Running locally</span>
+{% macro instruction_source_panel(stage, stage_label, pipeline_stages, asset, errors_by_field) %}
+{% set source_field = stage ~ '_instruction_source' %}
+{% set file_field = stage ~ '_instruction_file' %}
+{% set pages_field = stage ~ '_instruction_pdf_pages' %}
+{% set keep_field = stage ~ '_instruction_keep_existing' %}
+{% set text_field = stage ~ '_additional_instructions' %}
+{% set kept_choice_field = stage ~ '_instruction_kept_choice' %}
+{% set status_id = stage ~ '-instruction-file-status' %}
+{% set has_kept = asset and asset.source_mode == 'file' %}
+{% set scope_labels = {'pass1': 'Pass 1 only', 'pass2': 'Pass 2 only', 'both': 'Both passes'} %}
+{% set field_error_key = file_field if errors_by_field[file_field] else (pages_field if errors_by_field[pages_field] else '') %}
+<fieldset class="form-field instruction-source-panel{% if field_error_key %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}{% if field_error_key %} data-field-error="{{ field_error_key }}"{% endif %}>
+  <legend>{{ stage_label }} instructions</legend>
+  <div class="choice-card-grid instruction-source-choices">
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="typed" checked data-instruction-source-radio><span><strong>Type instructions</strong><small>Write instructions directly for this run.</small></span></label>
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="file" data-instruction-source-radio><span><strong>Upload instruction file</strong><small>Attach one .txt, .md, or .pdf file instead of typing.</small></span></label>
+  </div>
+  <div class="instruction-source-body" data-instruction-typed-panel>
+    <label><span class="field-heading">Typed instructions <button class="info-button" type="button" aria-label="About {{ stage_label }} additional instructions" data-help="Optional instructions appended to the {{ stage_label }} prompt for this run.">i</button></span><textarea name="{{ text_field }}" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
+  </div>
+  <div class="instruction-source-body instruction-file-panel" data-instruction-file-panel hidden>
+    {% if has_kept %}
+    <div class="instruction-kept-file" data-instruction-kept-file>
+      <span class="saved-inputs"><strong>Saved file</strong><a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a></span>
+      <dl class="instruction-kept-meta">
+        <div><dt>Kind</dt><dd>{{ 'PDF' if asset.kind == 'pdf' else 'Text' }}</dd></div>
+        {% if asset.kind == 'pdf' %}<div><dt>Selected pages</dt><dd>{% if asset.selected_pages %}{{ asset.selected_pages|join(', ') }} ({{ asset.selected_pages|length }} pages){% else %}All pages{% if asset.pdf_page_count %} ({{ asset.pdf_page_count }}){% endif %}{% endif %}</dd></div>{% endif %}
+        {% if stage == 'stage2' and asset.stage2_scope %}<div><dt>Stage 2 scope</dt><dd>{{ scope_labels.get(asset.stage2_scope, asset.stage2_scope) }}</dd></div>{% endif %}
+      </dl>
+      <div class="choice-card-grid instruction-kept-choices">
+        <label class="choice-card"><input type="radio" name="{{ kept_choice_field }}" value="keep" checked data-instruction-kept-radio><span><strong>Keep saved file</strong><small>Reuse the saved attachment for this run.</small></span></label>
+        <label class="choice-card"><input type="radio" name="{{ kept_choice_field }}" value="replace" data-instruction-kept-radio><span><strong>Replace file</strong><small>Upload a new file instead.</small></span></label>
       </div>
-    </aside>
-
-    <main>
+    </div>
+    {% endif %}
+    <div class="mdf-guide-file-row instruction-file-row" data-instruction-upload-row{% if has_kept %} hidden{% endif %}>
+      <label class="primary mdf-guide-upload-trigger instruction-upload-trigger">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+        </svg>
+        <span>Choose file</span>
+        <input class="mdf-guide-file-input" data-instruction-file-input name="{{ file_field }}" type="file" accept=".txt,.md,.pdf" disabled aria-describedby="{{ status_id }}{% if errors_by_field[file_field] %} {{ stage }}-instruction-file-error{% endif %}"{% if errors_by_field[file_field] %} aria-invalid="true"{% endif %}>
+      </label>
+      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="No file selected">No file selected</span>
+    </div>
+    {% if errors_by_field[file_field] %}<small id="{{ stage }}-instruction-file-error" class="field-error-message">{{ errors_by_field[file_field] }}</small>{% endif %}
+    <input type="hidden" name="{{ keep_field }}" value="{{ 'true' if has_kept else 'false' }}" data-instruction-keep-existing disabled>
+    <label class="instruction-pdf-pages{% if errors_by_field[pages_field] %} field-invalid{% endif %}" data-instruction-pdf-pages hidden><span class="field-heading">PDF pages <button class="info-button" type="button" aria-label="About {{ stage_label }} instruction PDF pages" data-help="Optional. Enter one page number, a page range, comma-separated page numbers, or a combination, for example 2-4,8. Blank selects every page in the uploaded PDF.">i</button></span><input class="page-spec-input" name="{{ pages_field }}" placeholder="ex: 2-4,8" disabled{% if errors_by_field[pages_field] %} aria-invalid="true" aria-describedby="{{ stage }}-instruction-pages-error"{% endif %}></label>
+    {% if errors_by_field[pages_field] %}<small id="{{ stage }}-instruction-pages-error" class="field-error-message">{{ errors_by_field[pages_field] }}</small>{% endif %}
+    <p class="instruction-pdf-warning" data-instruction-pdf-warning hidden>Selected PDF pages are attached to every applicable model call. Large files or “all pages” can substantially increase token use, cost, latency, and the chance of exceeding a model context limit.</p>
+  </div>
+  {% if stage == 'stage2' %}
+  <fieldset class="choice-group instruction-scope-group">
+    <legend>Apply to</legend>
+    <div class="choice-card-grid">
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="pass1" data-instruction-scope-radio><span><strong>Pass 1 only — parsing-guide discovery</strong></span></label>
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="pass2" data-instruction-scope-radio><span><strong>Pass 2 only — per-page MDF extraction</strong></span></label>
+      <label class="choice-card"><input type="radio" name="stage2_instruction_scope" value="both" checked data-instruction-scope-radio><span><strong>Both passes</strong></span></label>
+    </div>
+  </fieldset>
+  {% endif %}
+</fieldset>
+{% endmacro %}
+{% block title %}MUDIDI Local{% endblock %}
+{% block main %}
       <header class="topbar">
         <div><span class="eyebrow">Production inference</span><h1>New run</h1></div>
         <div class="provider-status"><span></span> {% if credential_ready_count %}{{ credential_ready_count }} provider key{{ '' if credential_ready_count == 1 else 's' }} saved{% else %}API key setup required{% endif %}</div>
       </header>
 
-      <section class="workspace">
-        <ol class="steps" aria-label="Run configuration steps">
-          <li class="current"><b>1</b> Input</li>
-          <li><b>2</b> Pipeline</li>
-          <li><b>3</b> Model</li>
-          <li><b>4</b> Agentic</li>
-          <li><b>5</b> Review</li>
+      <section class="workspace" data-new-run-wizard>
+        <ol class="wizard-stepper" aria-label="New run progress">
+          <li data-wizard-marker="input" aria-current="step" aria-label="Input">
+            <button class="wizard-step-button" type="button" data-wizard-go="input" aria-controls="wizard-input">
+              <span class="wizard-marker" aria-hidden="true">1</span>
+              <span class="wizard-marker-copy"><strong>Input</strong><small>Files and context</small></span>
+            </button>
+          </li>
+          <li data-wizard-marker="pipeline" aria-label="Pipeline">
+            <button class="wizard-step-button" type="button" data-wizard-go="pipeline" aria-controls="wizard-pipeline">
+              <span class="wizard-marker" aria-hidden="true">2</span>
+              <span class="wizard-marker-copy"><strong>Pipeline</strong><small>Workflow choice</small></span>
+            </button>
+          </li>
+          <li data-wizard-marker="model" aria-label="Model">
+            <button class="wizard-step-button" type="button" data-wizard-go="model" aria-controls="wizard-model">
+              <span class="wizard-marker" aria-hidden="true">3</span>
+              <span class="wizard-marker-copy"><strong>Model</strong><small>Provider settings</small></span>
+            </button>
+          </li>
+          <li data-wizard-marker="agentic" aria-label="Agentic">
+            <button class="wizard-step-button" type="button" data-wizard-go="agentic" aria-controls="wizard-agentic">
+              <span class="wizard-marker" aria-hidden="true">4</span>
+              <span class="wizard-marker-copy"><strong>Agentic</strong><small>Verification</small></span>
+            </button>
+          </li>
+          <li data-wizard-marker="review" aria-disabled="true" aria-label="Review">
+            <span class="wizard-marker" aria-hidden="true">5</span>
+            <span class="wizard-marker-copy"><strong>Review</strong><small>Server checkpoint</small></span>
+          </li>
         </ol>
 
         {% if presets %}
@@ -66,208 +128,349 @@
             <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id }}">
             <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused unless you choose replacement files. Review and edit any setting before continuing.</p></div>
             {% endif %}
-            <div class="panel-heading">
-              <div><span class="eyebrow">Step 1 of 5</span><h2>Choose dictionary pages</h2></div>
-              <span class="private">Files stay on this computer</span>
-            </div>
-            <div class="dropzone{% if errors_by_field.pages %} field-invalid{% endif %}"{% if errors_by_field.pages %} data-field-error="pages"{% endif %}>
-              <span class="file-icon">⇧</span>
-              <h3>Upload one dictionary PDF</h3>
-              <p>{% if selected_preset %}The saved dictionary PDF will be reused unless you choose a replacement.{% else %}PDF only · copied into this run's local input bundle{% endif %}</p>
-              {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
-              <label class="path-label" for="dictionary-pdf">Dictionary PDF <span class="required-marker" aria-hidden="true">*</span></label>
-              <input id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %}{% if errors_by_field.pages %} aria-invalid="true" aria-describedby="pages-error"{% endif %}>
-              {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
-            </div>
-            <label for="output">Output directory</label>
-            <div class="input-row{% if errors_by_field.output_directory %} field-invalid{% endif %}"{% if errors_by_field.output_directory %} data-field-error="output_directory"{% endif %}>
-              <input id="output" name="output_directory" value="{{ output_directory_default }}" required{% if errors_by_field.output_directory %} aria-invalid="true" aria-describedby="output-directory-error"{% endif %}>
-            </div>
-            {% if errors_by_field.output_directory %}<small id="output-directory-error" class="field-error-message">{{ errors_by_field.output_directory }}</small>{% endif %}
-            <fieldset class="choice-group pipeline-choices output-policy-choices">
-              <legend>Existing output policy</legend>
-              <label><input type="radio" name="output_policy" value="resume" checked required> <span>Resume compatible existing artifacts</span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>
-              <label><input type="radio" name="output_policy" value="overwrite"> <span>Overwrite existing artifacts</span><button class="info-button" type="button" aria-label="About overwriting existing artifacts" data-help="Replaces existing artifacts and reruns the selected work. Use this when inputs, models, instructions, or settings changed, or when you intentionally want fresh outputs.">i</button></label>
-            </fieldset>
-            <fieldset class="choice-group pipeline-choices" data-pipeline-select>
-              <legend>Pipeline</legend>
-              <label><input type="radio" name="pipeline" value="complete" checked required> <span>Complete digitization</span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
-              <label><input type="radio" name="pipeline" value="transcription"> <span>Transcription only</span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
-              <label><input type="radio" name="pipeline" value="structure"> <span>Parse transcription into MDF (Multi-Dictionary Formatter)</span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
-            </fieldset>
-            <fieldset id="api-credentials" class="choice-group credential-entry">
-              <legend>API credentials</legend>
-              <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
-              <div class="form-grid">
-                {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
-                  {% set status = credential_statuses[provider] %}
-                  <label for="credential-{{ provider }}">{{ label }} API key
-                    <span class="input-row">
-                      <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if status.available else 'Paste provider API key' }}">
-                      <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
-                      <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
-                    </span>
-                    <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if status.available else 'Not saved' }}</span>
-                  </label>
-                {% endfor %}
+
+            <section id="wizard-input" data-wizard-panel="input" aria-labelledby="wizard-input-title">
+              <div class="wizard-panel-heading">
+                <div><span class="eyebrow">Step 1 of 5</span><h2 id="wizard-input-title" tabindex="-1">Choose dictionary pages</h2></div>
+                <span class="private">Files stay on this computer</span>
               </div>
-              <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
-            </fieldset>
-            <div class="form-grid">
-              <label>Provider
-                <select name="provider" data-provider-select required>
-                  <option value="anthropic">Anthropic</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="gemini" selected>Google Gemini</option>
-                  <option value="openrouter">OpenRouter</option>
-                  <option value="custom">Other / advanced provider</option>
-                </select>
-              </label>
-              <label data-openrouter-provider hidden>OpenRouter Provider
-                <input name="openrouter_provider" list="openrouter-provider-catalog" placeholder="Automatic routing (recommended)" disabled>
-                <small>Optional endpoint slug such as anthropic, google-vertex, or deepinfra/turbo.</small>
-              </label>
-              <datalist id="openrouter-provider-catalog">
-                <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
-              </datalist>
-              {% for field, custom_field, reasoning_field, label, stages, help_text in [
-                ('stage1_model', 'stage1_custom_model', 'stage1_reasoning', 'Stage 1 model', 'stage1', 'Stage 1 transcribes the selected dictionary pages into faithful flat text.'),
-                ('stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1 model', 'pass1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
-                ('stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2 model', 'pass2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
-              ] %}
-                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} <button class="info-button" type="button" aria-label="About {{ label }}" data-help="{{ help_text }}">i</button></span>
-                  <select name="{{ field }}" data-model-select required>
+              <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
+              <div class="dropzone{% if errors_by_field.pages %} field-invalid{% endif %}" data-dictionary-dropzone{% if errors_by_field.pages %} data-field-error="pages"{% endif %}>
+                <label class="dictionary-upload-trigger" data-dictionary-file-trigger>
+                  <span class="sr-only">Choose dictionary PDF</span>
+                  <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
+                    <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+                  </svg>
+                  <input class="dictionary-file-input" id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %} aria-describedby="dictionary-file-status{% if errors_by_field.pages %} pages-error{% endif %}"{% if errors_by_field.pages %} aria-invalid="true"{% endif %}>
+                </label>
+                <h3>Upload one dictionary PDF <span class="required-marker" aria-hidden="true">*</span></h3>
+                <p>{% if selected_preset %}The saved dictionary PDF will be reused unless you choose a replacement.{% else %}PDF only · copied into this run's local input bundle{% endif %}</p>
+                {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
+                <span id="dictionary-file-status" class="dictionary-file-status" data-dictionary-file-status aria-live="polite" data-empty-label="{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}">{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}</span>
+                {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
+              </div>
+              <label class="path-label" for="output">Output directory</label>
+              <div class="input-row{% if errors_by_field.output_directory %} field-invalid{% endif %}"{% if errors_by_field.output_directory %} data-field-error="output_directory"{% endif %}>
+                <input id="output" name="output_directory" value="{{ output_directory_default }}" required{% if errors_by_field.output_directory %} aria-invalid="true" aria-describedby="output-directory-error"{% endif %}>
+              </div>
+              {% if errors_by_field.output_directory %}<small id="output-directory-error" class="field-error-message">{{ errors_by_field.output_directory }}</small>{% endif %}
+
+              <div class="wizard-subsection">
+                <h3>Dictionary page context</h3>
+                <div class="form-grid dictionary-page-context-panel">
+                  <label{% if errors_by_field.dictionary_pages %} class="field-invalid" data-field-error="dictionary_pages"{% endif %}><span class="field-heading">PDF dictionary pages <span><span class="required-marker" aria-hidden="true">*</span> <button class="info-button" type="button" aria-label="About PDF dictionary pages" data-help="Required. Enter one page number (30), a page range (30-35), comma-separated page numbers (30,35,40), or a combination of page numbers and ranges (1,5,10-20). Page numbers are 1-based and every number must exist in the uploaded PDF.">i</button></span></span><input class="page-spec-input" name="dictionary_pages" required placeholder="ex: 30-35"{% if errors_by_field.dictionary_pages %} aria-invalid="true" aria-describedby="dictionary-pages-error"{% endif %}><small>Dictionary page numbers are required.</small>{% if errors_by_field.dictionary_pages %}<small id="dictionary-pages-error" class="field-error-message">{{ errors_by_field.dictionary_pages }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.introduction_pages %} class="field-invalid" data-field-error="introduction_pages"{% endif %}><span class="field-heading">PDF introduction pages <button class="info-button" type="button" aria-label="About PDF introduction pages" data-help="Optional. Enter introduction or front matter from the same uploaded PDF using one page number, a page range, comma-separated page numbers, or a combination. These pages are supplied to the model as context and are not automatically removed from Dictionary pages.">i</button></span><input class="page-spec-input" name="introduction_pages" placeholder="ex: 1-5"{% if errors_by_field.introduction_pages %} aria-invalid="true" aria-describedby="introduction-pages-error"{% endif %}>{% if errors_by_field.introduction_pages %}<small id="introduction-pages-error" class="field-error-message">{{ errors_by_field.introduction_pages }}</small>{% endif %}</label>
+                </div>
+              </div>
+
+              <div class="wizard-subsection">
+                <h3>Additional context and MDF inputs</h3>
+                <div class="form-grid additional-context-stack">
+                  <section class="additional-context-group" aria-labelledby="stage1-context-title" data-stage-control data-pipeline-stages="stage1">
+                    <h4 id="stage1-context-title">Stage 1 context</h4>
+                  <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
+                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), errors_by_field) }}
+                  </section>
+                  <section class="additional-context-group" aria-labelledby="stage2-context-title" data-stage-control data-pipeline-stages="pass1 pass2">
+                    <h4 id="stage2-context-title">Stage 2 context</h4>
+                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), errors_by_field) }}
+                  </section>
+                  <section class="additional-context-group" aria-labelledby="mdf-guide-title" data-stage-control data-pipeline-stages="pass1 pass2">
+                    <h4 id="mdf-guide-title">MDF guide</h4>
+                  <div class="form-field mdf-guide-field" data-stage-control data-pipeline-stages="pass1 pass2">
+                    <span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>
+                    {% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}
+                    <div class="mdf-guide-file-row">
+                      <label class="primary mdf-guide-upload-trigger">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                          <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+                        </svg>
+                        <span>Choose JSON</span>
+                        <input class="mdf-guide-file-input" data-mdf-guide-file-input name="existing_mdf_guide_file" type="file" accept=".json" aria-describedby="mdf-guide-file-status">
+                      </label>
+                      <span id="mdf-guide-file-status" class="mdf-guide-file-status" data-mdf-guide-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}">{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}</span>
+                    </div>
+                  </div>
+                  <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
+                  </section>
+                  <fieldset class="choice-group mdf-manual additional-context-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                  <legend>MDF manual (optional)</legend>
+                  <div class="mdf-manual-heading">
+                    <p>Optional reference material for Stage 2 parsing-guide inference.</p>
+                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button>
+                  </div>
+                  <div class="choice-card-grid mdf-manual-options">
+                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="upload" required><span><strong>Upload my own MDF manual</strong><small>Use selected reference pages for Stage 2 marker interpretation.</small></span></label>
+                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="none" checked><span><strong>Continue without an MDF manual</strong><small>Let Stage 2 infer the parsing guide from the dictionary pages.</small></span></label>
+                  </div>
+                  <div class="mdf-manual-upload" data-custom-mdf-manual hidden>
+                    <div class="mdf-manual-file">
+                      <span class="mdf-manual-file-title">MDF manual PDF</span>
+                      {% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}
+                      <div class="mdf-guide-file-row">
+                        <label class="primary mdf-guide-upload-trigger">
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                            <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
+                          </svg>
+                          <span>Choose PDF</span>
+                          <input class="mdf-guide-file-input" data-mdf-manual-file-input name="custom_mdf_manual" type="file" accept=".pdf" disabled aria-describedby="mdf-manual-file-status">
+                        </label>
+                        <span id="mdf-manual-file-status" class="mdf-guide-file-status" data-mdf-manual-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}">{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mdf-manual-official">
+                    <span><strong>Official SIL MDF manual</strong><small>fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small></span>
+                    <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer">Open official SIL MDF manual <span aria-hidden="true">↗</span></a>
+                  </div>
+                </fieldset>
+                </div>
+              </div>
+
+              <fieldset class="profile-panel">
+                <legend>Dictionary Profile (optional)</legend>
+                <p>Answering these questions can improve extraction accuracy. Leave the whole section blank if you are unsure.</p>
+                <section class="profile-section" aria-labelledby="profile-headword-title">
+                  <h3 id="profile-headword-title">1–2. What language are the dictionary headwords written in, and what script do they use?</h3>
+                  <div class="editor-row">
+                    <input name="profile_headword_language" aria-label="Headword language" placeholder="e.g. Chukchi">
+                    <input name="profile_headword_script" aria-label="Headword script" placeholder="e.g. Cyrillic">
+                  </div>
+                </section>
+                <section class="profile-section" aria-labelledby="profile-target-title">
+                  <h3 id="profile-target-title">3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?</h3>
+                  <div id="profile-target-rows">
+                    <div class="editor-row">
+                      <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
+                      <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Cyrillic">
+                      <button class="primary profile-remove" type="button" data-remove aria-label="Remove language">Remove</button>
+                    </div>
+                  </div>
+                  <button type="button" data-add="profile-target">Add another language</button>
+                </section>
+                <label class="profile-layout-question">5. How is information arranged on the page?
+                  <textarea name="profile_page_layout" rows="3" placeholder="For example: There are two columns; each column contains independent dictionary entries."></textarea>
+                </label>
+                <section class="profile-section" aria-labelledby="profile-information-title">
+                  <h3 id="profile-information-title">6. Which information types appear in an entry?</h3>
+                  <div class="profile-information-grid">
+                    {% for value, label in [
+                      ('translation', 'Translation'), ('definition', 'Definition'),
+                      ('gloss', 'Gloss'), ('part_of_speech', 'Part of speech'),
+                      ('pronunciation', 'Pronunciation'), ('example', 'Example'),
+                      ('usage_note', 'Usage note'), ('etymology', 'Etymology'),
+                      ('cross_reference', 'Cross-reference'), ('variant', 'Variant'),
+                      ('grammar', 'Grammar'), ('other', 'Other')
+                    ] %}
+                      <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"{% if value == 'other' %} data-profile-other-toggle{% endif %}> {{ label }}</span></label>
+                    {% endfor %}
+                  </div>
+                  <label id="profile-other-information" class="profile-other-information" hidden>Other information types
+                    <textarea name="profile_other_information_types" rows="2" disabled placeholder="Type one or more information types, separated by commas"></textarea>
+                  </label>
+                </section>
+              </fieldset>
+              <div class="wizard-actions"><span>Configure these steps in any order.</span><button class="primary" type="button" data-wizard-next="pipeline">Continue to Pipeline →</button></div>
+            </section>
+
+            <section id="wizard-pipeline" data-wizard-panel="pipeline" aria-labelledby="wizard-pipeline-title" hidden>
+              <div class="wizard-panel-heading">
+                <div><span class="eyebrow">Step 2 of 5</span><h2 id="wizard-pipeline-title" tabindex="-1">Choose a pipeline</h2></div>
+              </div>
+              <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
+              <fieldset class="choice-group pipeline-choices" data-pipeline-select>
+                <legend>Pipeline</legend>
+                <div class="task-card-grid">
+                  <label class="task-card"><input type="radio" name="pipeline" value="complete" checked required><span class="task-card-copy"><strong>Complete digitization</strong><small>Runs transcription, infers an MDF parsing guide, pauses for your review, then parses the transcription into MDF.</small></span><button class="info-button" type="button" aria-label="About complete digitization" data-help="Runs transcription, infers an MDF parsing guide for your dictionary, pauses for your review, then parses the transcription into MDF.">i</button></label>
+                  <label class="task-card"><input type="radio" name="pipeline" value="transcription"><span class="task-card-copy"><strong>Transcription only</strong><small>Transcribes dictionary pages into faithful flat text without MDF parsing.</small></span><button class="info-button" type="button" aria-label="About transcription only" data-help="Transcribes dictionary pages into faithful flat text without MDF parsing.">i</button></label>
+                  <label class="task-card"><input type="radio" name="pipeline" value="structure"><span class="task-card-copy"><strong>Parse transcription into MDF (Multi-Dictionary Formatter)</strong><small>Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.</small></span><button class="info-button" type="button" aria-label="About MDF parsing" data-help="Uses an existing transcription, infers and reviews a dictionary-specific MDF parsing guide, then emits MDF records.">i</button></label>
+                </div>
+              </fieldset>
+              <fieldset class="choice-group output-policy-choices">
+                <legend>Existing output policy</legend>
+                <div class="choice-card-grid">
+                  <label class="choice-card"><input type="radio" name="output_policy" value="resume" checked required><span><strong>Resume compatible existing artifacts</strong><small>Reuses compatible artifacts in the output directory and processes only missing or incomplete work.</small></span><button class="info-button" type="button" aria-label="About resuming existing artifacts" data-help="Reuses compatible artifacts in the output directory and processes only missing or incomplete work. Use this after an interrupted run, or to continue the same run without repeating completed pages.">i</button></label>
+                  <label class="choice-card"><input type="radio" name="output_policy" value="overwrite"><span><strong>Overwrite existing artifacts</strong><small>Replaces existing artifacts and reruns the selected work.</small></span><button class="info-button" type="button" aria-label="About overwriting existing artifacts" data-help="Replaces existing artifacts and reruns the selected work. Use this when inputs, models, instructions, or settings changed, or when you intentionally want fresh outputs.">i</button></label>
+                </div>
+              </fieldset>
+              <div class="wizard-actions"><button type="button" data-wizard-back="input">← Back</button><button class="primary" type="button" data-wizard-next="model">Continue to Model →</button></div>
+            </section>
+
+            <section id="wizard-model" data-wizard-panel="model" aria-labelledby="wizard-model-title" hidden>
+              <div class="wizard-panel-heading">
+                <div><span class="eyebrow">Step 3 of 5</span><h2 id="wizard-model-title" tabindex="-1">Configure models</h2></div>
+              </div>
+              <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
+              <fieldset id="api-credentials" class="choice-group credential-entry">
+                <legend>API credentials</legend>
+                <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
+                <div class="credential-grid">
+                  {% for provider, label in [('gemini', 'Gemini'), ('openai', 'OpenAI'), ('anthropic', 'Anthropic'), ('openrouter', 'OpenRouter')] %}
+                    {% set status = credential_statuses[provider] %}
+                    {% set source = status.source.value %}
+                    <div class="credential-card" data-credential-card data-provider="{{ provider }}" data-key-saved="{{ 'true' if source == 'persistent' else 'false' }}" data-key-available="{{ 'true' if status.available else 'false' }}" data-key-source="{{ source }}">
+                      <label for="credential-{{ provider }}">{{ label }} API key
+                        <span class="input-row">
+                          <input id="credential-{{ provider }}" type="password" autocomplete="new-password" spellcheck="false" placeholder="{{ 'Saved key — leave blank to keep it' if source == 'persistent' else 'Environment key available — enter a key to save an override' if source == 'environment' else 'Session key available — enter a key to save an override' if source == 'temporary' else 'Paste provider API key' }}">
+                          <button type="button" class="key-reveal" data-reveal-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Show {{ label }} API key" aria-pressed="false">{{ credential_eye() }}</button>
+                          <button type="button" class="credential-save" data-save-key data-provider="{{ provider }}" data-credential-target="credential-{{ provider }}" aria-label="Save {{ label }} API key">Save key</button>
+                        </span>
+                        <span id="credential-status-{{ provider }}" class="credential-save-status" role="status">{{ 'Stored' if source == 'persistent' else 'Available from environment' if source == 'environment' else 'Available for this session' if source == 'temporary' else 'Not saved' }}</span>
+                        {% if source == 'persistent' %}<button type="button" class="credential-delete" data-delete-key data-provider="{{ provider }}">Remove saved key</button>{% endif %}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+                <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
+              </fieldset>
+              <div class="form-grid">
+                <input type="hidden" name="provider" value="gemini" data-provider-value required>
+                <label data-stage-control data-pipeline-stages="stage1">Stage 1 provider
+                  <select data-provider-choice aria-label="Stage 1 provider" required>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini" selected>Google Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="custom">Other / advanced provider</option>
+                  </select>
+                  {% if errors_by_field.provider %}<small class="field-error-message">{{ errors_by_field.provider }}</small>{% endif %}
+                </label>
+                <label data-stage-control data-pipeline-stages="pass1 pass2">Stage 2 provider
+                  <select data-provider-choice aria-label="Stage 2 provider" required>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini" selected>Google Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="custom">Other / advanced provider</option>
+                  </select>
+                </label>
+                <label data-openrouter-provider hidden>OpenRouter Provider
+                  <input name="openrouter_provider" list="openrouter-provider-catalog" placeholder="Automatic routing (recommended)" disabled>
+                  <small>Optional endpoint slug such as anthropic, google-vertex, or deepinfra/turbo.</small>
+                </label>
+                <datalist id="openrouter-provider-catalog">
+                  <option value="anthropic"><option value="openai"><option value="google-vertex"><option value="amazon-bedrock"><option value="together"><option value="deepinfra">
+                </datalist>
+                <section class="stage1-settings" data-stage-control data-pipeline-stages="stage1">
+                  <div class="stage-settings-heading"><div><span class="eyebrow">Stage 1</span><h3>Model and reasoning</h3></div></div>
+                  <div class="form-grid">
+                <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_model %} class="field-invalid" data-field-error="stage1_model"{% endif %}><span class="field-heading">Stage 1 model <button class="info-button" type="button" aria-label="About Stage 1 model" data-help="Stage 1 transcribes the selected dictionary pages into faithful flat text.">i</button></span>
+                  <select name="stage1_model" data-model-select required>
                     {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
                     <option value="__other__" data-model-provider="other">Other model…</option>
                   </select>
-                  <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                  <input name="stage1_custom_model" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                  {% if errors_by_field.stage1_model %}<small class="field-error-message">{{ errors_by_field.stage1_model }}</small>{% endif %}
                 </label>
-                <label data-stage-control data-pipeline-stages="{{ stages }}"><span class="field-heading">{{ label }} reasoning <button class="info-button" type="button" aria-label="About {{ label }} reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
-                  <select name="{{ reasoning_field }}" required>
+                <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_reasoning %} class="field-invalid" data-field-error="stage1_reasoning"{% endif %}><span class="field-heading">Stage 1 reasoning <button class="info-button" type="button" aria-label="About Stage 1 model reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
+                  <select name="stage1_reasoning" required>
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                     <option value="none">None / lowest supported</option>
                   </select>
+                  {% if errors_by_field.stage1_reasoning %}<small class="field-error-message">{{ errors_by_field.stage1_reasoning }}</small>{% endif %}
                 </label>
-              {% endfor %}
-              <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
-                <input name="temperature" type="number" min="0" step="0.05" value="0.1" required>
-              </label>
-              <label><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1" required></label>
-            </div>
-            <fieldset class="choice-group agentic-choice">
-              <legend>Agentic verification</legend>
-              <p>Agentic verification adds evaluator and correction model calls.</p>
-              <label><input type="radio" name="agentic" value="false" checked> No</label>
-              <label><input type="radio" name="agentic" value="true"> Yes</label>
-            </fieldset>
-            <details data-agentic-settings hidden>
-              <summary>Custom verification</summary>
-              <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
-              <div class="form-grid">
-                <label><span><input name="verify_stage1" type="checkbox" value="true" checked> Verify Stage 1</span></label>
-                <label><span><input name="verify_stage2" type="checkbox" value="true" checked> Verify Stage 2</span></label>
-                <label>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2"></label>
-                <label>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55"></label>
-                {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
-                  <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
-                    <label>{{ label }} provider
-                      <select name="{{ role }}_provider" data-agentic-provider>
-                        <option value="anthropic">Anthropic</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="gemini" selected>Google Gemini</option>
-                        <option value="openrouter">OpenRouter</option>
-                        <option value="custom">Other / advanced provider</option>
-                      </select>
-                    </label>
-                    <label>{{ label }} model
-                      <select name="{{ role }}_model" data-agentic-model>
-                        <option value="">Use stage model</option>
-                        {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
-                        <option value="__other__" data-model-provider="other">Other model…</option>
-                      </select>
-                      <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name supported by Google Gemini" hidden disabled>
-                    </label>
                   </div>
-                {% endfor %}
-                <label>Evaluator reasoning<select name="evaluator_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
-                <label>Rewriter reasoning<select name="rewriter_reasoning"><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                <label>Deterministic patches<select name="verifier_patches"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
-                <label>Concrete retry evidence<select name="require_concrete_retry"><option value="true">Required</option><option value="false">Not required</option></select></label>
-              </div>
-            </details>
-            <details{% if errors_by_field.dictionary_pages or errors_by_field.introduction_pages or errors_by_field.parse_rules_pages %} open{% endif %}>
-              <summary>Input and context</summary>
-              <div class="form-grid">
-                <label{% if errors_by_field.dictionary_pages %} class="field-invalid" data-field-error="dictionary_pages"{% endif %}><span class="field-heading">PDF dictionary pages <span><span class="required-marker" aria-hidden="true">*</span> <button class="info-button" type="button" aria-label="About PDF dictionary pages" data-help="Required. Enter one page number (30), a page range (30-35), comma-separated page numbers (30,35,40), or a combination of page numbers and ranges (1,5,10-20). Page numbers are 1-based and every number must exist in the uploaded PDF.">i</button></span></span><input class="page-spec-input" name="dictionary_pages" required placeholder="ex: 30-35"{% if errors_by_field.dictionary_pages %} aria-invalid="true" aria-describedby="dictionary-pages-error"{% endif %}><small>Dictionary page numbers are required.</small>{% if errors_by_field.dictionary_pages %}<small id="dictionary-pages-error" class="field-error-message">{{ errors_by_field.dictionary_pages }}</small>{% endif %}</label>
-                <label{% if errors_by_field.introduction_pages %} class="field-invalid" data-field-error="introduction_pages"{% endif %}><span class="field-heading">PDF introduction pages <button class="info-button" type="button" aria-label="About PDF introduction pages" data-help="Optional. Enter introduction or front matter from the same uploaded PDF using one page number, a page range, comma-separated page numbers, or a combination. These pages are supplied to the model as context and are not automatically removed from Dictionary pages.">i</button></span><input class="page-spec-input" name="introduction_pages" placeholder="ex: 1-5"{% if errors_by_field.introduction_pages %} aria-invalid="true" aria-describedby="introduction-pages-error"{% endif %}>{% if errors_by_field.introduction_pages %}<small id="introduction-pages-error" class="field-error-message">{{ errors_by_field.introduction_pages }}</small>{% endif %}</label>
-                <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
-                <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Stage 1 additional instructions <button class="info-button" type="button" aria-label="About Stage 1 additional instructions" data-help="Optional instructions appended to the Stage 1 transcription prompt for this run.">i</button></span><textarea name="stage1_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Stage 2 additional instructions <button class="info-button" type="button" aria-label="About Stage 2 additional instructions" data-help="Optional instructions appended to the Stage 2 MDF parsing prompt for this run.">i</button></span><textarea name="stage2_additional_instructions" maxlength="20000" rows="4" placeholder="For example: Use nt for dictionary-specific usage notes."></textarea></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2"><span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>{% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}<input name="existing_mdf_guide_file" type="file" accept=".json"></label>
-                <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
-              </div>
-              <fieldset class="choice-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
-                <legend>MDF manual (optional) <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button></legend>
-                <label><input type="radio" name="mdf_manual_source" value="upload" required> Upload my own MDF manual</label>
-                <label data-custom-mdf-manual hidden>MDF manual PDF{% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}<input name="custom_mdf_manual" type="file" accept=".pdf" disabled></label>
-                <div class="mdf-manual-official">
-                  <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer" aria-label="Open or download the official SIL MDF manual">Open or download the official SIL MDF manual <span aria-hidden="true">↗</span></a>
-                  <small>Official PDF: fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small>
-                </div>
-                <label><input type="radio" name="mdf_manual_source" value="none" checked> Continue without an MDF manual</label>
-              </fieldset>
-            </details>
-            <details class="profile-panel">
-              <summary>Dictionary Profile (optional)</summary>
-              <p>Answering these questions can improve extraction accuracy. Leave the whole section blank if you are unsure.</p>
-              <fieldset>
-                <legend>1–2. What language are the dictionary headwords written in, and what script do they use?</legend>
-                <div class="editor-row">
-                  <input name="profile_headword_language" aria-label="Headword language" placeholder="e.g. Chukchi">
-                  <input name="profile_headword_script" aria-label="Headword script" placeholder="e.g. Cyrillic">
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend>3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?</legend>
-                <div id="profile-target-rows">
-                  <div class="editor-row">
-                    <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. Russian">
-                    <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Cyrillic">
-                    <button type="button" data-remove aria-label="Remove language">Remove</button>
+                </section>
+                <section class="stage2-settings" data-stage2-container data-stage2-mode="shared">
+                  <div class="stage-settings-heading">
+                    <div><span class="eyebrow">Stage 2</span><h3>Model and reasoning</h3></div>
+                    <button type="button" class="stage2-toggle" data-stage2-toggle aria-expanded="false">Advanced · split passes</button>
                   </div>
-                </div>
-                <button type="button" data-add="profile-target">Add another language</button>
-              </fieldset>
-              <label class="profile-layout-question">5. How is information arranged on the page?
-                <textarea name="profile_page_layout" rows="3" placeholder="For example: There are two columns; each column contains independent dictionary entries."></textarea>
-              </label>
-              <fieldset>
-                <legend>6. Which information types appear in an entry?</legend>
-                {% for value, label in [
-                  ('translation', 'Translation'), ('definition', 'Definition'),
-                  ('gloss', 'Gloss'), ('part_of_speech', 'Part of speech'),
-                  ('pronunciation', 'Pronunciation'), ('example', 'Example'),
-                  ('usage_note', 'Usage note'), ('etymology', 'Etymology'),
-                  ('cross_reference', 'Cross-reference'), ('variant', 'Variant'),
-                  ('grammar', 'Grammar'), ('other', 'Other')
-                ] %}
-                  <label><span><input type="checkbox" name="profile_information_types" value="{{ value }}"{% if value == 'other' %} data-profile-other-toggle{% endif %}> {{ label }}</span></label>
-                {% endfor %}
-                <label id="profile-other-information" class="profile-other-information" hidden>Other information types
-                  <textarea name="profile_other_information_types" rows="2" disabled placeholder="Type one or more information types, separated by commas"></textarea>
+                  <p class="stage2-explanation" data-stage2-explanation hidden>Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for review. Pass 2 applies the approved guide to each transcription.</p>
+                  {% for pass_name, field, custom_field, reasoning_field, label, help_text in [
+                    ('pass1', 'stage2_pass1_model', 'stage2_pass1_custom_model', 'stage2_pass1_reasoning', 'Stage 2 Pass 1', 'Stage 2 Pass 1 infers the dictionary-specific MDF parsing guide from representative pages for your review.'),
+                    ('pass2', 'stage2_pass2_model', 'stage2_pass2_custom_model', 'stage2_pass2_reasoning', 'Stage 2 Pass 2', 'Stage 2 Pass 2 applies the approved MDF parsing guide to convert each transcription into MDF records.')
+                  ] %}
+                    <div class="stage2-pass-card" data-stage2-pass="{{ pass_name }}"{% if pass_name == 'pass2' %} hidden{% endif %}>
+                      <label data-stage-control data-pipeline-stages="{{ pass_name }}"{% if errors_by_field[field] %} class="field-invalid" data-field-error="{{ field }}"{% endif %}><span class="field-heading"><span data-stage2-model-label>{{ label }} model</span> <button class="info-button" type="button" aria-label="About {{ label }} model" data-help="{{ help_text }}">i</button></span>
+                        <select name="{{ field }}" data-model-select required>
+                          {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
+                          <option value="__other__" data-model-provider="other">Other model…</option>
+                        </select>
+                        <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                        {% if errors_by_field[field] %}<small class="field-error-message">{{ errors_by_field[field] }}</small>{% endif %}
+                      </label>
+                      <label data-stage-control data-pipeline-stages="{{ pass_name }}"{% if errors_by_field[reasoning_field] %} class="field-invalid" data-field-error="{{ reasoning_field }}"{% endif %}><span class="field-heading"><span data-stage2-reasoning-label>{{ label }} reasoning</span> <button class="info-button" type="button" aria-label="About {{ label }} model reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
+                        <select name="{{ reasoning_field }}" required>
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                          <option value="none">None / lowest supported</option>
+                        </select>
+                        {% if errors_by_field[reasoning_field] %}<small class="field-error-message">{{ errors_by_field[reasoning_field] }}</small>{% endif %}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </section>
+                <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"{% if errors_by_field.temperature %} class="field-invalid" data-field-error="temperature"{% endif %}><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
+                  <input name="temperature" type="number" min="0" step="0.05" value="0.1" required>
+                  {% if errors_by_field.temperature %}<small class="field-error-message">{{ errors_by_field.temperature }}</small>{% endif %}
                 </label>
+                <label{% if errors_by_field.batch_size %} class="field-invalid" data-field-error="batch_size"{% endif %}><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1" required>{% if errors_by_field.batch_size %}<small class="field-error-message">{{ errors_by_field.batch_size }}</small>{% endif %}</label>
+              </div>
+              <div class="wizard-actions"><button type="button" data-wizard-back="pipeline">← Back</button><button class="primary" type="button" data-wizard-next="agentic">Continue to Agentic →</button></div>
+            </section>
+
+            <section id="wizard-agentic" data-wizard-panel="agentic" aria-labelledby="wizard-agentic-title" hidden>
+              <div class="wizard-panel-heading">
+                <div><span class="eyebrow">Step 4 of 5</span><h2 id="wizard-agentic-title" tabindex="-1">Configure agentic verification</h2></div>
+              </div>
+              <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
+              <fieldset class="choice-group agentic-choice">
+                <legend>Agentic verification</legend>
+                <p>Agentic verification adds evaluator and correction model calls.</p>
+                <div class="task-card-grid">
+                  <label class="task-card"><input type="radio" name="agentic" value="false" checked><span class="task-card-copy"><strong>Off</strong><small>Use the selected pipeline models without evaluator or correction calls.</small></span></label>
+                  <label class="task-card"><input type="radio" name="agentic" value="true"><span class="task-card-copy"><strong>On</strong><small>Add evaluator and correction calls to the active pipeline stages.</small></span></label>
+                </div>
               </fieldset>
-            </details>
-            <div class="actions"><span>Configuration is saved only after validation.</span><button class="primary" type="submit">Review run →</button></div>
+              <fieldset class="agentic-settings" data-agentic-settings hidden>
+                <legend>Custom verification</legend>
+                <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
+                <div class="form-grid">
+                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage1 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage1 %} data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
+                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage2 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage2 %} data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.max_iterations %} class="field-invalid" data-field-error="max_iterations"{% endif %}>Maximum correction iterations<input name="max_iterations" type="number" min="0" max="10" value="2" disabled>{% if errors_by_field.max_iterations %}<small class="field-error-message">{{ errors_by_field.max_iterations }}</small>{% endif %}</label>
+                  <label{% if errors_by_field.min_retry_confidence %} class="field-invalid" data-field-error="min_retry_confidence"{% endif %}>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55" disabled>{% if errors_by_field.min_retry_confidence %}<small class="field-error-message">{{ errors_by_field.min_retry_confidence }}</small>{% endif %}</label>
+                  {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Rewriter')] %}
+                    <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
+                      <label>{{ label }} provider
+                        <select name="{{ role }}_provider" data-agentic-provider disabled>
+                          <option value="anthropic">Anthropic</option>
+                          <option value="openai">OpenAI</option>
+                          <option value="gemini" selected>Google Gemini</option>
+                          <option value="openrouter">OpenRouter</option>
+                          <option value="custom">Other / advanced provider</option>
+                        </select>
+                      </label>
+                      <label>{{ label }} model
+                        <select name="{{ role }}_model" data-agentic-model disabled>
+                          <option value="">Use stage model</option>
+                          {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
+                          <option value="__other__" data-model-provider="other">Other model…</option>
+                        </select>
+                        <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name supported by Google Gemini" hidden disabled>
+                      </label>
+                    </div>
+                  {% endfor %}
+                  <label>Evaluator reasoning<select name="evaluator_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
+                  <label>Rewriter reasoning<select name="rewriter_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                  <label>Deterministic patches<select name="verifier_patches" disabled><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                  <label>Concrete retry evidence<select name="require_concrete_retry" disabled><option value="true">Required</option><option value="false">Not required</option></select></label>
+                </div>
+              </fieldset>
+              <div class="wizard-actions"><button type="button" data-wizard-back="model">← Back</button><button class="primary" type="submit" data-wizard-submit>Review run →</button></div>
+            </section>
           </form>
 
-          <aside class="panel summary">
+          <aside class="panel summary" aria-labelledby="run-summary-title">
             <span class="eyebrow">Run summary</span>
-            <h2>Default pipeline</h2>
+            <h2 id="run-summary-title">Default pipeline</h2>
             <dl>
               <div><dt>Pipeline</dt><dd>Stage 1 + Stage 2</dd></div>
+              <div><dt>Stage 2 model</dt><dd data-stage2-summary-model>Shared model · Gemini 3.5 Flash</dd></div>
               <div><dt>Agentic</dt><dd>Off</dd></div>
               <div><dt>MDF parsing guide</dt><dd>Review required</dd></div>
             </dl>
@@ -283,11 +486,11 @@
         <div class="editor-row">
           <input name="profile_target_languages" aria-label="Translation language" placeholder="e.g. English">
           <input name="profile_target_scripts" aria-label="Translation language script" placeholder="e.g. Latin">
-          <button type="button" data-remove aria-label="Remove language">Remove</button>
+          <button class="primary profile-remove" type="button" data-remove aria-label="Remove language">Remove</button>
         </div>
       </template>
-    </main>
-    {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-    <script src="{{ url_for('static', path='/app.js') }}?v=dashboard-11" defer></script>
-  </body>
-</html>
+{% endblock %}
+{% block body_end %}
+{% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>
+{% endblock %}

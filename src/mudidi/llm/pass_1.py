@@ -22,6 +22,10 @@ from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 from mudidi.utils.image import file_content_part, image_data_url, mime_type_for_path
 from mudidi.utils.parse_rules_pages import format_sample_pages_block
+from mudidi.instructions import (
+    PreparedInstructionContext,
+    instruction_identity_projection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +87,17 @@ def _page_content_part(
     }
 
 
+def _instruction_prompt_values(
+    instruction_context: PreparedInstructionContext | None,
+    guides: str,
+) -> tuple[str, str]:
+    if instruction_context is None:
+        return guides, ""
+    return instruction_context.text, instruction_context.metadata.original_filename or ""
+
+
+
+
 def discover_field_cheatsheet(
     *,
     transcription: str,
@@ -94,14 +109,23 @@ def discover_field_cheatsheet(
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
     media_reference: MediaReferenceMode = "auto",
+    guides: str = "",
+    instruction_context: PreparedInstructionContext | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
+    guide_text, guide_source = _instruction_prompt_values(instruction_context, guides)
     user_text = get_prompt_store().format(
         "stage_2_pass_1_user_single",
         transcription=transcription.strip(),
         config_hint=_config_hint(languages_config, dictionary_profile),
+        guides=guide_text,
+        guides_source=guide_source,
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
+    if instruction_context is not None:
+        content.extend(
+            instruction_context.content_parts(model, stage_label="Stage 2 Pass 1")
+        )
     for intro_img in intro_images:
         content.append(_page_content_part(intro_img, media_reference=media_reference))
     content.append(_page_content_part(sample_image, media_reference=media_reference))
@@ -120,7 +144,6 @@ def discover_field_cheatsheet(
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
     return sheet, usage
 
-
 def discover_field_cheatsheet_multi(
     *,
     samples: Sequence[tuple[str, str, Path]],
@@ -131,11 +154,14 @@ def discover_field_cheatsheet_multi(
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
     media_reference: MediaReferenceMode = "auto",
+    guides: str = "",
+    instruction_context: PreparedInstructionContext | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules from several sample pages in one call."""
     if len(samples) < 2:
         raise ValueError("discover_field_cheatsheet_multi requires at least two samples.")
 
+    guide_text, guide_source = _instruction_prompt_values(instruction_context, guides)
     sample_pages_block = format_sample_pages_block(
         [(stem, transcription) for stem, transcription, _ in samples]
     )
@@ -143,8 +169,14 @@ def discover_field_cheatsheet_multi(
         "stage_2_pass_1_user_multi",
         config_hint=_config_hint(languages_config, dictionary_profile),
         sample_pages_block=sample_pages_block,
+        guides=guide_text,
+        guides_source=guide_source,
     )
     content: list[dict] = [{"type": "text", "text": user_text}]
+    if instruction_context is not None:
+        content.extend(
+            instruction_context.content_parts(model, stage_label="Stage 2 Pass 1")
+        )
     for intro_img in intro_images:
         content.append(_page_content_part(intro_img, media_reference=media_reference))
     for stem, _transcription, sample_image in samples:
@@ -168,6 +200,113 @@ def discover_field_cheatsheet_multi(
     data = _extract_json_object(raw)
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
     return sheet, usage
+
+
+def _parse_rules_cache_metadata_path(cache_path: Path) -> Path:
+    return cache_path.with_name(cache_path.name + ".meta.json")
+
+
+def _empty_instruction_manifest() -> dict[str, object]:
+    return {
+        "source_path": None,
+        "kind": "none",
+        "original_filename": None,
+        "byte_count": 0,
+        "sha256": None,
+        "pdf_page_count": None,
+        "selected_pages": [],
+        "selected_path": None,
+        "selected_sha256": None,
+    }
+
+
+def _parse_rules_cache_identity(
+    instruction_context: PreparedInstructionContext | None,
+    instruction_scope: str,
+) -> dict[str, object]:
+    entry = (
+        instruction_context.manifest_entry(scope=instruction_scope)
+        if instruction_context is not None
+        else _empty_instruction_manifest()
+    )
+    return {
+        "scope": instruction_scope,
+        "instruction": instruction_identity_projection(
+            entry,
+            default_scope=instruction_scope,
+        ),
+    }
+
+
+
+
+def _normalized_parse_rules_cache_identity(
+    value: object,
+    instruction_scope: str,
+) -> dict[str, object] | None:
+    if not isinstance(value, dict):
+        return None
+    instruction = value.get("instruction")
+    if not isinstance(instruction, dict):
+        return None
+    return {
+        "scope": value.get("scope"),
+        "instruction": instruction_identity_projection(
+            instruction,
+            default_scope=instruction_scope,
+        ),
+    }
+def _write_parse_rules_cache_metadata(
+    cache_path: Path,
+    *,
+    instruction_context: PreparedInstructionContext | None,
+    instruction_scope: str,
+) -> None:
+    metadata_path = _parse_rules_cache_metadata_path(cache_path)
+    metadata_path.write_text(
+        json.dumps(
+            _parse_rules_cache_identity(instruction_context, instruction_scope),
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _ensure_parse_rules_cache_compatible(
+    cache_path: Path,
+    *,
+    instruction_context: PreparedInstructionContext | None,
+    instruction_scope: str,
+    force_refresh: bool,
+) -> None:
+    metadata_path = _parse_rules_cache_metadata_path(cache_path)
+    if force_refresh or not cache_path.is_file():
+        return
+    expected = _parse_rules_cache_identity(instruction_context, instruction_scope)
+    if not metadata_path.is_file():
+        if expected["instruction"]["kind"] == "none" and instruction_scope == "both":
+            return
+        raise ValueError(
+            f"Instruction metadata for cached parse rules is unavailable at {cache_path}; "
+            "pass --overwrite before reuse."
+        )
+    try:
+        actual = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(
+            f"Cached parse-rule metadata is unreadable at {metadata_path}; "
+            "pass --overwrite before reuse."
+        ) from exc
+    actual_identity = _normalized_parse_rules_cache_identity(
+        actual,
+        instruction_scope,
+    )
+    if actual_identity != expected:
+        raise ValueError(
+            "Instruction attachment metadata changed for cached parse rules; "
+            "pass --overwrite before reuse."
+        )
 
 
 def load_parse_rules_file(path: Path) -> DictionaryMarkerCheatsheet:
@@ -202,10 +341,18 @@ def load_or_discover_parse_rules(
     force_refresh: bool = False,
     parse_rules_file: Path | None = None,
     multi_samples: Sequence[tuple[str, str, Path]] | None = None,
+    instruction_context: PreparedInstructionContext | None = None,
+    instruction_scope: str = "both",
     **discover_kwargs,
 ) -> Tuple[DictionaryMarkerCheatsheet, Optional[Dict[str, Any]]]:
     """Load cached parse rules, a user file, or run Pass 1 discovery."""
     read_path = find_parse_rules_path(cache_path.parent)
+    _ensure_parse_rules_cache_compatible(
+        read_path,
+        instruction_context=instruction_context,
+        instruction_scope=instruction_scope,
+        force_refresh=force_refresh,
+    )
     if read_path.is_file() and not force_refresh and parse_rules_file is None:
         logger.info("Loading cached parse rules: %s", read_path)
         return (
@@ -227,14 +374,25 @@ def load_or_discover_parse_rules(
             temperature=discover_kwargs.get("temperature", 0.1),
             languages_config=discover_kwargs.get("languages_config"),
             dictionary_profile=discover_kwargs.get("dictionary_profile"),
+            media_reference=discover_kwargs.get("media_reference", "auto"),
+            guides=discover_kwargs.get("guides", ""),
+            instruction_context=instruction_context,
         )
     else:
-        sheet, usage = discover_field_cheatsheet(**discover_kwargs)
+        sheet, usage = discover_field_cheatsheet(
+            instruction_context=instruction_context,
+            **discover_kwargs,
+        )
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
         json.dumps(sheet.model_dump(), ensure_ascii=False, indent=2),
         encoding="utf-8",
+    )
+    _write_parse_rules_cache_metadata(
+        cache_path,
+        instruction_context=instruction_context,
+        instruction_scope=instruction_scope,
     )
     logger.info("Saved parse rules → %s", cache_path)
     return sheet, usage

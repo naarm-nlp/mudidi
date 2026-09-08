@@ -24,7 +24,8 @@
     "variables": [
       {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
       {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
-      {"name": "guides", "description": "Optional user-defined guidelines."}
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."}
     ]
   },
   "stage_1_user_inference": {
@@ -34,7 +35,8 @@
       {"name": "alphabet_text", "tag": "<alphabet>", "description": "Optional alphabet or character legend."},
       {"name": "ocr_hint", "tag": "<ocr_reference>", "description": "Optional OCR character-shape reference."},
       {"name": "dictionary_profile", "tag": "<dictionary_profile>", "description": "Optional dictionary metadata supplied by the dashboard or YAML configuration."},
-      {"name": "guides", "description": "Optional user-defined guidelines."}
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."}
     ]
   },
   "stage_2_pass_1_system": {
@@ -49,6 +51,8 @@
     "file": "stage_2/pass_1/user_single.j2",
     "variables": [
       {"name": "config_hint", "description": "Optional language-role and layout context."},
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "transcription", "tag": "<sample_transcription>", "description": "Stage 1 transcription of the sample page."}
     ]
   },
@@ -57,6 +61,8 @@
     "file": "stage_2/pass_1/user_multi.j2",
     "variables": [
       {"name": "config_hint", "description": "Optional language-role and layout context."},
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "sample_pages_block", "description": "Tagged transcriptions for all sample pages."}
     ]
   },
@@ -85,7 +91,8 @@
       {"name": "field_block", "description": "Formatted field map from Pass 1."},
       {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
       {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
-      {"name": "guides", "description": "Optional user-defined guidelines."}
+      {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."}
     ]
   },
   "stage_2_pass_2_user_inference": {
@@ -97,6 +104,7 @@
       {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
       {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
       {"name": "guides", "description": "Optional user-defined guidelines."},
+      {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "current_page_context", "tag": "<current_page>", "description": "Current page identity."},
       {"name": "previous_page_context", "tag": "<previous_page>", "description": "Optional previous-page text context."},
       {"name": "next_page_context", "tag": "<next_page>", "description": "Optional next-page text context."},

@@ -1,24 +1,35 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}
-    <title>Page Viewer &amp; Editor · MUDIDI</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
-    <script src="{{ url_for('static', path='/app.js') }}?v=page-editor-1" defer></script>
-  </head>
-  <body class="standalone">
-    <main class="providers-page">
-      <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+{% extends "_layout.html" %}
+{% block title %}Page Viewer &amp; Editor · MUDIDI{% endblock %}
+{% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block main %}
+    <div class="page-shell">
+      <div class="providers-page page-viewer-page">
+      <a class="back-link" href="{{ '/active' if is_active else '/runs/' ~ run_id }}">{{ '← Active progress' if is_active else '← Run overview' }}</a>
       <header class="page-heading">
         <span class="eyebrow">Generated page inspection and correction</span>
         <h1>Page Viewer &amp; Editor</h1>
       </header>
-      <section class="panel empty-state">
-        <h2>No page outputs yet</h2>
-        <p>Processed pages will become available here as output files are generated.</p>
+      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+        <div class="detail-tabs">
+          <a href="/runs/{{ run_id }}">Overview</a>
+          <a href="/runs/{{ run_id }}/pages" aria-current="page">Page Viewer &amp; Editor</a>
+          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+          <a href="/runs/{{ run_id }}/usage">Usage</a>
+        </div>
+      </nav>
+      <section class="panel empty-state page-viewer-empty">
+        <div>
+          <h2>No page outputs yet</h2>
+          <p>Processed pages will appear here as the worker generates and validates output files.</p>
+          {% if is_active %}
+          <a class="primary link-button" href="/active">View active progress →</a>
+          {% else %}
+          <a class="primary link-button" href="/runs/{{ run_id }}">Return to run overview →</a>
+          {% endif %}
+        </div>
       </section>
-    </main>
-  </body>
-</html>
+      </div>
+    </div>
+{% endblock %}
