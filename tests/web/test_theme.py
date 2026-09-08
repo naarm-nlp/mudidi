@@ -597,17 +597,29 @@ def test_form_grid_aligns_mixed_controls_and_info_buttons_keep_compact_visuals(
     assert "inset: 10px" in compact_visual.group("body")
 
 
-def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
-    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+def test_additional_context_uses_semantic_single_column_spacing(
+    tmp_path: Path,
+) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    css = client.get("/static/app.css").text
 
-    form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
-    column = re.search(
-        r"\.additional-context-column\s*\{(?P<body>[^}]*)\}",
+    stack = re.search(
+        r"\.additional-context-stack\s*\{(?P<body>[^}]*)\}",
         css,
     )
-    column_fields = re.search(
-        r"\.additional-context-column\s*>\s*label,\s*"
-        r"\.additional-context-column\s*>\s*\.form-field\s*"
+    group = re.search(
+        r"\.additional-context-stack\s*>\s*\.additional-context-group\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    section_group = re.search(
+        r"\.additional-context-stack\s*>\s*section\.additional-context-group\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    group_fields = re.search(
+        r"\.additional-context-group\s*>\s*label,\s*"
+        r"\.additional-context-group\s*>\s*\.form-field\s*"
         r"\{(?P<body>[^}]*)\}",
         css,
     )
@@ -624,15 +636,19 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
         r"\.instruction-source-body\s*>\s*label\s*\{(?P<body>[^}]*)\}",
         css,
     )
-    subsection = re.search(r"\.wizard-subsection\s*\{(?P<body>[^}]*)\}", css)
 
-    assert form_grid is not None
-    assert "gap: 16px 18px" in form_grid.group("body")
-    assert column is not None
-    assert "align-content: start" in column.group("body")
-    assert "gap: 16px" in column.group("body")
-    assert column_fields is not None
-    assert "margin: 0" in column_fields.group("body")
+    assert stack is not None
+    assert "grid-template-columns: minmax(0, 1fr)" in stack.group("body")
+    assert "max-width: 960px" in stack.group("body")
+    assert "gap: 24px" in stack.group("body")
+    assert group is not None
+    assert "padding: 20px" in group.group("body")
+    assert "border: var(--border-width) solid var(--color-line)" in group.group("body")
+    assert section_group is not None
+    assert "align-content: start" in section_group.group("body")
+    assert "gap: 18px" in section_group.group("body")
+    assert group_fields is not None
+    assert "margin: 0" in group_fields.group("body")
     assert field_heading is not None
     assert "min-height: 44px" in field_heading.group("body")
     assert "padding-right: 37px" in field_heading.group("body")
@@ -652,9 +668,16 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     assert instruction_body_label is not None
     assert "display: grid" in instruction_body_label.group("body")
     assert "gap: 8px" in instruction_body_label.group("body")
-    assert subsection is not None
-    assert "margin-top: 24px" in subsection.group("body")
-    assert "padding-top: 18px" in subsection.group("body")
+
+    home = client.get("/").text
+    assert 'class="form-grid additional-context-stack"' in home
+    stage1 = home.index('id="stage1-context-title"')
+    stage2 = home.index('id="stage2-context-title"')
+    mdf_guide = home.index('id="mdf-guide-title"')
+    mdf_manual = home.index('class="choice-group mdf-manual additional-context-group"')
+    assert stage1 < stage2 < mdf_guide < mdf_manual
+    assert "additional-context-column" not in home
+    assert "additional-context-column" not in css
 
 
 def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
@@ -740,27 +763,12 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
         r"(?:^|\n)\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
         css,
     )
-    column_option_grid = re.search(
-        r"\.additional-context-column\s+\.mdf-manual-options\s*"
-        r"\{(?P<body>[^}]*)\}",
-        css,
-    )
     resource = re.search(
         r"(?:^|\n)\.mdf-manual-official\s*\{(?P<body>[^}]*)\}",
         css,
     )
-    column_resource = re.search(
-        r"\.additional-context-column\s+\.mdf-manual-official\s*"
-        r"\{(?P<body>[^}]*)\}",
-        css,
-    )
     resource_link = re.search(
         r"(?:^|\n)\.mdf-manual-link\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-    column_resource_link = re.search(
-        r"\.additional-context-column\s+\.mdf-manual-link\s*"
-        r"\{(?P<body>[^}]*)\}",
         css,
     )
 
@@ -776,48 +784,65 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grid.group(
         "body",
     )
-    assert column_option_grid is not None
-    assert "grid-template-columns: 1fr" in column_option_grid.group("body")
     assert resource is not None
     assert "display: flex" in resource.group("body")
     assert "justify-content: space-between" in resource.group("body")
-    assert column_resource is not None
-    assert "flex-direction: column" in column_resource.group("body")
     assert resource_link is not None
     assert "white-space: nowrap" in resource_link.group("body")
-    assert column_resource_link is not None
-    assert "white-space: normal" in column_resource_link.group("body")
 
 
-def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
+def test_instruction_source_panels_fit_semantic_context_groups(
     tmp_path: Path,
 ) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
-    panel = re.search(r"\.instruction-source-panel\s*\{(?P<body>[^}]*)\}", css)
+    panel = re.search(
+        r"(?:^|\n)\.instruction-source-panel\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    grouped_panel = re.search(
+        r"\.additional-context-group\s*>\s*\.instruction-source-panel\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
     legend = re.search(
-        r"\.instruction-source-panel\s*>\s*legend\s*\{(?P<body>[^}]*)\}", css
+        r"(?:^|\n)\.instruction-source-panel\s*>\s*legend\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    source_choices = re.search(
+        r"\.additional-context-group\s+\.instruction-source-choices\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    scope_choices = re.search(
+        r"\.additional-context-group\s+\.instruction-scope-group\s*>\s*"
+        r"\.choice-card-grid\s*\{(?P<body>[^}]*)\}",
+        css,
     )
     warning = re.search(r"\.instruction-pdf-warning\s*\{(?P<body>[^}]*)\}", css)
-    scope_group = re.search(r"\.instruction-scope-group\s*\{(?P<body>[^}]*)\}", css)
 
     assert panel is not None
     assert "border: var(--border-width) solid var(--color-line)" in panel.group("body")
+    assert grouped_panel is not None
+    assert "padding: 0" in grouped_panel.group("body")
+    assert "border: 0" in grouped_panel.group("body")
     assert legend is not None
     assert "text-transform: uppercase" in legend.group("body")
     assert "color: var(--color-ink)" in legend.group("body")
     assert "font-size: 13px" in legend.group("body")
     assert "font-weight: 900" in legend.group("body")
+    assert source_choices is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in source_choices.group(
+        "body",
+    )
+    assert scope_choices is not None
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in scope_choices.group(
+        "body",
+    )
     assert warning is not None
     assert "background: var(--color-warning-soft)" in warning.group("body")
     assert "overflow-wrap: anywhere" in warning.group("body")
-    assert scope_group is not None
-
-    upload_trigger = re.search(
-        r"\.form-grid\s+\.mdf-guide-upload-trigger\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-    assert upload_trigger is not None
 
     home = TestClient(create_app(data_dir=tmp_path)).get("/").text
     assert (

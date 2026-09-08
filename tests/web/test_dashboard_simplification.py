@@ -263,7 +263,9 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert "Dictionary page numbers are required" in response.text
     assert "front matter from the same uploaded PDF" in response.text
     assert "Optional. Upload a pre-generated MDF parsing guide" in response.text
-    assert "<small>Optional. Upload a pre-generated MDF parsing guide" not in response.text
+    assert (
+        "<small>Optional. Upload a pre-generated MDF parsing guide" not in response.text
+    )
     assert "It is still validated and must be reviewed" not in response.text
     assert 'name="stage1_additional_instructions"' in response.text
     assert 'name="stage2_additional_instructions"' in response.text
@@ -273,20 +275,17 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert response.text.count('class="field-heading"') >= 5
     assert (
         '<fieldset class="form-field instruction-source-panel" '
-        'data-instruction-source-panel data-instruction-stage="stage1"'
-        in response.text
+        'data-instruction-source-panel data-instruction-stage="stage1"' in response.text
     )
-    assert '<legend>Stage 1 instructions</legend>' in response.text
-    assert '<legend>Stage 2 instructions</legend>' in response.text
+    assert "<legend>Stage 1 instructions</legend>" in response.text
+    assert "<legend>Stage 2 instructions</legend>" in response.text
     assert (
         'name="stage1_instruction_source" value="typed" checked '
-        'data-instruction-source-radio'
-        in response.text
+        "data-instruction-source-radio" in response.text
     )
     assert (
         'name="stage2_instruction_source" value="typed" checked '
-        'data-instruction-source-radio'
-        in response.text
+        "data-instruction-source-radio" in response.text
     )
     assert '<textarea name="stage1_additional_instructions"' in response.text
     assert '<textarea name="stage2_additional_instructions"' in response.text
@@ -298,14 +297,19 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="mdf_manual_source" value="upload"' in response.text
     assert 'name="mdf_manual_source" value="bundled"' not in response.text
     assert 'name="custom_mdf_manual" type="file"' in response.text
-    assert '<fieldset class="choice-group mdf-manual"' in response.text
+    assert (
+        '<fieldset class="choice-group mdf-manual additional-context-group"'
+        in response.text
+    )
     assert 'class="choice-card-grid mdf-manual-options"' in response.text
     assert 'class="mdf-manual-upload" data-custom-mdf-manual hidden' in response.text
     assert "<legend>MDF manual (optional)</legend>" in response.text
     assert "Upload my own MDF manual" in response.text
     assert "Continue without an MDF manual" in response.text
     assert "Open official SIL MDF manual" in response.text
-    assert 'aria-label="Open or download the official SIL MDF manual"' not in response.text
+    assert (
+        'aria-label="Open or download the official SIL MDF manual"' not in response.text
+    )
     assert (
         'href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf"'
         in response.text
@@ -331,7 +335,9 @@ def test_dashboard_accepts_exactly_one_required_dictionary_pdf(tmp_path: Path) -
     assert 'name="dictionary_pdf" type="file" accept=".pdf" required' in response.text
     assert 'name="page_files"' not in response.text
     assert 'name="page_directory"' not in response.text
-    assert 'name="dictionary_pdf" type="file" accept=".pdf" multiple' not in response.text
+    assert (
+        'name="dictionary_pdf" type="file" accept=".pdf" multiple' not in response.text
+    )
     assert 'name="dictionary_pages" required' in response.text
     assert "Dictionary page numbers are required" in response.text
 

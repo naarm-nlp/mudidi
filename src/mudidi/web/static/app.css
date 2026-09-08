@@ -220,9 +220,14 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .key-reveal[aria-pressed="false"] .eye-hide,
 .key-reveal[aria-pressed="true"] .eye-show { display: none; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 16px 18px; }
-.form-grid > label, .form-grid > .form-field,
-.additional-context-column > label, .additional-context-column > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
-.additional-context-column { display: grid; align-content: start; gap: 16px; min-width: 0; }
+.form-grid > label, .form-grid > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
+.additional-context-stack { grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 960px; margin: 0 auto; gap: 24px; }
+.additional-context-stack > .additional-context-group { min-width: 0; margin: 0; padding: 20px; border: var(--border-width) solid var(--color-line); background: var(--color-panel); }
+.additional-context-stack > section.additional-context-group { display: grid; align-content: start; gap: 18px; }
+.additional-context-group > h4 { margin: 0; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
+.additional-context-group > label, .additional-context-group > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
+.additional-context-group > .instruction-source-panel { padding: 0; border: 0; }
+.additional-context-group > .instruction-source-panel > legend { padding: 0; }
 .stage1-settings > .form-grid { margin-top: 12px; }
 .field-heading { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding-right: 37px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
 .field-heading .info-button { position: absolute; top: 0; right: -7px; align-items: end; line-height: 24px; }
@@ -320,8 +325,6 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-heading p { margin: 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 .mdf-manual-heading .info-button { margin-top: -7px; }
 .mdf-manual-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.additional-context-column > .mdf-manual { margin: 0; }
-.additional-context-column .mdf-manual-options { grid-template-columns: 1fr; }
 .mdf-manual-options .choice-card { grid-template-columns: auto minmax(0, 1fr); }
 .mdf-manual-upload { margin-top: 12px; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
 .mdf-manual-file { display: grid; gap: 8px; margin: 0; }
@@ -330,12 +333,12 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-official > span { display: grid; gap: 4px; min-width: 0; }
 .mdf-manual-official strong { font-size: 13px; font-weight: 900; text-transform: uppercase; }
 .mdf-manual-link { flex: 0 0 auto; margin: 0; color: var(--color-on-accent); font-size: 12px; text-decoration: none; white-space: nowrap; }
-.additional-context-column .mdf-manual-official { align-items: stretch; flex-direction: column; }
-.additional-context-column .mdf-manual-link { white-space: normal; }
 .mdf-manual-official small { display: block; margin: 0; color: var(--color-muted); overflow-wrap: anywhere; }
 .instruction-source-panel { min-width: 0; margin: 0; padding: 14px 16px; border: var(--border-width) solid var(--color-line); }
 .instruction-source-panel > legend { padding: 0 6px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
 .instruction-source-panel > .choice-card-grid { margin: 0 0 14px; }
+.additional-context-group .instruction-source-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.additional-context-group .instruction-scope-group > .choice-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .instruction-source-body > label { display: grid; gap: 8px; margin: 0; }
 .instruction-pdf-pages { margin-top: 14px; }
 .instruction-pdf-warning { margin: 10px 0 0; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-size: 12px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
@@ -657,6 +660,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   .stage2-pass-card { grid-template-columns: 1fr; }
   .form-grid, .preset-grid { grid-template-columns: 1fr; }
   .mdf-manual-options { grid-template-columns: 1fr; }
+  .additional-context-group .instruction-source-choices,
+  .additional-context-group .instruction-scope-group > .choice-card-grid { grid-template-columns: 1fr; }
   .active-progress-summary { flex-wrap: wrap; }
   .active-progress-summary .elapsed-time { margin-left: 0; text-align: left; }
   .history-table-panel .table-scroll { overflow-x: auto; }

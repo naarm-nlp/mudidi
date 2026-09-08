@@ -165,9 +165,18 @@
 
               <div class="wizard-subsection">
                 <h3>Additional context and MDF inputs</h3>
-                <div class="form-grid additional-context-grid">
-                  <div class="additional-context-column">
+                <div class="form-grid additional-context-stack">
+                  <section class="additional-context-group" aria-labelledby="stage1-context-title" data-stage-control data-pipeline-stages="stage1">
+                    <h4 id="stage1-context-title">Stage 1 context</h4>
                   <label data-stage-control data-pipeline-stages="stage1"><span class="field-heading">Character Inventory <button class="info-button" type="button" aria-label="About the Character Inventory" data-help="Paste a character inventory for each language or script used in the dictionary. This helps constrain Stage 1 transcription to valid characters and reduces substitutions with visually similar characters. Use one language-script label followed by valid characters separated by spaces, for example: Chukchi-Cyrillic: а б в г ӄ">i</button></span><textarea name="character_inventory" maxlength="20000" rows="4" placeholder="Chukchi-Cyrillic: а б в г ӄ"></textarea></label>
+                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), errors_by_field) }}
+                  </section>
+                  <section class="additional-context-group" aria-labelledby="stage2-context-title" data-stage-control data-pipeline-stages="pass1 pass2">
+                    <h4 id="stage2-context-title">Stage 2 context</h4>
+                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), errors_by_field) }}
+                  </section>
+                  <section class="additional-context-group" aria-labelledby="mdf-guide-title" data-stage-control data-pipeline-stages="pass1 pass2">
+                    <h4 id="mdf-guide-title">MDF guide</h4>
                   <div class="form-field mdf-guide-field" data-stage-control data-pipeline-stages="pass1 pass2">
                     <span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>
                     {% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}
@@ -183,7 +192,8 @@
                     </div>
                   </div>
                   <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
-                <fieldset class="choice-group mdf-manual" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                  </section>
+                  <fieldset class="choice-group mdf-manual additional-context-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
                   <legend>MDF manual (optional)</legend>
                   <div class="mdf-manual-heading">
                     <p>Optional reference material for Stage 2 parsing-guide inference.</p>
@@ -201,11 +211,6 @@
                     <a class="primary link-button mdf-manual-link" href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" target="_blank" rel="noopener noreferrer">Open official SIL MDF manual <span aria-hidden="true">↗</span></a>
                   </div>
                 </fieldset>
-                  </div>
-                  <div class="additional-context-column">
-                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), errors_by_field) }}
-                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), errors_by_field) }}
-                  </div>
                 </div>
               </div>
 
