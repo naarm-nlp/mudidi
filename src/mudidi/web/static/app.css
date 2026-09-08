@@ -220,15 +220,18 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .key-reveal[aria-pressed="false"] .eye-hide,
 .key-reveal[aria-pressed="true"] .eye-show { display: none; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 16px 18px; }
-.form-grid > label, .form-grid > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
+.form-grid > label, .form-grid > .form-field,
+.additional-context-column > label, .additional-context-column > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
+.additional-context-column { display: grid; align-content: start; gap: 16px; min-width: 0; }
 .stage1-settings > .form-grid { margin-top: 12px; }
-.field-heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 30px; padding-right: 37px; }
-.field-heading .info-button { position: absolute; top: -7px; right: -7px; }
+.field-heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding-right: 37px; }
+.field-heading .info-button { position: absolute; top: 0; right: -7px; }
 .form-grid input:not([type="checkbox"]):not([type="radio"]), .form-grid select, .form-grid textarea { width: 100%; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background-color: var(--color-panel); }
 .form-grid select { padding: 10px 48px 10px 12px; }
 .page-spec-input::placeholder { color: var(--color-muted); opacity: .5; font-style: italic; }
 .form-grid textarea { min-height: 96px; resize: vertical; }
 .mdf-guide-file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-width: 0; }
+.mdf-guide-field > .mdf-guide-file-row { padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
 .form-grid .mdf-guide-upload-trigger { position: relative; display: inline-flex; align-items: center; gap: 8px; width: fit-content; min-width: 0; min-height: 42px; margin: 0; padding: 9px 14px; overflow: hidden; white-space: nowrap; }
 .mdf-guide-upload-trigger svg { flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: square; stroke-linejoin: miter; }
 .form-grid .mdf-guide-file-input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; margin: 0; opacity: 0; cursor: pointer; border: 0; }
@@ -315,6 +318,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-heading p { margin: 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 .mdf-manual-heading .info-button { margin-top: -7px; }
 .mdf-manual-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.additional-context-column > .mdf-manual { margin: 0; }
+.additional-context-column .mdf-manual-options { grid-template-columns: 1fr; }
 .mdf-manual-options .choice-card { grid-template-columns: auto minmax(0, 1fr); }
 .mdf-manual-upload { margin-top: 12px; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
 .mdf-manual-file { display: grid; gap: 8px; margin: 0; }
@@ -323,6 +328,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .mdf-manual-official > span { display: grid; gap: 4px; min-width: 0; }
 .mdf-manual-official strong { font-size: 13px; font-weight: 900; text-transform: uppercase; }
 .mdf-manual-link { flex: 0 0 auto; margin: 0; color: var(--color-on-accent); font-size: 12px; text-decoration: none; white-space: nowrap; }
+.additional-context-column .mdf-manual-official { align-items: stretch; flex-direction: column; }
+.additional-context-column .mdf-manual-link { white-space: normal; }
 .mdf-manual-official small { display: block; margin: 0; color: var(--color-muted); overflow-wrap: anywhere; }
 .instruction-source-panel { min-width: 0; margin: 0; padding: 14px 16px; border: var(--border-width) solid var(--color-line); }
 .instruction-source-panel > legend { padding: 0 6px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
