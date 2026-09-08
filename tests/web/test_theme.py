@@ -56,9 +56,7 @@ class _SemanticParser(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
-        own_hidden = (
-            "hidden" in attributes or attributes.get("aria-hidden") == "true"
-        )
+        own_hidden = "hidden" in attributes or attributes.get("aria-hidden") == "true"
         hidden = self._hidden_depth > 0 or own_hidden
         if tag == "main" and not hidden:
             self.mains += 1
@@ -106,7 +104,11 @@ class _SemanticParser(HTMLParser):
             and attributes.get("aria-current") == "page"
         ):
             self.workspace_current.append(tag)
-        if tag == "nav" and not hidden and attributes.get("aria-label") == "Run workspace":
+        if (
+            tag == "nav"
+            and not hidden
+            and attributes.get("aria-label") == "Run workspace"
+        ):
             self._open_workspace_nav += 1
         if tag not in self._VOID_TAGS:
             self._open_elements.append(
@@ -212,8 +214,7 @@ def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> 
     assert visible_headings and visible_headings[0] == 1
     assert visible_headings.count(1) == 1
     assert all(
-        right - left <= 1
-        for left, right in zip(visible_headings, visible_headings[1:])
+        right - left <= 1 for left, right in zip(visible_headings, visible_headings[1:])
     )
     for control in parser.controls:
         if control["hidden"] or control["type"] == "hidden":
@@ -230,17 +231,14 @@ def _assert_semantic_shell(response: object, *, run_workspace: bool = False) -> 
                 # decorative button icons rather than visible text labels.
                 visible_label = visible_text.lstrip("＋+×✕←→↑↓ ")
                 if len(visible_label) > 1:
-                    assert (
-                        visible_label.casefold() in accessible_name.casefold()
-                    ), control
+                    assert visible_label.casefold() in accessible_name.casefold(), (
+                        control
+                    )
             continue
         has_nested_label = bool(parser.nested_label_name(control))
         has_explicit_label = bool(parser.explicit_label_name(control["id"]))
         assert (
-            aria_label
-            or aria_labelledby
-            or has_nested_label
-            or has_explicit_label
+            aria_label or aria_labelledby or has_nested_label or has_explicit_label
         ), control
     if run_workspace:
         assert len(parser.workspace_current) == 1
@@ -326,9 +324,7 @@ def test_semantic_parser_does_not_leak_hidden_depth_from_void_inputs() -> None:
     ),
 )
 def test_semantic_shell_rejects_unlabeled_form_controls(control: str) -> None:
-    response = SimpleNamespace(
-        text=f"<main><h1>Workspace</h1>{control}</main>"
-    )
+    response = SimpleNamespace(text=f"<main><h1>Workspace</h1>{control}</main>")
 
     with pytest.raises(AssertionError):
         _assert_semantic_shell(response)
@@ -378,7 +374,9 @@ def _semantic_matrix(tmp_path: Path) -> list[tuple[str, object, bool]]:
         '{"stage1":{"total_tokens":1},"stage2":{"total_tokens":2}}',
         encoding="utf-8",
     )
-    store.create_preset("preset-one", name="One preset", provider="anthropic", config=config)
+    store.create_preset(
+        "preset-one", name="One preset", provider="anthropic", config=config
+    )
 
     empty_pages = tmp_path / "empty-pages"
     empty_pages.mkdir()
@@ -461,6 +459,8 @@ def test_every_reachable_template_variant_has_semantic_shell(tmp_path: Path) -> 
         if response.status_code == 303:
             continue
         _assert_semantic_shell(response, run_workspace=run_workspace)
+
+
 def test_every_page_renders_the_shared_shell(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
@@ -477,6 +477,7 @@ def test_every_page_renders_the_shared_shell(tmp_path: Path) -> None:
         assert "data-theme-toggle" in response.text
         assert 'class="standalone"' not in response.text
 
+
 def test_nav_marks_only_the_current_section_active(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
 
@@ -486,6 +487,7 @@ def test_nav_marks_only_the_current_section_active(tmp_path: Path) -> None:
     assert 'class="active" href="/history"' in response.text
     assert 'href="/history" aria-current="page"' in response.text
     assert 'class="active" href="/"' not in response.text
+
 
 def test_theme_script_is_served_without_os_preference_fallback(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path))
@@ -594,8 +596,13 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     form_grid = re.search(r"\.form-grid\s*\{(?P<body>[^}]*)\}", css)
-    direct_fields = re.search(
-        r"\.form-grid\s*>\s*label,\s*\.form-grid\s*>\s*\.form-field\s*"
+    column = re.search(
+        r"\.additional-context-column\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    column_fields = re.search(
+        r"\.additional-context-column\s*>\s*label,\s*"
+        r"\.additional-context-column\s*>\s*\.form-field\s*"
         r"\{(?P<body>[^}]*)\}",
         css,
     )
@@ -608,17 +615,20 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
 
     assert form_grid is not None
     assert "gap: 16px 18px" in form_grid.group("body")
-    assert direct_fields is not None
-    assert "margin: 0" in direct_fields.group("body")
+    assert column is not None
+    assert "align-content: start" in column.group("body")
+    assert "gap: 16px" in column.group("body")
+    assert column_fields is not None
+    assert "margin: 0" in column_fields.group("body")
     assert field_heading is not None
-    assert "min-height: 30px" in field_heading.group("body")
+    assert "min-height: 44px" in field_heading.group("body")
     assert "padding-right: 37px" in field_heading.group("body")
     assert field_help is not None
     assert "position: absolute" in field_help.group("body")
+    assert "top: 0" in field_help.group("body")
     assert subsection is not None
     assert "margin-top: 24px" in subsection.group("body")
     assert "padding-top: 18px" in subsection.group("body")
-
 
 
 def test_dictionary_dropzone_uses_a_centered_themed_icon_control(
@@ -657,6 +667,11 @@ def test_existing_mdf_guide_uses_a_compact_themed_file_control(
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     file_row = re.search(r"\.mdf-guide-file-row\s*\{(?P<body>[^}]*)\}", css)
+    framed_file_row = re.search(
+        r"\.mdf-guide-field\s*>\s*\.mdf-guide-file-row\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
     upload_trigger = re.search(
         r"\.form-grid\s+\.mdf-guide-upload-trigger\s*\{(?P<body>[^}]*)\}",
         css,
@@ -669,6 +684,14 @@ def test_existing_mdf_guide_uses_a_compact_themed_file_control(
 
     assert file_row is not None
     assert "flex-wrap: wrap" in file_row.group("body")
+    assert framed_file_row is not None
+    assert "padding: 14px" in framed_file_row.group("body")
+    assert (
+        "border: var(--divider-width) solid var(--color-line)"
+        in framed_file_row.group(
+            "body",
+        )
+    )
     assert upload_trigger is not None
     assert "display: inline-flex" in upload_trigger.group("body")
     assert "align-items: center" in upload_trigger.group("body")
@@ -683,24 +706,52 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     heading = re.search(r"\.mdf-manual-heading\s*\{(?P<body>[^}]*)\}", css)
-    option_grids = re.findall(
-        r"\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
+    option_grid = re.search(
+        r"(?:^|\n)\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
         css,
     )
-    resource = re.search(r"\.mdf-manual-official\s*\{(?P<body>[^}]*)\}", css)
-    resource_link = re.search(r"\.mdf-manual-link\s*\{(?P<body>[^}]*)\}", css)
+    column_option_grid = re.search(
+        r"\.additional-context-column\s+\.mdf-manual-options\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    resource = re.search(
+        r"(?:^|\n)\.mdf-manual-official\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    column_resource = re.search(
+        r"\.additional-context-column\s+\.mdf-manual-official\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+    resource_link = re.search(
+        r"(?:^|\n)\.mdf-manual-link\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    column_resource_link = re.search(
+        r"\.additional-context-column\s+\.mdf-manual-link\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
 
     assert heading is not None
     assert "display: grid" in heading.group("body")
     assert "grid-template-columns: minmax(0, 1fr) auto" in heading.group("body")
-    assert len(option_grids) == 2
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grids[0]
-    assert "grid-template-columns: 1fr" in option_grids[1]
+    assert option_grid is not None
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grid.group(
+        "body",
+    )
+    assert column_option_grid is not None
+    assert "grid-template-columns: 1fr" in column_option_grid.group("body")
     assert resource is not None
     assert "display: flex" in resource.group("body")
     assert "justify-content: space-between" in resource.group("body")
+    assert column_resource is not None
+    assert "flex-direction: column" in column_resource.group("body")
     assert resource_link is not None
     assert "white-space: nowrap" in resource_link.group("body")
+    assert column_resource_link is not None
+    assert "white-space: normal" in column_resource_link.group("body")
 
 
 def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
@@ -709,7 +760,9 @@ def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     panel = re.search(r"\.instruction-source-panel\s*\{(?P<body>[^}]*)\}", css)
-    legend = re.search(r"\.instruction-source-panel\s*>\s*legend\s*\{(?P<body>[^}]*)\}", css)
+    legend = re.search(
+        r"\.instruction-source-panel\s*>\s*legend\s*\{(?P<body>[^}]*)\}", css
+    )
     warning = re.search(r"\.instruction-pdf-warning\s*\{(?P<body>[^}]*)\}", css)
     scope_group = re.search(r"\.instruction-scope-group\s*\{(?P<body>[^}]*)\}", css)
 
@@ -729,7 +782,12 @@ def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
     assert upload_trigger is not None
 
     home = TestClient(create_app(data_dir=tmp_path)).get("/").text
-    assert home.count('class="primary mdf-guide-upload-trigger instruction-upload-trigger"') == 2
+    assert (
+        home.count(
+            'class="primary mdf-guide-upload-trigger instruction-upload-trigger"'
+        )
+        == 2
+    )
     assert home.count('class="mdf-guide-file-input" data-instruction-file-input') == 2
 
 
@@ -775,7 +833,9 @@ def test_pipeline_cards_reserve_width_for_readable_copy(tmp_path: Path) -> None:
     assert policy_copy is not None
     assert "display: grid" in policy_copy.group("body")
     assert responsive_grid is not None
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in responsive_grid.group("body")
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in responsive_grid.group(
+        "body"
+    )
     assert responsive_last_card is not None
     assert "grid-column: 1 / -1" in responsive_last_card.group("body")
     assert radio_alignment is not None
@@ -907,7 +967,6 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
     assert "app.css') }}?v=dashboard-ui-8" in layout
 
 
-
 def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
     templates_dir = Path(__file__).resolve().parents[2] / "src/mudidi/web/templates"
     versions = {
@@ -923,14 +982,9 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
 
 
 def _relative_luminance(hex_color: str) -> float:
-    channels = [
-        int(hex_color[index : index + 2], 16) / 255
-        for index in (1, 3, 5)
-    ]
+    channels = [int(hex_color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
     linear = [
-        channel / 12.92
-        if channel <= 0.03928
-        else ((channel + 0.055) / 1.055) ** 2.4
+        channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
         for channel in channels
     ]
     return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
