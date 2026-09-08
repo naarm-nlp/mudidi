@@ -224,7 +224,7 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .additional-context-column > label, .additional-context-column > .form-field { display: grid; align-content: start; gap: 8px; margin: 0; }
 .additional-context-column { display: grid; align-content: start; gap: 16px; min-width: 0; }
 .stage1-settings > .form-grid { margin-top: 12px; }
-.field-heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding-right: 37px; }
+.field-heading { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding-right: 37px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
 .field-heading .info-button { position: absolute; top: 0; right: -7px; }
 .form-grid input:not([type="checkbox"]):not([type="radio"]), .form-grid select, .form-grid textarea { width: 100%; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background-color: var(--color-panel); }
 .form-grid select { padding: 10px 48px 10px 12px; }
@@ -238,7 +238,7 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .mdf-guide-upload-trigger:has(.mdf-guide-file-input:focus-visible) { outline: var(--border-width) solid var(--color-accent); outline-offset: 3px; }
 .mdf-guide-file-status { min-width: 0; color: var(--color-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
 .choice-group { margin: 24px 0 8px; padding: 14px 16px; border: var(--border-width) solid var(--color-line); }
-.choice-group legend { padding: 0 6px; font-size: 13px; font-weight: 800; }
+.choice-group legend { padding: 0 6px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
 .choice-group > label { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-weight: 600; }
 .agentic-stage-toggle > span { display: flex; align-items: center; gap: 8px; }
 .agentic-stage-toggle input { margin: 0; }
@@ -332,9 +332,9 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .additional-context-column .mdf-manual-link { white-space: normal; }
 .mdf-manual-official small { display: block; margin: 0; color: var(--color-muted); overflow-wrap: anywhere; }
 .instruction-source-panel { min-width: 0; margin: 0; padding: 14px 16px; border: var(--border-width) solid var(--color-line); }
-.instruction-source-panel > legend { padding: 0 6px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+.instruction-source-panel > legend { padding: 0 6px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
 .instruction-source-panel > .choice-card-grid { margin: 0 0 14px; }
-.instruction-source-body > label { margin: 0; }
+.instruction-source-body > label { display: grid; gap: 8px; margin: 0; }
 .instruction-pdf-pages { margin-top: 14px; }
 .instruction-pdf-warning { margin: 10px 0 0; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-size: 12px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .instruction-scope-group { margin: 14px 0 0; }

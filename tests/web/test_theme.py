@@ -611,6 +611,10 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
         r"\.field-heading\s+\.info-button\s*\{(?P<body>[^}]*)\}",
         css,
     )
+    instruction_body_label = re.search(
+        r"\.instruction-source-body\s*>\s*label\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
     subsection = re.search(r"\.wizard-subsection\s*\{(?P<body>[^}]*)\}", css)
 
     assert form_grid is not None
@@ -623,9 +627,18 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     assert field_heading is not None
     assert "min-height: 44px" in field_heading.group("body")
     assert "padding-right: 37px" in field_heading.group("body")
+    assert "align-items: flex-end" in field_heading.group("body")
+    assert "font-size: 13px" in field_heading.group("body")
+    assert "font-weight: 900" in field_heading.group("body")
+    assert "letter-spacing: -.02em" in field_heading.group("body")
+    assert "text-transform: uppercase" in field_heading.group("body")
+    assert "color: var(--color-ink)" in field_heading.group("body")
     assert field_help is not None
     assert "position: absolute" in field_help.group("body")
     assert "top: 0" in field_help.group("body")
+    assert instruction_body_label is not None
+    assert "display: grid" in instruction_body_label.group("body")
+    assert "gap: 8px" in instruction_body_label.group("body")
     assert subsection is not None
     assert "margin-top: 24px" in subsection.group("body")
     assert "padding-top: 18px" in subsection.group("body")
@@ -706,6 +719,10 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
     heading = re.search(r"\.mdf-manual-heading\s*\{(?P<body>[^}]*)\}", css)
+    choice_legend = re.search(
+        r"\.choice-group\s+legend\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
     option_grid = re.search(
         r"(?:^|\n)\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
         css,
@@ -737,6 +754,11 @@ def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> N
     assert heading is not None
     assert "display: grid" in heading.group("body")
     assert "grid-template-columns: minmax(0, 1fr) auto" in heading.group("body")
+    assert choice_legend is not None
+    assert "color: var(--color-ink)" in choice_legend.group("body")
+    assert "font-size: 13px" in choice_legend.group("body")
+    assert "font-weight: 900" in choice_legend.group("body")
+    assert "text-transform: uppercase" in choice_legend.group("body")
     assert option_grid is not None
     assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grid.group(
         "body",
@@ -770,6 +792,9 @@ def test_instruction_source_panels_reuse_bordered_brutalist_tokens(
     assert "border: var(--border-width) solid var(--color-line)" in panel.group("body")
     assert legend is not None
     assert "text-transform: uppercase" in legend.group("body")
+    assert "color: var(--color-ink)" in legend.group("body")
+    assert "font-size: 13px" in legend.group("body")
+    assert "font-weight: 900" in legend.group("body")
     assert warning is not None
     assert "background: var(--color-warning-soft)" in warning.group("body")
     assert "overflow-wrap: anywhere" in warning.group("body")
