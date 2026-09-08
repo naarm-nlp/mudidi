@@ -225,7 +225,8 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .additional-context-column { display: grid; align-content: start; gap: 16px; min-width: 0; }
 .stage1-settings > .form-grid { margin-top: 12px; }
 .field-heading { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; padding-right: 37px; color: var(--color-ink); font-size: 13px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
-.field-heading .info-button { position: absolute; top: 0; right: -7px; }
+.field-heading .info-button { position: absolute; top: 0; right: -7px; align-items: end; line-height: 24px; }
+.field-heading .info-button::before { inset: 20px 10px 0; }
 .form-grid input:not([type="checkbox"]):not([type="radio"]), .form-grid select, .form-grid textarea { width: 100%; padding: 10px 12px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background-color: var(--color-panel); }
 .form-grid select { padding: 10px 48px 10px 12px; }
 .page-spec-input::placeholder { color: var(--color-muted); opacity: .5; font-style: italic; }
@@ -249,8 +250,8 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .pipeline-choices .task-card .info-button { position: absolute; right: 8px; bottom: 8px; }
 .agentic-choice .task-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 #wizard-model > .form-grid { margin-top: 16px; }
-.info-button { position: relative; isolation: isolate; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 0; color: var(--color-on-accent); background: transparent; font-size: 12px; font-weight: 900; cursor: help; }
-.info-button::before { content: ""; position: absolute; z-index: -1; inset: 7px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent); }
+.info-button { position: relative; isolation: isolate; display: grid; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; padding: 0; place-items: center; border: 0; color: var(--color-on-accent); background: transparent; font-size: 12px; font-weight: 900; cursor: help; }
+.info-button::before { content: ""; position: absolute; z-index: -1; inset: 10px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent); }
 .info-button::after { box-sizing: border-box; content: attr(data-help); position: absolute; z-index: 3; right: 0; top: 36px; width: min(330px, 70vw); padding: 10px 12px; border: var(--border-width) solid var(--color-line); color: var(--color-bg); background: var(--color-ink); box-shadow: var(--shadow-sm); font-weight: 500; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .15s, transform .15s; }
 .info-button.is-tooltip-hovered::after { opacity: 1; transform: translateY(0); }
 .mdf-manual-help::after { width: min(440px, 80vw); }

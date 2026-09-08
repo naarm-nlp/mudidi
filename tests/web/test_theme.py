@@ -586,10 +586,15 @@ def test_form_grid_aligns_mixed_controls_and_info_buttons_keep_compact_visuals(
     assert "width: 44px" in info_button.group("body")
     assert "height: 44px" in info_button.group("body")
     assert "background: transparent" in info_button.group("body")
+    assert "display: grid" in info_button.group("body")
+    assert "place-items: center" in info_button.group("body")
 
-    compact_visual = re.search(r"\.info-button::before\s*\{(?P<body>[^}]*)\}", css)
+    compact_visual = re.search(
+        r"(?:^|\n)\.info-button::before\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
     assert compact_visual is not None
-    assert "inset: 7px" in compact_visual.group("body")
+    assert "inset: 10px" in compact_visual.group("body")
 
 
 def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
@@ -609,6 +614,10 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     field_heading = re.search(r"\.field-heading\s*\{(?P<body>[^}]*)\}", css)
     field_help = re.search(
         r"\.field-heading\s+\.info-button\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    field_help_visual = re.search(
+        r"\.field-heading\s+\.info-button::before\s*\{(?P<body>[^}]*)\}",
         css,
     )
     instruction_body_label = re.search(
@@ -636,6 +645,10 @@ def test_input_panel_uses_compact_field_spacing(tmp_path: Path) -> None:
     assert field_help is not None
     assert "position: absolute" in field_help.group("body")
     assert "top: 0" in field_help.group("body")
+    assert "align-items: end" in field_help.group("body")
+    assert "line-height: 24px" in field_help.group("body")
+    assert field_help_visual is not None
+    assert "inset: 20px 10px 0" in field_help_visual.group("body")
     assert instruction_body_label is not None
     assert "display: grid" in instruction_body_label.group("body")
     assert "gap: 8px" in instruction_body_label.group("body")
