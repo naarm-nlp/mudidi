@@ -81,6 +81,12 @@ Save the API key for your model provider under **API credentials** on the
 MUDIDI opens `http://localhost:8000`. It binds to loopback and is not intended
 for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
+![MUDIDI New Run dashboard showing the Input step](../assets/dashboard-home.png)
+
+The dashboard uses a five-step responsive wizard with persistent navigation,
+high-contrast controls, and a live run summary. The same form fields and
+validation rules are used in desktop and mobile layouts.
+
 
 ## Create a run
 
@@ -146,6 +152,8 @@ preserve typography. OCR hints, column mode, and expert OCR/VLM backends remain
 available through YAML and the CLI but are intentionally absent from the
 dashboard.
 
+![MUDIDI dashboard Pipeline step](../assets/dashboard-pipeline.png)
+
 The final **Review** page is rendered by the server, not another client-side
 wizard panel. It groups the validated non-secret values under **Input**,
 **Pipeline**, **Model**, and **Agentic**, reports MDF parsing-guide review
@@ -181,22 +189,38 @@ additional entry structures and rules visible in the dictionary.
 
 ## Additional context
 
-The dashboard can attach:
+The **Input** step groups optional context by the stage that consumes it:
 
-- required PDF dictionary page numbers using one number, an ascending range,
-  comma-separated numbers, or a combination such as `1,5,10-20`;
-- optional PDF introduction page numbers using the same syntax;
-- a character inventory entered directly as text;
-- Stage 1 and Stage 2 additional instructions entered directly as text;
-- optional representative MDF parsing guide pages using the same page syntax;
-- an existing MDF parsing guide JSON file.
+- a character inventory entered directly as text for Stage 1;
+- Stage 1 instructions entered as text or uploaded as one `.txt`, `.md`, or
+  `.pdf` file;
+- Stage 2 instructions entered as text or uploaded as one `.txt`, `.md`, or
+  `.pdf` file;
+- an existing MDF parsing guide JSON file;
+- optional representative MDF parsing-guide pages;
+- an optional MDF manual PDF.
 
-All page numbers must be positive Arabic numbers within the uploaded PDF.
+Dictionary, introduction, and representative MDF parsing-guide page numbers
+must be positive Arabic numbers within the uploaded dictionary PDF.
 Representative MDF parsing-guide pages must also be included in the selected
-dictionary pages. Roman numeral page specifications are not accepted.
+dictionary pages. Instruction PDF page numbers must exist within their own
+attachment. Roman numeral page specifications are not accepted.
 
-Additional instructions are stored as bounded UTF-8 files in the run input
-bundle and passed through the same prompt-guide mechanism used by YAML/CLI.
+For an instruction attachment, select **Upload instruction file** instead of
+**Type instructions**. TXT and Markdown files must contain non-blank UTF-8 text
+and are limited to 20,000 characters. PDF attachments retain document layout,
+images, and typography. An optional PDF page specification selects one page,
+an ascending range, comma-separated pages, or a combination; leaving it blank
+uses every page in the attachment.
+
+Stage 2 instructions also have a scope: **Pass 1 only**, **Pass 2 only**,
+or **Both passes**. The default is both. Switching away from a selected file
+asks for confirmation before clearing it. Review pages and saved presets show
+the attachment name, type, selected PDF pages, and Stage 2 scope without
+exposing file contents.
+
+Uploaded and typed instructions are copied into the run-owned input bundle and
+passed through the same prompt-guide execution path used by YAML and CLI runs.
 
 ## MDF parsing guide and MDF manual
 
@@ -228,6 +252,11 @@ tooltip.
 MUDIDI does not bundle or redistribute SIL's manual. A PDF is copied into the
 run-owned input bundle only when you upload it yourself. The manual is optional
 and does not replace the dictionary-specific MDF parsing guide.
+
+The existing parsing-guide and MDF-manual file pickers use the same themed
+upload control as instruction attachments. The selected filename is displayed
+beside the control, and choosing **Continue without an MDF manual** disables
+and excludes the manual upload.
 
 ## Agentic verification
 
