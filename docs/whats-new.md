@@ -26,6 +26,18 @@ MUDIDI can now run production dictionary digitization through authenticated Open
 - Resume compatible CLI output safely; changed instruction attachments require an explicit overwrite.
 - Cancel queued or active web runs without leaving page output or usage attributed to work that never completed.
 - Pass `--alphabet PATH` to enable the supplied character inventory automatically.
+- Migrate older saved dashboard presets that contain retired configuration
+  fields instead of failing during dashboard startup.
+
+### What changed
+
+- Dashboard preset storage now runs schema migration 5 for existing local
+  databases.
+- Legacy `models.temperature` values are removed before strict configuration
+  validation, so old presets no longer crash dashboard startup.
+- The migration preserves current preset settings and keeps new YAML and API
+  configurations strict; `temperature` remains rejected for newly submitted
+  configurations.
 
 ### Provider adapters
 
@@ -49,4 +61,7 @@ Three defects found during that smoke were repaired before release:
 2. complete overwrite runs issuing a duplicate Stage 1 request for the Pass 1 sample page;
 3. explicit CLI alphabet files remaining disabled in the resolved runtime.
 
-The release candidate passed 1,383 repository tests with 10 intentional skips, the strict MkDocs build, generated-reference verification, Ruff, and live post-repair web and CLI checks.
+The release candidate passed 1,383 repository tests with 10 intentional skips,
+the strict MkDocs build, generated-reference verification, Ruff, and live
+post-repair web and CLI checks. Current main passes 1,384 tests, including the
+legacy-preset migration regression.
