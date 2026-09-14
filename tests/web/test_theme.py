@@ -1129,7 +1129,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-15"}
+    assert versions == {"dashboard-ui-16"}
 
 
 def _relative_luminance(hex_color: str) -> float:

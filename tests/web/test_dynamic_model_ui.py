@@ -114,6 +114,7 @@ def test_browser_script_fetches_grouped_catalogs_and_filters_auth_panels() -> No
     ]
     assert "migrateStage2CachesForProvider();" in load_body
     assert "forcedProviders" not in load_body
+    assert 'if (force) url.searchParams.set("force", "true");' in load_body
     assert 'payload.warning?.code === "provider_unavailable"' in script
 
 

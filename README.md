@@ -59,7 +59,7 @@ secret from the parent environment.
 
 The release was smoke-tested through web and CLI workflows with all three
 authenticated providers. The current repository verification suite passes
-**1,384 tests**, with 10 intentional skips, alongside strict MkDocs,
+**1,385 tests**, with 10 intentional skips, alongside strict MkDocs,
 generated-reference, Ruff, dependency-audit, Docker smoke, and main-branch CI
 checks.
 
@@ -233,7 +233,7 @@ Never place credentials in YAML run configuration.
 
 Google subscription runs use Antigravity's browser OAuth and Cloud Code Assist
 transport directly. In the dashboard, choose **Subscription billing**, select
-Google Antigravity, then click **Log in** and complete the Google consent flow
+Google, then click **Log in** and complete the Google consent flow
 in the opened browser window. Use **Log out** to remove the stored Antigravity
 session.
 

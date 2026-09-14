@@ -920,7 +920,11 @@ class GoogleAntigravityBackend:
                 "Cloud Code Assist endpoint must use streamGenerateContent with alt=sse"
             )
 
-        selected_project = _safe_project_id(project_id)
+        selected_project = (
+            google_cloud_project_from_environment()
+            if project_id is None
+            else _safe_project_id(project_id)
+        )
         selected_account_id = _safe_string(account_id)
         selected_account_label = _safe_string(account_label)
         if project_id is not None and selected_project is None:

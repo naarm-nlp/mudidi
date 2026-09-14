@@ -39,6 +39,7 @@ from mudidi.llm.subscriptions.claude_research import ClaudeResearchBackend
 from mudidi.llm.subscriptions.pkce import PkceChallenge
 from mudidi.llm.subscriptions.storage import SubscriptionStore
 from mudidi.web.app import create_app
+from mudidi.web.models import Provider
 
 
 class _FakeBackend:
@@ -1198,6 +1199,18 @@ def test_real_google_callback_persists_for_new_runtime(
         subscription_store=store,
         subscription_backends={SubscriptionProvider.GOOGLE: backend},
     )
+    invalidated: list[Provider] = []
+    original_invalidate = app.state.model_catalog_service.invalidate
+
+    def track_invalidation(provider: Provider) -> None:
+        invalidated.append(provider)
+        original_invalidate(provider)
+
+    monkeypatch.setattr(
+        app.state.model_catalog_service,
+        "invalidate",
+        track_invalidation,
+    )
     client = TestClient(app)
 
     initiation = client.post("/subscriptions/google/login")
@@ -1243,6 +1256,7 @@ def test_real_google_callback_persists_for_new_runtime(
     assert logged_out.json()["credential_present"] is False
     assert logged_out.json()["removable"] is False
     assert not runtime.backend.status().authenticated
+    assert invalidated == [Provider.GEMINI, Provider.GEMINI]
 
 
 def test_real_claude_adapter_callback_uses_provider_redirect_alias(

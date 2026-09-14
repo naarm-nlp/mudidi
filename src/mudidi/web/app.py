@@ -525,11 +525,6 @@ def create_app(
                     status_code=422,
                     detail="provider does not support subscription model discovery",
                 )
-            if force:
-                raise HTTPException(
-                    status_code=422,
-                    detail="subscription catalogs cannot be refreshed",
-                )
         result = app.state.model_catalog_service.list_models(
             provider,
             stage=stage,
@@ -581,6 +576,18 @@ def create_app(
                 status_code=404, detail="subscription provider unavailable"
             )
         return backend
+
+    def invalidate_subscription_catalog(
+        provider: SubscriptionProvider,
+    ) -> None:
+        """Discard model results tied to a changed subscription session."""
+
+        catalog_provider = {
+            SubscriptionProvider.OPENAI: Provider.OPENAI,
+            SubscriptionProvider.GOOGLE: Provider.GEMINI,
+            SubscriptionProvider.CLAUDE: Provider.ANTHROPIC,
+        }[provider]
+        app.state.model_catalog_service.invalidate(catalog_provider)
 
     def subscription_category(
         status: SubscriptionStatus,
@@ -934,6 +941,7 @@ def create_app(
                         category="authentication",
                     )
                 backend.complete_login(code, state, transaction)
+                invalidate_subscription_catalog(provider)
             finally:
                 if close_receiver:
                     remove_subscription_receiver(handle, close=True)
@@ -1301,6 +1309,7 @@ def create_app(
                         category="authentication",
                     )
                 logout()
+                invalidate_subscription_catalog(provider)
                 payload = subscription_status_payload(provider, backend)
                 payload["status"] = "logged_out"
                 return subscription_response(payload)

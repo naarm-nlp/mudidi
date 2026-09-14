@@ -334,9 +334,9 @@
               </fieldset>
               <fieldset class="choice-group subscription-entry" data-subscription-entry hidden>
                 <legend>Subscription accounts</legend>
-                <p>OpenAI, Google Antigravity, and Claude use provider browser login. MUDIDI stores OAuth tokens only in its encrypted local subscription store.</p>
+                <p>OpenAI, Google, and Claude use provider browser login. MUDIDI stores OAuth tokens only in its encrypted local subscription store.</p>
                 <div class="subscription-grid">
-                  {% for provider, label in [('openai', 'OpenAI'), ('google', 'Google Antigravity'), ('claude', 'Claude')] %}
+                  {% for provider, label in [('openai', 'OpenAI'), ('google', 'Google'), ('claude', 'Claude')] %}
                     {% set subscription = subscription_statuses[provider] %}
                     <article class="subscription-card" data-subscription-card data-subscription-provider="{{ provider }}" data-subscription-authenticated="{{ 'true' if subscription.authenticated else 'false' }}" data-subscription-credential-present="{{ 'true' if subscription.credential_present else 'false' }}" data-subscription-removable="{{ 'true' if subscription.removable else 'false' }}" data-subscription-available="{{ 'true' if subscription.available else 'false' }}">
                       <div class="subscription-card-heading"><h3>{{ label }} subscription</h3><span class="subscription-state" data-subscription-state>{{ 'Authenticated' if subscription.authenticated else 'Unavailable' if not subscription.available else 'Session expired' if subscription.credential_present else 'Log in required' }}</span></div>
@@ -527,5 +527,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-15" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-16" defer></script>
 {% endblock %}
