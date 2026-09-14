@@ -66,10 +66,12 @@ Completion translates the provider-neutral request into an Anthropic
 Messages-compatible JSON request. OAuth requests prepend the identity system
 block `You are Claude Code, Anthropic's official CLI for Claude.` before any
 caller system text. The adapter supports text content, user image blocks (as
-validated base64 data URIs or HTTPS image URLs), reviewed extended-thinking
-budgets for older models, adaptive thinking plus `output_config.effort` for
-current models, and the provider's structured JSON-schema output shape. It
-normalizes visible text, stop reason, and input/output/cached/reasoning usage.
+validated base64 data URIs or HTTPS image URLs), PDF document blocks (as
+validated base64 data URIs, HTTPS URLs, or Anthropic file IDs), reviewed
+extended-thinking budgets for older models, adaptive thinking plus
+`output_config.effort` for current models, and the provider's structured
+JSON-schema output shape. It normalizes visible text, stop reason, and
+input/output/cached/reasoning usage.
 
 Unsupported content, unsupported schema keywords, malformed responses,
 thought-only output, schema mismatches, authentication failures, and

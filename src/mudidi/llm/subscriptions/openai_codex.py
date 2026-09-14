@@ -78,6 +78,7 @@ _DEFAULT_TIMEOUT = 30.0
 _MAX_TIMEOUT = 300.0
 _DEFAULT_MAX_RESPONSE_BYTES = 8 * 1_048_576
 _IMAGE_MIME_TYPES = frozenset({"image/jpeg", "image/png", "image/gif", "image/webp"})
+_PDF_MIME_TYPE = "application/pdf"
 
 # Deliberately narrow allowlists.  They are used for both configured constants
 # and final response URLs when an injected seam reports one.
@@ -1655,6 +1656,133 @@ class OpenAICodexBackend:
             )
         return url
 
+    def _file_part(self, part: Mapping[str, Any]) -> dict[str, Any]:
+        file_value = part.get("file")
+        if not isinstance(file_value, Mapping):
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Codex file input is malformed",
+                reason="file_input_unsupported",
+            )
+
+        mime_values = [
+            value
+            for mapping in (part, file_value)
+            for key in ("format", "mime_type", "mimeType", "media_type")
+            if (value := mapping.get(key)) is not None
+        ]
+        if not mime_values or any(
+            not isinstance(value, str)
+            or value.strip().lower() != _PDF_MIME_TYPE
+            for value in mime_values
+        ):
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Codex file input must be an application/pdf document",
+                reason="file_input_unsupported",
+            )
+
+        sources = [
+            (key, file_value[key])
+            for key in ("file_data", "file_id", "file_url")
+            if key in file_value
+        ]
+        if len(sources) != 1:
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Codex file input must contain exactly one data source",
+                reason="file_input_unsupported",
+            )
+        source_kind, source_value = sources[0]
+
+        if source_kind == "file_data":
+            if not isinstance(source_value, str):
+                raise _error(
+                    SubscriptionUnsupportedRequest,
+                    "Codex PDF data URI is malformed",
+                    reason="file_input_unsupported",
+                )
+            header, separator, encoded = source_value.partition(",")
+            parameters = header[5:].split(";") if header.lower().startswith("data:") else []
+            if (
+                not separator
+                or len(parameters) != 2
+                or parameters[0].lower() != _PDF_MIME_TYPE
+                or parameters[1].lower() != "base64"
+                or not encoded
+            ):
+                raise _error(
+                    SubscriptionUnsupportedRequest,
+                    "Codex PDF data URI is malformed",
+                    reason="file_input_unsupported",
+                )
+            try:
+                base64.b64decode(encoded.encode("ascii"), validate=True)
+            except (ValueError, UnicodeError):
+                raise _error(
+                    SubscriptionUnsupportedRequest,
+                    "Codex PDF data URI is malformed",
+                    reason="file_input_unsupported",
+                ) from None
+
+            filename = file_value.get("filename", part.get("filename", "document.pdf"))
+            selected_filename = _safe_string(filename)
+            if (
+                selected_filename is None
+                or selected_filename != selected_filename.strip()
+                or "/" in selected_filename
+                or "\\" in selected_filename
+                or not selected_filename.lower().endswith(".pdf")
+                or any(ord(character) < 32 for character in selected_filename)
+            ):
+                raise _error(
+                    SubscriptionUnsupportedRequest,
+                    "Codex PDF filename is malformed",
+                    reason="file_input_unsupported",
+                )
+            return {
+                "type": "input_file",
+                "filename": selected_filename,
+                "file_data": source_value,
+            }
+
+        if not isinstance(source_value, str) or not source_value.strip():
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Codex file reference is malformed",
+                reason="file_input_unsupported",
+            )
+        selected_reference = source_value.strip()
+        try:
+            parsed = urlsplit(selected_reference)
+        except ValueError:
+            parsed = None
+        if (
+            parsed is not None
+            and parsed.scheme.lower() == "https"
+            and parsed.hostname
+            and parsed.username is None
+            and parsed.password is None
+            and not parsed.fragment
+            and not any(character in selected_reference for character in "\r\n\x00")
+        ):
+            return {"type": "input_file", "file_url": selected_reference}
+        if (
+            source_kind == "file_id"
+            and selected_reference.startswith("file-")
+            and len(selected_reference) <= 512
+            and all(
+                character.isalnum() or character in "-_"
+                for character in selected_reference
+            )
+        ):
+            return {"type": "input_file", "file_id": selected_reference}
+        raise _error(
+            SubscriptionUnsupportedRequest,
+            "Codex file reference is unsupported",
+            reason="file_input_unsupported",
+        )
+
     def _message_parts(self, content: Any) -> list[dict[str, Any]]:
         if isinstance(content, str):
             if not content:
@@ -1683,6 +1811,9 @@ class OpenAICodexBackend:
                     reason="unsupported_message_content",
                 )
             kind = part.get("type")
+            if kind == "file":
+                values.append(self._file_part(part))
+                continue
             if kind in {"image", "image_url", "input_image"} or "image_url" in part:
                 values.append(
                     {"type": "input_image", "image_url": self._image_url(part)}
