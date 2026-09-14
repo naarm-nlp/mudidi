@@ -12,8 +12,8 @@ the existing API-key workflow.
 - Authenticate with OpenAI, Google Gemini, or Claude through the local web
   dashboard or `mudidi auth`.
 - Keep subscription credentials in a dedicated encrypted local store.
-- Discover live, account-scoped model catalogs with newest-first ordering and
-  model-specific reasoning levels.
+- Discover live, account-scoped model catalogs with Google Pro models before
+  Flash and newest-first ordering within each family.
 - Select independent Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, evaluator, and
   rewriter models where supported.
 - Preserve entitlement-only split-model selections in saved presets while the

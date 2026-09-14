@@ -171,6 +171,19 @@ def sort_models_newest_first(
     return tuple(sorted(models, key=cmp_to_key(_compare_models_newest_first)))
 
 
+def _gemini_subscription_family_rank(
+    model: ModelOption | LiveModelOption,
+) -> int:
+    """Place Gemini Pro ahead of Flash without disturbing family-local order."""
+
+    family_tokens = set(re.split(r"[/_.-]+", model.model_id.casefold()))
+    if "pro" in family_tokens:
+        return 0
+    if "flash" in family_tokens:
+        return 1
+    return 2
+
+
 def _parse_release_at(value: object) -> datetime | None:
     if isinstance(value, bool):
         return None
@@ -702,7 +715,15 @@ class ModelCatalogService:
         )
         recommended: list[CatalogItem] = []
         available: list[CatalogItem] = []
-        for model in sort_models_newest_first(models):
+        ordered_models = sort_models_newest_first(models)
+        if (
+            provider is Provider.GEMINI
+            and auth_mode is CatalogAuthMode.SUBSCRIPTION
+        ):
+            ordered_models = tuple(
+                sorted(ordered_models, key=_gemini_subscription_family_rank)
+            )
+        for model in ordered_models:
             known = curated.get(model.model_id)
             item = CatalogItem(
                 model.model_id,

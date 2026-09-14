@@ -320,11 +320,10 @@ key or unavailable provider leaves the bundled fallback usable and reports the
 degraded state without exposing provider errors or credentials.
 
 Subscription billing instead lists every canonical model advertised to the
-authenticated OpenAI, Google, or Claude account in one **Available from your
-subscription — newest first** group. **Refresh models** bypasses the
-subscription cache and queries the authenticated account again. Provider
-release timestamps take precedence; provider order and numeric model revisions
-provide deterministic fallbacks, so revision
+authenticated OpenAI, Google, or Claude account in one group. Google places
+Pro models before Flash models. Within each Google family, and for other
+providers, release timestamps take precedence; provider order and numeric model
+revisions provide deterministic fallbacks, so revision
 `3.10` sorts ahead of `3.9`. Subscription mode has no **Other model** escape
 hatch: preview and run submission reject model identifiers absent from the
 current authenticated catalog.
