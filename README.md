@@ -1,7 +1,51 @@
 # MUDIDI
 
 **[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
-**[See what's new in MUDIDI 0.1.0](https://naarm-nlp.github.io/mudidi/whats-new/)**
+
+## What's new in 0.1.0
+
+MUDIDI 0.1.0 adds local subscription-backed dictionary inference alongside
+the existing API-key workflow.
+
+### Subscription inference
+
+- Authenticate with OpenAI, Google Gemini, or Claude through the local web
+  dashboard or `mudidi auth`.
+- Keep subscription credentials in a dedicated encrypted local store.
+- Discover live, account-scoped model catalogs with newest-first ordering and
+  model-specific reasoning levels.
+- Select independent Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, evaluator, and
+  rewriter models where supported.
+
+### Production workflow
+
+- Run complete web or CLI extraction with human MDF-guide review and approval.
+- Resume compatible CLI output safely; changed instruction attachments require
+  explicit overwrite.
+- Cancel active web runs without producing page output or usage for unfinished
+  work.
+- Pass `--alphabet PATH` to enable a supplied character inventory automatically.
+- Preserve entitlement-only split-model selections when saved presets refresh
+  the live catalog.
+
+### Provider support
+
+- **OpenAI:** Codex subscription authentication, account model discovery,
+  structured output, image input, reasoning controls, and usage normalization.
+- **Google:** MUDIDI-owned OAuth, direct Cloud Code routing, canonical Gemini
+  aliases, effort routing, and project-aware requests.
+- **Claude:** OAuth-backed Messages requests, paginated model discovery, image
+  input, structured output, and adaptive or extended thinking.
+
+Google subscription login requires a deployment-owned OAuth registration through
+`MUDIDI_GOOGLE_OAUTH_CLIENT_ID`; set
+`MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET` when the registration issues one.
+Inference workers receive only the public client ID, never the client secret.
+
+The release was smoke-tested through web and CLI workflows with all three
+authenticated providers. The repository verification suite passed **1,383
+tests**, with 10 intentional skips, alongside strict MkDocs, generated-reference,
+Ruff, dependency-audit, Docker smoke, and main-branch CI checks.
 
 MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
