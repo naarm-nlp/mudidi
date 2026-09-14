@@ -25,8 +25,18 @@ the existing API-key workflow.
 - Cancel active web runs without producing page output or usage for unfinished
   work.
 - Pass `--alphabet PATH` to enable a supplied character inventory automatically.
-- Preserve entitlement-only split-model selections when saved presets refresh
-  the live catalog.
+- Migrate older saved dashboard presets that contain retired configuration
+  fields instead of failing during dashboard startup.
+
+### What changed
+
+- Dashboard preset storage now runs schema migration 5 for existing local
+  databases.
+- Legacy `models.temperature` values are removed before strict configuration
+  validation, so old presets no longer crash dashboard startup.
+- The migration preserves current preset settings and keeps new YAML and API
+  configurations strict; `temperature` remains rejected for newly submitted
+  configurations.
 
 ### Provider support
 
@@ -43,9 +53,10 @@ Google subscription login requires a deployment-owned OAuth registration through
 Inference workers receive only the public client ID, never the client secret.
 
 The release was smoke-tested through web and CLI workflows with all three
-authenticated providers. The repository verification suite passed **1,383
-tests**, with 10 intentional skips, alongside strict MkDocs, generated-reference,
-Ruff, dependency-audit, Docker smoke, and main-branch CI checks.
+authenticated providers. The current repository verification suite passes
+**1,384 tests**, with 10 intentional skips, alongside strict MkDocs,
+generated-reference, Ruff, dependency-audit, Docker smoke, and main-branch CI
+checks.
 
 MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
