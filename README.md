@@ -2,6 +2,29 @@
 
 **[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
 
+## What's new in 0.1.1
+
+MUDIDI 0.1.1 improves Google subscription authentication and live model
+selection while preserving API-key billing as a separate mode.
+
+### Google subscription workflow
+
+- Log in and out from the dashboard through Google Antigravity's browser OAuth;
+  no Antigravity CLI login is required.
+- Refresh the authenticated model catalog on demand, including after login or
+  logout changes the active subscription session.
+- List Gemini Pro models before Flash models while preserving newest-first
+  ordering within each family.
+- Present the account as **Google subscription** while keeping the Antigravity
+  transport detail out of the primary dashboard label.
+
+### Compatibility
+
+- Migrate older dashboard presets containing the retired
+  `models.temperature` field instead of failing during startup.
+- Keep subscription tokens in MUDIDI's encrypted local store and out of run
+  configuration, browser storage, and subprocess arguments.
+
 ## What's new in 0.1.0
 
 MUDIDI 0.1.0 adds local subscription-backed dictionary inference alongside

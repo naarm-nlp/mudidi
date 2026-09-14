@@ -1,5 +1,28 @@
 # What's New
 
+## 0.1.1 — Google subscription workflow
+
+MUDIDI 0.1.1 makes Google subscription login and model selection work entirely
+from the local dashboard.
+
+### Google authentication and models
+
+- Log in and out through Google Antigravity's browser OAuth without requiring
+  an Antigravity CLI login.
+- Store the resulting access and refresh tokens only in MUDIDI's encrypted
+  local subscription store.
+- Refresh live subscription model catalogs on demand and invalidate cached
+  results when login or logout changes the active account.
+- Put Gemini Pro models before Flash models, preserving newest-first provider
+  order within each family.
+- Show the account as **Google subscription** in the dashboard.
+
+### Compatibility
+
+- Migrate legacy saved presets containing `models.temperature` before strict
+  validation.
+- Preserve API-key billing as an independent authentication mode.
+
 ## 0.1.0 — Subscription inference
 
 MUDIDI can now run production dictionary digitization through authenticated OpenAI, Google, or Claude subscriptions. API-key inference remains available as a separate billing mode.
