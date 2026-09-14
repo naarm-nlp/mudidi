@@ -16,7 +16,7 @@ _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _migrate_auth_provider_config(config_json: str) -> str:
-    """Rewrite the retired single-provider auth field in persisted presets."""
+    """Rewrite retired fields in persisted preset configurations."""
 
     try:
         payload = json.loads(config_json)
@@ -24,16 +24,26 @@ def _migrate_auth_provider_config(config_json: str) -> str:
         return config_json
     if not isinstance(payload, dict):
         return config_json
+
+    changed = False
     auth = payload.get("auth")
-    if not isinstance(auth, dict) or "provider" not in auth:
+    if isinstance(auth, dict) and "provider" in auth:
+        provider = auth.pop("provider")
+        if "providers" not in auth:
+            auth["providers"] = (
+                [provider]
+                if auth.get("mode") == "subscription" and isinstance(provider, str)
+                else []
+            )
+        changed = True
+
+    models = payload.get("models")
+    if isinstance(models, dict) and "temperature" in models:
+        models.pop("temperature")
+        changed = True
+
+    if not changed:
         return config_json
-    provider = auth.pop("provider")
-    if "providers" not in auth:
-        auth["providers"] = (
-            [provider]
-            if auth.get("mode") == "subscription" and isinstance(provider, str)
-            else []
-        )
     return json.dumps(payload, separators=(",", ":"))
 
 
@@ -283,6 +293,24 @@ class RunStore:
                         )
                 connection.execute(
                     "INSERT INTO schema_migrations(version, applied_at) VALUES (4, ?)",
+                    (_now().isoformat(),),
+                )
+            migrated = connection.execute(
+                "SELECT 1 FROM schema_migrations WHERE version = 5"
+            ).fetchone()
+            if migrated is None:
+                for row in connection.execute(
+                    "SELECT preset_id, config_json FROM presets"
+                ).fetchall():
+                    config_json = str(row["config_json"])
+                    replacement = _migrate_auth_provider_config(config_json)
+                    if replacement != config_json:
+                        connection.execute(
+                            "UPDATE presets SET config_json = ? WHERE preset_id = ?",
+                            (replacement, str(row["preset_id"])),
+                        )
+                connection.execute(
+                    "INSERT INTO schema_migrations(version, applied_at) VALUES (5, ?)",
                     (_now().isoformat(),),
                 )
 

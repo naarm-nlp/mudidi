@@ -199,6 +199,46 @@ def test_store_migrates_legacy_subscription_preset_auth_provider(
         "claude"
     ]
 
+def test_store_migrates_removed_temperature_from_legacy_preset(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "pages"},
+            "output": {"directory": tmp_path / "output"},
+            "models": {"default": "anthropic/claude-sonnet-4-6"},
+        }
+    )
+    preset = store.create_preset(
+        "legacy-temperature-preset",
+        name="Legacy temperature",
+        provider="anthropic",
+        config=config,
+    )
+    payload = json.loads(config.model_dump_json())
+    payload["models"]["temperature"] = 0.1
+    with sqlite3.connect(store.database_path) as connection:
+        connection.execute(
+            "UPDATE presets SET config_json = ? WHERE preset_id = ?",
+            (json.dumps(payload), preset.preset_id),
+        )
+        connection.execute("DELETE FROM schema_migrations WHERE version = 5")
+
+    migrated_store = RunStore(store.database_path)
+    loaded = migrated_store.get_preset(preset.preset_id)
+
+    assert "temperature" not in loaded.config.models.model_dump()
+    with sqlite3.connect(store.database_path) as connection:
+        stored = json.loads(
+            connection.execute(
+                "SELECT config_json FROM presets WHERE preset_id = ?",
+                (preset.preset_id,),
+            ).fetchone()[0]
+        )
+    assert "temperature" not in stored["models"]
+    assert migrated_store.list_presets() == [loaded]
+
 
 def test_delete_preset_removes_metadata_and_raises_for_missing_id(
     store: RunStore,
