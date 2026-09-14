@@ -433,15 +433,19 @@ saved preset.
 
 ## Credentials and local data
 
-On the **Model** step, API-key billing displays only the selected run-level
-provider's credential card, with its saved status, masked input, reveal button,
-and **Save key**. Selecting another model provider swaps the visible card
-without changing or deleting any stored credentials. Subscription billing hides
-the API credential fieldset and displays only the selected subscription
-provider's account card; switching back restores the matching API card.
+On the **Model** step, **Subscription billing** appears above **API-key billing**
+and is selected by default for a new run. API-key billing displays only the
+selected run-level provider's credential card, with its saved status, masked
+input, reveal button, and **Save key**. Selecting another model provider swaps
+the visible card without changing or deleting any stored credentials.
+Subscription billing hides the API credential fieldset and displays only the
+selected subscription provider's account card; switching back restores the
+matching API card.
 
-Google subscription login additionally requires a deployment-owned desktop
-OAuth registration:
+Google subscription login uses Google Antigravity's installed-app OAuth
+registration by default, with the same five scopes and loopback callback used
+by Antigravity clients. No OAuth setup is required for normal dashboard login.
+A deployment with its own compatible Antigravity registration may set:
 
 ```text
 MUDIDI_GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
@@ -449,11 +453,10 @@ MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
 # GOOGLE_CLOUD_PROJECT=your-project-id
 ```
 
-The client ID is required. Set the client secret when the registration issues
-one; `GOOGLE_CLOUD_PROJECT` is optional for accounts that require an explicit
-Cloud Code Assist project. Keep these values in `.env` or the parent process
-environment, not in source files or run YAML. Subscription workers inherit only
-the public client ID, never the client secret or project override.
+The client ID and secret are optional overrides. `GOOGLE_CLOUD_PROJECT` remains
+optional for accounts that require an explicit Cloud Code Assist project. Keep
+override values in `.env` or the parent process environment, not in run YAML.
+Subscription workers do not inherit an override client secret.
 
 The **API credentials** section accepts Gemini, OpenAI, Anthropic, and OpenRouter
 keys. Click **Save key** to persist an entered value. Inputs are masked by

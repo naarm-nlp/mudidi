@@ -18,6 +18,8 @@ the existing API-key workflow.
   rewriter models where supported.
 - Preserve entitlement-only split-model selections in saved presets while the
   live catalog refreshes.
+- Show Subscription billing first and select it by default for new dashboard
+  runs; API-key billing remains available below it.
 
 ### Production workflow
 
@@ -49,10 +51,11 @@ the existing API-key workflow.
 - **Claude:** OAuth-backed Messages requests, paginated model discovery, image
   input, structured output, and adaptive or extended thinking.
 
-Google subscription login requires a deployment-owned OAuth registration through
-`MUDIDI_GOOGLE_OAUTH_CLIENT_ID`; set
-`MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET` when the registration issues one.
-Inference workers receive only the public client ID, never the client secret.
+Google subscription login uses Google Antigravity's installed-app OAuth
+registration by default. `MUDIDI_GOOGLE_OAUTH_CLIENT_ID` and
+`MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET` are optional overrides for a compatible
+Antigravity registration. Inference workers do not inherit an override client
+secret from the parent environment.
 
 The release was smoke-tested through web and CLI workflows with all three
 authenticated providers. The current repository verification suite passes
@@ -230,13 +233,14 @@ Never place credentials in YAML run configuration.
 
 Google subscription runs use Antigravity's browser OAuth and Cloud Code Assist
 transport directly. In the dashboard, choose **Subscription billing**, select
-Google, then click **Log in** and complete the Google consent flow in the opened
-browser window.
+Google Antigravity, then click **Log in** and complete the Google consent flow
+in the opened browser window. Use **Log out** to remove the stored Antigravity
+session.
 
-Before starting MUDIDI, configure a deployment-owned Google desktop OAuth
-registration. The client ID is required; set the client secret when the
-registration issues one. `GOOGLE_CLOUD_PROJECT` is optional for accounts that
-must select a Cloud Code Assist project.
+MUDIDI bundles Google Antigravity's installed-app registration, including the
+five Antigravity scopes, so no OAuth environment variables are required for
+normal use. A deployment with its own compatible Antigravity registration may
+set these optional overrides before starting MUDIDI:
 
 ```text
 MUDIDI_GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
@@ -244,9 +248,9 @@ MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
 # GOOGLE_CLOUD_PROJECT=your-project-id
 ```
 
-Keep these values in `.env` or the process environment, never in source files
-or YAML run configurations. Web workers receive only the public client ID; they
-do not inherit the client secret.
+Keep override values in `.env` or the process environment, never in YAML run
+configurations. Subscription workers do not inherit an override client secret
+from the parent environment.
 
 MUDIDI stores the resulting access and refresh tokens only in its encrypted
 local subscription store. It does not read OMP, Antigravity CLI, gcloud, or

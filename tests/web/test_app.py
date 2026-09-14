@@ -115,6 +115,15 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "data-model-provider=" not in response.text
     assert "OpenRouter Provider" in response.text
     assert "Authenticate a provider to load models" in response.text
+    subscription_option = response.text.index(
+        'value="subscription" checked data-auth-mode-choice'
+    )
+    api_key_option = response.text.index(
+        'value="api_key" data-auth-mode-choice'
+    )
+    assert subscription_option < api_key_option
+    assert "Google Antigravity subscription" in response.text
+    assert "Run agy" not in response.text
     assert 'data-pipeline-stages="stage1"' in response.text
     for server_catalog_model in (
         "GPT-5.6 Sol",

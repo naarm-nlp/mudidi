@@ -10,6 +10,7 @@ MUDIDI can now run production dictionary digitization through authenticated Open
 - Keep provider credentials in a dedicated encrypted local store.
 - Use independently authenticated providers without exposing access tokens in configuration, logs, subprocess arguments, or browser storage.
 - Refresh expired sessions once and fail with actionable authentication guidance when reauthentication is required.
+- Make Subscription billing the first and default billing choice for new dashboard runs; API-key billing remains available below it.
 
 ### Live model selection
 
@@ -42,10 +43,10 @@ MUDIDI can now run production dictionary digitization through authenticated Open
 ### Provider adapters
 
 - **OpenAI:** Codex account authentication, account-scoped model discovery, structured output, image input, reasoning controls, and usage normalization.
-- **Google:** direct Cloud Code routing through MUDIDI-owned OAuth, canonical Gemini model aliases, effort routing, failed-run retry, and project-aware requests.
-  A deployment-owned Google desktop OAuth client ID is required. Its optional
-  client secret remains in the parent process and is not forwarded to inference
-  workers.
+- **Google:** direct Google Antigravity OAuth and Cloud Code routing, canonical Gemini model aliases, effort routing, failed-run retry, and project-aware requests.
+  The official Antigravity installed-app registration is bundled; the
+  `MUDIDI_GOOGLE_OAUTH_CLIENT_ID` and `MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET`
+  variables are optional overrides for compatible Antigravity registrations.
 - **Claude:** OAuth-backed Messages requests, paginated model discovery, image input, structured output, adaptive or extended thinking, and typed failure handling.
 
 !!! note

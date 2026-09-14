@@ -707,14 +707,7 @@ def create_app(
         *,
         provider: SubscriptionProvider,
     ) -> str:
-        if (
-            provider is SubscriptionProvider.GOOGLE
-            and exc.metadata.get("reason") == "oauth_client_configuration_missing"
-        ):
-            return (
-                "Google OAuth is not configured; set "
-                "MUDIDI_GOOGLE_OAUTH_CLIENT_ID and restart MUDIDI"
-            )
+        del provider
         category = subscription_error_category(exc)
         return {
             "authentication": "Subscription authentication failed",
@@ -723,7 +716,6 @@ def create_app(
             "policy": "Subscription request was blocked by provider policy",
             "unsupported_capability": "Subscription request is unsupported by this provider",
         }.get(category, "Subscription request failed")
-
     def subscription_error_status(exc: SubscriptionError) -> int:
         category = subscription_error_category(exc)
         return {

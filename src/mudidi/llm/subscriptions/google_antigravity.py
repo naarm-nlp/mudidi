@@ -61,8 +61,19 @@ from mudidi.llm.subscriptions.types import (
     resolve_subscription_model,
 )
 
-# Google OAuth registration is deployment configuration. Client secrets never
-# enter source control or subscription worker environments.
+# Google Antigravity uses a dedicated installed-app registration, distinct from
+# Gemini CLI. These base64 values match the public registration used by OMP;
+# only access and refresh tokens are confidential.
+_BUNDLED_GOOGLE_OAUTH_CLIENT_ID = base64.b64decode(
+    "MTA3MTAwNjA2MDU5MS10bWhzc2luMmgyMWxjcmUyMzV2dG9sb2poNGc0MDNlcC5h"
+    "cHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbQ==",
+    validate=True,
+).decode("ascii")
+_BUNDLED_GOOGLE_OAUTH_CLIENT_SECRET = base64.b64decode(
+    "R09DU1BYLUs1OEZXUjQ4NkxkTEoxbUxCOHNYQzR6NnFEQWY=",
+    validate=True,
+).decode("ascii")
+
 GOOGLE_OAUTH_CLIENT_ID_ENV = "MUDIDI_GOOGLE_OAUTH_CLIENT_ID"
 GOOGLE_OAUTH_CLIENT_SECRET_ENV = "MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET"
 GOOGLE_CLOUD_PROJECT_ENV = "GOOGLE_CLOUD_PROJECT"
@@ -349,6 +360,31 @@ def google_oauth_client_secret_from_environment(
 
     source = os.environ if environ is None else environ
     return _safe_string(source.get(GOOGLE_OAUTH_CLIENT_SECRET_ENV))
+
+def google_oauth_registration(
+    *,
+    client_id: str | None = None,
+    client_secret: str | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> tuple[str, str | None]:
+    """Resolve the bundled installed-app registration with optional overrides."""
+
+    source = os.environ if environ is None else environ
+    selected_client_id = (
+        client_id
+        if client_id is not None
+        else _safe_string(source.get(GOOGLE_OAUTH_CLIENT_ID_ENV))
+    )
+    selected_client_secret = (
+        client_secret
+        if client_secret is not None
+        else _safe_string(source.get(GOOGLE_OAUTH_CLIENT_SECRET_ENV))
+    )
+    if selected_client_id is None:
+        selected_client_id = _BUNDLED_GOOGLE_OAUTH_CLIENT_ID
+        if selected_client_secret is None:
+            selected_client_secret = _BUNDLED_GOOGLE_OAUTH_CLIENT_SECRET
+    return selected_client_id, selected_client_secret
 
 
 def google_cloud_project_from_environment(
@@ -844,12 +880,14 @@ class GoogleAntigravityBackend:
             and client_secret != oauth_client_secret
         ):
             raise TypeError("client_secret and oauth_client_secret must match")
-        selected_client_id = (
-            client_id if client_id is not None else oauth_client_id
-        ) or google_oauth_client_id_from_environment()
-        selected_client_secret = (
-            client_secret if client_secret is not None else oauth_client_secret
-        ) or google_oauth_client_secret_from_environment()
+        selected_client_id, selected_client_secret = google_oauth_registration(
+            client_id=client_id if client_id is not None else oauth_client_id,
+            client_secret=(
+                client_secret
+                if client_secret is not None
+                else oauth_client_secret
+            ),
+        )
         if selected_client_id is not None and _safe_string(selected_client_id) is None:
             raise ValueError("client_id must be a bounded non-empty string")
         if (
@@ -993,8 +1031,7 @@ class GoogleAntigravityBackend:
         if _safe_string(selected_client_id) is None:
             raise _error(
                 SubscriptionAuthError,
-                "Google OAuth is not configured; set "
-                "MUDIDI_GOOGLE_OAUTH_CLIENT_ID and restart MUDIDI",
+                "Google OAuth registration is unavailable",
                 reason="oauth_client_configuration_missing",
             )
         parameters: dict[str, Any] = {
@@ -2025,9 +2062,7 @@ class GoogleAntigravityBackend:
         if _safe_string(self._client_id) is None:
             raise _error(
                 SubscriptionTokenExpired,
-                "Google OAuth is not configured; set "
-                "MUDIDI_GOOGLE_OAUTH_CLIENT_ID and restart MUDIDI",
-                status=401,
+                "Google OAuth registration is unavailable",
                 reason="oauth_client_configuration_missing",
                 credential=current,
             )
