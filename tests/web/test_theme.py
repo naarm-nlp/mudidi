@@ -572,6 +572,22 @@ def test_stylesheet_exposes_the_brutalist_theme(tmp_path: Path) -> None:
     assert "border-radius" not in response.text
 
 
+def test_history_status_badges_wrap_inside_one_readable_box(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    status_badge = re.search(
+        r"\.history-table\s+\.status-pill\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    assert status_badge is not None
+    declarations = status_badge.group("body")
+    assert "display: inline-block" in declarations
+    assert "max-width: 100%" in declarations
+    assert "overflow-wrap: normal" in declarations
+    assert "word-break: normal" in declarations
+    assert "line-height: 1.35" in declarations
+
+
 def test_form_grid_aligns_mixed_controls_and_info_buttons_keep_compact_visuals(
     tmp_path: Path,
 ) -> None:
@@ -678,6 +694,7 @@ def test_additional_context_uses_semantic_single_column_spacing(
     assert stage1 < stage2 < mdf_guide < mdf_manual
     assert "additional-context-column" not in home
     assert "additional-context-column" not in css
+
 
 def test_dictionary_context_and_profile_use_matching_bordered_panels(
     tmp_path: Path,
@@ -1008,6 +1025,31 @@ def test_model_panel_preserves_compact_stage_hierarchy(tmp_path: Path) -> None:
     assert "grid-template-columns: 1fr" in credential_grids[1]
 
 
+def test_model_catalog_toolbar_uses_existing_layout_tokens(tmp_path: Path) -> None:
+    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
+
+    toolbar = re.search(
+        r"\.model-catalog-toolbar\s*\{(?P<body>[^}]*)\}",
+        css,
+    )
+    status = re.search(
+        r"\.model-catalog-toolbar\s+\[data-model-status\]\s*"
+        r"\{(?P<body>[^}]*)\}",
+        css,
+    )
+
+    assert toolbar is not None
+    assert "display: flex" in toolbar.group("body")
+    assert "flex-wrap: wrap" in toolbar.group("body")
+    assert "border: var(--divider-width) solid var(--color-line)" in toolbar.group(
+        "body"
+    )
+    assert "background: var(--color-accent-soft)" in toolbar.group("body")
+    assert status is not None
+    assert "color: var(--color-muted)" in status.group("body")
+    assert "font-family: var(--font-mono)" in status.group("body")
+
+
 def test_agentic_choices_fill_two_columns_and_stack_on_mobile(tmp_path: Path) -> None:
     css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
 
@@ -1073,7 +1115,7 @@ def test_layout_uses_current_dashboard_stylesheet_version() -> None:
         / "_layout.html"
     ).read_text(encoding="utf-8")
 
-    assert "app.css') }}?v=dashboard-ui-8" in layout
+    assert "app.css') }}?v=dashboard-ui-11" in layout
 
 
 def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
@@ -1087,7 +1129,7 @@ def test_every_template_uses_one_dashboard_app_bundle_version() -> None:
         )
     }
 
-    assert versions == {"dashboard-ui-8"}
+    assert versions == {"dashboard-ui-15"}
 
 
 def _relative_luminance(hex_color: str) -> float:

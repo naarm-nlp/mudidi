@@ -1,0 +1,52 @@
+# What's New
+
+## 0.1.0 — Subscription inference
+
+MUDIDI can now run production dictionary digitization through authenticated OpenAI, Google, or Claude subscriptions. API-key inference remains available as a separate billing mode.
+
+### Subscription accounts
+
+- Sign in and sign out from the local dashboard or `mudidi auth`.
+- Keep provider credentials in a dedicated encrypted local store.
+- Use independently authenticated providers without exposing access tokens in configuration, logs, subprocess arguments, or browser storage.
+- Refresh expired sessions once and fail with actionable authentication guidance when reauthentication is required.
+
+### Live model selection
+
+- Load stage-compatible models from the authenticated account rather than a fixed OpenAI, Gemini, or Claude list.
+- Sort subscription models newest first while retaining provider release and ordering metadata.
+- Show only the reasoning levels supported by the selected model, including adaptive Claude and effort-qualified Gemini models.
+- Configure Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, evaluator, and rewriter models independently where the workflow permits it.
+- Preserve entitlement-only split-model selections in saved presets while the live catalog refreshes.
+
+### Production workflow
+
+- Run subscription-backed inference from both the local web dashboard and `mudidi run`.
+- Review and approve the generated MDF parsing guide before Stage 2 conversion.
+- Resume compatible CLI output safely; changed instruction attachments require an explicit overwrite.
+- Cancel queued or active web runs without leaving page output or usage attributed to work that never completed.
+- Pass `--alphabet PATH` to enable the supplied character inventory automatically.
+
+### Provider adapters
+
+- **OpenAI:** Codex account authentication, account-scoped model discovery, structured output, image input, reasoning controls, and usage normalization.
+- **Google:** direct Cloud Code routing through MUDIDI-owned OAuth, canonical Gemini model aliases, effort routing, failed-run retry, and project-aware requests.
+  A deployment-owned Google desktop OAuth client ID is required. Its optional
+  client secret remains in the parent process and is not forwarded to inference
+  workers.
+- **Claude:** OAuth-backed Messages requests, paginated model discovery, image input, structured output, adaptive or extended thinking, and typed failure handling.
+
+!!! note
+    Subscription adapters use provider-specific consumer authentication and locally observed interfaces. Claude subscription routing is documented as researched behavior rather than a public Anthropic OAuth contract. Review provider terms before relying on these paths in a production environment.
+
+### Verified release boundary
+
+The release was smoke-tested with page 34 of the *Carolinian-English Dictionary* through all three authenticated providers and both supported surfaces. Coverage included complete Gemini extraction, OpenAI and Claude transcription, CLI split-model execution, agentic verification, cancellation, guide approval, editing, artifacts, history, usage, presets, and resume behavior.
+
+Three defects found during that smoke were repaired before release:
+
+1. saved subscription presets losing entitlement-only split models during catalog startup;
+2. complete overwrite runs issuing a duplicate Stage 1 request for the Pass 1 sample page;
+3. explicit CLI alphabet files remaining disabled in the resolved runtime.
+
+The release candidate passed 1,383 repository tests with 10 intentional skips, the strict MkDocs build, generated-reference verification, Ruff, and live post-repair web and CLI checks.

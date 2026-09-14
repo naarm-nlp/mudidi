@@ -5,6 +5,9 @@
 MUDIDI's documentation is published at
 [naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/) from
 the repository's `main` branch.
+See [What's New](whats-new.md) for the current release highlights and verified
+provider coverage.
+
 
 ## Pipeline
 

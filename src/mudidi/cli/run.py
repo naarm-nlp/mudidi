@@ -10,9 +10,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, cast
 
+from mudidi.llm.reasoning import REASONING_CHOICES
 from mudidi.config.run_config import RUN_STAGE_CHOICES, stage_from_cli
 from mudidi.llm.prompt_store import configure_prompts, default_prompts_path
-from mudidi.cli.model_args import forward_model_argv, register_model_arguments
+from mudidi.cli.model_args import (
+    DEFAULT_MODEL,
+    forward_model_argv,
+    register_model_arguments,
+)
 from mudidi.utils.pdf_split import parse_page_spec
 
 from mudidi.config.yaml_config import (
@@ -28,6 +33,8 @@ from mudidi.config.yaml_config import (
     redacted_config_dict,
     validate_config_paths,
 )
+from mudidi.llm.subscriptions import AuthMode, qualify_subscription_model
+from mudidi.llm.client import resolve_subscription_runtime
 
 
 def register_run_arguments(parser: argparse.ArgumentParser) -> None:
@@ -39,6 +46,21 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         help="Benchmark mode: samples tree layout, gold defaults, no neighbor context.",
     )
 
+    parser.add_argument(
+        "--auth-mode",
+        choices=["api_key", "subscription"],
+        default=None,
+        dest="auth_mode",
+        help="Authentication mode for inference (default: api_key).",
+    )
+    parser.add_argument(
+        "--auth-provider",
+        "--provider",
+        choices=["openai", "google", "claude"],
+        default=None,
+        dest="auth_provider",
+        help="Subscription provider; requires --auth-mode subscription.",
+    )
     parser.add_argument(
         "--pages",
         dest="pages",
@@ -240,15 +262,14 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--agentic-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default="low",
         dest="agentic_reasoning_effort",
-        help="Reasoning effort for agentic verifier and rewriter calls "
-        "(default: low).",
+        help="Reasoning effort for agentic verifier and rewriter calls (default: low).",
     )
     parser.add_argument(
         "--agentic-evaluator-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default=None,
         dest="agentic_evaluator_reasoning_effort",
         help="Reasoning effort for agentic verifier/evaluator calls. Defaults "
@@ -256,7 +277,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--agentic-rewriter-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default=None,
         dest="agentic_rewriter_reasoning_effort",
         help="Reasoning effort for agentic correction/rewrite calls. Defaults "
@@ -336,7 +357,9 @@ def _validate_pdf_page_args(run_args: argparse.Namespace) -> None:
             )
 
 
-def _merge_extract_args(_run_args: argparse.Namespace, remaining: Sequence[str]) -> list[str]:
+def _merge_extract_args(
+    _run_args: argparse.Namespace, remaining: Sequence[str]
+) -> list[str]:
     """Forward unhandled flags to the legacy extract driver."""
     return list(remaining)
 
@@ -348,7 +371,9 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
 
     if run_args.benchmark:
         if not run_args.samples_dir and not pages:
-            raise SystemExit("--benchmark requires --samples-dir or --pages with sample layout.")
+            raise SystemExit(
+                "--benchmark requires --samples-dir or --pages with sample layout."
+            )
     elif not pages or not output:
         raise SystemExit("Inference mode requires --pages and --output-dir.")
 
@@ -466,6 +491,8 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
 
 
 _RUN_OVERRIDE_PATHS = {
+    "auth_mode": "auth.mode",
+    "auth_provider": "auth.providers",
     "pages": "input.pages",
     "dict_pages": "input.dictionary_pages",
     "intro": "input.introduction",
@@ -600,11 +627,18 @@ def resolve_extraction_config(
         config_type = InferenceConfig if kind == "inference" else BenchmarkRunConfig
         config = config_type.model_validate(raw)
 
+    configured_default_model_explicit = "default" in config.models.model_fields_set
+    cli_model_explicit = bool(getattr(args, "_model_explicit", "model" in values))
+
     overrides: dict[str, Any] = {}
     for cli_name, config_path_name in _RUN_OVERRIDE_PATHS.items():
         if cli_name not in values:
             continue
         value = values[cli_name]
+        if cli_name in {"auth_mode", "auth_provider"} and value is None:
+            continue
+        if cli_name == "auth_provider":
+            value = [value]
         if cli_name in {
             "pages",
             "intro",
@@ -620,6 +654,35 @@ def resolve_extraction_config(
         }:
             value = _absolute_cli_path(value)
         overrides[config_path_name] = value
+    if "alphabet" in values and values["alphabet"] is not None:
+        overrides["runtime.use_alphabet"] = True
+
+    effective_mode = overrides.get("auth.mode", config.auth.mode)
+    effective_providers = overrides.get("auth.providers", config.auth.providers)
+    try:
+        normalized_mode = (
+            effective_mode
+            if isinstance(effective_mode, AuthMode)
+            else AuthMode(effective_mode)
+        )
+    except (TypeError, ValueError):
+        normalized_mode = None
+    if normalized_mode is AuthMode.API_KEY:
+        if "auth.mode" in overrides and "auth.providers" not in overrides:
+            overrides["auth.providers"] = []
+        if (
+            config.auth.mode is AuthMode.SUBSCRIPTION
+            and not configured_default_model_explicit
+            and not cli_model_explicit
+        ):
+            overrides["models.default"] = DEFAULT_MODEL
+    elif (
+        normalized_mode is AuthMode.SUBSCRIPTION
+        and len(effective_providers) == 1
+        and not configured_default_model_explicit
+        and not cli_model_explicit
+    ):
+        overrides["models.default"] = qualify_subscription_model(effective_providers[0])
     return cast(
         InferenceConfig | BenchmarkRunConfig,
         merge_explicit_overrides(config, overrides),
@@ -643,6 +706,9 @@ def execution_namespace_from_config(
     parse_rules_pages = list(pipeline.parse_rules_pages) or None
     return argparse.Namespace(
         resolved_config_snapshot=redacted_config_dict(config),
+        auth_mode=config.auth.mode.value,
+        auth_providers=[provider.value for provider in config.auth.providers],
+        subscription_runtime=None,
         input_image=pages,
         pages=pages,
         dict_pages=input_config.dictionary_pages,
@@ -697,7 +763,6 @@ def execution_namespace_from_config(
         stage2_pass2_reasoning_effort=(
             models.stage2_pass2_reasoning or models.stage2_reasoning
         ),
-        temperature=models.temperature,
         stage1_agentic=agentic.stage1,
         stage2_agentic=agentic.stage2,
         agentic_max_iterations=agentic.max_iterations,
@@ -778,6 +843,32 @@ def _count_page_files(path: Path) -> int:
     )
 
 
+def _billing_preview_metadata(
+    config: InferenceConfig | BenchmarkRunConfig,
+) -> dict[str, str | None]:
+    """Return safe authentication and billing labels for dry-run previews."""
+
+    mode = config.auth.mode.value
+    providers = ", ".join(provider.value for provider in config.auth.providers) or None
+    label = "Subscription billing" if mode == "subscription" else "API-key billing"
+    return {
+        "auth_mode": mode,
+        "auth_providers": providers,
+        "billing": "subscription" if mode == "subscription" else "api_key",
+        "billing_mode": mode,
+        "billing_label": label,
+    }
+
+
+def _with_billing_preview(
+    config: InferenceConfig | BenchmarkRunConfig,
+    preview: dict[str, Any],
+) -> dict[str, Any]:
+    """Attach explicit billing metadata without including credential material."""
+
+    return {**_billing_preview_metadata(config), **preview}
+
+
 def _execution_preview(
     config: InferenceConfig | BenchmarkRunConfig,
 ) -> dict[str, Any]:
@@ -785,22 +876,28 @@ def _execution_preview(
 
     if isinstance(config, InferenceConfig):
         assert config.input.pages is not None
-        return {
-            "entry_count": 1,
-            "page_count": _count_page_files(config.input.pages),
-            "selected_input": str(config.input.pages),
-            "derived_output": str(config.output.directory),
-        }
+        return _with_billing_preview(
+            config,
+            {
+                "entry_count": 1,
+                "page_count": _count_page_files(config.input.pages),
+                "selected_input": str(config.input.pages),
+                "derived_output": str(config.output.directory),
+            },
+        )
 
     root = config.input.dataset_dir or config.input.samples_dir
     if root is None:
         assert config.input.pages is not None
-        return {
-            "entry_count": 1,
-            "page_count": _count_page_files(config.input.pages),
-            "selected_input": str(config.input.pages),
-            "derived_output": str(config.output.directory),
-        }
+        return _with_billing_preview(
+            config,
+            {
+                "entry_count": 1,
+                "page_count": _count_page_files(config.input.pages),
+                "selected_input": str(config.input.pages),
+                "derived_output": str(config.output.directory),
+            },
+        )
     requested = set(config.input.languages or [])
     entries = []
     skipped = []
@@ -844,12 +941,15 @@ def _execution_preview(
             "missing Stage 1 prediction prerequisites: "
             + ", ".join(missing_prerequisites)
         )
-    return {
-        "entry_count": len(entries),
-        "page_count": page_count,
-        "entries": entries,
-        "skipped_entries": skipped,
-    }
+    return _with_billing_preview(
+        config,
+        {
+            "entry_count": len(entries),
+            "page_count": page_count,
+            "entries": entries,
+            "skipped_entries": skipped,
+        },
+    )
 
 
 def run_resolved_command(
@@ -904,7 +1004,9 @@ def execute_extraction_config(
     """
 
     configure_prompts(default_prompts_path())
+    subscription_runtime = resolve_subscription_runtime(config.auth)
     namespace = execution_namespace_from_config(config)
+    namespace.subscription_runtime = subscription_runtime
     namespace.approved_parse_rules = approved_parse_rules
     namespace.progress_callback = progress_callback
     _write_resolved_config(config)
@@ -1004,10 +1106,7 @@ def run_benchmark_sweep_command(
         return 0
 
     manifest_path = (
-        loaded.base.output.directory
-        / "sweeps"
-        / loaded.name
-        / "sweep_manifest.json"
+        loaded.base.output.directory / "sweeps" / loaded.name / "sweep_manifest.json"
     )
     manifest: dict[str, Any] = {
         "version": loaded.version,
@@ -1041,9 +1140,7 @@ def run_benchmark_sweep_command(
             if loaded.sweep.failure_policy == "stop":
                 break
     manifest["status"] = "failed" if any_failure else "complete"
-    manifest["completed_utc"] = datetime.now(timezone.utc).isoformat(
-        timespec="seconds"
-    )
+    manifest["completed_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     _write_sweep_manifest(manifest_path, manifest)
     return 1 if any_failure else 0
 

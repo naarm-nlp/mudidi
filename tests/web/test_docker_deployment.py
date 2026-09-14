@@ -14,7 +14,11 @@ def test_compose_publishes_only_to_host_loopback_and_persists_data() -> None:
     compose = yaml.safe_load((ROOT / "compose.yaml").read_text(encoding="utf-8"))
     service = compose["services"]["mudidi"]
 
-    assert service["ports"] == ["127.0.0.1:8000:8000"]
+    assert service["ports"] == [
+        "127.0.0.1:8000:8000",
+        "127.0.0.1:1455:1455",
+        "127.0.0.1:54545:54545",
+    ]
     assert "./mudidi-data:/data" in service["volumes"]
     assert "./outputs:/app/outputs" in service["volumes"]
     assert service["init"] is True

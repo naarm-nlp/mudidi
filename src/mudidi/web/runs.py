@@ -15,6 +15,28 @@ from mudidi.config.yaml_config import InferenceConfig
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
+def _migrate_auth_provider_config(config_json: str) -> str:
+    """Rewrite the retired single-provider auth field in persisted presets."""
+
+    try:
+        payload = json.loads(config_json)
+    except json.JSONDecodeError:
+        return config_json
+    if not isinstance(payload, dict):
+        return config_json
+    auth = payload.get("auth")
+    if not isinstance(auth, dict) or "provider" not in auth:
+        return config_json
+    provider = auth.pop("provider")
+    if "providers" not in auth:
+        auth["providers"] = (
+            [provider]
+            if auth.get("mode") == "subscription" and isinstance(provider, str)
+            else []
+        )
+    return json.dumps(payload, separators=(",", ":"))
+
+
 class RunStatus(StrEnum):
     """Durable lifecycle states for one local production run."""
 
@@ -81,6 +103,13 @@ class PresetRecord:
     created_at: datetime
 
 
+_RESUME_PHASE_BY_ACTIVE_STATUS = {
+    RunStatus.RUNNING_STAGE1: "stage1",
+    RunStatus.DISCOVERING_PARSE_RULES: "stage2_pass1",
+    RunStatus.RUNNING_STAGE2: "stage2_pass2",
+}
+
+
 _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
     RunStatus.DRAFT: frozenset({RunStatus.VALIDATED, RunStatus.CANCELLED}),
     RunStatus.VALIDATED: frozenset(
@@ -139,7 +168,14 @@ _ALLOWED_TRANSITIONS: dict[RunStatus, frozenset[RunStatus]] = {
         }
     ),
     RunStatus.COMPLETED: frozenset(),
-    RunStatus.FAILED: frozenset(),
+    RunStatus.FAILED: frozenset(
+        {
+            RunStatus.QUEUED,
+            RunStatus.AWAITING_PARSE_RULES_REVIEW,
+            RunStatus.CREDENTIALS_REQUIRED,
+            RunStatus.CANCELLED,
+        }
+    ),
     RunStatus.CANCELLED: frozenset(),
 }
 
@@ -231,6 +267,24 @@ class RunStore:
                 "VALUES (2, ?)",
                 (_now().isoformat(),),
             )
+            migrated = connection.execute(
+                "SELECT 1 FROM schema_migrations WHERE version = 4"
+            ).fetchone()
+            if migrated is None:
+                for row in connection.execute(
+                    "SELECT preset_id, config_json FROM presets"
+                ).fetchall():
+                    config_json = str(row["config_json"])
+                    replacement = _migrate_auth_provider_config(config_json)
+                    if replacement != config_json:
+                        connection.execute(
+                            "UPDATE presets SET config_json = ? WHERE preset_id = ?",
+                            (replacement, str(row["preset_id"])),
+                        )
+                connection.execute(
+                    "INSERT INTO schema_migrations(version, applied_at) VALUES (4, ?)",
+                    (_now().isoformat(),),
+                )
 
     def create_run(self, run_id: str, *, provider: str | None = None) -> RunRecord:
         """Create one draft run without persisting provider credentials."""
@@ -316,9 +370,15 @@ class RunStore:
             if target not in _ALLOWED_TRANSITIONS[current]:
                 raise InvalidRunTransition(f"cannot transition {current} to {target}")
             try:
+                resume_phase = (
+                    _RESUME_PHASE_BY_ACTIVE_STATUS.get(current)
+                    if target is RunStatus.FAILED
+                    else row["resume_phase"]
+                )
                 connection.execute(
-                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
-                    (target.value, _now().isoformat(), run_id),
+                    "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
+                    "WHERE run_id = ?",
+                    (target.value, resume_phase, _now().isoformat(), run_id),
                 )
                 connection.commit()
             except sqlite3.IntegrityError as exc:
@@ -342,7 +402,7 @@ class RunStore:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
-                "SELECT status FROM runs WHERE run_id = ?", (run_id,)
+                "SELECT status, resume_phase FROM runs WHERE run_id = ?", (run_id,)
             ).fetchone()
             if row is None:
                 raise KeyError(run_id)
@@ -350,9 +410,15 @@ class RunStore:
                 connection.rollback()
                 return False
             try:
+                resume_phase = (
+                    _RESUME_PHASE_BY_ACTIVE_STATUS.get(expected)
+                    if target is RunStatus.FAILED
+                    else row["resume_phase"]
+                )
                 connection.execute(
-                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
-                    (target.value, _now().isoformat(), run_id),
+                    "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
+                    "WHERE run_id = ?",
+                    (target.value, resume_phase, _now().isoformat(), run_id),
                 )
                 connection.commit()
             except sqlite3.IntegrityError as exc:
@@ -411,13 +477,9 @@ class RunStore:
 
     def interrupt(self, run_id: str) -> RunRecord:
         """Persist an interruption and the safe phase to which it may resume."""
-
         run = self.get_run(run_id)
-        resume_phase = {
-            RunStatus.RUNNING_STAGE1: "stage1",
-            RunStatus.DISCOVERING_PARSE_RULES: "parse_rule_review",
-            RunStatus.RUNNING_STAGE2: "stage2_pass2",
-        }.get(run.status)
+
+        resume_phase = _RESUME_PHASE_BY_ACTIVE_STATUS.get(run.status)
         if resume_phase is None:
             raise InvalidRunTransition(f"cannot interrupt {run.status}")
         with self._connect() as connection:
@@ -433,12 +495,44 @@ class RunStore:
             )
         return self.get_run(run_id)
 
+    def set_failed_resume_phase(self, run_id: str, resume_phase: str) -> RunRecord:
+        """Backfill retry provenance for a failed run created by older versions."""
+
+        if resume_phase not in frozenset(_RESUME_PHASE_BY_ACTIVE_STATUS.values()):
+            raise ValueError("invalid failed-run resume phase")
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE runs SET resume_phase = ?, updated_at = ? "
+                "WHERE run_id = ? AND status = ? AND resume_phase IS NULL",
+                (
+                    resume_phase,
+                    _now().isoformat(),
+                    run_id,
+                    RunStatus.FAILED.value,
+                ),
+            )
+        if cursor.rowcount != 1:
+            run = self.get_run(run_id)
+            if run.status is not RunStatus.FAILED:
+                raise InvalidRunTransition(f"cannot retry {run.status}")
+            if run.resume_phase != resume_phase:
+                raise InvalidRunTransition(
+                    "failed run already has different retry phase"
+                )
+        return self.get_run(run_id)
+
     def resume(self, run_id: str, *, credentials_available: bool) -> RunRecord:
-        """Resume only to the phase justified by persisted provenance."""
+        """Resume or retry only the phase justified by persisted provenance."""
 
         run = self.get_run(run_id)
-        if run.status not in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED}:
+        if run.status not in {
+            RunStatus.INTERRUPTED,
+            RunStatus.CREDENTIALS_REQUIRED,
+            RunStatus.FAILED,
+        }:
             raise InvalidRunTransition(f"cannot resume {run.status}")
+        if run.status is RunStatus.FAILED and run.resume_phase is None:
+            raise InvalidRunTransition("failed run has no retry phase")
         if not credentials_available:
             if run.status is RunStatus.CREDENTIALS_REQUIRED:
                 return run
@@ -820,7 +914,9 @@ def _preset_from_row(row: sqlite3.Row) -> PresetRecord:
         preset_id=str(row["preset_id"]),
         name=str(row["name"]),
         provider=str(row["provider"]),
-        config=InferenceConfig.model_validate_json(str(row["config_json"])),
+        config=InferenceConfig.model_validate_json(
+            _migrate_auth_provider_config(str(row["config_json"]))
+        ),
         created_at=datetime.fromisoformat(str(row["created_at"])),
     )
 

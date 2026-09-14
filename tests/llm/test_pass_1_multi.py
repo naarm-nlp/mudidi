@@ -6,6 +6,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from mudidi.llm.pass_1 import (
     discover_field_cheatsheet_multi,
     load_or_discover_parse_rules,
@@ -115,6 +117,29 @@ def test_discover_field_cheatsheet_multi_includes_config_hint_when_set(mock_comp
     assert "Circassian" in text_part
 
 
+@patch("mudidi.llm.pass_1.discover_field_cheatsheet_multi")
+def test_load_or_discover_parse_rules_defaults_missing_intro_images_to_empty_list(
+    mock_discover, tmp_path: Path
+) -> None:
+    expected = DictionaryMarkerCheatsheet(
+        markers=[MarkerLine(marker="lx", description="headword")]
+    )
+    mock_discover.return_value = (expected, {"total_tokens": 1})
+
+    sheet, usage = load_or_discover_parse_rules(
+        tmp_path / "mdf_parsing_guide.json",
+        multi_samples=[
+            ("page_1", "line one", tmp_path / "page_1.png"),
+            ("page_2", "line two", tmp_path / "page_2.png"),
+        ],
+        model="gemini/gemini-3-flash-preview",
+    )
+
+    assert sheet == expected
+    assert usage == {"total_tokens": 1}
+    assert mock_discover.call_args.kwargs["intro_images"] == []
+
+
 def test_load_or_discover_parse_rules_cached_skips_usage(tmp_path: Path) -> None:
     cache_path = tmp_path / "mdf_parsing_guide.json"
     cache_path.write_text(
@@ -126,3 +151,18 @@ def test_load_or_discover_parse_rules_cached_skips_usage(tmp_path: Path) -> None
     sheet, usage = load_or_discover_parse_rules(cache_path)
     assert sheet.markers[0].marker == "lx"
     assert usage is None
+
+
+def test_load_or_discover_parse_rules_rejects_removed_temperature_with_cached_rules(
+    tmp_path: Path,
+) -> None:
+    cache_path = tmp_path / "mdf_parsing_guide.json"
+    cache_path.write_text(
+        DictionaryMarkerCheatsheet(
+            markers=[MarkerLine(marker="lx", description="headword")],
+        ).model_dump_json(indent=2),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TypeError, match="temperature"):
+        load_or_discover_parse_rules(cache_path, temperature=0.1)

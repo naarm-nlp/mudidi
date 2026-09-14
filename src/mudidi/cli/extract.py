@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from mudidi.llm.reasoning import REASONING_CHOICES
 from mudidi.ocr.mathpix import MathpixBackend
 from mudidi.ocr.vlm.prompts import find_ocr_hint_file
 from mudidi.schemas.ocr_result import OCRPageResult
@@ -61,7 +62,10 @@ from mudidi.utils.stage1_input import (
     stage1_tsv_path,
     stage1_transcript_kind,
 )
-from mudidi.utils.stage2_page_selection import select_one_stage2_page, sort_snippet_pages
+from mudidi.utils.stage2_page_selection import (
+    select_one_stage2_page,
+    sort_snippet_pages,
+)
 from mudidi.config.output_paths import output_layout_from_config
 from mudidi.config.run_config import (
     EXTRACT_STAGE_CHOICES,
@@ -126,7 +130,11 @@ def _attempt_number(path: Path) -> int:
 def _load_agentic_verifier_summary(agentic_dir: Path, attempt: int) -> dict[str, str]:
     verifier_path = agentic_dir / f"attempt_{attempt}_verifier.json"
     if not verifier_path.is_file():
-        return {"verifier_decision": "", "verifier_confidence": "", "verifier_issues": ""}
+        return {
+            "verifier_decision": "",
+            "verifier_confidence": "",
+            "verifier_issues": "",
+        }
     data = json.loads(verifier_path.read_text(encoding="utf-8"))
     issues = data.get("issues") or []
     return {
@@ -210,12 +218,7 @@ def _stage1_gold_flat_path_for_entry(
 ) -> Optional[Path]:
     if entry_dir is None:
         return None
-    candidate = (
-        entry_dir
-        / "Stage 1 Gold OCR"
-        / stem
-        / f"{stem}_stage1_GOLD_flat.txt"
-    )
+    candidate = entry_dir / "Stage 1 Gold OCR" / stem / f"{stem}_stage1_GOLD_flat.txt"
     return candidate if candidate.is_file() else None
 
 
@@ -304,9 +307,10 @@ def _entry_dir_for_run(
     entry_dir = getattr(args, "entry_dir", None)
     if entry_dir:
         return Path(entry_dir)
-    if output_dir.name == "outputs" and (
-        output_dir.parent / "dictionary_languages.yaml"
-    ).is_file():
+    if (
+        output_dir.name == "outputs"
+        and (output_dir.parent / "dictionary_languages.yaml").is_file()
+    ):
         return output_dir.parent
     if (input_dir.parent / "dictionary_languages.yaml").is_file():
         return input_dir.parent
@@ -504,7 +508,10 @@ def _git_short_sha() -> Optional[str]:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, check=False, timeout=2,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=2,
         )
         sha = out.stdout.strip()
         return sha or None
@@ -529,8 +536,11 @@ def _alphabet_manifest_entry(alphabet_path: Optional[str]) -> Dict[str, Any]:
         text = _read_text_file(p)
     except OSError as exc:
         return {
-            "used": True, "path": str(p), "kind": "text",
-            "text": None, "read_error": str(exc),
+            "used": True,
+            "path": str(p),
+            "kind": "text",
+            "text": None,
+            "read_error": str(exc),
         }
     return {"used": True, "path": str(p), "kind": "text", "text": text}
 
@@ -567,11 +577,13 @@ def _per_page_inputs_stage1(
     for image_file in images:
         stem = image_file.stem
         ocr_file = _find_ocr_file(ocr_dir, stem) if ocr_dir else None
-        rows.append({
-            "stem": stem,
-            "snippet_path": str(image_file),
-            "ocr_hint_file": str(ocr_file) if ocr_file else None,
-        })
+        rows.append(
+            {
+                "stem": stem,
+                "snippet_path": str(image_file),
+                "ocr_hint_file": str(ocr_file) if ocr_file else None,
+            }
+        )
     return rows
 
 
@@ -660,9 +672,7 @@ def _write_run_config(
                 f"Instruction attachment metadata changed for {target_dir}; "
                 "pass --overwrite before resuming."
             )
-        print(
-            f"  Keeping existing {path} (resume; pass --overwrite to refresh it)."
-        )
+        print(f"  Keeping existing {path} (resume; pass --overwrite to refresh it).")
         return
     path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -674,6 +684,7 @@ def _write_run_config(
                 json.dumps(resolved_config, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
+
 
 def _build_stage1_manifest(
     args,
@@ -700,7 +711,6 @@ def _build_stage1_manifest(
         "stage1_guides": _guides_manifest_entry(
             getattr(args, "stage1_instruction_context", None)
         ),
-        "temperature": args.temperature,
         "batch_size": getattr(args, "batch_size", 1),
         "render_pdfs": run_needs_pdf_rasterization(
             args.stage_models.stage_1,
@@ -751,7 +761,6 @@ def _build_stage2_manifest(
             getattr(args, "stage2_pass2_reasoning_effort", None)
             or args.stage2_reasoning_effort
         ),
-        "temperature": args.temperature,
         "batch_size": getattr(args, "batch_size", 1),
         "stage2_output_format": "mdf",
         "prompts_file": str(
@@ -770,7 +779,9 @@ def _build_stage2_manifest(
             or getattr(args, "field_cheatsheet_gold", False)
             else "discover"
         ),
-        "toolbox_pdf": str(args.toolbox_pdf) if getattr(args, "toolbox_pdf", None) else None,
+        "toolbox_pdf": str(args.toolbox_pdf)
+        if getattr(args, "toolbox_pdf", None)
+        else None,
         "prompt_cache": getattr(args, "prompt_cache", "auto"),
         "media_reference": getattr(args, "media_reference", "auto"),
         "prompt_cache_key": getattr(args, "prompt_cache_key", None),
@@ -807,6 +818,7 @@ def _build_stage2_manifest(
     if dictionary_languages is not None:
         manifest["dictionary_languages"] = dictionary_languages
     return manifest
+
 
 def _instruction_models(args) -> list[str]:
     """Return every effective generation and configured agentic model."""
@@ -867,7 +879,6 @@ def _prepare_instruction_contexts(
     return stage1_context, stage2_context
 
 
-
 def _build_strategy(
     args,
     intro_image_paths: List[str],
@@ -892,13 +903,21 @@ def _build_strategy(
             stage2_pass2_reasoning_effort=getattr(
                 args, "stage2_pass2_reasoning_effort", None
             ),
-            temperature=getattr(args, "temperature", 0.1),
             stage1_guides=getattr(args, "stage1_guides_text", ""),
             stage2_guides=getattr(args, "stage2_guides_text", ""),
-            stage1_instruction_context=getattr(args, "stage1_instruction_context", None),
-            stage2_instruction_context=getattr(args, "stage2_instruction_context", None),
+            stage1_instruction_context=getattr(
+                args, "stage1_instruction_context", None
+            ),
+            stage2_instruction_context=getattr(
+                args, "stage2_instruction_context", None
+            ),
             dictionary_languages=dictionary_languages,
             stage2_guides_scope=getattr(args, "stage2_guides_scope", "both"),
+            backend=getattr(
+                args,
+                "subscription_runtime",
+                getattr(args, "backend", None),
+            ),
             stage1_mode=getattr(args, "stage1_mode", "column"),
             dictionary_profile=dictionary_profile,
             entry_dir=str(getattr(args, "entry_dir", "") or "") or None,
@@ -927,9 +946,7 @@ def _build_strategy(
             stage1_typography=bool(getattr(args, "stage1_typography", False)),
             stage1_agentic=bool(getattr(args, "stage1_agentic", False)),
             stage2_agentic=bool(getattr(args, "stage2_agentic", False)),
-            agentic_max_iterations=int(
-                getattr(args, "agentic_max_iterations", 2) or 0
-            ),
+            agentic_max_iterations=int(getattr(args, "agentic_max_iterations", 2) or 0),
             agentic_evaluator_model=getattr(args, "agentic_evaluator_model", None),
             agentic_rewriter_model=getattr(args, "agentic_rewriter_model", None),
             agentic_reasoning_effort=getattr(args, "agentic_reasoning_effort", "low"),
@@ -960,54 +977,20 @@ def _build_strategy(
     raise ValueError(f"Unknown strategy: {args.strategy}")
 
 
-def _stage1_transcript_path_for_stem(
-    stage1_dir: Path,
-    stem: str,
-    *,
-    stage1_mode: str,
-) -> Path:
-    page_dir = stage1_dir / stem
-    if stage1_mode == "flat":
-        return stage1_flat_path(page_dir, stem)
-    return stage1_tsv_path(page_dir, stem)
-
-
-def _prepare_parse_rules_samples(
+def _load_parse_rules_samples(
     args,
     images: List[Path],
-    stage1_dir: Path,
     output_dir: Path,
     *,
     layout,
-    strategy: TwoStageLLMExtraction,
-    ocr_dir: Optional[Path],
 ) -> List[tuple[str, str, str]]:
-    """Ensure Stage 1 transcripts exist for Pass 1 sample page(s)."""
+    """Load Stage 1 transcripts completed before Pass 1 discovery."""
     stems = normalize_parse_rules_page_stems(getattr(args, "parse_rules_pages", None))
     sample_images = select_parse_rules_sample_images(images, stems)
     samples: List[tuple[str, str, str]] = []
-    stage1_mode = getattr(args, "stage1_mode", "column")
 
-    for page_index, image_file in enumerate(sample_images):
+    for image_file in sample_images:
         stem = image_file.stem
-        stage1_out = _stage1_transcript_path_for_stem(
-            stage1_dir, stem, stage1_mode=stage1_mode
-        )
-
-        if args.stage == "all" and (args.overwrite or not stage1_out.is_file()):
-            print(f"Pass 1 prep: Stage 1 transcription for sample page {stem} …")
-            stage1_page_dir = stage1_dir / stem
-            stage1_page_dir.mkdir(parents=True, exist_ok=True)
-            ocr_file = _find_ocr_file(ocr_dir, stem) if ocr_dir else None
-            ocr_result = _build_ocr_result(str(image_file), ocr_file)
-            strategy.extract(
-                ocr_result,
-                str(image_file),
-                page_number=page_index,
-                stage1_output_path=str(stage1_out),
-                run_stage="1",
-            )
-
         transcript_path = stage1_transcript_for_stage2(
             output_dir,
             stem,
@@ -1267,7 +1250,7 @@ Examples:
     )
     parser.add_argument(
         "--stage1-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default="low",
         dest="stage1_reasoning_effort",
         help="Reasoning effort for the Stage 1 transcription LLM call "
@@ -1286,13 +1269,6 @@ Examples:
         "(default: low). High reasoning has been observed to leak chain-of-"
         "thought into output on dense pages — bump only when "
         "you've confirmed the leak doesn't happen for your model + pages.",
-    )
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.1,
-        help="Sampling temperature for all LLM steps (default: 0.1). GPT-5 family "
-        "models only accept 1.0 — MUDIDI clamps automatically with a log line.",
     )
     parser.add_argument(
         "--stage-1-guides",
@@ -1567,7 +1543,7 @@ Examples:
         "(TSV if present, else flat). With --stage1-source gold reads "
         "outputs/stage-1-gold/; with predictions reads "
         "outputs/stage-1/<experiment-name>/. Ignored for stage-1-only runs.",
-    )  
+    )
     parser.add_argument(
         "--stage1-source",
         choices=["gold", "predictions"],
@@ -1620,15 +1596,14 @@ Examples:
     )
     parser.add_argument(
         "--agentic-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default="low",
         dest="agentic_reasoning_effort",
-        help="Reasoning effort for agentic verifier and rewriter calls "
-        "(default: low).",
+        help="Reasoning effort for agentic verifier and rewriter calls (default: low).",
     )
     parser.add_argument(
         "--agentic-evaluator-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default=None,
         dest="agentic_evaluator_reasoning_effort",
         help="Reasoning effort for agentic verifier/evaluator calls. Defaults "
@@ -1636,7 +1611,7 @@ Examples:
     )
     parser.add_argument(
         "--agentic-rewriter-reasoning",
-        choices=["none", "low", "medium", "high"],
+        choices=REASONING_CHOICES,
         default=None,
         dest="agentic_rewriter_reasoning_effort",
         help="Reasoning effort for agentic correction/rewrite calls. Defaults "
@@ -1701,9 +1676,7 @@ Examples:
         "vlm_ocr",
         "mathpix_ocr",
     ):
-        parser.error(
-            "--stage1-mode flat requires two_stage, vlm_ocr, or mathpix_ocr"
-        )
+        parser.error("--stage1-mode flat requires two_stage, vlm_ocr, or mathpix_ocr")
 
     if getattr(args, "batch_size", 1) < 1:
         parser.error("--batch-size must be >= 1")
@@ -1745,7 +1718,6 @@ Examples:
         args.ocr_text = None
     if args.no_intro:
         args.intro = None
-
 
     prompts_path = args.prompts_file or default_prompts_path()
     if not prompts_path.is_file():
@@ -1812,7 +1784,9 @@ Examples:
     return _run_single_entry(args, parser)
 
 
-def _validate_pdf_page_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+def _validate_pdf_page_args(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
     """Validate --dict-pages / --intro-pages pairing with PDF inputs."""
     pages_path = Path(args.input_image) if args.input_image else None
     is_source_pdf = bool(
@@ -1845,10 +1819,14 @@ def _validate_pdf_page_args(args: argparse.Namespace, parser: argparse.ArgumentP
         if getattr(args, "dict_pages", None):
             parser.error("--dict-pages is only valid when --pages is a single PDF file")
         if getattr(args, "intro_pages", None):
-            parser.error("--intro-pages is only valid when --pages is a single PDF file")
+            parser.error(
+                "--intro-pages is only valid when --pages is a single PDF file"
+            )
 
 
-def _normalize_experiment_names(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+def _normalize_experiment_names(
+    args: argparse.Namespace, parser: argparse.ArgumentParser
+) -> None:
     """Resolve repeatable ``--experiment-name`` into ``experiment_names`` list."""
     names = args.experiment_names if args.experiment_names is not None else ["default"]
 
@@ -1887,7 +1865,9 @@ def _normalize_experiment_names(args: argparse.Namespace, parser: argparse.Argum
         )
 
 
-def _discover_sample_entries(samples_root: Path, languages: Optional[List[str]]) -> List[Path]:
+def _discover_sample_entries(
+    samples_root: Path, languages: Optional[List[str]]
+) -> List[Path]:
     """Return entry subfolders to process under ``samples_root``."""
     all_entries = sorted(p for p in samples_root.iterdir() if p.is_dir())
     if languages:
@@ -2034,9 +2014,7 @@ def _run_samples_dir(args, parser) -> int:
             args, entry_dir, configured_output_root
         )
         if not pages_dir.is_dir():
-            print(
-                f"[skip] {entry_dir.name}: no snippets/ or Dictionary pages/ folder"
-            )
+            print(f"[skip] {entry_dir.name}: no snippets/ or Dictionary pages/ folder")
             continue
 
         predictions_root = getattr(args, "stage1_predictions_root", None)
@@ -2048,9 +2026,7 @@ def _run_samples_dir(args, parser) -> int:
                 / args.experiment_name
             )
             destination_slot = (
-                Path(args.output)
-                / args.stage1_output_subdir
-                / args.experiment_name
+                Path(args.output) / args.stage1_output_subdir / args.experiment_name
             )
             if not source_slot.is_dir():
                 print(
@@ -2111,9 +2087,7 @@ def _run_single_entry(args, parser) -> int:
     layout = output_layout_from_config(run_config)
     stage1_dir = layout.stage1_root
     stage2_dir = layout.stage2_root
-    cheatsheet_root = (
-        layout.output_dir if layout.inference else layout.stage2_root
-    )
+    cheatsheet_root = layout.output_dir if layout.inference else layout.stage2_root
     snippets_cache_dir = output_dir / ".rendered_snippets"
     intro_cache_dir = output_dir / ".rendered_intro"
     _prepare_instruction_contexts(args, output_dir, parser)
@@ -2181,9 +2155,7 @@ def _run_single_entry(args, parser) -> int:
         except RuntimeError as exc:
             print(exc)
             return 1
-        print(
-            f"Intro: {len(intro_image_paths)} page attachments loaded."
-        )
+        print(f"Intro: {len(intro_image_paths)} page attachments loaded.")
     elif args.intro:
         intro_path = Path(args.intro)
         if not intro_path.exists():
@@ -2195,13 +2167,13 @@ def _run_single_entry(args, parser) -> int:
                 )
             except ValueError as exc:
                 parser.error(str(exc))
-            print(
-                f"Intro: {len(intro_image_paths)} page attachments loaded."
-            )
+            print(f"Intro: {len(intro_image_paths)} page attachments loaded.")
 
     dictionary_languages = None
     dictionary_profile = getattr(args, "dictionary_profile", None)
-    entry_path = _entry_dir_for_run(args, output_dir, input_dir if input_path.is_dir() else input_path.parent)
+    entry_path = _entry_dir_for_run(
+        args, output_dir, input_dir if input_path.is_dir() else input_path.parent
+    )
     if entry_path:
         args.entry_dir = str(entry_path)
     if args.strategy == "two_stage":
@@ -2221,7 +2193,6 @@ def _run_single_entry(args, parser) -> int:
             )
 
     # ── Strategy (instantiated once, shared across pages) ─────────────────────
-    parse_rules_samples: Optional[List[tuple[str, str, str]]] = None
     strategy = _build_strategy(
         args,
         intro_image_paths,
@@ -2254,7 +2225,7 @@ def _run_single_entry(args, parser) -> int:
                 force=args.overwrite,
                 resolved_config=resolved_config,
             )
-    if (
+    needs_parse_rules_samples = (
         args.strategy == "two_stage"
         and runs_stage2_pass1(args.stage)
         and not getattr(args, "parse_rules_file", None)
@@ -2262,19 +2233,21 @@ def _run_single_entry(args, parser) -> int:
             getattr(args, "parse_rules_gold", False)
             or getattr(args, "field_cheatsheet_gold", False)
         )
-    ):
-        parse_rules_samples = _prepare_parse_rules_samples(
+    )
+
+    def configure_parse_rules_samples() -> None:
+        parse_rules_samples = _load_parse_rules_samples(
             args,
             images,
-            stage1_dir,
             output_dir,
             layout=layout,
-            strategy=strategy,
-            ocr_dir=ocr_dir,
         )
         strategy.parse_rules_samples = parse_rules_samples
         sample_label = ", ".join(stem for stem, _, _ in parse_rules_samples)
         print(f"Pass 1 sample page(s): {sample_label}")
+
+    if needs_parse_rules_samples and args.stage != "all":
+        configure_parse_rules_samples()
     elif getattr(args, "parse_rules_file", None):
         print(f"Pass 1: using parse rules file {args.parse_rules_file}")
 
@@ -2341,8 +2314,7 @@ def _run_single_entry(args, parser) -> int:
     print(f"Output directory: {output_dir}")
     print(
         f"Strategy: {args.strategy} | Models: {args.stage_models.summary()} | "
-        f"Stage: {args.stage} | Temperature: {args.temperature} | "
-        f"Overwrite: {args.overwrite}"
+        f"Stage: {args.stage} | Overwrite: {args.overwrite}"
     )
     if args.strategy == "two_stage":
         if runs_stage1(args.stage):
@@ -2386,17 +2358,18 @@ def _run_single_entry(args, parser) -> int:
 
     for phase_index, page_run_stage in enumerate(run_phases):
         if len(run_phases) > 1:
-            phase_label = "Stage 1 transcription" if page_run_stage == "1" else "Stage 2 MDF"
+            phase_label = (
+                "Stage 1 transcription" if page_run_stage == "1" else "Stage 2 MDF"
+            )
             print(
                 f"\n{'=' * 60}\n"
                 f"Phase {phase_index + 1}/{len(run_phases)}: {phase_label} "
                 f"({total} page(s))\n"
                 f"{'=' * 60}"
             )
-        if (
-            page_run_stage in ("2", "2-pass-2")
-            and args.prompt_mode == "inference"
-        ):
+        if needs_parse_rules_samples and args.stage == "all" and page_run_stage == "2":
+            configure_parse_rules_samples()
+        if page_run_stage in ("2", "2-pass-2") and args.prompt_mode == "inference":
             for image_file in images:
                 _transcript_loader(image_file.stem)
 
@@ -2457,12 +2430,12 @@ def _run_single_entry(args, parser) -> int:
             if not args.overwrite:
                 if page_run_stage == "1" and stage1_done.exists():
                     _locked_print(
-                        f"[{idx+1}/{total}] SKIP {image_file.name} → stage1 already exists"
+                        f"[{idx + 1}/{total}] SKIP {image_file.name} → stage1 already exists"
                     )
                     return "skipped"
                 if page_run_stage in ("2", "2-pass-2") and stage2_done.exists():
                     _locked_print(
-                        f"[{idx+1}/{total}] SKIP {image_file.name} → stage2 already exists"
+                        f"[{idx + 1}/{total}] SKIP {image_file.name} → stage2 already exists"
                     )
                     return "skipped"
 
@@ -2495,7 +2468,7 @@ def _run_single_entry(args, parser) -> int:
             if progress_callback is not None:
                 progress_callback("started", page_number, page_run_stage)
             _locked_print(
-                f"\n[{idx+1}/{total}] Processing: {image_file.name}  "
+                f"\n[{idx + 1}/{total}] Processing: {image_file.name}  "
                 f"(page {page_number}){phase_tag}"
             )
             if runs_stage1(page_run_stage):
@@ -2642,14 +2615,14 @@ def _run_single_entry(args, parser) -> int:
                             if getattr(args, "stage1_mode", "column") == "flat":
                                 flat_out = stage1_flat_path(stage1_page_dir, stem)
                                 if flat_out.is_file():
-                                    transcript_cache[stem] = read_stage1_transcript_text(
-                                        flat_out
+                                    transcript_cache[stem] = (
+                                        read_stage1_transcript_text(flat_out)
                                     )
                             else:
                                 tsv_out = stage1_tsv_path(stage1_page_dir, stem)
                                 if tsv_out.is_file():
-                                    transcript_cache[stem] = read_stage1_transcript_text(
-                                        tsv_out
+                                    transcript_cache[stem] = (
+                                        read_stage1_transcript_text(tsv_out)
                                     )
 
                 elapsed = time.perf_counter() - started
@@ -2672,7 +2645,9 @@ def _run_single_entry(args, parser) -> int:
             with ThreadPoolExecutor(max_workers=batch_size) as pool:
                 outcomes = list(pool.map(_run_page, range(len(images)), images))
         else:
-            outcomes = [_run_page(idx, image_file) for idx, image_file in enumerate(images)]
+            outcomes = [
+                _run_page(idx, image_file) for idx, image_file in enumerate(images)
+            ]
 
         for outcome in outcomes:
             if outcome == "processed":
@@ -2759,7 +2734,9 @@ def _write_run_usage(
         None,
     )
     if parse_rules_usage_path is not None:
-        parse_rules_usage = json.loads(parse_rules_usage_path.read_text(encoding="utf-8"))
+        parse_rules_usage = json.loads(
+            parse_rules_usage_path.read_text(encoding="utf-8")
+        )
         field_discovery = parse_rules_usage.get("field_discovery")
         discovery_in_pages = any(page.get("field_discovery") for page in pages)
         if not discovery_in_pages:
@@ -2776,7 +2753,9 @@ def _write_run_usage(
         "pages": pages,
         "field_discovery": field_discovery,
         "run_total_cost_usd": round(total_cost, 8) if cost_available else None,
-        "run_total_elapsed_seconds": round(total_elapsed, 3) if elapsed_available else None,
+        "run_total_elapsed_seconds": round(total_elapsed, 3)
+        if elapsed_available
+        else None,
     }
 
     out = output_dir / "run_usage.json"

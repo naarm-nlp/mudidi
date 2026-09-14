@@ -144,9 +144,12 @@ in server memory, are passed to the worker environment, and are cleared after
 the run/server lifetime. Logs, exceptions, SSE payloads, SQLite, presets, and
 resolved configs are redacted.
 
-The model catalog combines a bundled tested registry, live provider model-list
-results held in process memory, and custom LiteLLM identifiers. Provider
-failures fall back to the bundled catalog and never block custom entry.
+The API-key model catalog combines a bundled tested registry, live provider
+model-list results held in process memory, and custom LiteLLM identifiers.
+Provider failures fall back to the bundled catalog and never block custom
+entry. Subscription catalogs are separate: authenticated backend discovery
+returns a flat entitlement-only list and server validation rejects identifiers
+outside that list.
 
 ## Security boundaries
 

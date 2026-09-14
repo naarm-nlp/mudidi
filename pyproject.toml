@@ -9,6 +9,7 @@ description = "Dictionary OCR and MDF extraction pipeline with benchmark and inf
 requires-python = ">=3.11"
 
 dependencies = [
+    "certifi>=2024.2.2",
     "litellm>=1.87.0",
     "python-docx",
     "Pillow",

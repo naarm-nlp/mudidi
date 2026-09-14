@@ -98,7 +98,7 @@ The **New Run** screen is a five-step wizard:
 2. **Pipeline** — choose one of the three supported workflows and an existing
    output policy.
 3. **Model** — manage the local provider credential, select the provider,
-   model, and reasoning settings, and configure temperature and batch size.
+   model, and reasoning settings, and configure batch size.
 4. **Agentic** — leave verification off or enable its evaluator and correction
    settings.
 5. **Review** — submit the complete form for authoritative server validation,
@@ -277,8 +277,8 @@ their existing optional role-specific model controls.
 ## Models and providers
 
 The **Model** step begins with the selected provider's credential card, then
-shows model and reasoning controls for active stages, temperature, and batch
-size. There is one authoritative run-level `provider` form value. The Stage 1
+shows model, reasoning, and batch-size controls for active stages. There is one
+authoritative run-level `provider` form value. The Stage 1
 and Stage 2 provider selectors are synchronized presentations of that value,
 not independent per-stage providers: changing either selector updates the
 other, and the same single provider is submitted for the run. Existing
@@ -312,14 +312,41 @@ replace both pass controls before session storage persists them, a reload or
 navigation restores those shared replacement values rather than the independent
 split-pass choices.
 
-The provider-specific catalog is combined with optional live model discovery and
-an **Other model** entry. OpenRouter uses a manually entered model such as
-`qwen/qwen3-235b-a22b`; MUDIDI adds the LiteLLM `openrouter/` prefix. The
-optional **OpenRouter Provider** slug pins an endpoint preference, while blank
-uses automatic routing.
+With API-key billing, MUDIDI loads the selected provider's current account model
+list on the server, caches a successful result for 15 minutes, and groups the
+choices into stage recommendations and additional account models whose
+compatibility is not verified. **Refresh models** bypasses that cache. A missing
+key or unavailable provider leaves the bundled fallback usable and reports the
+degraded state without exposing provider errors or credentials.
 
-Selecting **None / lowest supported** reasoning resolves to `low`; MUDIDI only
-sends reasoning controls to model families known to support them.
+Subscription billing instead lists every canonical model advertised to the
+authenticated OpenAI, Google, or Claude account in one **Available from your
+subscription — newest first** group. Provider release timestamps take
+precedence; provider order and numeric model revisions provide deterministic
+fallbacks, so revision
+`3.10` sorts ahead of `3.9`. Subscription mode has no **Other model** escape
+hatch: preview and run submission reject model identifiers absent from the
+current authenticated catalog.
+
+Google's subscription catalog includes internal effort-qualified and agent
+aliases. MUDIDI collapses `-low`, `-medium`, and `-high` variants into one
+logical model with only the available reasoning levels. Fixed `(High)` agent
+aliases expose only **High**. When Google declares several compatibility keys
+with the same available canonical `tagDescription`, MUDIDI shows that canonical
+model once. Distinct native IDs without a canonical tag remain selectable and
+include the native ID for disambiguation.
+
+API-key and custom-provider modes retain **Other model** for manual LiteLLM
+identifiers. MUDIDI adds the direct-provider prefix when required. The optional
+**OpenRouter Provider** slug pins an endpoint preference, while blank uses
+automatic routing. Existing API-key selections that disappear from a later
+provider response remain available as an explicitly labeled current selection.
+
+Reasoning choices are model-specific and use the portable order **Minimal**,
+**Low**, **Medium**, **High**, **Xhigh**, and **Max**. Known models expose only
+their reviewed or provider-advertised subset. Unknown manual/API-key models
+expose all six choices. Legacy `none` values resolve to the known model's lowest
+effort, or `low` for an unknown model, rather than disabling reasoning.
 
 
 ## Complete-digitization workflow
@@ -406,11 +433,27 @@ saved preset.
 
 ## Credentials and local data
 
-On the **Model** step, the selected run-level provider appears in a prominent
-credential card with its saved status, a masked input, a reveal button, and
-**Save key**. The other provider cards are inside the **Manage keys**
-disclosure. Selecting a different provider moves that provider's card into the
-selected position without duplicating the card or its field.
+On the **Model** step, API-key billing displays only the selected run-level
+provider's credential card, with its saved status, masked input, reveal button,
+and **Save key**. Selecting another model provider swaps the visible card
+without changing or deleting any stored credentials. Subscription billing hides
+the API credential fieldset and displays only the selected subscription
+provider's account card; switching back restores the matching API card.
+
+Google subscription login additionally requires a deployment-owned desktop
+OAuth registration:
+
+```text
+MUDIDI_GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
+# GOOGLE_CLOUD_PROJECT=your-project-id
+```
+
+The client ID is required. Set the client secret when the registration issues
+one; `GOOGLE_CLOUD_PROJECT` is optional for accounts that require an explicit
+Cloud Code Assist project. Keep these values in `.env` or the parent process
+environment, not in source files or run YAML. Subscription workers inherit only
+the public client ID, never the client secret or project override.
 
 The **API credentials** section accepts Gemini, OpenAI, Anthropic, and OpenRouter
 keys. Click **Save key** to persist an entered value. Inputs are masked by

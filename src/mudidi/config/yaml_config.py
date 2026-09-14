@@ -2,7 +2,7 @@
 
 The models in this module are the public configuration boundary. Runtime
 credentials deliberately remain outside these models and are loaded from the
-environment by the LLM client.
+separate local subscription store by the selected backend.
 """
 
 from __future__ import annotations
@@ -21,7 +21,14 @@ from pydantic import (
     model_validator,
 )
 
+from mudidi.llm.reasoning import ReasoningChoice as ReasoningEffort
 from mudidi.cli.model_args import DEFAULT_MODEL
+from mudidi.llm.subscriptions import (
+    AuthMode,
+    SubscriptionProvider,
+    qualify_subscription_model,
+    subscription_provider_for_model,
+)
 from mudidi.config.run_config import (
     RunStage,
     runs_stage1,
@@ -39,7 +46,6 @@ ConfigKind = Literal[
     "stage1_evaluation",
     "stage2_evaluation",
 ]
-ReasoningEffort = Literal["none", "low", "medium", "high"]
 
 _PATH_KEYS = {
     "pages",
@@ -105,14 +111,10 @@ def _readable_instruction_guide(
     suffix = path.suffix.lower()
     allowed = {".txt", ".md", ".docx", ".pdf"}
     if suffix not in allowed:
-        raise ValueError(
-            f"{label} must use one of: .txt, .md, .docx, .pdf"
-        )
+        raise ValueError(f"{label} must use one of: .txt, .md, .docx, .pdf")
     if suffix == ".pdf":
         if strategy in {"vlm_ocr", "mathpix_ocr"}:
-            raise ValueError(
-                f"{label} PDF guides are not supported by {strategy}"
-            )
+            raise ValueError(f"{label} PDF guides are not supported by {strategy}")
         if path.stat().st_size == 0:
             raise ValueError(f"{label} PDF is empty")
         try:
@@ -121,9 +123,7 @@ def _readable_instruction_guide(
         except OSError as exc:
             raise ValueError(f"{label} PDF is not readable: {exc}") from exc
         if signature != b"%PDF-":
-            raise ValueError(
-                f"{label} PDF has an invalid signature; expected %PDF-"
-            )
+            raise ValueError(f"{label} PDF has an invalid signature; expected %PDF-")
         import pymupdf
 
         try:
@@ -142,19 +142,18 @@ def _readable_instruction_guide(
         invalid = next((page for page in selected if page > page_count), None)
         if invalid is not None:
             raise ValueError(
-                f"invalid {label}_pages: page {invalid} is outside PDF "
-                f"(1-{page_count})"
+                f"invalid {label}_pages: page {invalid} is outside PDF (1-{page_count})"
             )
         return
     if page_spec is not None:
         pages_label = label.removesuffix("guides") + "guides_pages"
         raise ValueError(f"{pages_label} requires a PDF guide")
     from mudidi.instructions import read_instruction_text
+
     try:
         read_instruction_text(path)
     except Exception as exc:
         raise ValueError(f"{label} text is invalid: {exc}") from exc
-
 
 
 class _StrictModel(BaseModel):
@@ -214,6 +213,7 @@ class PipelineConfig(_StrictModel):
         if not value.strip():
             return None
         return _normalize_guide_page_spec(value)
+
     @model_validator(mode="after")
     def validate_strategy_stage(self) -> PipelineConfig:
         if self.strategy == "vlm_ocr" and self.stage != "1":
@@ -244,8 +244,7 @@ class PipelineConfig(_StrictModel):
         scope_matches = {
             "pass1": runs_stage2_pass1(self.stage),
             "pass2": runs_stage2_pass2(self.stage),
-            "both": runs_stage2_pass1(self.stage)
-            or runs_stage2_pass2(self.stage),
+            "both": runs_stage2_pass1(self.stage) or runs_stage2_pass2(self.stage),
         }
         if not scope_matches[self.stage2_guides_scope]:
             raise ValueError(
@@ -269,10 +268,9 @@ class ModelsConfig(_StrictModel):
         pattern=r"^(auto|[a-z0-9][a-z0-9._/-]*)$",
     )
     stage1_reasoning: ReasoningEffort = "low"
-    stage2_reasoning: Literal["low", "medium", "high"] = "low"
-    stage2_pass1_reasoning: Literal["low", "medium", "high"] | None = None
-    stage2_pass2_reasoning: Literal["low", "medium", "high"] | None = None
-    temperature: float = Field(default=0.1, ge=0.0)
+    stage2_reasoning: ReasoningEffort = "low"
+    stage2_pass1_reasoning: ReasoningEffort | None = None
+    stage2_pass2_reasoning: ReasoningEffort | None = None
 
 
 class AgenticConfig(_StrictModel):
@@ -341,10 +339,38 @@ class MathpixConfig(_StrictModel):
     request_timeout_seconds: float = Field(default=60.0, gt=0)
 
 
+class AuthConfig(_StrictModel):
+    """Explicit authentication selection for extraction runs.
+
+    Credentials remain outside configuration. Subscription provider names
+    identify the encrypted local backends required by active model routes.
+    """
+
+    mode: AuthMode = AuthMode.API_KEY
+    providers: tuple[SubscriptionProvider, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_subscription_providers(self) -> AuthConfig:
+        ordered = tuple(sorted(set(self.providers), key=lambda item: item.value))
+        object.__setattr__(self, "providers", ordered)
+        if self.mode is AuthMode.SUBSCRIPTION and not ordered:
+            raise ValueError(
+                "auth.providers is required when auth.mode is 'subscription'; "
+                "supported providers are openai, google, and claude"
+            )
+        if self.mode is AuthMode.API_KEY and ordered:
+            raise ValueError(
+                "auth.providers requires auth.mode: 'subscription'; "
+                "API-key runs do not select subscription providers"
+            )
+        return self
+
+
 class _ExtractionConfig(_StrictModel):
     version: Literal[1] = 1
     input: InputConfig
     output: OutputConfig
+    auth: AuthConfig = Field(default_factory=AuthConfig)
     pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
     models: ModelsConfig = Field(default_factory=ModelsConfig)
     agentic: AgenticConfig = Field(default_factory=AgenticConfig)
@@ -359,6 +385,90 @@ class _ExtractionConfig(_StrictModel):
             raise ValueError("vlm.model is required for strategy: vlm_ocr")
         if self.pipeline.strategy != "vlm_ocr" and self.vlm.model is not None:
             raise ValueError("vlm.model is only valid for strategy: vlm_ocr")
+        return self
+
+    @model_validator(mode="after")
+    def validate_subscription_model_selection(self) -> _ExtractionConfig:
+        """Normalize active subscription models and validate provider routes."""
+
+        if self.auth.mode is not AuthMode.SUBSCRIPTION:
+            return self
+        configured = set(self.auth.providers)
+        single_provider = (
+            self.auth.providers[0] if len(self.auth.providers) == 1 else None
+        )
+        if "default" not in self.models.model_fields_set:
+            if single_provider is None:
+                raise ValueError(
+                    "models.default must be provider-qualified for "
+                    "multi-provider subscription runs"
+                )
+            object.__setattr__(
+                self.models,
+                "default",
+                qualify_subscription_model(single_provider),
+            )
+
+        required: set[SubscriptionProvider] = set()
+
+        def normalize(label: str, model: str | None) -> str | None:
+            if model is None:
+                return None
+            selected = model.strip()
+            if "/" not in selected:
+                if single_provider is None:
+                    raise ValueError(
+                        f"{label} must include a provider prefix for a "
+                        "multi-provider subscription run"
+                    )
+                selected = qualify_subscription_model(single_provider, selected)
+            try:
+                provider = subscription_provider_for_model(selected)
+            except ValueError as exc:
+                raise ValueError(f"{label}: {exc}") from exc
+            if provider not in configured:
+                raise ValueError(
+                    f"{label} requires subscription provider {provider.value!r}"
+                )
+            required.add(provider)
+            return selected
+
+        object.__setattr__(
+            self.models,
+            "default",
+            normalize("models.default", self.models.default),
+        )
+        active_model_fields = (
+            ("stage1", runs_stage1(self.pipeline.stage)),
+            ("stage2_pass1", runs_stage2_pass1(self.pipeline.stage)),
+            ("stage2_pass2", runs_stage2_pass2(self.pipeline.stage)),
+        )
+        for field_name, active in active_model_fields:
+            if not active:
+                continue
+            model_name = getattr(self.models, field_name)
+            if model_name is not None:
+                object.__setattr__(
+                    self.models,
+                    field_name,
+                    normalize(f"models.{field_name}", model_name),
+                )
+        if self.agentic.stage1 or self.agentic.stage2:
+            for field_name in ("evaluator_model", "rewriter_model"):
+                model_name = getattr(self.agentic, field_name)
+                if model_name is not None:
+                    object.__setattr__(
+                        self.agentic,
+                        field_name,
+                        normalize(f"agentic.{field_name}", model_name),
+                    )
+        if required != configured:
+            unused = ", ".join(
+                provider.value for provider in sorted(configured - required)
+            )
+            raise ValueError(
+                f"auth.providers contains providers unused by active models: {unused}"
+            )
         return self
 
 
@@ -410,6 +520,10 @@ class BenchmarkRunConfig(_ExtractionConfig):
 
     @model_validator(mode="after")
     def require_benchmark_input(self) -> BenchmarkRunConfig:
+        if self.auth.mode is AuthMode.SUBSCRIPTION:
+            raise ValueError(
+                "benchmark configurations support auth.mode: 'api_key' only"
+            )
         if not any((self.input.dataset_dir, self.input.samples_dir, self.input.pages)):
             raise ValueError(
                 "benchmark_run requires input.dataset_dir, input.samples_dir, or input.pages"
@@ -464,13 +578,17 @@ class _EvaluationConfig(_StrictModel):
     @model_validator(mode="after")
     def require_input_pair_or_batch(self) -> _EvaluationConfig:
         has_pair = self.input.predicted is not None and self.input.gold is not None
-        has_batch = self.input.dataset_dir is not None and self.input.pred_root is not None
+        has_batch = (
+            self.input.dataset_dir is not None and self.input.pred_root is not None
+        )
         if has_pair == has_batch:
             raise ValueError(
                 "evaluation requires either predicted+gold or dataset_dir+pred_root"
             )
         pair_partial = (self.input.predicted is None) != (self.input.gold is None)
-        batch_partial = (self.input.dataset_dir is None) != (self.input.pred_root is None)
+        batch_partial = (self.input.dataset_dir is None) != (
+            self.input.pred_root is None
+        )
         if pair_partial or batch_partial:
             raise ValueError("evaluation input pairs must be supplied together")
         return self
@@ -508,9 +626,9 @@ class BenchmarkSweepConfig(_StrictModel):
     axes: dict[str, list[SweepChoice]] | None = None
     experiments: list[SweepChoice] | None = None
     experiment_name: str | None = None
-    name_field: Literal[
-        "runtime.experiment_name", "runtime.stage2_experiment_name"
-    ] = "runtime.experiment_name"
+    name_field: Literal["runtime.experiment_name", "runtime.stage2_experiment_name"] = (
+        "runtime.experiment_name"
+    )
     exclude: list[dict[str, str]] = Field(default_factory=list)
     sweep: SweepOptions = Field(default_factory=SweepOptions)
     source_config: Path | None = Field(default=None, exclude=True)
@@ -518,7 +636,9 @@ class BenchmarkSweepConfig(_StrictModel):
     @model_validator(mode="after")
     def validate_definition(self) -> BenchmarkSweepConfig:
         if (self.axes is None) == (self.experiments is None):
-            raise ValueError("benchmark_sweep requires exactly one of axes or experiments")
+            raise ValueError(
+                "benchmark_sweep requires exactly one of axes or experiments"
+            )
         if self.axes is not None:
             if not self.axes:
                 raise ValueError("benchmark_sweep axes cannot be empty")

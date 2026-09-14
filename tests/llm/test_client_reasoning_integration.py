@@ -19,7 +19,8 @@ import os
 
 import pytest
 
-from mudidi.llm.client import _direct_supports_reasoning_effort, complete
+from mudidi.llm.client import complete
+from mudidi.llm.reasoning import resolve_reasoning_profile
 
 _INTEGRATION_ENABLED = os.getenv("MUDIDI_LLM_INTEGRATION", "").lower() in (
     "1",
@@ -58,8 +59,8 @@ def _require_integration_gate() -> None:
 def test_direct_openai_reasoning_effort_live() -> None:
     """Stage-2-style low effort on a direct OpenAI reasoning model."""
     model = _openai_model()
-    assert _direct_supports_reasoning_effort(model), (
-        f"{model!r} is not configured for direct reasoning_effort in client.py"
+    assert resolve_reasoning_profile("openai", model).efforts, (
+        f"{model!r} has no configured direct reasoning profile"
     )
 
     text = complete(
@@ -84,7 +85,7 @@ def test_direct_openai_reasoning_effort_live() -> None:
 def test_direct_openai_reasoning_none_live() -> None:
     """Stage-1-style none effort on a direct OpenAI reasoning model."""
     model = _openai_model()
-    assert _direct_supports_reasoning_effort(model)
+    assert resolve_reasoning_profile("openai", model).efforts
 
     text = complete(
         model=model,
@@ -116,8 +117,8 @@ def test_direct_anthropic_reasoning_effort_live() -> None:
     """Stage-2-style low effort on a direct Anthropic reasoning model."""
     model = _anthropic_model()
     assert model is not None
-    assert _direct_supports_reasoning_effort(model), (
-        f"{model!r} is not configured for direct reasoning_effort in client.py"
+    assert resolve_reasoning_profile("anthropic", model).efforts, (
+        f"{model!r} has no configured direct reasoning profile"
     )
 
     text = complete(

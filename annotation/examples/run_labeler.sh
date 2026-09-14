@@ -25,7 +25,6 @@ LABELER_MODE="llm"
 MODEL="gemini/gemini-3.1-pro-preview"
 REASONING_EFFORT="high"
 DRIFT_GATE=0.02
-TEMPERATURE=0.2
 BATCH_SIZE=5
 STAGE="all"
 
@@ -49,7 +48,6 @@ PAGES=(
 script_args=( --dictionaries-root "$INPUT_DIR" --output-root "$OUTPUT_ROOT" )
 llm_args=( --dictionaries-root "$INPUT_DIR" --output-root "$OUTPUT_ROOT"
            --model "$MODEL" --reasoning-effort "$REASONING_EFFORT"
-           --temperature "$TEMPERATURE" --max-drift "$DRIFT_GATE"
            --batch-size "$BATCH_SIZE" --stage "$STAGE" )
 [ "$OVERWRITE" = "1" ] && script_args+=( --overwrite ) && llm_args+=( --overwrite )
 if [ "${#RULES[@]}" -gt 0 ]; then

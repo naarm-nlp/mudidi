@@ -207,6 +207,27 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .credential-card .input-row input { min-width: 0; }
 .credential-entry > small { display: block; margin-top: 10px; }
 .credential-delete { min-height: 42px; margin-top: 8px; padding: 6px 9px; border: var(--divider-width) solid var(--color-danger); color: var(--color-ink); background: var(--color-danger-soft); font-size: 11px; font-weight: 800; cursor: pointer; }
+.subscription-auth-controls { align-items: start; }
+.subscription-auth-controls[hidden] { display: none; }
+.subscription-auth-hint { align-self: end; margin: 24px 0 8px; color: var(--color-muted); font-size: 12px; }
+.subscription-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.subscription-card { min-width: 0; padding: 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-panel); }
+.subscription-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.subscription-card-heading h3 { margin: 0; font-size: 14px; }
+.subscription-state { color: var(--color-muted); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.subscription-metadata { margin: 14px 0 0; }
+.subscription-metadata div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: var(--divider-width) solid var(--color-line); font-size: 11px; }
+.subscription-metadata dt { color: var(--color-muted); font-weight: 800; text-transform: uppercase; }
+.subscription-metadata dd { margin: 0; color: var(--color-ink); font-family: var(--font-mono); overflow-wrap: anywhere; text-align: right; }
+.subscription-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.subscription-card-actions button { min-height: 40px; padding: 8px 10px; font-size: 11px; font-weight: 800; cursor: pointer; }
+.subscription-card-actions .subscription-logout { border: var(--border-width) solid var(--color-line); color: var(--color-ink); background: var(--color-panel); }
+.subscription-card-actions button:disabled { cursor: not-allowed; opacity: .5; }
+.subscription-action-status { display: block; min-height: 18px; margin-top: 8px; color: var(--color-muted); font-size: 11px; }
+.model-catalog-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 16px 0 0; padding: 12px 14px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.model-catalog-toolbar button { min-height: 40px; padding: 8px 12px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-ink); background: var(--color-panel); font-size: 11px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
+.model-catalog-toolbar [data-model-status] { flex: 1 1 260px; min-width: 0; color: var(--color-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.form-grid select optgroup { color: var(--color-ink); background: var(--color-panel); font-weight: 800; }
 .stage1-settings { grid-column: 1 / -1; min-width: 0; padding: 16px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
 .stage-settings-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .stage-settings-heading h3 { margin: 0; font-size: 16px; }
@@ -359,7 +380,11 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .page-heading { margin: 28px 0; }
 .page-heading p { color: var(--color-muted); }
 .notice { margin-bottom: 18px; padding: 12px 15px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-accent-soft); font-family: var(--font-mono); font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.preset-save-notification { position: fixed; z-index: 40; top: 24px; right: 24px; display: grid; gap: 3px; width: min(360px, calc(100vw - 32px)); padding: 15px 18px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-md); color: var(--color-ink); background: var(--color-success-soft); font-family: var(--font-mono); text-transform: uppercase; }
+.preset-save-notification strong { font-size: 14px; letter-spacing: .06em; }
+.preset-save-notification span { font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 .status-pill { padding: 5px 8px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.history-table .status-pill { display: inline-block; max-width: 100%; overflow-wrap: normal; word-break: normal; line-height: 1.35; }
 .status-pill.ready { color: var(--color-ink); background: var(--color-success-soft); }
 .history-list { padding: 8px 24px; }
 .history-actions { display: flex; justify-content: flex-end; align-items: center; gap: 13px; }
@@ -399,7 +424,32 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .pipeline-step-heading strong { min-width: 0; font-size: 16px; overflow-wrap: anywhere; }
 .pipeline-state { flex: none; padding: 4px 8px; border: var(--divider-width) solid var(--color-line); color: var(--color-ink); background: var(--color-warning-soft); font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 .pipeline-step.completed .pipeline-state { color: var(--color-ink); background: var(--color-success-soft); }
-.pipeline-step.running .pipeline-state { color: var(--color-on-accent); background: var(--color-accent); }
+.pipeline-step.running .pipeline-state {
+  position: relative;
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+}
+.pipeline-step.running .pipeline-state::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, currentColor 1px, transparent 1.5px) 0 0 / 8px 3px repeat-x,
+    radial-gradient(circle, currentColor 1px, transparent 1.5px) 100% 0 / 3px 8px repeat-y,
+    radial-gradient(circle, currentColor 1px, transparent 1.5px) 100% 100% / 8px 3px repeat-x,
+    radial-gradient(circle, currentColor 1px, transparent 1.5px) 0 100% / 3px 8px repeat-y;
+  animation: pipeline-state-march .8s linear infinite;
+}
+@keyframes pipeline-state-march {
+  to {
+    background-position:
+      8px 0,
+      100% 8px,
+      calc(100% - 8px) 100%,
+      0 calc(100% - 8px);
+  }
+}
 .pipeline-step.pending .pipeline-step-heading strong { color: var(--color-muted); }
 .pipeline-step-content p { margin: 7px 0 0; color: var(--color-muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .pipeline-action { display: inline-block; max-width: 100%; margin-top: 14px; padding: 9px 13px; border: var(--border-width) solid var(--color-line); box-shadow: var(--shadow-sm); color: var(--color-on-accent); background: var(--color-accent); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; text-decoration: none; overflow-wrap: anywhere; }
@@ -610,6 +660,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 }
 @media (max-width: 1180px) {
   .credential-grid { grid-template-columns: 1fr; }
+  .subscription-grid { grid-template-columns: 1fr; }
 }
 
 

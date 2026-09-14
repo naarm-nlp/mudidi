@@ -1,7 +1,7 @@
 {% extends "_layout.html" %}
 {% block title %}{{ run.run_id }} · MUDIDI{% endblock %}
 {% block head_meta %}{% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endif %}{% endblock %}
-{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-15" defer></script>{% endblock %}
 {% block main %}
     <div class="page-shell">
       <div class="providers-page run-overview">
@@ -14,6 +14,12 @@
         <h1 class="run-id">{{ run.run_id }}</h1>
         <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}{% endif %}</p>
       </header>
+      {% if run.billing_mode %}
+      <div class="checkpoint run-billing-metadata">
+        <strong>{{ run.billing_label }}</strong>
+        <span>Authentication: {{ run.auth_mode }}{% if run.auth_providers and run.auth_providers != 'None' %} · Providers: {{ run.auth_providers }}{% endif %}</span>
+      </div>
+      {% endif %}
       <div class="content-grid run-overview-grid">
         <section class="panel review-card run-progress-card">
           <div class="progress-heading">
@@ -60,7 +66,7 @@
           <form method="post" action="/runs/{{ run.run_id }}/cancel"><button class="danger" type="submit">Cancel run</button></form>
           {% endif %}
           {% if run.resume_available %}
-          <form method="post" action="/runs/{{ run.run_id }}/resume"><button class="primary" type="submit">Resume run</button></form>
+          <form method="post" action="/runs/{{ run.run_id }}/resume"><button class="primary" type="submit">{{ run.resume_label }}</button></form>
           {% endif %}
           {% if run.delete_available %}
           <form method="post" action="/runs/{{ run.run_id }}/delete" data-confirm-delete><button class="danger" type="submit">Delete local run record</button></form>
