@@ -714,6 +714,31 @@ def test_subscription_login_launch_requires_unexpired_pending_transaction(
         assert "refresh-secret" not in response.text
 
 
+def test_google_login_reports_missing_oauth_configuration(
+    tmp_path: Path,
+) -> None:
+    backend = _LoginErrorBackend(
+        SubscriptionProvider.GOOGLE,
+        SubscriptionAuthError(
+            "Google OAuth is not configured",
+            provider=SubscriptionProvider.GOOGLE,
+            metadata={"reason": "oauth_client_configuration_missing"},
+        ),
+    )
+    response = TestClient(
+        _app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend})
+    ).post("/subscriptions/google/login")
+
+    assert response.status_code == 409
+    assert response.json()["category"] == "authentication"
+    assert (
+        response.json()["message"]
+        == "Google OAuth is not configured; set "
+        "MUDIDI_GOOGLE_OAUTH_CLIENT_ID and restart MUDIDI"
+    )
+    assert "client_secret" not in response.text
+
+
 def test_claude_login_reports_provider_policy_errors_without_secrets(
     tmp_path: Path,
 ) -> None:
