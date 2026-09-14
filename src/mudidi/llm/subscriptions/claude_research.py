@@ -163,6 +163,7 @@ _THINKING_BUDGETS = {
 _TEXT_BLOCK_TYPES = frozenset({None, "text", "input_text", "output_text"})
 _IMAGE_BLOCK_TYPES = frozenset({"image", "image_url", "input_image"})
 _IMAGE_MIME_TYPES = frozenset({"image/jpeg", "image/png", "image/gif", "image/webp"})
+_PDF_MIME_TYPE = "application/pdf"
 _SUPPORTED_SCHEMA_KEYWORDS = frozenset(
     {
         "type",
@@ -871,6 +872,110 @@ def _image_block(part: Mapping[str, Any]) -> dict[str, Any]:
     return {"type": "image", "source": {"type": "url", "url": remote}}
 
 
+def _document_block(part: Mapping[str, Any]) -> dict[str, Any]:
+    file_value = part.get("file")
+    if not isinstance(file_value, Mapping):
+        raise _error(
+            SubscriptionUnsupportedRequest,
+            "Claude file input is malformed",
+            reason="file_input_unsupported",
+        )
+
+    mime_values = [
+        value
+        for mapping in (part, file_value)
+        for key in ("format", "mime_type", "mimeType", "media_type")
+        if (value := mapping.get(key)) is not None
+    ]
+    if not mime_values or any(
+        not isinstance(value, str)
+        or value.strip().lower() != _PDF_MIME_TYPE
+        for value in mime_values
+    ):
+        raise _error(
+            SubscriptionUnsupportedRequest,
+            "Claude file input must be an application/pdf document",
+            reason="file_input_unsupported",
+        )
+
+    sources = [
+        (key, file_value[key])
+        for key in ("file_data", "file_id", "file_url")
+        if key in file_value
+    ]
+    if len(sources) != 1:
+        raise _error(
+            SubscriptionUnsupportedRequest,
+            "Claude file input must contain exactly one data source",
+            reason="file_input_unsupported",
+        )
+    source_kind, source_value = sources[0]
+
+    if source_kind == "file_data":
+        if not isinstance(source_value, str):
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Claude PDF data URI is malformed",
+                reason="file_input_unsupported",
+            )
+        header, separator, encoded = source_value.partition(",")
+        parameters = header[5:].split(";") if header.lower().startswith("data:") else []
+        if (
+            not separator
+            or len(parameters) != 2
+            or parameters[0].lower() != _PDF_MIME_TYPE
+            or parameters[1].lower() != "base64"
+            or not encoded
+        ):
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Claude PDF data URI is malformed",
+                reason="file_input_unsupported",
+            )
+        try:
+            base64.b64decode(encoded.encode("ascii"), validate=True)
+        except (ValueError, UnicodeError):
+            raise _error(
+                SubscriptionUnsupportedRequest,
+                "Claude PDF data URI is malformed",
+                reason="file_input_unsupported",
+            ) from None
+        return {
+            "type": "document",
+            "source": {
+                "type": "base64",
+                "media_type": _PDF_MIME_TYPE,
+                "data": encoded,
+            },
+        }
+
+    remote = _is_https_image_url(source_value)
+    if remote is not None:
+        return {
+            "type": "document",
+            "source": {"type": "url", "url": remote},
+        }
+    selected_reference = _safe_string(source_value, maximum=_MAX_IDENTIFIER_LENGTH)
+    if (
+        source_kind == "file_id"
+        and selected_reference is not None
+        and selected_reference.startswith(("file-", "file_"))
+        and all(
+            character.isalnum() or character in "-_"
+            for character in selected_reference
+        )
+    ):
+        return {
+            "type": "document",
+            "source": {"type": "file", "file_id": selected_reference},
+        }
+    raise _error(
+        SubscriptionUnsupportedRequest,
+        "Claude file reference is unsupported",
+        reason="file_input_unsupported",
+    )
+
+
 def _content_blocks(content: Any) -> list[dict[str, Any]]:
     if isinstance(content, str):
         if not content:
@@ -900,6 +1005,9 @@ def _content_blocks(content: Any) -> list[dict[str, Any]]:
                 reason="unsupported_message_content",
             )
         kind = part.get("type")
+        if kind == "file":
+            blocks.append(_document_block(part))
+            continue
         if kind in _IMAGE_BLOCK_TYPES or "image_url" in part or "source" in part:
             if kind not in _IMAGE_BLOCK_TYPES and "source" not in part:
                 raise _error(

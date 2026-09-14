@@ -1040,6 +1040,117 @@ def test_codex_translates_multimodal_image_content_for_responses() -> None:
     ]
 
 
+def test_codex_translates_inline_pdf_file_content_for_responses() -> None:
+    backend = OpenAICodexBackend(store=_Store(_credential()))
+    data_uri = "data:application/pdf;base64,JVBERi0xLjc="
+    request = CompletionRequest(
+        model="gpt-6-astra",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Read this manual"},
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_data": data_uri,
+                            "format": "application/pdf",
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    body = backend._build_request_body(request, structured=False)
+
+    assert body["input"][0]["content"] == [
+        {"type": "input_text", "text": "Read this manual"},
+        {
+            "type": "input_file",
+            "filename": "document.pdf",
+            "file_data": data_uri,
+        },
+    ]
+
+
+def test_codex_translates_remote_pdf_file_content_for_responses() -> None:
+    backend = OpenAICodexBackend(store=_Store(_credential()))
+    url = "https://example.test/toolbox.pdf"
+    request = CompletionRequest(
+        model="gpt-6-astra",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_id": url,
+                            "format": "application/pdf",
+                        },
+                    }
+                ],
+            }
+        ],
+    )
+
+    body = backend._build_request_body(request, structured=False)
+
+    assert body["input"][0]["content"] == [
+        {"type": "input_file", "file_url": url},
+    ]
+
+
+@pytest.mark.parametrize(
+    "file_part",
+    [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,%%%not-base64%%%",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:text/plain;base64,dGV4dA==",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_id": "http://example.test/toolbox.pdf",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0xLjc=",
+                "file_id": "https://example.test/toolbox.pdf",
+                "format": "application/pdf",
+            },
+        },
+    ],
+)
+def test_codex_rejects_malformed_pdf_file_content(
+    file_part: dict[str, Any],
+) -> None:
+    backend = OpenAICodexBackend(store=_Store(_credential()))
+    request = CompletionRequest(
+        model="gpt-6-astra",
+        messages=[{"role": "user", "content": [file_part]}],
+    )
+
+    with pytest.raises(SubscriptionUnsupportedRequest) as raised:
+        backend._build_request_body(request, structured=False)
+
+    assert raised.value.metadata["reason"] == "file_input_unsupported"
+
+
 @pytest.mark.parametrize(
     "image_part",
     [

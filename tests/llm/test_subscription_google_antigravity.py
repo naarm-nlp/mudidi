@@ -1172,6 +1172,30 @@ def test_complete_translates_cloud_code_envelope_and_normalizes_sse_response() -
     assert result.billing_mode == "subscription"
 
 
+
+def test_antigravity_translates_inline_pdf_file_content_to_inline_data() -> None:
+    backend = GoogleAntigravityBackend(store=_Store(_credential()))
+    parts = backend._message_parts(
+        [
+            {
+                "type": "file",
+                "file": {
+                    "file_data": "data:application/pdf;base64,JVBERi0xLjc=",
+                    "format": "application/pdf",
+                },
+            }
+        ]
+    )
+
+    assert parts == [
+        {
+            "inlineData": {
+                "mimeType": "application/pdf",
+                "data": "JVBERi0xLjc=",
+            }
+        }
+    ]
+
 @pytest.mark.parametrize(
     "persisted_model",
     [

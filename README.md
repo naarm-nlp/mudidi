@@ -24,6 +24,8 @@ selection while preserving API-key billing as a separate mode.
   `models.temperature` field instead of failing during startup.
 - Keep subscription tokens in MUDIDI's encrypted local store and out of run
   configuration, browser storage, and subprocess arguments.
+- Translate Stage 2 Pass 1 and Pass 2 PDF attachments into each subscription
+  provider's native document format.
 
 ## What's new in 0.1.0
 
@@ -68,11 +70,12 @@ the existing API-key workflow.
 ### Provider support
 
 - **OpenAI:** Codex subscription authentication, account model discovery,
-  structured output, image input, reasoning controls, and usage normalization.
-- **Google:** MUDIDI-owned OAuth, direct Cloud Code routing, canonical Gemini
-  aliases, effort routing, and project-aware requests.
+  structured output, image and PDF input, reasoning controls, and usage
+  normalization.
+- **Google:** MUDIDI-owned OAuth, direct Cloud Code routing, image and PDF input,
+  canonical Gemini aliases, effort routing, and project-aware requests.
 - **Claude:** OAuth-backed Messages requests, paginated model discovery, image
-  input, structured output, and adaptive or extended thinking.
+  and PDF input, structured output, and adaptive or extended thinking.
 
 Google subscription login uses Google Antigravity's installed-app OAuth
 registration by default. `MUDIDI_GOOGLE_OAUTH_CLIENT_ID` and
@@ -82,7 +85,7 @@ secret from the parent environment.
 
 The release was smoke-tested through web and CLI workflows with all three
 authenticated providers. The current repository verification suite passes
-**1,385 tests**, with 10 intentional skips, alongside strict MkDocs,
+**1,398 tests**, with 10 intentional skips, alongside strict MkDocs,
 generated-reference, Ruff, dependency-audit, Docker smoke, and main-branch CI
 checks.
 

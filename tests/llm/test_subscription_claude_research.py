@@ -653,6 +653,124 @@ def test_complete_translates_messages_images_thinking_and_usage() -> None:
     assert result.billing_mode == "subscription"
 
 
+
+def test_claude_translates_inline_pdf_file_content_to_document_block() -> None:
+    backend = ClaudeResearchBackend(store=_Store(_credential()))
+    request = CompletionRequest(
+        model="claude-sonnet-4-6",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Read this manual"},
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_data": (
+                                "data:application/pdf;base64,JVBERi0xLjc="
+                            ),
+                            "format": "application/pdf",
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    body = backend._build_request_body(request, structured=False)
+
+    assert body["messages"][0]["content"] == [
+        {"type": "text", "text": "Read this manual"},
+        {
+            "type": "document",
+            "source": {
+                "type": "base64",
+                "media_type": "application/pdf",
+                "data": "JVBERi0xLjc=",
+            },
+        },
+    ]
+
+
+def test_claude_translates_remote_pdf_file_content_to_document_block() -> None:
+    backend = ClaudeResearchBackend(store=_Store(_credential()))
+    url = "https://example.test/toolbox.pdf"
+    request = CompletionRequest(
+        model="claude-sonnet-4-6",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "file",
+                        "file": {
+                            "file_id": url,
+                            "format": "application/pdf",
+                        },
+                    }
+                ],
+            }
+        ],
+    )
+
+    body = backend._build_request_body(request, structured=False)
+
+    assert body["messages"][0]["content"] == [
+        {
+            "type": "document",
+            "source": {"type": "url", "url": url},
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "file_part",
+    [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,%%%not-base64%%%",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:text/plain;base64,dGV4dA==",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_id": "http://example.test/toolbox.pdf",
+                "format": "application/pdf",
+            },
+        },
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0xLjc=",
+                "file_id": "https://example.test/toolbox.pdf",
+                "format": "application/pdf",
+            },
+        },
+    ],
+)
+def test_claude_rejects_malformed_pdf_file_content(
+    file_part: dict[str, Any],
+) -> None:
+    backend = ClaudeResearchBackend(store=_Store(_credential()))
+    request = CompletionRequest(
+        model="claude-sonnet-4-6",
+        messages=[{"role": "user", "content": [file_part]}],
+    )
+
+    with pytest.raises(SubscriptionUnsupportedRequest) as raised:
+        backend._build_request_body(request, structured=False)
+
+    assert raised.value.metadata["reason"] == "file_input_unsupported"
+
 def test_complete_uses_stage_two_safe_default_timeout() -> None:
     observed_timeouts: list[float] = []
 
