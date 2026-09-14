@@ -5,13 +5,14 @@ Generated from the public argparse tree.
 ## `mudidi`
 
 ```text
-usage: mudidi [-h] {run,benchmark,config,web} ...
+usage: mudidi [-h] {run,auth,benchmark,config,web} ...
 
 Dictionary OCR and MDF extraction (inference and benchmark modes).
 
 positional arguments:
-  {run,benchmark,config,web}
+  {run,auth,benchmark,config,web}
     run                 Run production inference.
+    auth                Manage local subscription authentication.
     benchmark           Benchmark workflows.
     config              Configuration utilities.
     web                 Run the local production website.
@@ -23,7 +24,8 @@ options:
 ## `mudidi run`
 
 ```text
-usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
+usage: mudidi run [-h] [--config CONFIG] [--auth-mode {api_key,subscription}]
+                  [--auth-provider {openai,google,claude}] [--pages PAGES]
                   [--dict-pages DICT_PAGES] [--intro INTRO]
                   [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
                   [--ocr-text OCR_TEXT] [--toolbox-pdf TOOLBOX_PDF]
@@ -42,9 +44,9 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
                   [--agentic-max-iterations AGENTIC_MAX_ITERATIONS]
                   [--agentic-evaluator-model AGENTIC_EVALUATOR_MODEL]
                   [--agentic-rewriter-model AGENTIC_REWRITER_MODEL]
-                  [--agentic-reasoning {none,low,medium,high}]
-                  [--agentic-evaluator-reasoning {none,low,medium,high}]
-                  [--agentic-rewriter-reasoning {none,low,medium,high}]
+                  [--agentic-reasoning {none,minimal,low,medium,high,xhigh,max}]
+                  [--agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}]
+                  [--agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}]
                   [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
                   [--agentic-verifier-patches | --no-agentic-verifier-patches]
                   [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
@@ -52,6 +54,10 @@ usage: mudidi run [-h] [--config CONFIG] [--pages PAGES]
 options:
   -h, --help            show this help message and exit
   --config CONFIG
+  --auth-mode {api_key,subscription}
+  --auth-provider {openai,google,claude}, --provider {openai,google,claude}
+                        Subscription provider; requires --auth-mode
+                        subscription.
   --pages PAGES
   --dict-pages DICT_PAGES
   --intro INTRO
@@ -94,13 +100,13 @@ agentic verifier-rewriter options:
   --agentic-rewriter-model AGENTIC_REWRITER_MODEL
                         Model used for correction calls; defaults to the
                         current stage model.
-  --agentic-reasoning {none,low,medium,high}
+  --agentic-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Shared reasoning effort for verifier and rewriter
                         calls.
-  --agentic-evaluator-reasoning {none,low,medium,high}
+  --agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Verifier reasoning effort; overrides --agentic-
                         reasoning.
-  --agentic-rewriter-reasoning {none,low,medium,high}
+  --agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Rewriter reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
@@ -110,6 +116,72 @@ agentic verifier-rewriter options:
                         rewriting.
   --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
                         Require or waive localized evidence before retrying.
+```
+
+## `mudidi auth`
+
+```text
+usage: mudidi auth [-h] {status,login,logout} ...
+
+Manage credentials in MUDIDI's local encrypted subscription store. No API keys
+or tokens are accepted by these commands.
+
+positional arguments:
+  {status,login,logout}
+    status              Show safe status for one subscription provider.
+    login               Open one provider's subscription login in the browser.
+    logout              Delete one provider's local subscription credential.
+
+options:
+  -h, --help            show this help message and exit
+```
+
+## `mudidi auth status`
+
+```text
+usage: mudidi auth status [-h] [--provider {openai,google,claude}]
+                          [{openai,google,claude}]
+
+positional arguments:
+  {openai,google,claude}
+                        Subscription provider (openai, google, or claude).
+
+options:
+  -h, --help            show this help message and exit
+  --provider {openai,google,claude}
+                        Subscription provider (also accepted positionally).
+```
+
+## `mudidi auth login`
+
+```text
+usage: mudidi auth login [-h] [--provider {openai,google,claude}]
+                         [{openai,google,claude}]
+
+positional arguments:
+  {openai,google,claude}
+                        Subscription provider (openai, google, or claude).
+
+options:
+  -h, --help            show this help message and exit
+  --provider {openai,google,claude}
+                        Subscription provider (also accepted positionally).
+```
+
+## `mudidi auth logout`
+
+```text
+usage: mudidi auth logout [-h] [--provider {openai,google,claude}]
+                          [{openai,google,claude}]
+
+positional arguments:
+  {openai,google,claude}
+                        Subscription provider (openai, google, or claude).
+
+options:
+  -h, --help            show this help message and exit
+  --provider {openai,google,claude}
+                        Subscription provider (also accepted positionally).
 ```
 
 ## `mudidi benchmark`
@@ -130,10 +202,12 @@ options:
 ## `mudidi benchmark run`
 
 ```text
-usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
-                            [--dict-pages DICT_PAGES] [--intro INTRO]
-                            [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
-                            [--ocr-text OCR_TEXT]
+usage: mudidi benchmark run [-h] [--config CONFIG]
+                            [--auth-mode {api_key,subscription}]
+                            [--auth-provider {openai,google,claude}]
+                            [--pages PAGES] [--dict-pages DICT_PAGES]
+                            [--intro INTRO] [--intro-pages INTRO_PAGES]
+                            [--alphabet ALPHABET] [--ocr-text OCR_TEXT]
                             [--dictionary-languages DICTIONARY_LANGUAGES]
                             [--toolbox-pdf TOOLBOX_PDF]
                             [--stage-1-guides STAGE1_GUIDES_PATH]
@@ -152,9 +226,9 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
                             [--agentic-max-iterations AGENTIC_MAX_ITERATIONS]
                             [--agentic-evaluator-model AGENTIC_EVALUATOR_MODEL]
                             [--agentic-rewriter-model AGENTIC_REWRITER_MODEL]
-                            [--agentic-reasoning {none,low,medium,high}]
-                            [--agentic-evaluator-reasoning {none,low,medium,high}]
-                            [--agentic-rewriter-reasoning {none,low,medium,high}]
+                            [--agentic-reasoning {none,minimal,low,medium,high,xhigh,max}]
+                            [--agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}]
+                            [--agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}]
                             [--agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE]
                             [--agentic-verifier-patches | --no-agentic-verifier-patches]
                             [--agentic-concrete-retry-gate | --no-agentic-concrete-retry-gate]
@@ -166,6 +240,10 @@ usage: mudidi benchmark run [-h] [--config CONFIG] [--pages PAGES]
 options:
   -h, --help            show this help message and exit
   --config CONFIG
+  --auth-mode {api_key,subscription}
+  --auth-provider {openai,google,claude}, --provider {openai,google,claude}
+                        Subscription provider; requires --auth-mode
+                        subscription.
   --pages PAGES
   --dict-pages DICT_PAGES
   --intro INTRO
@@ -214,13 +292,13 @@ agentic verifier-rewriter options:
   --agentic-rewriter-model AGENTIC_REWRITER_MODEL
                         Model used for correction calls; defaults to the
                         current stage model.
-  --agentic-reasoning {none,low,medium,high}
+  --agentic-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Shared reasoning effort for verifier and rewriter
                         calls.
-  --agentic-evaluator-reasoning {none,low,medium,high}
+  --agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Verifier reasoning effort; overrides --agentic-
                         reasoning.
-  --agentic-rewriter-reasoning {none,low,medium,high}
+  --agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Rewriter reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE

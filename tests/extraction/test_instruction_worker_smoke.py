@@ -428,6 +428,7 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
 
     stage1_manifest_path = output / "stage-1" / "run_config.json"
     manifest = json.loads(stage1_manifest_path.read_text(encoding="utf-8"))
+    assert "temperature" not in manifest
     guide = manifest["stage1_guides"]
     assert guide["selected_pages"] == [2, 3]
     assert guide["source_path"] == str(instruction_pdf)
@@ -523,6 +524,10 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
     assert len(raster_files) == 2
     assert (output / "stage-1" / "page_1" / "page_1_stage1_flat.txt").is_file()
     assert (output / "stage-1" / "page_2" / "page_2_stage1_flat.txt").is_file()
+    resolved_config = json.loads(
+        (output / "resolved_config.json").read_text(encoding="utf-8")
+    )
+    assert "temperature" not in resolved_config["models"]
     assert (output / "resolved_config.json").is_file()
 
     stage1_page_expectations = (
@@ -658,7 +663,7 @@ def test_actual_worker_stage2_scope_and_split_model_media(
         for call in stage2_calls
         if call["model"] == "unknown/stage2-rewriter" and call["response_schema"] is None
     ]
-    assert len(stage1_generation_calls) == 3
+    assert len(stage1_generation_calls) == 2
     assert all(
         not any(
             part.get("text", "").startswith(
@@ -669,8 +674,6 @@ def test_actual_worker_stage2_scope_and_split_model_media(
         and not any(part.get("type") == "file" for part in _parts(call))
         for call in stage1_generation_calls
     )
-    stage1_page_generation_calls = stage1_generation_calls[-2:]
-    assert len(stage1_page_generation_calls) == 2
     assert len(pass2_generation) == 2
     assert len(evaluator_calls) == 4
     assert len(rewriter_calls) == 2
@@ -715,6 +718,7 @@ def test_actual_worker_stage2_scope_and_split_model_media(
     stage2_manifest = json.loads(
         (output / "stage-2" / "run_config.json").read_text(encoding="utf-8")
     )
+    assert "temperature" not in stage2_manifest
     stage2_guide = stage2_manifest["stage2_guides"]
     assert stage2_guide["source_path"] == str(instruction_pdf)
     assert stage2_guide["kind"] == "pdf"

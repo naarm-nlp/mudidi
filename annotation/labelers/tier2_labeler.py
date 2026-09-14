@@ -486,14 +486,12 @@ def _call_llm(
     model: str,
     reasoning_effort: str,
     max_tokens: int,
-    temperature: float,
 ) -> Tuple[str, Dict[str, Any]]:
     return complete_with_usage(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         reasoning_effort=reasoning_effort,
         max_tokens=max_tokens,
-        temperature=temperature,
     )
 
 
@@ -505,7 +503,6 @@ def run_legend_stage(
     model: str = DEFAULT_MODEL,
     reasoning_effort: str = DEFAULT_REASONING_EFFORT,
     max_tokens: int = DEFAULT_MAX_TOKENS,
-    temperature: float = 0.1,
 ) -> Tuple[Dict[str, str], str, Dict[str, Any]]:
     """Infer a language-code legend for one page. Returns ``(legend, raw_text, usage)``."""
     markup_tags = detect_markup_tags(raw_gold)
@@ -520,7 +517,6 @@ def run_legend_stage(
         model=model,
         reasoning_effort=reasoning_effort,
         max_tokens=max_tokens,
-        temperature=temperature,
     )
     legend, _block = parse_legend_output(text)
     if not legend:
@@ -539,7 +535,6 @@ def run_tagging_stage(
     model: str = DEFAULT_MODEL,
     reasoning_effort: str = DEFAULT_REASONING_EFFORT,
     max_tokens: int = DEFAULT_MAX_TOKENS,
-    temperature: float = 0.1,
     max_drift: float = 0.02,
 ) -> Tuple[PageLanguageMap, List[str], float, str, Dict[str, Any]]:
     """Tag one page with a fixed legend. Returns ``(page_map, used, drift, raw_text, usage)``."""
@@ -556,7 +551,6 @@ def run_tagging_stage(
         model=model,
         reasoning_effort=reasoning_effort,
         max_tokens=max_tokens,
-        temperature=temperature,
     )
     stripped = _strip_code_fence(text)
     marker = _TAGGED_MARKER.search(stripped)
@@ -586,7 +580,6 @@ def label_page(
     model: str = DEFAULT_MODEL,
     reasoning_effort: str = DEFAULT_REASONING_EFFORT,
     max_tokens: int = DEFAULT_MAX_TOKENS,
-    temperature: float = 0.1,
     max_drift: float = 0.02,
 ) -> Tuple[PageLanguageMap, List[str], float, Dict[str, Any]]:
     """Label one raw gold page via the LLM and deterministic recovery.
@@ -614,7 +607,6 @@ def label_page(
             model=model,
             reasoning_effort=reasoning_effort,
             max_tokens=max_tokens,
-            temperature=temperature,
             max_drift=max_drift,
         )
         return page_map, used, drift, usage
@@ -631,7 +623,6 @@ def label_page(
         model=model,
         reasoning_effort=reasoning_effort,
         max_tokens=max_tokens,
-        temperature=temperature,
     )
     code_to_language, tagged = parse_llm_output(text)
     code_to_language = apply_code_overrides(code_to_language, code_overrides or {})
@@ -653,7 +644,6 @@ def label_dictionary(
     model: str = DEFAULT_MODEL,
     reasoning_effort: str = DEFAULT_REASONING_EFFORT,
     max_tokens: int = DEFAULT_MAX_TOKENS,
-    temperature: float = 0.1,
     max_drift: float = 0.15,
     limit: Optional[int] = None,
     pages_only: Optional[Iterable[int]] = None,
@@ -720,7 +710,6 @@ def label_dictionary(
                 model=model,
                 reasoning_effort=reasoning_effort,
                 max_tokens=max_tokens,
-                temperature=temperature,
             )
             save_legend(dict_legend_path, legend, raw_text=raw_text)
         except Exception as exc:  # noqa: BLE001
@@ -768,7 +757,6 @@ def label_dictionary(
                     model=model,
                     reasoning_effort=reasoning_effort,
                     max_tokens=max_tokens,
-                    temperature=temperature,
                 )
                 save_legend(page_legend_path, legend, raw_text=raw_text)
             except Exception as exc:  # noqa: BLE001
@@ -809,7 +797,6 @@ def label_dictionary(
                     model=model,
                     reasoning_effort=reasoning_effort,
                     max_tokens=max_tokens,
-                    temperature=temperature,
                     max_drift=max_drift,
                 )
                 tagged_raw_path = _tagged_raw_path(gold_path, output_root)
@@ -848,7 +835,6 @@ def label_dictionary(
                 model=model,
                 reasoning_effort=reasoning_effort,
                 max_tokens=max_tokens,
-                temperature=temperature,
                 max_drift=max_drift,
             )
         except Exception as exc:  # noqa: BLE001
@@ -903,13 +889,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         choices=("none", "low", "medium", "high"),
     )
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.1,
-        help="Sampling temperature (default: 0.1). Ignored for Gemini 3+ "
-        "(locked to 1.0 by litellm) and GPT-5 family (locked to 1.0).",
-    )
     parser.add_argument(
         "--max-drift",
         type=float,
@@ -1049,7 +1028,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             model=args.model,
             reasoning_effort=args.reasoning_effort,
             max_tokens=args.max_tokens,
-            temperature=args.temperature,
             max_drift=args.max_drift,
             limit=args.limit,
             pages_only=args.pages,

@@ -30,6 +30,7 @@ markdown_extensions:
       base_path: .
 nav:
   - Home: index.md
+  - What's New: whats-new.md
   - Getting Started:
       - Installation: getting-started/installation.md
       - Quickstart: getting-started/quickstart.md
@@ -38,6 +39,7 @@ nav:
   - Production Inference:
       - Overview: production/index.md
       - Local web dashboard: production/local-web-app.md
+      - Claude subscription routing research: subscription-routing-research.md
   - Benchmarking & Evaluation:
       - Overview: benchmarking/index.md
       - Advanced VLM backends: benchmarking/vlm.md

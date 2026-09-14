@@ -301,7 +301,15 @@
                 <div><span class="eyebrow">Step 3 of 5</span><h2 id="wizard-model-title" tabindex="-1">Configure models</h2></div>
               </div>
               <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
-              <fieldset id="api-credentials" class="choice-group credential-entry">
+              <fieldset class="choice-group auth-entry" data-auth-entry>
+                <legend>Authentication and billing</legend>
+                <p>Select one billing mode for the run. Each stage and verification role can use its own authenticated provider.</p>
+                <div class="choice-card-grid" data-auth-mode-choices>
+                  <label class="choice-card"><input type="radio" name="auth_mode" value="api_key" checked data-auth-mode-choice><span><strong>API key billing</strong><small>Use the existing provider key controls below.</small></span></label>
+                  <label class="choice-card"><input type="radio" name="auth_mode" value="subscription" data-auth-mode-choice><span><strong>Subscription billing</strong><small>Use a locally authenticated OpenAI, Google, or Claude subscription.</small></span></label>
+                </div>
+              </fieldset>
+              <fieldset id="api-credentials" class="choice-group credential-entry" data-api-credential-entry>
                 <legend>API credentials</legend>
                 <p>Enter each provider key once and click <strong>Save key</strong>. Keys are encrypted in the local dashboard database and are never included in run configuration files.</p>
                 <div class="credential-grid">
@@ -321,22 +329,48 @@
                     </div>
                   {% endfor %}
                 </div>
+                <p data-custom-provider-note hidden>Custom providers use a model identifier entered manually below and do not require a saved built-in provider key.</p>
                 <small>Leave a field blank to keep its saved value. Use the eye button to reveal a saved key.</small>
               </fieldset>
+              <fieldset class="choice-group subscription-entry" data-subscription-entry hidden>
+                <legend>Subscription accounts</legend>
+                <p>OpenAI, Google Antigravity, and Claude use provider browser login. MUDIDI stores OAuth tokens only in its encrypted local subscription store.</p>
+                <div class="subscription-grid">
+                  {% for provider, label in [('openai', 'OpenAI'), ('google', 'Google'), ('claude', 'Claude')] %}
+                    {% set subscription = subscription_statuses[provider] %}
+                    <article class="subscription-card" data-subscription-card data-subscription-provider="{{ provider }}" data-subscription-authenticated="{{ 'true' if subscription.authenticated else 'false' }}" data-subscription-credential-present="{{ 'true' if subscription.credential_present else 'false' }}" data-subscription-removable="{{ 'true' if subscription.removable else 'false' }}" data-subscription-available="{{ 'true' if subscription.available else 'false' }}">
+                      <div class="subscription-card-heading"><h3>{{ label }} subscription</h3><span class="subscription-state" data-subscription-state>{{ 'Authenticated' if subscription.authenticated else 'Unavailable' if not subscription.available else 'Session expired' if subscription.credential_present else 'Log in required' }}</span></div>
+                      <dl class="subscription-metadata">
+                        <div><dt>Category</dt><dd data-subscription-category>{{ subscription.category }}</dd></div>
+                        <div><dt>Account</dt><dd data-subscription-account>{{ subscription.account_label or 'None' }}</dd></div>
+                        <div><dt>Expiry</dt><dd data-subscription-expiry>{{ subscription.expires_at or 'None' }}</dd></div>
+                      </dl>
+                      <div class="subscription-card-actions">
+                        <button type="button" class="primary subscription-login" data-subscription-login data-provider="{{ provider }}"{% if not subscription.available %} disabled{% endif %}>Log in</button>
+                        <button type="button" class="subscription-logout" data-subscription-logout data-provider="{{ provider }}"{% if not subscription.removable %} disabled{% endif %}>Log out</button>
+                      </div>
+                      <span class="subscription-action-status" data-subscription-action-status role="status" aria-live="polite"></span>
+                    </article>
+                  {% endfor %}
+                </div>
+              </fieldset>
+              <div class="model-catalog-toolbar" data-model-catalog-toolbar>
+                <button type="button" data-model-refresh>Refresh models</button>
+                <span data-model-status role="status" aria-live="polite">Authenticate a provider to load models</span>
+              </div>
               <div class="form-grid">
-                <input type="hidden" name="provider" value="gemini" data-provider-value required>
                 <label data-stage-control data-pipeline-stages="stage1">Stage 1 provider
-                  <select data-provider-choice aria-label="Stage 1 provider" required>
+                  <select name="stage1_provider" data-provider-choice data-provider-group="stage1" aria-label="Stage 1 provider" required>
                     <option value="anthropic">Anthropic</option>
                     <option value="openai">OpenAI</option>
                     <option value="gemini" selected>Google Gemini</option>
                     <option value="openrouter">OpenRouter</option>
                     <option value="custom">Other / advanced provider</option>
                   </select>
-                  {% if errors_by_field.provider %}<small class="field-error-message">{{ errors_by_field.provider }}</small>{% endif %}
+                  {% if errors_by_field.stage1_provider %}<small class="field-error-message">{{ errors_by_field.stage1_provider }}</small>{% endif %}
                 </label>
                 <label data-stage-control data-pipeline-stages="pass1 pass2">Stage 2 provider
-                  <select data-provider-choice aria-label="Stage 2 provider" required>
+                  <select name="stage2_provider" data-provider-choice data-provider-group="stage2" aria-label="Stage 2 provider" required>
                     <option value="anthropic">Anthropic</option>
                     <option value="openai">OpenAI</option>
                     <option value="gemini" selected>Google Gemini</option>
@@ -355,19 +389,21 @@
                   <div class="stage-settings-heading"><div><span class="eyebrow">Stage 1</span><h3>Model and reasoning</h3></div></div>
                   <div class="form-grid">
                 <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_model %} class="field-invalid" data-field-error="stage1_model"{% endif %}><span class="field-heading">Stage 1 model <button class="info-button" type="button" aria-label="About Stage 1 model" data-help="Stage 1 transcribes the selected dictionary pages into faithful flat text.">i</button></span>
-                  <select name="stage1_model" data-model-select required>
-                    {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
-                    <option value="__other__" data-model-provider="other">Other model…</option>
+                  <select name="stage1_model" data-model-select data-model-stage="stage1" required disabled>
+                    <option value="">Authenticate Anthropic to choose a model</option>
                   </select>
-                  <input name="stage1_custom_model" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                  <input name="stage1_custom_model" data-custom-model placeholder="Enter a model name" hidden disabled>
+                  <small data-model-auth-hint>Authenticate Anthropic to choose a model.</small>
                   {% if errors_by_field.stage1_model %}<small class="field-error-message">{{ errors_by_field.stage1_model }}</small>{% endif %}
                 </label>
-                <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_reasoning %} class="field-invalid" data-field-error="stage1_reasoning"{% endif %}><span class="field-heading">Stage 1 reasoning <button class="info-button" type="button" aria-label="About Stage 1 model reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
-                  <select name="stage1_reasoning" required>
-                    <option value="low">Low</option>
+                <label data-stage-control data-pipeline-stages="stage1"{% if errors_by_field.stage1_reasoning %} class="field-invalid" data-field-error="stage1_reasoning"{% endif %}><span class="field-heading">Stage 1 reasoning <button class="info-button" type="button" aria-label="About Stage 1 model reasoning" data-help="Controls reasoning effort for this model call only. The choices update to match the selected model.">i</button></span>
+                  <select name="stage1_reasoning" data-reasoning-select required disabled>
+                    <option value="minimal">Minimal</option>
+                    <option value="low" selected>Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
-                    <option value="none">None / lowest supported</option>
+                    <option value="xhigh">Extra high</option>
+                    <option value="max">Max</option>
                   </select>
                   {% if errors_by_field.stage1_reasoning %}<small class="field-error-message">{{ errors_by_field.stage1_reasoning }}</small>{% endif %}
                 </label>
@@ -385,29 +421,27 @@
                   ] %}
                     <div class="stage2-pass-card" data-stage2-pass="{{ pass_name }}"{% if pass_name == 'pass2' %} hidden{% endif %}>
                       <label data-stage-control data-pipeline-stages="{{ pass_name }}"{% if errors_by_field[field] %} class="field-invalid" data-field-error="{{ field }}"{% endif %}><span class="field-heading"><span data-stage2-model-label>{{ label }} model</span> <button class="info-button" type="button" aria-label="About {{ label }} model" data-help="{{ help_text }}">i</button></span>
-                        <select name="{{ field }}" data-model-select required>
-                          {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}"{% if model.model_id == 'gemini/gemini-3.5-flash' %} selected{% endif %}>{{ model.display_name }}</option>{% endfor %}
-                          <option value="__other__" data-model-provider="other">Other model…</option>
+                        <select name="{{ field }}" data-model-select data-model-stage="stage2" required disabled>
+                          <option value="">Authenticate Anthropic to choose a model</option>
                         </select>
-                        <input name="{{ custom_field }}" data-custom-model placeholder="e.g. qwen/qwen3-235b-a22b" hidden disabled>
+                        <input name="{{ custom_field }}" data-custom-model placeholder="Enter a model name" hidden disabled>
+                        <small data-model-auth-hint>Authenticate Anthropic to choose a model.</small>
                         {% if errors_by_field[field] %}<small class="field-error-message">{{ errors_by_field[field] }}</small>{% endif %}
                       </label>
-                      <label data-stage-control data-pipeline-stages="{{ pass_name }}"{% if errors_by_field[reasoning_field] %} class="field-invalid" data-field-error="{{ reasoning_field }}"{% endif %}><span class="field-heading"><span data-stage2-reasoning-label>{{ label }} reasoning</span> <button class="info-button" type="button" aria-label="About {{ label }} model reasoning" data-help="Controls reasoning effort for this model call only. None requests the lowest supported setting; models without configurable reasoning use their supported fallback.">i</button></span>
-                        <select name="{{ reasoning_field }}" required>
-                          <option value="low">Low</option>
+                      <label data-stage-control data-pipeline-stages="{{ pass_name }}"{% if errors_by_field[reasoning_field] %} class="field-invalid" data-field-error="{{ reasoning_field }}"{% endif %}><span class="field-heading"><span data-stage2-reasoning-label>{{ label }} reasoning</span> <button class="info-button" type="button" aria-label="About {{ label }} model reasoning" data-help="Controls reasoning effort for this model call only. The choices update to match the selected model.">i</button></span>
+                        <select name="{{ reasoning_field }}" data-reasoning-select required disabled>
+                          <option value="minimal">Minimal</option>
+                          <option value="low" selected>Low</option>
                           <option value="medium">Medium</option>
                           <option value="high">High</option>
-                          <option value="none">None / lowest supported</option>
+                          <option value="xhigh">Extra high</option>
+                          <option value="max">Max</option>
                         </select>
                         {% if errors_by_field[reasoning_field] %}<small class="field-error-message">{{ errors_by_field[reasoning_field] }}</small>{% endif %}
                       </label>
                     </div>
                   {% endfor %}
                 </section>
-                <label data-stage-control data-pipeline-stages="stage1 pass1 pass2"{% if errors_by_field.temperature %} class="field-invalid" data-field-error="temperature"{% endif %}><span class="field-heading">Temperature <button class="info-button" type="button" aria-label="About temperature" data-help="Controls output randomness. Lower values are more consistent and faithful; the recommended default is 0.1.">i</button></span>
-                  <input name="temperature" type="number" min="0" step="0.05" value="0.1" required>
-                  {% if errors_by_field.temperature %}<small class="field-error-message">{{ errors_by_field.temperature }}</small>{% endif %}
-                </label>
                 <label{% if errors_by_field.batch_size %} class="field-invalid" data-field-error="batch_size"{% endif %}><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1" required>{% if errors_by_field.batch_size %}<small class="field-error-message">{{ errors_by_field.batch_size }}</small>{% endif %}</label>
               </div>
               <div class="wizard-actions"><button type="button" data-wizard-back="pipeline">← Back</button><button class="primary" type="button" data-wizard-next="agentic">Continue to Agentic →</button></div>
@@ -446,17 +480,16 @@
                         </select>
                       </label>
                       <label>{{ label }} model
-                        <select name="{{ role }}_model" data-agentic-model disabled>
-                          <option value="">Use stage model</option>
-                          {% for model in models %}<option value="{{ model.model_id }}" data-model-provider="{{ model.provider.value }}">{{ model.display_name }}</option>{% endfor %}
-                          <option value="__other__" data-model-provider="other">Other model…</option>
+                        <select name="{{ role }}_model" data-agentic-model data-model-stage="verification" disabled>
+                          <option value="">Authenticate a provider to choose a model</option>
                         </select>
-                        <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name supported by Google Gemini" hidden disabled>
+                        <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name" hidden disabled>
+                        <small data-model-auth-hint>Authenticate a provider to choose a model.</small>
                       </label>
                     </div>
                   {% endfor %}
-                  <label>Evaluator reasoning<select name="evaluator_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select></label>
-                  <label>Rewriter reasoning<select name="rewriter_reasoning" disabled><option value="">Use default</option><option value="none">None</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                  <label>Evaluator reasoning<select name="evaluator_reasoning" data-reasoning-select disabled><option value="">Use default</option><option value="minimal">Minimal</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option><option value="xhigh">Extra high</option><option value="max">Max</option></select></label>
+                  <label>Rewriter reasoning<select name="rewriter_reasoning" data-reasoning-select disabled><option value="">Use default</option><option value="minimal">Minimal</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option><option value="xhigh">Extra high</option><option value="max">Max</option></select></label>
                   <label>Deterministic patches<select name="verifier_patches" disabled><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
                   <label>Concrete retry evidence<select name="require_concrete_retry" disabled><option value="true">Required</option><option value="false">Not required</option></select></label>
                 </div>
@@ -470,7 +503,9 @@
             <h2 id="run-summary-title">Default pipeline</h2>
             <dl>
               <div><dt>Pipeline</dt><dd>Stage 1 + Stage 2</dd></div>
-              <div><dt>Stage 2 model</dt><dd data-stage2-summary-model>Shared model · Gemini 3.5 Flash</dd></div>
+              <div><dt>Stage 2 model</dt><dd data-stage2-summary-model>Shared model · Gemini 3.8 Flash</dd></div>
+              <div><dt>Authentication</dt><dd data-auth-summary>API key</dd></div>
+              <div><dt>Billing</dt><dd data-billing-summary>API-key billing</dd></div>
               <div><dt>Agentic</dt><dd>Off</dd></div>
               <div><dt>MDF parsing guide</dt><dd>Review required</dd></div>
             </dl>
@@ -492,5 +527,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-15" defer></script>
 {% endblock %}

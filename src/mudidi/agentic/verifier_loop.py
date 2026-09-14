@@ -256,6 +256,13 @@ def _merge_usage_totals(base: dict[str, Any], addition: dict[str, Any] | None) -
         merged["cost_usd"] = round(float(base_cost) + float(add_cost), 8)
     elif add_cost is not None:
         merged["cost_usd"] = add_cost
+    base_billing = merged.get("billing_mode")
+    add_billing = addition.get("billing_mode")
+    if add_billing is not None:
+        if base_billing is None:
+            merged["billing_mode"] = add_billing
+        elif base_billing != add_billing:
+            merged["billing_mode"] = "mixed"
     return merged
 
 

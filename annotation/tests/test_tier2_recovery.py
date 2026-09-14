@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import pytest
 
 import tier2_labeler  # noqa: E402  (module handle for monkeypatching the LLM)
@@ -29,6 +31,51 @@ from tier2_recovery import (  # noqa: E402
 )
 
 from mudidi.schemas.language_span import SPACE  # noqa: E402
+
+
+def test_call_llm_omits_temperature_from_generic_completion_request(monkeypatch):
+    captured = {}
+
+    def fake_complete_with_usage(**kwargs):
+        captured.update(kwargs)
+        return "answer", {}
+
+    monkeypatch.setattr(tier2_labeler, "complete_with_usage", fake_complete_with_usage)
+
+    tier2_labeler._call_llm(
+        "prompt",
+        model="gemini/gemini-3-flash-preview",
+        reasoning_effort="none",
+        max_tokens=16,
+    )
+    assert "temperature" not in captured
+
+@pytest.mark.parametrize(
+    "function_name",
+    ["_call_llm", "run_legend_stage", "run_tagging_stage", "label_page", "label_dictionary"],
+)
+def test_labeler_apis_expose_no_temperature_parameter(function_name: str) -> None:
+    function = getattr(tier2_labeler, function_name)
+
+    assert "temperature" not in inspect.signature(function).parameters
+
+
+def test_labeler_cli_rejects_removed_temperature_option(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        tier2_labeler.main(
+            [
+                "--dictionaries-root",
+                str(tmp_path),
+                "--temperature",
+                "0.2",
+            ]
+        )
+
+    assert exc_info.value.code == 2
+    assert "unrecognized arguments: --temperature" in capsys.readouterr().err
+
 
 
 def _lang_at(page_map, raw, needle):

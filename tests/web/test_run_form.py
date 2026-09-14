@@ -7,6 +7,7 @@ from pathlib import Path
 import fitz
 import pytest
 from pydantic import ValidationError
+from mudidi.llm.subscriptions import SubscriptionProvider
 
 from mudidi.web.forms import NewRunForm, PipelineChoice
 
@@ -25,10 +26,15 @@ def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
         "dictionary_pages": "1",
         "output_directory": output,
         "pipeline": PipelineChoice.COMPLETE,
-        "provider": "anthropic",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
         "model": "anthropic/claude-sonnet-4-6",
         "reasoning": "low",
     }
+    legacy_provider = overrides.pop("provider", None)
+    if legacy_provider is not None:
+        values["stage1_provider"] = legacy_provider
+        values["stage2_provider"] = legacy_provider
     values.update(overrides)
     return NewRunForm.model_validate(values)
 
@@ -75,15 +81,17 @@ def test_agentic_maps_direct_controls(tmp_path: Path) -> None:
 def test_stage_specific_models_override_default(tmp_path: Path) -> None:
     config = _form(
         tmp_path,
+        stage1_provider="gemini",
+        stage2_provider="anthropic",
         stage1_model="gemini/gemini-3.1-pro-preview",
         stage2_pass1_model="anthropic/claude-opus-4-6",
-        stage2_pass2_model="openai/gpt-5.4",
+        stage2_pass2_model="anthropic/claude-sonnet-4-6",
     ).to_inference_config()
 
     assert config.models.default == "anthropic/claude-sonnet-4-6"
     assert config.models.stage1 == "gemini/gemini-3.1-pro-preview"
     assert config.models.stage2_pass1 == "anthropic/claude-opus-4-6"
-    assert config.models.stage2_pass2 == "openai/gpt-5.4"
+    assert config.models.stage2_pass2 == "anthropic/claude-sonnet-4-6"
 
 
 def test_review_summary_lists_page_ranges_and_effective_stage_models(
@@ -91,11 +99,13 @@ def test_review_summary_lists_page_ranges_and_effective_stage_models(
 ) -> None:
     form = _form(
         tmp_path,
+        stage1_provider="gemini",
+        stage2_provider="anthropic",
         dictionary_pages="10-12",
         parse_rules_pages=["10", "12"],
         stage1_model="gemini/gemini-3.1-pro-preview",
         stage2_pass1_model="anthropic/claude-opus-4-6",
-        stage2_pass2_model="openai/gpt-5.4",
+        stage2_pass2_model="anthropic/claude-sonnet-4-6",
     )
 
     summary = form.to_summary()
@@ -104,7 +114,8 @@ def test_review_summary_lists_page_ranges_and_effective_stage_models(
     assert summary["parse_rule_pages"] == "10, 12"
     assert summary["stage_1_model"] == "gemini/gemini-3.1-pro-preview"
     assert summary["stage_2_pass_1_model"] == "anthropic/claude-opus-4-6"
-    assert summary["stage_2_pass_2_model"] == "openai/gpt-5.4"
+    assert summary["stage_2_pass_2_model"] == "anthropic/claude-sonnet-4-6"
+
 
 @pytest.mark.parametrize(
     (
@@ -182,7 +193,6 @@ def test_review_summary_uses_effective_instruction_source(
         for text in (stage1_instructions, stage2_instructions)
         if text
     )
-
 
 
 def test_stage_models_accept_provider_specific_other_values(tmp_path: Path) -> None:
@@ -303,12 +313,13 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
         reasoning="high",
         evaluator_reasoning="medium",
         rewriter_reasoning="high",
-        temperature=0.25,
         agentic=True,
         verify_stage1=True,
         verify_stage2=True,
+        evaluator_provider="openai",
+        rewriter_provider="anthropic",
         evaluator_model="openai/gpt-5.6",
-        rewriter_model="anthropic/claude-opus-4-8",
+        rewriter_model="anthropic/claude-opus-5",
         batch_size=3,
     ).to_inference_config()
 
@@ -316,7 +327,7 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     assert config.pipeline.stage1_typography is False
     assert config.pipeline.stage1_guides == stage1_guides.resolve()
     assert config.pipeline.stage2_guides == stage2_guides.resolve()
-    assert config.models.temperature == 0.25
+    assert "temperature" not in config.models.model_dump()
     assert config.agentic.evaluator_reasoning == "medium"
     assert config.agentic.rewriter_reasoning == "high"
     assert config.runtime.batch_size == 3
@@ -493,3 +504,168 @@ def test_each_stage2_instruction_scope_maps_to_pipeline_config(
     config = form.to_inference_config()
 
     assert config.pipeline.stage2_guides_scope == scope
+
+
+def test_auth_defaults_to_api_key_and_preserves_api_key_model_controls(
+    tmp_path: Path,
+) -> None:
+    form = _form(tmp_path)
+    config = form.to_inference_config()
+
+    assert form.auth_mode == "api_key"
+    assert config.auth.mode.value == "api_key"
+    assert config.auth.providers == ()
+    assert config.models.default == "anthropic/claude-sonnet-4-6"
+
+
+def test_subscription_form_normalizes_models_for_stage_provider(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="gemini",
+        model=None,
+        pipeline=PipelineChoice.TRANSCRIPTION,
+        stage1_model="gemini-2.5-pro",
+    )
+
+    config = form.to_inference_config()
+
+    assert config.auth.mode.value == "subscription"
+    assert config.auth.providers == (SubscriptionProvider.GOOGLE,)
+    assert config.models.default == "gemini/gemini-2.5-pro"
+    assert config.models.stage1 == "gemini/gemini-2.5-pro"
+
+
+def test_stage_providers_resolve_independently_for_api_keys(tmp_path: Path) -> None:
+    config = _form(
+        tmp_path,
+        provider=None,
+        stage1_provider="openai",
+        stage2_provider="anthropic",
+        model=None,
+        stage1_model="gpt-5.6-terra",
+        stage2_pass1_model="claude-opus-5",
+        stage2_pass2_model="claude-sonnet-4-6",
+    ).to_inference_config()
+
+    assert config.auth.providers == ()
+    assert config.models.stage1 == "openai/gpt-5.6-terra"
+    assert config.models.stage2_pass1 == "anthropic/claude-opus-5"
+    assert config.models.stage2_pass2 == "anthropic/claude-sonnet-4-6"
+
+
+def test_stage_providers_resolve_independently_for_subscriptions(
+    tmp_path: Path,
+) -> None:
+    config = _form(
+        tmp_path,
+        auth_mode="subscription",
+        provider=None,
+        stage1_provider="gemini",
+        stage2_provider="anthropic",
+        model=None,
+        stage1_model="gemini-2.5-pro",
+        stage2_pass1_model="claude-opus-5",
+        stage2_pass2_model="claude-sonnet-4-6",
+    ).to_inference_config()
+
+    assert [provider.value for provider in config.auth.providers] == [
+        "claude",
+        "google",
+    ]
+    assert config.models.stage1 == "gemini/gemini-2.5-pro"
+    assert config.models.stage2_pass1 == "anthropic/claude-opus-5"
+    assert config.models.stage2_pass2 == "anthropic/claude-sonnet-4-6"
+
+
+def test_subscription_form_defaults_each_active_stage_from_its_provider(
+    tmp_path: Path,
+) -> None:
+    config = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="openai",
+        stage2_provider="anthropic",
+        model=None,
+        stage1_model=None,
+        stage2_pass1_model=None,
+        stage2_pass2_model=None,
+    ).to_inference_config()
+
+    assert config.models.default == "anthropic/claude-sonnet-4-6"
+    assert config.models.stage1 == "openai/gpt-5.6-terra"
+    assert config.models.stage2_pass1 == "anthropic/claude-sonnet-4-6"
+    assert config.models.stage2_pass2 == "anthropic/claude-sonnet-4-6"
+
+
+def test_subscription_form_rejects_mismatched_stage_model(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="gemini",
+        model=None,
+        pipeline=PipelineChoice.TRANSCRIPTION,
+        stage1_model="openai/gpt-wrong",
+    )
+
+    with pytest.raises(ValueError, match="incompatible with the google subscription"):
+        form.to_inference_config()
+
+
+def test_subscription_form_routes_agentic_provider_independently(
+    tmp_path: Path,
+) -> None:
+    config = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="gemini",
+        model=None,
+        pipeline=PipelineChoice.TRANSCRIPTION,
+        stage1_model="gemini-2.5-pro",
+        agentic=True,
+        verify_stage1=True,
+        evaluator_provider="openai",
+        evaluator_model="gpt-5.6-terra",
+    ).to_inference_config()
+
+    assert set(config.auth.providers) == {
+        SubscriptionProvider.GOOGLE,
+        SubscriptionProvider.OPENAI,
+    }
+    assert config.agentic.evaluator_model == "openai/gpt-5.6-terra"
+
+
+def test_subscription_form_rejects_unsupported_provider(
+    tmp_path: Path,
+) -> None:
+    form = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="openrouter",
+        model=None,
+        stage1_model="openai/gpt-5.6-terra",
+        pipeline=PipelineChoice.TRANSCRIPTION,
+    )
+
+    with pytest.raises(ValueError, match="does not support subscription"):
+        form.to_inference_config()
+
+
+def test_claude_subscription_summary_is_warning_free(
+    tmp_path: Path,
+) -> None:
+    summary = _form(
+        tmp_path,
+        auth_mode="subscription",
+        stage1_provider="anthropic",
+        model=None,
+        stage1_model="claude-sonnet-4-6",
+        pipeline=PipelineChoice.TRANSCRIPTION,
+    ).to_summary()
+
+    assert "policy_warning" not in summary
+    assert summary["billing_mode"] == "subscription"

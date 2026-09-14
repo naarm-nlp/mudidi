@@ -1771,6 +1771,7 @@ name = "mudidi"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
     { name = "grapheme" },
     { name = "jinja2" },
     { name = "jiwer" },
@@ -1812,6 +1813,7 @@ web = [
 
 [package.metadata]
 requires-dist = [
+    { name = "certifi", specifier = ">=2024.2.2" },
     { name = "cryptography", marker = "extra == 'web'", specifier = ">=45.0" },
     { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.115" },
     { name = "grapheme" },

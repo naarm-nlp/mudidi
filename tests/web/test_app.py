@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -48,7 +49,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert response.text.count("data-wizard-go=") == 4
     assert 'data-wizard-marker="review" aria-disabled="true"' in response.text
     assert 'action="/runs/preview"' in response.text
-    assert 'data-wizard-submit' in response.text
+    assert "data-wizard-submit" in response.text
     panel_order = [
         response.text.index(f'data-wizard-panel="{step}"')
         for step in ("input", "pipeline", "model", "agentic")
@@ -59,13 +60,16 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'aria-labelledby="wizard-model-title"' in response.text
     assert 'aria-labelledby="wizard-agentic-title"' in response.text
     assert 'name="dictionary_pages"' in response.text
-    assert 'data-dictionary-dropzone' in response.text
-    assert '<label class="dictionary-upload-trigger" data-dictionary-file-trigger>' in response.text
+    assert "data-dictionary-dropzone" in response.text
+    assert (
+        '<label class="dictionary-upload-trigger" data-dictionary-file-trigger>'
+        in response.text
+    )
     assert '<span class="sr-only">Choose dictionary PDF</span>' in response.text
     assert 'class="dictionary-file-input"' in response.text
     assert 'data-dictionary-file-status aria-live="polite"' in response.text
     assert 'class="primary mdf-guide-upload-trigger"' in response.text
-    assert 'data-mdf-guide-file-input' in response.text
+    assert "data-mdf-guide-file-input" in response.text
     assert 'data-mdf-guide-file-status aria-live="polite"' in response.text
     assert 'name="stage1_model"' in response.text
     assert 'name="stage2_pass1_model"' in response.text
@@ -78,27 +82,28 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert response.text.count('type="password"') >= 4
     assert response.text.count('class="eye-icon eye-show"') == 4
     assert response.text.count('class="eye-icon eye-hide"') == 4
-    assert 'name="provider"' in response.text
-    assert response.text.count('name="provider"') == 1
-    assert '<input type="hidden" name="provider" value="gemini" data-provider-value' in response.text
-    assert 'data-provider-value' in response.text
+    assert 'name="provider"' not in response.text
+    assert response.text.count('name="stage1_provider"') == 1
+    assert response.text.count('name="stage2_provider"') == 1
+    assert "data-provider-value" not in response.text
     assert response.text.count("data-provider-choice") >= 2
     assert 'data-stage2-mode="shared"' in response.text
-    assert 'data-stage2-toggle' in response.text
+    assert "data-stage2-toggle" in response.text
     assert "Advanced · split passes" in response.text
     assert 'data-stage2-pass="pass1"' in response.text
     assert 'data-stage2-pass="pass2"' in response.text
-    assert '<p class="stage2-explanation" data-stage2-explanation hidden>' in response.text
+    assert (
+        '<p class="stage2-explanation" data-stage2-explanation hidden>' in response.text
+    )
     assert 'class="stage1-settings"' in response.text
     assert (
         '<div class="stage-settings-heading"><div><span class="eyebrow">Stage 1</span>'
-        "<h3>Model and reasoning</h3></div></div>"
-        in response.text
+        "<h3>Model and reasoning</h3></div></div>" in response.text
     )
     assert 'class="credential-grid"' in response.text
     assert response.text.count("data-credential-card") == 4
-    assert 'data-selected-credential' not in response.text
-    assert 'data-other-credentials' not in response.text
+    assert "data-selected-credential" not in response.text
+    assert "data-other-credentials" not in response.text
     assert "Manage keys" not in response.text
     assert "◉" not in response.text
     assert 'name="stage1_reasoning"' in response.text
@@ -107,31 +112,33 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="reasoning"' not in response.text
     assert 'name="stage1_custom_model"' in response.text
     assert 'name="openrouter_provider"' in response.text
-    assert 'data-model-provider="openai"' in response.text
-    assert 'data-model-provider="anthropic"' in response.text
-    assert 'data-model-provider="gemini"' in response.text
+    assert "data-model-provider=" not in response.text
     assert "OpenRouter Provider" in response.text
-    assert "qwen/qwen3-235b-a22b" in response.text
+    assert "Authenticate a provider to load models" in response.text
     assert 'data-pipeline-stages="stage1"' in response.text
-    assert "GPT-5.6 Sol" in response.text
-    assert "GPT-5.6 Terra" in response.text
-    assert "GPT-5.6 Luna" in response.text
-    assert "Claude Fable 5" in response.text
-    assert "Claude Opus 4.8" in response.text
-    assert "Claude Sonnet 5" in response.text
-    assert "Claude Haiku 4.5" in response.text
-    assert "Gemini 3.1 Pro" in response.text
-    assert "Gemini 3.5 Flash" in response.text
-    assert "Gemini 3.1 Flash-Lite" in response.text
+    for server_catalog_model in (
+        "GPT-5.6 Sol",
+        "Claude Fable 5",
+    ):
+        assert server_catalog_model not in response.text
     assert "Other / advanced provider" in response.text
     assert "Stage and model overrides" not in response.text
     assert 'name="verify_stage1"' in response.text
     assert 'name="verify_stage2"' in response.text
-    assert 'name="verify_stage1" type="checkbox" value="true" checked disabled' in response.text
-    assert 'name="verify_stage2" type="checkbox" value="true" checked disabled' in response.text
+    assert (
+        'name="verify_stage1" type="checkbox" value="true" checked disabled'
+        in response.text
+    )
+    assert (
+        'name="verify_stage2" type="checkbox" value="true" checked disabled'
+        in response.text
+    )
     assert 'name="agentic" value="false" checked' in response.text
     assert 'name="agentic" value="true"' in response.text
-    assert '<fieldset class="agentic-settings" data-agentic-settings hidden>' in response.text
+    assert (
+        '<fieldset class="agentic-settings" data-agentic-settings hidden>'
+        in response.text
+    )
     for field in (
         "max_iterations",
         "min_retry_confidence",
@@ -149,28 +156,28 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'data-agentic-model-group="rewriter"' in response.text
     assert 'list="model-catalog"' not in response.text
     assert (
-        'name="evaluator_reasoning" disabled><option value="">Use default</option>'
-        '<option value="none">None</option><option value="low">Low</option>'
-        '<option value="medium">Medium</option><option value="high" selected>High</option>'
+        'name="evaluator_reasoning" data-reasoning-select disabled>'
+        '<option value="">Use default</option><option value="minimal">Minimal</option>'
+        '<option value="low">Low</option><option value="medium">Medium</option>'
+        '<option value="high" selected>High</option>'
+        '<option value="xhigh">Extra high</option><option value="max">Max</option>'
         in response.text
     )
     assert (
-        'name="rewriter_reasoning" disabled><option value="">Use default</option>'
-        '<option value="none">None</option><option value="low" selected>Low</option>'
-        in response.text
+        'name="rewriter_reasoning" data-reasoning-select disabled>'
+        '<option value="">Use default</option><option value="minimal">Minimal</option>'
+        '<option value="low" selected>Low</option>' in response.text
     )
-    assert 'data-wizard-submit' in response.text
+    assert "data-wizard-submit" in response.text
     assert "Review run" in response.text
     assert 'name="page_limit"' not in response.text
     assert 'name="media_reference"' not in response.text
     assert 'name="prompt_cache"' not in response.text
-    assert response.text.index('name="temperature"') < response.text.index(
-        'name="batch_size"'
-    )
+    assert 'name="temperature"' not in response.text
+    assert 'aria-label="About temperature"' not in response.text
     assert response.text.index('name="batch_size"') < response.text.index(
         'data-wizard-panel="agentic"'
     )
-    assert 'aria-label="About temperature"' in response.text
     assert 'aria-label="About Stage 1 model reasoning"' in response.text
     assert 'aria-label="About Stage 2 Pass 1 model reasoning"' in response.text
     assert 'aria-label="About Stage 2 Pass 2 model reasoning"' in response.text
@@ -182,13 +189,12 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="output_policy"' in response.text
     assert "Require a new or empty directory" not in response.text
     assert (
-            '<input type="radio" name="output_policy" value="resume" checked required>'
+        '<input type="radio" name="output_policy" value="resume" checked required>'
         in response.text
     )
     assert "Resume compatible existing artifacts" in response.text
     assert (
-        '<input type="radio" name="output_policy" value="overwrite">'
-        in response.text
+        '<input type="radio" name="output_policy" value="overwrite">' in response.text
     )
     assert "Overwrite existing artifacts" in response.text
     assert 'aria-label="About resuming existing artifacts"' in response.text
@@ -224,12 +230,14 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-8" in response.text
+    assert "/static/app.js?v=dashboard-ui-15" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
 
-def test_agentic_pipeline_sync_keeps_off_controls_out_of_form_data_and_restores_on() -> None:
+def test_agentic_pipeline_sync_keeps_off_controls_out_of_form_data_and_restores_on() -> (
+    None
+):
     app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
     harness = r"""
 const fs = require("node:fs");
@@ -266,6 +274,16 @@ class Field {
   closest() { return null; }
   setAttribute() {}
   removeAttribute() {}
+  replaceChildren() {
+    this.options = [];
+    this.children = [];
+    this.selectedOptions = [];
+  }
+  append(child) {
+    this.children ||= [];
+    this.children.push(child);
+    if (child.value !== undefined) this.options.push(child);
+  }
 }
 class Fields extends Array {
   namedItem(name) {
@@ -342,15 +360,19 @@ const modelOption = (value, modelProvider = "") => ({
   hidden: false,
   disabled: false,
 });
-const modelOptions = [
+const modelOptions = (provider = "gemini") => [
   modelOption(""),
-  modelOption("gemini/gemini-3.5-flash", "gemini"),
+  modelOption(`${provider}/catalog-model`, provider),
   modelOption("__other__", "other"),
 ];
-[evaluatorModel, rewriterModel].forEach((select) => {
-  select.options = modelOptions.map((option) => ({...option, dataset: {...option.dataset}}));
-  select.value = select.value;
-});
+const primeCatalog = (select, provider) => {
+  select.options = modelOptions(provider).map(
+    (option) => ({...option, dataset: {...option.dataset}}),
+  );
+  select.dataset.catalogProvider = provider;
+  select.value = "";
+};
+[evaluatorModel, rewriterModel].forEach((select) => primeCatalog(select, "gemini"));
 const advancedFields = [
   verifyStage1,
   verifyStage2,
@@ -376,21 +398,34 @@ agenticSettings.hidden = true;
 agenticSettings.querySelectorAll = (selector) => (
   selector === "input, select, textarea" ? advancedFields : []
 );
-const makeAgenticGroup = (provider, model, custom) => ({
-  querySelector(selector) {
-    if (selector === "[data-agentic-provider]") return provider;
-    if (selector === "[data-agentic-model]") return model;
-    if (selector === "[data-agentic-custom-model]") return custom;
-    return null;
-  },
-  closest(selector) {
-    return selector === "[data-agentic-settings]" ? agenticSettings : null;
-  },
-});
+const makeAgenticGroup = (provider, model, custom) => {
+  model.parentElement = {
+    querySelector(selector) {
+      return selector.includes("data-agentic-custom-model") ? custom : null;
+    },
+  };
+  return {
+    querySelector(selector) {
+      if (selector === "[data-agentic-provider]") return provider;
+      if (selector === "[data-agentic-model]") return model;
+      if (selector === "[data-agentic-custom-model]") return custom;
+      return null;
+    },
+    closest(selector) {
+      return selector === "[data-agentic-settings]" ? agenticSettings : null;
+    },
+  };
+};
 const agenticGroups = [
   makeAgenticGroup(evaluatorProvider, evaluatorModel, evaluatorCustom),
   makeAgenticGroup(rewriterProvider, rewriterModel, rewriterCustom),
 ];
+const credentialCards = ["gemini", "openai", "anthropic", "openrouter"].map((provider) => {
+  const card = new Field();
+  card.dataset.provider = provider;
+  card.dataset.keyAvailable = "true";
+  return card;
+});
 
 const document = {
   body: {append() {}},
@@ -412,6 +447,7 @@ const document = {
       return [verifyStage1, verifyStage2];
     }
     if (selector === "[data-agentic-model-group]") return agenticGroups;
+    if (selector === "[data-credential-card]") return credentialCards;
     return [];
   },
 };
@@ -519,6 +555,7 @@ const assertUseStageModel = (label) => {
 };
 
 evaluatorProvider.value = "gemini";
+primeCatalog(evaluatorModel, "gemini");
 sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
 evaluatorModel.value = "__other__";
 sync.synchronizeAgenticModelGroup(evaluatorGroup);
@@ -528,8 +565,10 @@ if (evaluatorCustom.hidden || evaluatorCustom.disabled) {
   throw new Error("Agentic custom evaluator was not enabled for its selected model");
 }
 
+primeCatalog(evaluatorModel, "openai");
 evaluatorProvider.value = "openai";
 sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
+primeCatalog(evaluatorModel, "gemini");
 evaluatorProvider.value = "gemini";
 sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
 evaluatorModel.value = "";
@@ -542,12 +581,22 @@ assertUseStageModel("Initial Gemini fallback");
 
 const assertManualModel = (provider, value) => {
   evaluatorProvider.value = provider;
+  if (provider !== "custom") primeCatalog(evaluatorModel, provider);
   sync.synchronizeAgenticModelGroup(evaluatorGroup, true);
-  evaluatorCustom.value = value;
-  sync.synchronizeAgenticModelGroup(evaluatorGroup);
-  if (!evaluatorModel.hidden || !evaluatorModel.disabled) {
+  if (provider === "openrouter") {
+    if (evaluatorModel.hidden || evaluatorModel.disabled) {
+      throw new Error("OpenRouter did not keep its discovered model selector active");
+    }
+    if (!evaluatorCustom.hidden || !evaluatorCustom.disabled) {
+      throw new Error("OpenRouter enabled custom entry before Other was selected");
+    }
+    evaluatorModel.value = "__other__";
+    sync.synchronizeAgenticModelGroup(evaluatorGroup);
+  } else if (!evaluatorModel.hidden || !evaluatorModel.disabled) {
     throw new Error(`${provider} did not hide and disable its model selector`);
   }
+  evaluatorCustom.value = value;
+  sync.synchronizeAgenticModelGroup(evaluatorGroup);
   if (evaluatorCustom.hidden || evaluatorCustom.disabled) {
     throw new Error(`${provider} custom model input was not enabled`);
   }
@@ -558,7 +607,7 @@ const assertManualModel = (provider, value) => {
 assertManualModel("openrouter", "qwen/qwen3-235b-a22b");
 setPipeline("structure");
 if (evaluatorCustom.disabled || evaluatorCustom.hidden) {
-  throw new Error("Pipeline synchronization disabled a selected OpenRouter custom model");
+  throw new Error("Pipeline synchronization disabled a selected OpenRouter Other model");
 }
 assertManualModel("custom", "provider/model");
 setPipeline("transcription");
@@ -584,7 +633,10 @@ if (formDataFor(runForm).has("evaluator_custom_model")) {
     )
     assert result.returncode == 0, result.stderr
 
-def test_instruction_source_panel_sync_handles_switching_confirmation_and_kept_presets() -> None:
+
+def test_instruction_source_panel_sync_handles_switching_confirmation_and_kept_presets() -> (
+    None
+):
     app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
     harness = r"""
 const fs = require("node:fs");
@@ -836,7 +888,9 @@ assert(keptPdfPanel.fileInput.required, "a hidden panel excluded by the pipeline
     assert result.returncode == 0, result.stderr
 
 
-def test_instruction_panel_restore_prefers_submitted_replace_state_over_stale_preset_on_validation_recovery() -> None:
+def test_instruction_panel_restore_prefers_submitted_replace_state_over_stale_preset_on_validation_recovery() -> (
+    None
+):
     app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
     harness = r"""
 const fs = require("node:fs");
@@ -1150,6 +1204,7 @@ assert(explanation.hidden, "returning to shared mode should hide the pass explan
     )
     assert result.returncode == 0, result.stderr
 
+
 def test_credential_delete_browser_state_uses_effective_fallback() -> None:
     app_js = Path(__file__).resolve().parents[2] / "src/mudidi/web/static/app.js"
     harness = r"""
@@ -1232,6 +1287,7 @@ label.append = (child) => {
   child.isConnected = true;
 };
 const listeners = {};
+const catalogLoads = [];
 const document = {
   body: {append() {}},
   addEventListener(type, listener) {
@@ -1270,6 +1326,7 @@ const window = {
   sessionStorage: {getItem: () => null, setItem() {}},
 };
 const context = vm.createContext({
+  loadModelCatalog: (options = {}) => catalogLoads.push(options),
   URL,
   URLSearchParams,
   console,
@@ -1277,12 +1334,16 @@ const context = vm.createContext({
   queueMicrotask,
   window,
 });
-const source = fs.readFileSync(process.argv[1], "utf8");
+const source = fs.readFileSync(process.argv[1], "utf8").replace(
+  "const loadModelCatalog = async",
+  "const loadModelCatalogImpl = async",
+);
 vm.runInContext(source, context);
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 (async () => {
+  catalogLoads.length = 0;
   await document.dispatch("click", {
     target: deleteButton,
     preventDefault() {},
@@ -1293,6 +1354,15 @@ const assert = (condition, message) => {
   assert(status.textContent === "Available from environment", "fallback status was not rendered");
   assert(input.placeholder.toLowerCase().includes("environment"), "fallback placeholder was not rendered");
   assert(!card.querySelector("[data-delete-key]"), "environment fallback must not be deletable");
+  assert(catalogLoads.length === 1, "deletion did not reload the model catalog");
+  assert(
+    catalogLoads[0].resetProvider === "anthropic",
+    "deletion did not scope selection reset to its provider",
+  );
+  assert(
+    catalogLoads[0].preserveSelection !== false,
+    "deletion disabled selection preservation for unrelated providers",
+  );
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
@@ -1442,14 +1512,23 @@ assert(otherLivePage.sources.length === 2, "other live page duplicated its sourc
     assert result.returncode == 0, result.stderr
 
 
-def test_home_prefills_gemini_flash_for_each_stage(tmp_path: Path) -> None:
+def test_home_defaults_stage_providers_but_gates_models_until_authentication(
+    tmp_path: Path,
+) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/")
 
     assert response.status_code == 200
-    assert '<option value="gemini" selected>Google Gemini</option>' in response.text
-    assert response.text.count(
-        'value="gemini/gemini-3.5-flash" data-model-provider="gemini" selected'
-    ) == 3
+    assert (
+        response.text.count('<option value="gemini" selected>Google Gemini</option>')
+        >= 2
+    )
+    for name in ("stage1_model", "stage2_pass1_model", "stage2_pass2_model"):
+        assert f'<select name="{name}"' in response.text
+        assert re.search(
+            rf'<select name="{name}"[^>]*disabled>',
+            response.text,
+        )
+    assert "data-model-provider=" not in response.text
 
 
 def test_home_explains_each_pipeline_model_role(tmp_path: Path) -> None:
@@ -1459,7 +1538,10 @@ def test_home_explains_each_pipeline_model_role(tmp_path: Path) -> None:
     assert 'aria-label="About Stage 1 model"' in response.text
     assert 'aria-label="About Stage 2 Pass 1 model"' in response.text
     assert 'aria-label="About Stage 2 Pass 2 model"' in response.text
-    assert "transcribes the selected dictionary pages into faithful flat text" in response.text
+    assert (
+        "transcribes the selected dictionary pages into faithful flat text"
+        in response.text
+    )
     assert "infers the dictionary-specific MDF parsing guide" in response.text
     assert "applies the approved MDF parsing guide" in response.text
 
@@ -1472,8 +1554,14 @@ def test_new_run_wizard_exposes_stage_instruction_source_panels(tmp_path: Path) 
     assert text.count('class="form-field instruction-source-panel') == 2
     assert 'data-instruction-stage="stage1"' in text
     assert 'data-instruction-stage="stage2"' in text
-    assert 'data-instruction-source-panel data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1"' in text
-    assert 'data-instruction-source-panel data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2"' in text
+    assert (
+        'data-instruction-source-panel data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1"'
+        in text
+    )
+    assert (
+        'data-instruction-source-panel data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2"'
+        in text
+    )
     assert text.count('data-instruction-has-preset="false"') == 2
     assert text.count('name="stage1_instruction_source" value="typed" checked') == 1
     assert text.count('name="stage1_instruction_source" value="file"') == 1
@@ -1486,13 +1574,22 @@ def test_new_run_wizard_exposes_stage_instruction_source_panels(tmp_path: Path) 
     assert 'name="stage2_instruction_pdf_pages"' in text
     assert 'name="stage1_additional_instructions"' in text
     assert 'name="stage2_additional_instructions"' in text
-    assert '<input type="hidden" name="stage1_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>' in text
-    assert '<input type="hidden" name="stage2_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>' in text
-    assert text.count(
-        "Selected PDF pages are attached to every applicable model call. Large files or "
-        "\u201call pages\u201d can substantially increase token use, cost, latency, and the "
-        "chance of exceeding a model context limit."
-    ) == 2
+    assert (
+        '<input type="hidden" name="stage1_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>'
+        in text
+    )
+    assert (
+        '<input type="hidden" name="stage2_instruction_keep_existing" value="false" data-instruction-keep-existing disabled>'
+        in text
+    )
+    assert (
+        text.count(
+            "Selected PDF pages are attached to every applicable model call. Large files or "
+            "\u201call pages\u201d can substantially increase token use, cost, latency, and the "
+            "chance of exceeding a model context limit."
+        )
+        == 2
+    )
     assert "Pass 1 only \u2014 parsing-guide discovery" in text
     assert "Pass 2 only \u2014 per-page MDF extraction" in text
     assert ">Both passes<" in text
@@ -1513,7 +1610,8 @@ def test_new_run_wizard_shows_kept_instruction_state_for_a_loaded_preset(
             "output_directory": str(tmp_path / "source-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1543,14 +1641,24 @@ def test_new_run_wizard_shows_kept_instruction_state_for_a_loaded_preset(
     loaded = client.get(f"/?preset={preset.preset_id}")
     assert loaded.status_code == 200
     text = loaded.text
-    assert 'data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1" data-instruction-has-preset="true" data-instruction-preset-kind="pdf"' in text
-    assert 'data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2" data-instruction-has-preset="false"' in text
-    assert '<input type="hidden" name="stage1_instruction_keep_existing" value="true" data-instruction-keep-existing disabled>' in text
-    assert 'data-instruction-kept-file' in text
+    assert '"temperature"' not in text
+    assert (
+        'data-instruction-stage="stage1" data-stage-control data-pipeline-stages="stage1" data-instruction-has-preset="true" data-instruction-preset-kind="pdf"'
+        in text
+    )
+    assert (
+        'data-instruction-stage="stage2" data-stage-control data-pipeline-stages="pass1 pass2" data-instruction-has-preset="false"'
+        in text
+    )
+    assert (
+        '<input type="hidden" name="stage1_instruction_keep_existing" value="true" data-instruction-keep-existing disabled>'
+        in text
+    )
+    assert "data-instruction-kept-file" in text
     assert 'name="stage1_instruction_kept_choice" value="keep" checked' in text
     assert 'name="stage1_instruction_kept_choice" value="replace"' in text
-    assert '<strong>Keep saved file</strong>' in text
-    assert '<strong>Replace file</strong>' in text
+    assert "<strong>Keep saved file</strong>" in text
+    assert "<strong>Replace file</strong>" in text
     assert "stage1.pdf" in text
     assert "<dt>Kind</dt><dd>PDF</dd>" in text
     assert "<dt>Selected pages</dt><dd>1, 2 (2 pages)</dd>" in text
@@ -1564,7 +1672,9 @@ def test_instruction_file_error_from_a_final_step_submission_marks_field_error_f
     # rejected `stage1_instruction_file` is the sole problem, not something
     # already visible on the Input step in the browser's remembered wizard
     # position (sessionStorage would otherwise keep the wizard on "agentic").
-    client = TestClient(create_app(data_dir=tmp_path / "app-data", offline_inference=True))
+    client = TestClient(
+        create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    )
 
     response = client.post(
         "/runs/preview",
@@ -1572,7 +1682,8 @@ def test_instruction_file_error_from_a_final_step_submission_marks_field_error_f
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1597,6 +1708,7 @@ def test_instruction_file_error_from_a_final_step_submission_marks_field_error_f
     stage2_open_tag = text[stage2_tag_start:stage2_tag_end]
     assert "data-field-error" not in stage2_open_tag
 
+
 def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submission(
     tmp_path: Path,
 ) -> None:
@@ -1612,7 +1724,8 @@ def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submissi
             "output_directory": str(tmp_path / "source-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1642,7 +1755,8 @@ def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submissi
             "output_directory": str(tmp_path / "kept-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1663,7 +1777,8 @@ def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submissi
             "output_directory": str(tmp_path / "replaced-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1685,7 +1800,6 @@ def test_kept_choice_client_only_field_survives_preset_keep_and_replace_submissi
         replaced_config.pipeline.stage1_guides.read_text(encoding="utf-8")
         == "replacement text"
     )
-
 
 
 def test_health_endpoint_is_small_and_versioned(tmp_path: Path) -> None:
@@ -1747,7 +1861,9 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert ".profile-other-information" in response.text
     assert ".profile-other-information textarea" in response.text
     css_rules = [line.strip() for line in response.text.splitlines()]
-    assert any(line.startswith(".rules-editor .editor-row button {") for line in css_rules)
+    assert any(
+        line.startswith(".rules-editor .editor-row button {") for line in css_rules
+    )
     assert not any(line.startswith(".editor-row button {") for line in css_rules)
     assert ".preset-loader {" in response.text
     assert "margin-bottom: 24px" in response.text
@@ -1768,14 +1884,13 @@ def test_new_run_form_previews_typed_configuration(tmp_path: Path) -> None:
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 200
@@ -1803,14 +1918,13 @@ def test_container_dashboard_rebases_project_outputs_to_the_host_mount(
         data={
             "output_directory": submitted_output,
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 200
@@ -1822,23 +1936,20 @@ def test_container_dashboard_rebases_project_outputs_to_the_host_mount(
 def test_container_dashboard_rejects_unmounted_host_output_path(
     tmp_path: Path,
 ) -> None:
-    client = TestClient(
-        create_app(data_dir=tmp_path / "app-data", container_mode=True)
-    )
+    client = TestClient(create_app(data_dir=tmp_path / "app-data", container_mode=True))
 
     response = client.post(
         "/runs/preview",
         data={
             "output_directory": "/Users/example/Desktop/custom-output",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 422
@@ -1879,31 +1990,6 @@ def test_new_run_saves_selected_dashboard_credential_immediately(
     assert expected_value not in response.text
 
 
-def test_preview_error_identifies_the_invalid_field(tmp_path: Path) -> None:
-    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
-
-    response = client.post(
-        "/runs/preview",
-        data={
-            "output_directory": str(tmp_path / "output"),
-            "pipeline": "complete",
-            "provider": "anthropic",
-            "model": "anthropic/claude-sonnet-5",
-            "reasoning": "low",
-            "temperature": "-1",
-            "dictionary_pages": "1",
-        },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
-    )
-
-    assert response.status_code == 422
-    assert "Temperature" in response.text
-    assert "greater than or equal to 0" in response.text
-    assert "Submitted values are not echoed" not in response.text
-
-
 def test_preview_marks_invalid_agentic_stage_toggle(tmp_path: Path) -> None:
     client = TestClient(create_app(data_dir=tmp_path / "app-data"))
 
@@ -1912,7 +1998,8 @@ def test_preview_marks_invalid_agentic_stage_toggle(tmp_path: Path) -> None:
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "true",
@@ -1920,9 +2007,7 @@ def test_preview_marks_invalid_agentic_stage_toggle(tmp_path: Path) -> None:
             "verify_stage2": "true",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 422
@@ -1942,7 +2027,8 @@ def test_preview_ignores_retired_controls_from_a_stale_browser_tab(
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "page_limit": "12",
@@ -1950,9 +2036,7 @@ def test_preview_ignores_retired_controls_from_a_stale_browser_tab(
             "prompt_cache": "off",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 200
@@ -1970,16 +2054,14 @@ def test_new_run_accepts_provider_aware_stage_models_without_legacy_model(
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "transcription",
-            "provider": "openrouter",
+            "stage1_model": "anthropic/claude-sonnet-5",
+            "stage1_provider": "openrouter",
+            "stage2_provider": "anthropic",
             "openrouter_provider": "anthropic",
-            "stage1_model": "openrouter/anthropic/claude-sonnet-5",
-            "temperature": "0.1",
             "reasoning": "none",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 200
@@ -1999,7 +2081,8 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "profile_headword_language": "Chukchi",
@@ -2011,9 +2094,7 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "profile_other_information_types": "dialect labels, semantic domains",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 200
@@ -2043,7 +2124,8 @@ def test_new_run_form_renders_validation_errors_without_echoing_secret(
             "pages": str(tmp_path / "missing"),
             "output_directory": str(tmp_path / "output"),
             "pipeline": "2-pass-2",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "sk-do-not-render",
             "reasoning": "low",
         },
@@ -2086,7 +2168,9 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
     assert response.status_code == 200
     assert response.json() == {"status": "saved", "provider": "anthropic"}
     assert "sk-ant-browser-secret" not in response.text
-    assert b"sk-ant-browser-secret" not in (tmp_path / "mudidi-web.sqlite3").read_bytes()
+    assert (
+        b"sk-ant-browser-secret" not in (tmp_path / "mudidi-web.sqlite3").read_bytes()
+    )
 
     restarted = TestClient(create_app(data_dir=tmp_path))
     home_page = restarted.get("/")
@@ -2144,6 +2228,7 @@ def test_deleting_persistent_override_reports_environment_fallback(
     assert 'data-key-available="true"' in home.text
     assert 'data-delete-key data-provider="anthropic"' not in home.text
 
+
 def test_environment_credential_has_no_destructive_action(tmp_path: Path) -> None:
     vault = CredentialVault(
         environ={"ANTHROPIC_API_KEY": "env-only-secret"},
@@ -2152,9 +2237,9 @@ def test_environment_credential_has_no_destructive_action(tmp_path: Path) -> Non
             key_path=tmp_path / ".credential-key",
         ),
     )
-    response = TestClient(
-        create_app(data_dir=tmp_path, credential_vault=vault)
-    ).get("/")
+    response = TestClient(create_app(data_dir=tmp_path, credential_vault=vault)).get(
+        "/"
+    )
 
     assert response.status_code == 200
     assert "env-only-secret" not in response.text
@@ -2185,7 +2270,8 @@ def test_new_run_accepts_uploaded_dictionary_pdf_into_managed_input(
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "dictionary_pages": "1-2",
@@ -2221,19 +2307,19 @@ def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> 
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "transcription",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "dictionary_pages": "1",
         },
-        files={
-            "dictionary_pdf": ("../escape.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("../escape.pdf", _pdf_bytes(), "application/pdf")},
     )
 
     assert response.status_code == 422
     assert app.state.run_store.list_runs() == []
     assert not (tmp_path / "app-data" / "escape.png").exists()
+
 
 def test_new_run_wizard_exposes_ordered_named_panels_and_non_color_states(
     tmp_path: Path,

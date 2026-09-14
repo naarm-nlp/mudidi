@@ -168,6 +168,34 @@ GEMINI_API_KEY=replace-me
 
 Never place credentials in YAML run configuration.
 
+### Google subscription setup
+
+Google subscription runs use Antigravity's browser OAuth and Cloud Code Assist
+transport directly. In the dashboard, choose **Subscription billing**, select
+Google, then click **Log in** and complete the Google consent flow in the opened
+browser window.
+
+Before starting MUDIDI, configure a deployment-owned Google desktop OAuth
+registration. The client ID is required; set the client secret when the
+registration issues one. `GOOGLE_CLOUD_PROJECT` is optional for accounts that
+must select a Cloud Code Assist project.
+
+```text
+MUDIDI_GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
+# GOOGLE_CLOUD_PROJECT=your-project-id
+```
+
+Keep these values in `.env` or the process environment, never in source files
+or YAML run configurations. Web workers receive only the public client ID; they
+do not inherit the client secret.
+
+MUDIDI stores the resulting access and refresh tokens only in its encrypted
+local subscription store. It does not read OMP, Antigravity CLI, gcloud, or
+browser credential stores. The available Gemini model list comes from the
+authenticated Cloud Code Assist account. Google subscription mode does not
+fall back to `GEMINI_API_KEY` or the public Gemini API catalog.
+
 ## Quick end-to-end inference
 
 Process a directory containing page images or individual page PDFs:

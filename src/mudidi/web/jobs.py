@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 # Dedicated worker processes use fixed argument vectors and never invoke a shell.
 import subprocess  # nosec B404
@@ -20,17 +21,41 @@ from mudidi.execution.events import (
     ParseRulesGenerated,
     RunCompleted,
     RunFailed,
+    StageStarted,
     parse_execution_event,
 )
+from mudidi.llm.subscriptions import AuthMode
 from mudidi.web.credentials import (
     CredentialSource,
     ResolvedCredential,
     credential_environment_name,
+    subscription_store_path as managed_subscription_store_path,
 )
 from mudidi.web.inference_worker import InferencePhase
 from mudidi.web.models import Provider
-from mudidi.web.runs import RunStatus, RunStore
+from mudidi.web.runs import RunRecord, RunStatus, RunStore
 
+
+_SUBSCRIPTION_ENVIRONMENT_ALLOWLIST = frozenset(
+    {
+        "PATH",
+        "PYTHONPATH",
+        "VIRTUAL_ENV",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "SYSTEMROOT",
+        "WINDIR",
+        "MUDIDI_GOOGLE_OAUTH_CLIENT_ID",
+        "MUDIDI_AGENTIC_VERIFIER_MAX_TOKENS",
+    }
+)
 if TYPE_CHECKING:
     from mudidi.web.parse_rules import ParseRuleReviewService
 
@@ -70,6 +95,11 @@ class JobController:
         self.store.get_run(run_id)
         return self.data_dir / "runs" / run_id / "worker.log"
 
+    def subscription_store_path(self) -> Path:
+        """Return the separate encrypted subscription store directory."""
+
+        return managed_subscription_store_path(self.data_dir)
+
     def prepare_inference(
         self,
         run_id: str,
@@ -84,8 +114,13 @@ class JobController:
         path = self.config_path(run_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".tmp")
+        snapshot = redacted_config_dict(config)
+        if config.auth.mode is AuthMode.API_KEY:
+            # API-key mode is the legacy default; do not persist a redundant
+            # auth label in the web run snapshot.
+            snapshot.pop("auth", None)
         temporary.write_text(
-            json.dumps(redacted_config_dict(config), indent=2),
+            json.dumps(snapshot, indent=2),
             encoding="utf-8",
         )
         temporary.replace(path)
@@ -103,13 +138,15 @@ class JobController:
         self,
         run_id: str,
         *,
-        credential: ResolvedCredential | None,
+        credentials: tuple[ResolvedCredential, ...],
         offline_executor: bool = False,
     ) -> None:
         """Launch Stage 1 and/or Pass 1 while preserving the review pause."""
 
         config = self.load_inference_config(run_id)
         phase = _initial_phase(config)
+        subscription = config.auth.mode is AuthMode.SUBSCRIPTION
+        credential_message = _credential_handoff(config, credentials)
         current = self.store.get_run(run_id).status
         if current in {RunStatus.VALIDATED, RunStatus.CREDENTIALS_REQUIRED}:
             self.store.transition(run_id, RunStatus.QUEUED)
@@ -131,18 +168,29 @@ class JobController:
             run_id,
             phase=phase,
             offline_executor=offline_executor,
+            subscription=subscription,
         )
-        self._spawn(run_id, command, credential=credential)
+        self._spawn(
+            run_id,
+            command,
+            credentials=credentials,
+            credential_message=credential_message,
+            subscription=subscription,
+        )
 
     def start_pass2(
         self,
         run_id: str,
         *,
         approval: ApprovedParseRules,
-        credential: ResolvedCredential | None,
+        credentials: tuple[ResolvedCredential, ...],
         offline_executor: bool = False,
     ) -> None:
         """Launch Pass 2 only for the run-bound committed approval capability."""
+
+        config = self.load_inference_config(run_id)
+        subscription = config.auth.mode is AuthMode.SUBSCRIPTION
+        credential_message = _credential_handoff(config, credentials)
 
         run = self.store.get_run(run_id)
         if run.status is not RunStatus.RUNNING_STAGE2:
@@ -168,24 +216,67 @@ class JobController:
             phase=InferencePhase.PASS2,
             approval_manifest=manifest_path,
             offline_executor=offline_executor,
+            subscription=subscription,
         )
-        self._spawn(run_id, command, credential=credential)
+        self._spawn(
+            run_id,
+            command,
+            credentials=credentials,
+            credential_message=credential_message,
+            subscription=subscription,
+        )
+
+    def prepare_failed_retry(self, run_id: str) -> RunRecord:
+        """Persist inferred retry provenance for a legacy failed run."""
+
+        run = self.store.get_run(run_id)
+        if run.status is not RunStatus.FAILED:
+            raise RuntimeError("only failed runs can be prepared for retry")
+        if run.resume_phase is not None:
+            return run
+        phase = _failed_resume_phase(
+            self.store.list_events(run_id),
+            self.load_inference_config(run_id),
+        )
+        return self.store.set_failed_resume_phase(run_id, phase)
 
     def resume_inference(
         self,
         run_id: str,
         *,
-        credential: ResolvedCredential | None,
+        credentials: tuple[ResolvedCredential, ...],
         offline_executor: bool = False,
     ) -> None:
         """Resume the durable phase without bypassing parse-rule approval."""
 
         run = self.store.get_run(run_id)
+        if run.status is RunStatus.FAILED:
+            run = self.prepare_failed_retry(run_id)
         if run.status is RunStatus.CREDENTIALS_REQUIRED and run.resume_phase is None:
             self.start_inference(
                 run_id,
-                credential=credential,
+                credentials=credentials,
                 offline_executor=offline_executor,
+            )
+            return
+        if run.resume_phase == "stage2_pass1":
+            config = self.load_inference_config(run_id)
+            subscription = config.auth.mode is AuthMode.SUBSCRIPTION
+            credential_message = _credential_handoff(config, credentials)
+            command = self._production_command(
+                run_id,
+                phase=InferencePhase.PASS1,
+                offline_executor=offline_executor,
+                subscription=subscription,
+            )
+            self.store.resume(run_id, credentials_available=True)
+            self.store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+            self._spawn(
+                run_id,
+                command,
+                credentials=credentials,
+                credential_message=credential_message,
+                subscription=subscription,
             )
             return
         if run.resume_phase == "parse_rule_review":
@@ -197,7 +288,7 @@ class JobController:
                 self.store.transition(run_id, RunStatus.QUEUED)
                 self.start_inference(
                     run_id,
-                    credential=credential,
+                    credentials=credentials,
                     offline_executor=offline_executor,
                 )
                 return
@@ -208,14 +299,14 @@ class JobController:
             self.start_pass2(
                 run_id,
                 approval=approval,
-                credential=credential,
+                credentials=credentials,
                 offline_executor=offline_executor,
             )
             return
         self.store.resume(run_id, credentials_available=True)
         self.start_inference(
             run_id,
-            credential=credential,
+            credentials=credentials,
             offline_executor=offline_executor,
         )
 
@@ -257,6 +348,7 @@ class JobController:
                     stderr=subprocess.PIPE,
                     text=True,
                     start_new_session=True,
+                    env=_worker_environment(),
                 )
             except OSError:
                 self.store.transition(run_id, RunStatus.FAILED)
@@ -279,6 +371,7 @@ class JobController:
         phase: InferencePhase,
         approval_manifest: Path | None = None,
         offline_executor: bool,
+        subscription: bool = False,
     ) -> list[str]:
         events = self.store.list_events(run_id)
         sequence_start = max((int(event["sequence"]) for event in events), default=0)
@@ -297,6 +390,10 @@ class JobController:
             "--log-file",
             str(self.log_path(run_id)),
         ]
+        if subscription:
+            command.extend(
+                ["--subscription-store", str(self.subscription_store_path())]
+            )
         if approval_manifest is not None:
             command.extend(["--approval-manifest", str(approval_manifest)])
         if offline_executor:
@@ -308,11 +405,15 @@ class JobController:
         run_id: str,
         command: list[str],
         *,
-        credential: ResolvedCredential | None,
+        credentials: tuple[ResolvedCredential, ...],
+        credential_message: str | None = None,
+        subscription: bool = False,
     ) -> None:
         with self._lock:
             if any(worker.process.poll() is None for worker in self._workers.values()):
                 raise RuntimeError("another inference worker is active")
+            if subscription and credentials:
+                raise ValueError("subscription workers cannot receive API credentials")
             # Command is a fixed Python module argv; user input is never executable.
             process = subprocess.Popen(  # nosec B603
                 command,
@@ -321,6 +422,7 @@ class JobController:
                 stderr=subprocess.PIPE,
                 text=True,
                 start_new_session=True,
+                env=_worker_environment(credentials, subscription=subscription),
             )
             worker = _OwnedWorker(process=process, command=tuple(command))
             monitor = Thread(
@@ -331,11 +433,15 @@ class JobController:
             )
             worker.monitor = monitor
             self._workers[run_id] = worker
-            credential_message = _credential_message(credential)
+            message = (
+                credential_message
+                if credential_message is not None
+                else _credential_message(credentials)
+            )
             if process.stdin is None:
                 process.terminate()
                 raise RuntimeError("worker credential pipe was not created")
-            process.stdin.write(credential_message + "\n")
+            process.stdin.write(message + "\n")
             process.stdin.close()
             monitor.start()
 
@@ -398,6 +504,12 @@ class JobController:
             except (json.JSONDecodeError, ValidationError):
                 protocol_failed = True
                 break
+            if isinstance(event, StageStarted) and event.stage == "stage2_pass1":
+                self.store.transition_if_current(
+                    run_id,
+                    expected=RunStatus.RUNNING_STAGE1,
+                    target=RunStatus.DISCOVERING_PARSE_RULES,
+                )
             serialized = event.model_dump(mode="json")
             self.store.append_event(run_id, serialized)
             if isinstance(event, RunCompleted):
@@ -424,7 +536,11 @@ class JobController:
             return
         if protocol_failed or return_code != 0:
             self._fail_if_active(run_id)
-        elif status is RunStatus.RUNNING_STAGE1:
+        elif status in {
+            RunStatus.RUNNING_STAGE1,
+            RunStatus.DISCOVERING_PARSE_RULES,
+            RunStatus.RUNNING_STAGE2,
+        }:
             self._fail_if_active(run_id)
 
     def _fail_if_active(self, run_id: str) -> None:
@@ -458,6 +574,26 @@ class JobController:
         self.store.transition_if_current(run_id, expected=expected, target=target)
 
 
+def _failed_resume_phase(
+    events: list[dict[str, object]],
+    config: InferenceConfig,
+) -> str:
+    """Recover retry provenance for failed runs written before it was durable."""
+
+    for event in reversed(events):
+        stage = event.get("stage")
+        if stage in {"stage1", "stage2_pass1", "stage2_pass2"}:
+            return str(stage)
+    initial = _initial_phase(config)
+    if initial in {InferencePhase.STAGE1, InferencePhase.STAGE1_THEN_PASS1}:
+        return "stage1"
+    if initial is InferencePhase.PASS1:
+        return "stage2_pass1"
+    if initial is InferencePhase.USER_GUIDE:
+        return "stage2_pass2"
+    raise RuntimeError("failed run has no retryable phase")
+
+
 def _initial_phase(config: InferenceConfig) -> InferencePhase:
     if config.pipeline.parse_rules_file is not None:
         if config.pipeline.stage == "1":
@@ -472,16 +608,61 @@ def _initial_phase(config: InferenceConfig) -> InferencePhase:
     raise ValueError("direct web Pass 2 execution is forbidden")
 
 
-def _credential_message(credential: ResolvedCredential | None) -> str:
-    if credential is None or credential.source is CredentialSource.ENVIRONMENT:
-        return "{}"
-    environment_name = credential_environment_name(credential.provider)
-    if environment_name is None:
+def _credential_message(credentials: tuple[ResolvedCredential, ...]) -> str:
+    entries: dict[str, str] = {}
+    for credential in credentials:
+        if credential.source is CredentialSource.ENVIRONMENT:
+            continue
+        environment_name = credential_environment_name(credential.provider)
+        if environment_name is not None:
+            entries[environment_name] = credential.get_secret_value()
+    if not entries:
         return "{}"
     return json.dumps(
-        {
-            "environment_name": environment_name,
-            "api_key": credential.get_secret_value(),
-        },
+        {"auth_mode": "api_key", "credentials": entries},
         separators=(",", ":"),
     )
+
+
+def _credential_handoff(
+    config: InferenceConfig,
+    credentials: tuple[ResolvedCredential, ...],
+) -> str:
+    """Serialize the mode-specific message accepted by the child worker."""
+
+    if config.auth.mode is AuthMode.SUBSCRIPTION:
+        if credentials:
+            raise ValueError("subscription workers cannot receive API credentials")
+        return json.dumps(
+            {
+                "auth_mode": "subscription",
+                "providers": [provider.value for provider in config.auth.providers],
+            },
+            separators=(",", ":"),
+        )
+    return _credential_message(credentials)
+
+
+def _worker_environment(
+    credentials: tuple[ResolvedCredential, ...] = (),
+    *,
+    subscription: bool = False,
+) -> dict[str, str]:
+    """Build a mode-specific child environment."""
+
+    if subscription:
+        environment = {
+            name: value
+            for name, value in os.environ.items()
+            if name in _SUBSCRIPTION_ENVIRONMENT_ALLOWLIST
+        }
+    else:
+        environment = dict(os.environ)
+    if not subscription:
+        for credential in credentials:
+            if credential.source is not CredentialSource.ENVIRONMENT:
+                continue
+            environment_name = credential_environment_name(credential.provider)
+            if environment_name is not None:
+                environment[environment_name] = credential.get_secret_value()
+    return environment

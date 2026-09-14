@@ -57,7 +57,9 @@ def test_worker_failure_records_terminal_event_and_failed_state(
     controller.start_fake("run-fail", page_count=1, fail=True, delay_seconds=0)
     controller.wait("run-fail", timeout=5)
 
-    assert store.get_run("run-fail").status is RunStatus.FAILED
+    failed = store.get_run("run-fail")
+    assert failed.status is RunStatus.FAILED
+    assert failed.resume_phase == "stage1"
     assert store.list_events("run-fail")[-1]["type"] == "run.failed"
 
 
