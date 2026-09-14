@@ -1,6 +1,7 @@
 # MUDIDI
 
 **[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
+**[See what's new in MUDIDI 0.1.0](https://naarm-nlp.github.io/mudidi/whats-new/)**
 
 MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
