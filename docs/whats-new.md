@@ -49,4 +49,4 @@ Three defects found during that smoke were repaired before release:
 2. complete overwrite runs issuing a duplicate Stage 1 request for the Pass 1 sample page;
 3. explicit CLI alphabet files remaining disabled in the resolved runtime.
 
-The release candidate passed 1,382 repository tests with 10 intentional skips, the strict MkDocs build, generated-reference verification, Ruff, and live post-repair web and CLI checks.
+The release candidate passed 1,383 repository tests with 10 intentional skips, the strict MkDocs build, generated-reference verification, Ruff, and live post-repair web and CLI checks.
