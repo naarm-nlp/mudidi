@@ -20,6 +20,7 @@ from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.dictionary_languages import DictionaryLanguagesConfig
 from mudidi.schemas.dictionary_profile import DictionaryProfile
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
+from mudidi.llm.subscriptions import SubscriptionBackend, SubscriptionRuntime
 from mudidi.utils.image import file_content_part, image_data_url, mime_type_for_path
 from mudidi.utils.parse_rules_pages import format_sample_pages_block
 from mudidi.instructions import (
@@ -105,12 +106,12 @@ def discover_field_cheatsheet(
     intro_images: List[Path],
     model: str,
     reasoning_effort: str = "high",
-    temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
     media_reference: MediaReferenceMode = "auto",
     guides: str = "",
     instruction_context: PreparedInstructionContext | None = None,
+    backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
     guide_text, guide_source = _instruction_prompt_values(instruction_context, guides)
@@ -133,13 +134,14 @@ def discover_field_cheatsheet(
         {"role": "system", "content": pass_1_system_prompt()},
         {"role": "user", "content": content},
     ]
-    logger.info("Pass 1 field discovery: model=%s sample=%s", model, sample_image.name)
-    raw, usage = complete_with_usage(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        reasoning_effort=reasoning_effort,  # type: ignore[arg-type]
-    )
+    completion_kwargs: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "reasoning_effort": reasoning_effort,  # type: ignore[arg-type]
+    }
+    if backend is not None:
+        completion_kwargs["backend"] = backend
+    raw, usage = complete_with_usage(**completion_kwargs)
     data = _extract_json_object(raw)
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
     return sheet, usage
@@ -150,14 +152,13 @@ def discover_field_cheatsheet_multi(
     intro_images: List[Path],
     model: str,
     reasoning_effort: str = "high",
-    temperature: float = 0.1,
     languages_config: Optional[DictionaryLanguagesConfig] = None,
     dictionary_profile: Optional[DictionaryProfile] = None,
     media_reference: MediaReferenceMode = "auto",
     guides: str = "",
     instruction_context: PreparedInstructionContext | None = None,
+    backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
-    """Pass 1: discover markers + rules from several sample pages in one call."""
     if len(samples) < 2:
         raise ValueError("discover_field_cheatsheet_multi requires at least two samples.")
 
@@ -191,12 +192,14 @@ def discover_field_cheatsheet_multi(
         model,
         sample_names,
     )
-    raw, usage = complete_with_usage(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        reasoning_effort=reasoning_effort,  # type: ignore[arg-type]
-    )
+    completion_kwargs: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "reasoning_effort": reasoning_effort,  # type: ignore[arg-type]
+    }
+    if backend is not None:
+        completion_kwargs["backend"] = backend
+    raw, usage = complete_with_usage(**completion_kwargs)
     data = _extract_json_object(raw)
     sheet = DictionaryMarkerCheatsheet.model_validate(data)
     return sheet, usage
@@ -343,7 +346,16 @@ def load_or_discover_parse_rules(
     multi_samples: Sequence[tuple[str, str, Path]] | None = None,
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
-    **discover_kwargs,
+    transcription: str | None = None,
+    sample_image: Path | None = None,
+    intro_images: List[Path] | None = None,
+    model: str | None = None,
+    reasoning_effort: str = "high",
+    languages_config: Optional[DictionaryLanguagesConfig] = None,
+    dictionary_profile: Optional[DictionaryProfile] = None,
+    media_reference: MediaReferenceMode = "auto",
+    guides: str = "",
+    backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Optional[Dict[str, Any]]]:
     """Load cached parse rules, a user file, or run Pass 1 discovery."""
     read_path = find_parse_rules_path(cache_path.parent)
@@ -366,22 +378,54 @@ def load_or_discover_parse_rules(
     if parse_rules_file is not None:
         sheet = load_parse_rules_file(parse_rules_file)
     elif multi_samples is not None and len(multi_samples) > 1:
+        if model is None:
+            raise TypeError("Multi-sample parse-rules discovery requires model.")
         sheet, usage = discover_field_cheatsheet_multi(
             samples=multi_samples,
-            intro_images=discover_kwargs.get("intro_images", []),
-            model=discover_kwargs["model"],
-            reasoning_effort=discover_kwargs.get("reasoning_effort", "high"),
-            temperature=discover_kwargs.get("temperature", 0.1),
-            languages_config=discover_kwargs.get("languages_config"),
-            dictionary_profile=discover_kwargs.get("dictionary_profile"),
-            media_reference=discover_kwargs.get("media_reference", "auto"),
-            guides=discover_kwargs.get("guides", ""),
+            intro_images=intro_images or [],
+            model=model,
+            reasoning_effort=reasoning_effort,
+            languages_config=languages_config,
+            dictionary_profile=dictionary_profile,
+            media_reference=media_reference,
+            guides=guides,
             instruction_context=instruction_context,
+            backend=backend,
         )
     else:
+        if (
+            transcription is None
+            or sample_image is None
+            or intro_images is None
+            or model is None
+        ):
+            missing = [
+                name
+                for name, value in (
+                    ("transcription", transcription),
+                    ("sample_image", sample_image),
+                    ("intro_images", intro_images),
+                    ("model", model),
+                )
+                if value is None
+            ]
+            raise TypeError(
+                "Single-sample parse-rules discovery requires "
+                + ", ".join(missing)
+                + "."
+            )
         sheet, usage = discover_field_cheatsheet(
+            transcription=transcription,
+            sample_image=sample_image,
+            intro_images=intro_images,
+            model=model,
+            reasoning_effort=reasoning_effort,
+            languages_config=languages_config,
+            dictionary_profile=dictionary_profile,
+            media_reference=media_reference,
+            guides=guides,
             instruction_context=instruction_context,
-            **discover_kwargs,
+            backend=backend,
         )
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)

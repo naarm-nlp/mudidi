@@ -76,6 +76,7 @@ from mudidi.schemas.transcription import (
 from mudidi.schemas.extraction_result import ExtractionResult
 from mudidi.schemas.ocr_result import OCRPageResult
 from mudidi.llm import client as llm
+from mudidi.llm.subscriptions import SubscriptionBackend, SubscriptionRuntime
 from mudidi.config.run_config import PromptMode
 from mudidi.instructions import PreparedInstructionContext
 from mudidi.llm.prompts import (
@@ -459,7 +460,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage2_reasoning_effort: str = "low",
         stage2_pass1_reasoning_effort: Optional[str] = None,
         stage2_pass2_reasoning_effort: Optional[str] = None,
-        temperature: float = 0.1,
         stage1_guides: str = "",
         stage2_guides: str = "",
         stage1_mode: str = "column",
@@ -492,6 +492,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage1_instruction_context: PreparedInstructionContext | None = None,
         stage2_instruction_context: PreparedInstructionContext | None = None,
         stage2_guides_scope: str = "both",
+        *,
+        backend: SubscriptionBackend | SubscriptionRuntime | None = None,
     ):
         if stage1_mode not in ("column", "flat"):
             raise ValueError(f"stage1_mode must be 'column' or 'flat', got {stage1_mode!r}")
@@ -512,7 +514,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.stage2_pass2_reasoning_effort = (
             stage2_pass2_reasoning_effort or stage2_reasoning_effort
         )
-        self.temperature = temperature
         self.stage1_guides = stage1_guides
         self.stage2_guides = stage2_guides
         self.stage1_instruction_context = stage1_instruction_context
@@ -561,6 +562,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             if agentic_rewriter_reasoning_effort is not None
             else agentic_reasoning_effort
         )
+        self.backend = backend
         self._field_map_lock = threading.Lock()
         self._field_map: Optional[FieldMapPrompt] = None
 
@@ -896,8 +898,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 model=self.transcribe_model,
                 messages=messages,
                 response_schema=response_schema,
-                temperature=self.temperature,
                 reasoning_effort=self.stage1_reasoning_effort,
+                **({"backend": self.backend} if self.backend is not None else {}),
             )
             flat_text = flat_transcription_to_text(
                 result.header, result.lines, result.footer
@@ -923,8 +925,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             model=self.transcribe_model,
             messages=messages,
             response_schema=response_schema,
-            temperature=self.temperature,
             reasoning_effort=self.stage1_reasoning_effort,
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         return _transcription_to_tsv(result), raw, usage, _sanitize_messages(messages)
 
@@ -1030,7 +1032,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         intro_images=intro_paths,
                         model=self.stage2_pass1_model,
                         reasoning_effort=self.stage2_pass1_reasoning_effort,
-                        temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
                         media_reference=self.media_reference,
@@ -1045,7 +1046,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         intro_images=intro_paths,
                         model=self.stage2_pass1_model,
                         reasoning_effort=self.stage2_pass1_reasoning_effort,
-                        temperature=self.temperature,
                         languages_config=self.dictionary_languages,
                         dictionary_profile=self.dictionary_profile,
                         media_reference=self.media_reference,
@@ -1061,6 +1061,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         f"from [{sample_list}] (cache → {cache_path}) …"
                     )
 
+                if self.backend is not None:
+                    discover_kwargs["backend"] = self.backend
                 discovery_started = time.perf_counter()
                 self._field_map, pass1_usage = load_or_discover_parse_rules(
                     cache_path,
@@ -1096,7 +1098,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             field_map=field_map,
             model=self.stage2_pass2_model,
             reasoning_effort=self.stage2_pass2_reasoning_effort,
-            temperature=self.temperature,
             guides=guide_text,
             toolbox_pdf=self.stage2_toolbox_pdf,
             mode=self.prompt_mode,
@@ -1106,6 +1107,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             prompt_cache_key=self.prompt_cache_key,
             instruction_context=pass2_context,
             instruction_scope=self.stage2_guides_scope,
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         return mdf_text, raw, usage, _sanitize_messages(messages)
 
@@ -1310,9 +1312,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             messages=messages,
             response_schema=AgenticVerifierDecision,
             model=evaluator_model,
-            temperature=self.temperature,
             max_tokens=_agentic_verifier_max_tokens(),
             reasoning_effort=self._agentic_evaluator_reasoning_for_stage("stage1"),
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         return result, usage
 
@@ -1378,9 +1380,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             model=rewriter_model,
             messages=messages,
             response_schema=response_schema,
-            temperature=self.temperature,
             max_tokens=64000,
             reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage1"),
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         if self.stage1_mode == "flat":
             return (
@@ -1421,9 +1423,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             model=evaluator_model,
             messages=messages,
             response_schema=AgenticVerifierDecision,
-            temperature=self.temperature,
             max_tokens=_agentic_verifier_max_tokens(),
             reasoning_effort=self._agentic_evaluator_reasoning_for_stage("stage2"),
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         return result, usage
 
@@ -1460,9 +1462,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         text, usage = llm.complete_with_usage(
             model=rewriter_model,
             messages=messages,
-            temperature=self.temperature,
             max_tokens=64000,
             reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage2"),
+            **({"backend": self.backend} if self.backend is not None else {}),
         )
         return text.strip(), usage
 

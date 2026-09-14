@@ -6,6 +6,12 @@ services:
     init: true
     ports:
       - "127.0.0.1:8000:8000"
+      - "127.0.0.1:1455:1455"
+      - "127.0.0.1:54545:54545"
+    environment:
+      MUDIDI_GOOGLE_OAUTH_CLIENT_ID: "${MUDIDI_GOOGLE_OAUTH_CLIENT_ID:-}"
+      MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET: "${MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET:-}"
+      GOOGLE_CLOUD_PROJECT: "${GOOGLE_CLOUD_PROJECT:-}"
     volumes:
       - "./mudidi-data:/data"
       - "./outputs:/app/outputs"

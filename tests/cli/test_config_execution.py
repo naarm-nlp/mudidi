@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from mudidi.cli.model_args import DEFAULT_MODEL
 from mudidi.cli import extract
 from mudidi.cli.main import build_parser
 from mudidi.cli.run import (
@@ -20,7 +21,21 @@ from mudidi.cli.run import (
     run_resolved_command,
 )
 from mudidi.config.yaml_config import BenchmarkRunConfig, InferenceConfig
+from mudidi.llm.subscriptions import SubscriptionProvider
+
 from mudidi.schemas.dictionary_profile import DictionaryProfile, ProfileLanguage
+
+
+def test_extract_parser_rejects_removed_temperature_option(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.argv", ["mudidi-extract", "--temperature", "0.1"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        extract.main()
+
+    assert exc_info.value.code == 2
+    assert "unrecognized arguments: --temperature" in capsys.readouterr().err
 
 
 def test_single_entry_resolves_progress_callback_from_execution_args(
@@ -42,8 +57,8 @@ def test_single_entry_resolves_progress_callback_from_execution_args(
         }
     )
     namespace = execution_namespace_from_config(config)
-    namespace.progress_callback = (
-        lambda *_args: (_ for _ in ()).throw(ProgressObserved())
+    namespace.progress_callback = lambda *_args: (_ for _ in ()).throw(
+        ProgressObserved()
     )
     monkeypatch.setattr(extract, "_build_strategy", lambda *_args, **_kwargs: object())
 
@@ -99,6 +114,66 @@ runtime:
     assert config.models.default == "provider/cli"
     assert config.runtime.batch_size == 4
     assert config.output.directory == tmp_path / "original-output"
+
+
+def test_explicit_default_model_overrides_yaml(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: pages
+output:
+  directory: output
+models:
+  default: provider/yaml
+""".strip(),
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(
+        ["run", "--config", str(config_path), "--model", DEFAULT_MODEL]
+    )
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.models.default == DEFAULT_MODEL
+
+
+def test_explicit_default_model_is_rejected_for_mismatched_subscription(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: pages
+output:
+  directory: output
+auth:
+  mode: subscription
+  provider: openai
+""".strip(),
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(
+        [
+            "run",
+            "--config",
+            str(config_path),
+            "--auth-mode",
+            "subscription",
+            "--provider",
+            "openai",
+            "--model",
+            DEFAULT_MODEL,
+        ]
+    )
+
+    with pytest.raises((ValidationError, ValueError), match="model|provider"):
+        resolve_extraction_config(args, kind="inference")
 
 
 def test_agentic_cli_values_override_yaml_and_preserve_omitted_fields(
@@ -198,6 +273,45 @@ output:
     assert config.input.introduction == (tmp_path / "intro.pdf").resolve()
     assert config.input.introduction_pages == "2-4"
     assert config.input.alphabet == (tmp_path / "alphabet.txt").resolve()
+    assert config.runtime.use_alphabet is True
+    assert execution_namespace_from_config(config).no_alphabet is False
+
+
+def test_full_run_parse_rule_samples_reuse_stage1_phase_output(
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    image = pages / "page_34.png"
+    image.write_bytes(b"page")
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "output"},
+            "pipeline": {"stage": "all"},
+            "models": {"default": "gemini/gemini-3.8-flash"},
+            "runtime": {"overwrite": True},
+        }
+    )
+    namespace = execution_namespace_from_config(config)
+    layout = extract.output_layout_from_config(
+        extract.RunConfig.from_namespace(namespace)
+    )
+    transcript = extract.stage1_flat_path(
+        layout.stage1_root / image.stem,
+        image.stem,
+    )
+    transcript.parent.mkdir(parents=True)
+    transcript.write_text("fresh Stage 1 output", encoding="utf-8")
+
+    samples = extract._load_parse_rules_samples(
+        namespace,
+        [image],
+        layout.output_dir,
+        layout=layout,
+    )
+
+    assert samples == [("page_34", "fresh Stage 1 output", str(image))]
 
 
 def test_inference_config_rejects_legacy_dictionary_languages_file(
@@ -272,7 +386,9 @@ def test_inference_namespace_carries_dictionary_profile_without_a_file(
     assert namespace.dictionary_languages is None
 
 
-def test_execution_namespace_carries_openrouter_endpoint_provider(tmp_path: Path) -> None:
+def test_execution_namespace_carries_openrouter_endpoint_provider(
+    tmp_path: Path,
+) -> None:
     config = InferenceConfig.model_validate(
         {
             "input": {"pages": tmp_path / "pages"},
@@ -338,7 +454,10 @@ def test_dry_run_does_not_invoke_extraction(
         lambda **_kwargs: (_ for _ in ()).throw(AssertionError("must not execute")),
     )
 
-    assert run_resolved_command(args, parser=argparse.ArgumentParser(), kind="inference") == 0
+    assert (
+        run_resolved_command(args, parser=argparse.ArgumentParser(), kind="inference")
+        == 0
+    )
     output = capsys.readouterr().out
     assert '"kind": "inference"' in output
     assert '"stage1_mode": "flat"' in output
@@ -542,3 +661,126 @@ def test_benchmark_preview_rejects_missing_stage1_prediction_slot(
 
     with pytest.raises(ValueError, match="missing Stage 1 prediction prerequisites"):
         preview_extraction_config(config)
+
+
+def test_cli_subscription_auth_overrides_yaml_and_alias_provider(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: pages
+output:
+  directory: output
+auth:
+  mode: api_key
+""".strip(),
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(
+        [
+            "run",
+            "--config",
+            str(config_path),
+            "--auth-mode",
+            "subscription",
+            "--provider",
+            "google",
+        ]
+    )
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.auth.mode.value == "subscription"
+    assert config.auth.providers == (SubscriptionProvider.GOOGLE,)
+
+
+def test_cli_api_key_override_clears_yaml_subscription_provider(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: pages
+output:
+  directory: output
+auth:
+  mode: subscription
+  providers:
+    - google
+""".strip(),
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(
+        ["run", "--config", str(config_path), "--auth-mode", "api_key"]
+    )
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.auth.mode.value == "api_key"
+    assert config.auth.providers == ()
+    assert config.models.default == "gemini/gemini-3-flash-preview"
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["run", "--pages", "pages", "--output-dir", "output", "--provider", "openai"],
+        [
+            "run",
+            "--pages",
+            "pages",
+            "--output-dir",
+            "output",
+            "--auth-mode",
+            "api_key",
+            "--provider",
+            "openai",
+        ],
+        [
+            "run",
+            "--pages",
+            "pages",
+            "--output-dir",
+            "output",
+            "--auth-mode",
+            "subscription",
+        ],
+    ],
+)
+def test_cli_rejects_invalid_auth_combinations(
+    argv: list[str],
+    tmp_path: Path,
+) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    with pytest.raises((ValidationError, ValueError), match="auth|provider"):
+        resolve_extraction_config(args, kind="inference")
+
+
+def test_subscription_preview_exposes_billing_metadata_without_credentials(
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "pages"
+    pages.mkdir()
+    (pages / "page_1.png").write_bytes(b"preview")
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "output"},
+            "auth": {"mode": "subscription", "providers": ["claude"]},
+        }
+    )
+
+    preview = preview_extraction_config(config)
+
+    assert preview["billing_mode"] == "subscription"
+    assert preview["auth_providers"] == "claude"
+    assert "billing" in preview
+    assert "token" not in repr(preview).lower()

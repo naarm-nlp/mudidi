@@ -88,7 +88,8 @@ def test_kept_preset_pdf_page_and_scope_edits_persist_into_resaved_preset(
             "output_directory": str(tmp_path / "source-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -121,7 +122,8 @@ def test_kept_preset_pdf_page_and_scope_edits_persist_into_resaved_preset(
             "output_directory": str(tmp_path / "edited-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -181,7 +183,8 @@ def test_review_hides_typed_internal_filename_and_shows_selected_pdf_count(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_additional_instructions": "Typed instructions stay secret.",
@@ -191,7 +194,10 @@ def test_review_hides_typed_internal_filename_and_shows_selected_pdf_count(
         },
         files=[
             ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(1), "application/pdf")),
-            ("stage2_instruction_file", ("visible.pdf", _pdf_bytes(), "application/pdf")),
+            (
+                "stage2_instruction_file",
+                ("visible.pdf", _pdf_bytes(), "application/pdf"),
+            ),
         ],
     )
     assert response.status_code == 200

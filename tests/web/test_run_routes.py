@@ -78,7 +78,9 @@ def test_event_stream_replays_persisted_events_as_sse(tmp_path: Path) -> None:
     assert json.loads(data_lines[-1])["type"] == "run.completed"
 
 
-def test_event_stream_can_start_after_the_latest_persisted_event(tmp_path: Path) -> None:
+def test_event_stream_can_start_after_the_latest_persisted_event(
+    tmp_path: Path,
+) -> None:
     app = create_app(data_dir=tmp_path)
     client = TestClient(app)
     started = client.post("/runs/demo", data={"page_count": "1"})
@@ -110,6 +112,7 @@ def test_active_page_links_to_running_job_and_cancel_route(tmp_path: Path) -> No
     assert cancelled.status_code == 303
     assert app.state.run_store.get_run(run_id).status is RunStatus.CANCELLED
 
+
 def test_active_page_filters_runs_with_terminal_event_before_status_reconciliation(
     tmp_path: Path,
 ) -> None:
@@ -140,7 +143,9 @@ def test_active_page_exposes_progress_timeline_activity_and_elapsed_hook(
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
     store.transition(run_id, RunStatus.RUNNING_STAGE1)
-    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2))
+    store.append_event(
+        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2)
+    )
     store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
     store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
 
@@ -180,7 +185,9 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
     store.start_uploaded_guide_stage2(run_id)
-    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2))
+    store.append_event(
+        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2)
+    )
     store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
     store.append_event(run_id, _event(run_id, 3, "page.completed", "stage1", page=2))
     store.append_event(run_id, _event(run_id, 4, "stage.started", "stage2_pass1"))
@@ -197,7 +204,9 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     store.append_event(
         run_id, _event(run_id, 6, "stage.started", "stage2_pass2", total_pages=2)
     )
-    store.append_event(run_id, _event(run_id, 7, "page.started", "stage2_pass2", page=2))
+    store.append_event(
+        run_id, _event(run_id, 7, "page.started", "stage2_pass2", page=2)
+    )
 
     response = TestClient(app).get(f"/runs/{run_id}")
 
@@ -206,6 +215,9 @@ def test_run_overview_names_pipeline_phases_and_current_page(tmp_path: Path) -> 
     assert "Currently processing: Page 2 of 2" in response.text
     assert "Stage 1 — Transcription" in response.text
     assert "MDF parsing guide discovery" in response.text
+    assert "policy_warning" not in response.text
+    assert "subscription-policy-warning" not in response.text
+
 
 def test_run_overview_disables_config_dependent_workspace_links_without_managed_config(
     tmp_path: Path,
@@ -267,6 +279,7 @@ def test_run_overview_links_config_dependent_workspace_views_with_managed_config
     for label in ("Page Viewer &amp; Editor", "File Artifacts", "Usage"):
         assert f">{label}</a>" in response.text
 
+
 def test_run_overview_keeps_state_gated_actions_in_workspace(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path)
     store = app.state.run_store
@@ -291,13 +304,27 @@ def test_run_overview_keeps_state_gated_actions_in_workspace(tmp_path: Path) -> 
     assert f'action="/runs/{run_id}/delete"' in resumable.text
 
     store.transition(run_id, RunStatus.CANCELLED)
-    terminal = TestClient(app).get(f"/runs/{run_id}")
+    cancelled = TestClient(app).get(f"/runs/{run_id}")
+    assert f'action="/runs/{run_id}/cancel"' not in cancelled.text
+    assert f'action="/runs/{run_id}/resume"' not in cancelled.text
+    assert f'action="/runs/{run_id}/delete"' in cancelled.text
 
-    assert f'action="/runs/{run_id}/cancel"' not in terminal.text
-    assert f'action="/runs/{run_id}/resume"' not in terminal.text
-    assert f'action="/runs/{run_id}/delete"' in terminal.text
+    failed_id = "gated-failed-actions"
+    store.create_run(failed_id)
+    store.transition(failed_id, RunStatus.VALIDATED)
+    store.transition(failed_id, RunStatus.QUEUED)
+    store.transition(failed_id, RunStatus.RUNNING_STAGE1)
+    store.transition(failed_id, RunStatus.FAILED)
+    failed = TestClient(app).get(f"/runs/{failed_id}")
 
-@pytest.mark.parametrize("resumable_status", [RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED])
+    assert f'action="/runs/{failed_id}/resume"' in failed.text
+    assert ">Retry run</button>" in failed.text
+    assert f'action="/runs/{failed_id}/delete"' in failed.text
+
+
+@pytest.mark.parametrize(
+    "resumable_status", [RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED]
+)
 def test_resumable_run_keeps_historical_progress_without_current_page(
     tmp_path: Path,
     resumable_status: RunStatus,
@@ -309,7 +336,9 @@ def test_resumable_run_keeps_historical_progress_without_current_page(
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
     store.transition(run_id, RunStatus.RUNNING_STAGE1)
-    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3))
+    store.append_event(
+        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3)
+    )
     store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
     store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
     store.interrupt(run_id)
@@ -337,7 +366,9 @@ def test_terminal_run_keeps_historical_progress_without_current_page(
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
     store.transition(run_id, RunStatus.RUNNING_STAGE1)
-    store.append_event(run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3))
+    store.append_event(
+        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=3)
+    )
     store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
     store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
     store.transition(run_id, terminal_status)
@@ -349,7 +380,6 @@ def test_terminal_run_keeps_historical_progress_without_current_page(
     assert "1 of 3 pages" in history.text
     assert "0 of 0 pages" not in history.text
     assert "Currently processing: Page 2 of 3" not in response.text
-
 
 
 def test_run_overview_recovers_missing_total_and_uses_singular_page(
@@ -380,6 +410,8 @@ def test_run_overview_recovers_missing_total_and_uses_singular_page(
     assert response.status_code == 200
     assert "1 of 1 page complete" in response.text
     assert "1 of 0 pages complete" not in response.text
+    assert "Inferring guide from representative pages" in response.text
+    assert "Starts after Stage 1 is complete" not in response.text
 
 
 def test_run_overview_counts_resumed_skipped_stage_as_complete(tmp_path: Path) -> None:

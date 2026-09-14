@@ -10,6 +10,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from mudidi.config.yaml_config import InferenceConfig
+from mudidi.llm.subscriptions import SubscriptionProvider
 from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet
 
@@ -19,6 +20,23 @@ _CREDENTIAL_ENVIRONMENTS = {
     "GEMINI_API_KEY",
     "OPEN_ROUTER_API_KEY",
 }
+_SUBSCRIPTION_DESCRIPTOR_FIELDS = frozenset({"auth_mode", "providers"})
+_API_KEY_MESSAGE_FIELDS = frozenset({"auth_mode", "credentials"})
+
+
+class _DuplicateCredentialKey(ValueError):
+    """Raised when a credential boundary object repeats a key."""
+
+
+def _reject_duplicate_keys(
+    pairs: list[tuple[object, object]],
+) -> dict[object, object]:
+    payload: dict[object, object] = {}
+    for key, value in pairs:
+        if key in payload:
+            raise _DuplicateCredentialKey("credential message contains duplicate keys")
+        payload[key] = value
+    return payload
 
 
 class InferencePhase(StrEnum):
@@ -29,6 +47,35 @@ class InferencePhase(StrEnum):
     PASS1 = "pass1"
     PASS2 = "pass2"
     USER_GUIDE = "user_guide"
+
+
+@dataclass(frozen=True, slots=True)
+class SubscriptionDescriptor:
+    """Non-secret worker selector for subscription backends."""
+
+    auth_mode: str
+    providers: tuple[SubscriptionProvider, ...]
+
+    def __post_init__(self) -> None:
+        if self.auth_mode != "subscription":
+            raise ValueError("subscription descriptor auth_mode must be 'subscription'")
+        if not self.providers:
+            raise ValueError("subscription descriptor requires providers")
+        if any(
+            not isinstance(provider, SubscriptionProvider)
+            for provider in self.providers
+        ):
+            raise ValueError("subscription descriptor provider is unsupported")
+        if len(set(self.providers)) != len(self.providers):
+            raise ValueError("subscription descriptor providers must be unique")
+
+    def as_message(self) -> dict[str, str | list[str]]:
+        """Return the exact descriptor payload accepted by the worker."""
+
+        return {
+            "auth_mode": self.auth_mode,
+            "providers": [provider.value for provider in self.providers],
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,20 +153,50 @@ def apply_credential_message(
     message: str,
     *,
     environ: MutableMapping[str, str] | None = None,
-) -> None:
-    """Validate a one-shot stdin credential message and install it for LiteLLM."""
+) -> SubscriptionDescriptor | None:
+    """Validate a one-shot credential map or subscription descriptor."""
 
     try:
-        payload = json.loads(message)
+        payload = json.loads(message, object_pairs_hook=_reject_duplicate_keys)
+    except _DuplicateCredentialKey as exc:
+        raise ValueError(str(exc)) from exc
     except json.JSONDecodeError as exc:
         raise ValueError("credential message is not valid JSON") from exc
     if not isinstance(payload, dict):
         raise ValueError("credential message must be an object")
-    environment_name = payload.get("environment_name")
-    api_key = payload.get("api_key")
-    if environment_name not in _CREDENTIAL_ENVIRONMENTS:
-        raise ValueError("credential message uses an unsupported environment name")
-    if not isinstance(api_key, str) or not api_key.strip():
-        raise ValueError("credential message has an empty API key")
+    if payload == {}:
+        return None
+
+    if payload.get("auth_mode") == "subscription" or "providers" in payload:
+        if set(payload) != _SUBSCRIPTION_DESCRIPTOR_FIELDS:
+            raise ValueError("subscription descriptor contains unknown or mixed fields")
+        if payload.get("auth_mode") != "subscription":
+            raise ValueError("subscription descriptor auth_mode is unsupported")
+        raw_providers = payload.get("providers")
+        if not isinstance(raw_providers, list) or not raw_providers:
+            raise ValueError(
+                "subscription descriptor providers must be a non-empty list"
+            )
+        try:
+            providers = tuple(SubscriptionProvider(item) for item in raw_providers)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("subscription descriptor provider is unsupported") from exc
+        return SubscriptionDescriptor(auth_mode="subscription", providers=providers)
+
+    if set(payload) != _API_KEY_MESSAGE_FIELDS:
+        raise ValueError("credential message contains unknown fields")
+    if payload.get("auth_mode") != "api_key":
+        raise ValueError("credential message auth_mode is unsupported")
+    credentials = payload.get("credentials")
+    if not isinstance(credentials, dict) or not credentials:
+        raise ValueError("credential message credentials must be a non-empty object")
     target = environ if environ is not None else os.environ
-    target[str(environment_name)] = api_key.strip()
+    resolved: dict[str, str] = {}
+    for environment_name, api_key in credentials.items():
+        if environment_name not in _CREDENTIAL_ENVIRONMENTS:
+            raise ValueError("credential message uses an unsupported environment name")
+        if not isinstance(api_key, str) or not api_key.strip():
+            raise ValueError("credential message has an empty API key")
+        resolved[str(environment_name)] = api_key.strip()
+    target.update(resolved)
+    return None

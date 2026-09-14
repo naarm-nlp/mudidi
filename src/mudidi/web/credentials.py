@@ -21,6 +21,15 @@ _ENVIRONMENT_KEYS: dict[Provider, str] = {
     Provider.OPENROUTER: "OPEN_ROUTER_API_KEY",
 }
 
+def subscription_store_path(data_dir: Path | str) -> Path:
+    """Return the dedicated encrypted subscription-store directory.
+
+    Subscription records intentionally live below the web data directory but
+    outside the API-key vault database and schema.
+    """
+
+    return Path(data_dir).expanduser().resolve() / "subscriptions"
+
 
 class CredentialSource(StrEnum):
     """Non-secret description of where a provider key will be resolved."""

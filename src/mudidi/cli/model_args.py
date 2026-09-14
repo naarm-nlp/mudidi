@@ -9,6 +9,20 @@ from dataclasses import dataclass
 DEFAULT_MODEL = "gemini/gemini-3-flash-preview"
 
 
+class _StoreExplicitModel(argparse.Action):
+    """Store a model and record that the legacy parser saw the flag."""
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: str,
+        option_string: str | None = None,
+    ) -> None:
+        setattr(namespace, self.dest, values)
+        setattr(namespace, "_model_explicit", True)
+
+
 @dataclass(frozen=True)
 class StageModels:
     """Resolved litellm model ids per pipeline step."""
@@ -30,9 +44,11 @@ class StageModels:
 
 def register_model_arguments(parser: argparse.ArgumentParser) -> None:
     """Register ``--model`` and per-step model overrides."""
+    parser.set_defaults(_model_explicit=False)
     parser.add_argument(
         "-m",
         "--model",
+        action=_StoreExplicitModel,
         default=DEFAULT_MODEL,
         help="Default model for all steps when step-specific flags are omitted "
         f"(default: {DEFAULT_MODEL}).",

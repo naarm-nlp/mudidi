@@ -1,7 +1,7 @@
 {% extends "_layout.html" %}
 {% block title %}Live Logs · MUDIDI{% endblock %}
 {% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
-{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-8" defer></script>{% endblock %}
+{% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-15" defer></script>{% endblock %}
 {% block main %}
 <div class="page-shell">
   <div class="providers-page">
@@ -27,10 +27,10 @@
       <div class="log-toolbar">
         <div>
           <span class="eyebrow" id="log-panel-title">Stream status</span>
-          <span class="stream-status" data-stream-status role="status">{{ "Live" if is_active else "Idle" }}</span>
+          <span class="stream-status" data-stream-status role="status">{{ "Live" if is_active else "Finished" }}</span>
         </div>
         <div class="log-toolbar-actions">
-          <button type="button" data-live-toggle aria-pressed="false"><span data-live-pause-label{% if not is_active %} hidden{% endif %}>Pause</span><span data-live-resume-label{% if is_active %} hidden{% endif %}>Resume</span></button>
+          {% if is_active %}<button type="button" data-live-toggle aria-pressed="false"><span data-live-pause-label>Pause</span><span data-live-resume-label hidden>Resume</span></button>{% endif %}
           <button type="button" data-log-copy>Copy visible text</button>
           <span class="log-copy-status" data-log-copy-status role="status" aria-live="polite"></span>
         </div>

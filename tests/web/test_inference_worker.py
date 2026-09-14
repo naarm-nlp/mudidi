@@ -136,23 +136,32 @@ def test_pass1_reports_managed_output_parse_rules_path(
     assert result.parse_rules_path == tmp_path / "output/mdf_parsing_guide.json"
 
 
-def test_credential_message_sets_only_selected_environment_variable() -> None:
+def test_credential_message_sets_all_selected_environment_variables() -> None:
     environ: dict[str, str] = {}
     message = json.dumps(
-        {"environment_name": "ANTHROPIC_API_KEY", "api_key": "sk-ant-secret"}
+        {
+            "auth_mode": "api_key",
+            "credentials": {
+                "ANTHROPIC_API_KEY": "sk-ant-secret",
+                "OPENAI_API_KEY": "sk-openai-secret",
+            },
+        }
     )
 
     apply_credential_message(message, environ=environ)
 
-    assert environ == {"ANTHROPIC_API_KEY": "sk-ant-secret"}
+    assert environ == {
+        "ANTHROPIC_API_KEY": "sk-ant-secret",
+        "OPENAI_API_KEY": "sk-openai-secret",
+    }
 
 
 @pytest.mark.parametrize(
     "message",
     [
         "not json",
-        json.dumps({"environment_name": "PATH", "api_key": "secret"}),
-        json.dumps({"environment_name": "OPENAI_API_KEY", "api_key": ""}),
+        json.dumps({"auth_mode": "api_key", "credentials": {"PATH": "secret"}}),
+        json.dumps({"auth_mode": "api_key", "credentials": {"OPENAI_API_KEY": ""}}),
     ],
 )
 def test_credential_message_rejects_malformed_or_unapproved_keys(message: str) -> None:

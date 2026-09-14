@@ -329,7 +329,7 @@ def test_page_viewer_entry_keeps_empty_state_when_no_pages_exist(
     assert "No page outputs yet" in response.text
     assert "Processed pages will appear here" in response.text
     assert "page-viewer-empty" in response.text
-    assert f'href="/active"' in response.text
+    assert 'href="/active"' in response.text
     assert "View active progress" in response.text
     assert f'<meta name="mudidi-events" content="/runs/{run_id}/events?after=0">' in response.text
 
@@ -358,7 +358,7 @@ def test_page_viewer_empty_state_links_to_run_overview_when_inactive(
     assert response.status_code == 200
     assert f'href="/runs/{run_id}"' in response.text
     assert "Return to run overview" in response.text
-    assert f'class="back-link" href="/active"' not in response.text
+    assert 'class="back-link" href="/active"' not in response.text
 
 
 def test_page_viewer_refreshes_as_outputs_arrive_during_stage1(
