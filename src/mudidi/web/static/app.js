@@ -984,7 +984,7 @@ const loadModelCatalog = async ({
         );
         url.searchParams.set("stage", request.stage);
         url.searchParams.set("auth_mode", request.authMode);
-        if (force && request.authMode === "api_key") url.searchParams.set("force", "true");
+        if (force) url.searchParams.set("force", "true");
         const response = await window.fetch(url, {
           headers: {"Accept": "application/json"},
           signal: modelCatalogController.signal,

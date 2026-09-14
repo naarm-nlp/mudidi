@@ -178,10 +178,6 @@ def test_model_catalog_endpoint_redacts_provider_failure(tmp_path: Path) -> None
             "/models/openrouter",
             {"stage": "stage1", "auth_mode": "subscription"},
         ),
-        (
-            "/models/openai",
-            {"stage": "stage1", "auth_mode": "subscription", "force": "true"},
-        ),
     ],
 )
 def test_model_catalog_endpoint_rejects_invalid_combinations(
@@ -359,3 +355,42 @@ def test_authenticated_google_subscription_catalog_comes_from_antigravity(
     ]
     assert backend.list_calls == 1
     assert discovery.calls == []
+
+
+def test_authenticated_subscription_catalog_force_refreshes_cached_models(
+    tmp_path: Path,
+) -> None:
+    backend = _AuthenticatedSubscriptionBackend(
+        SubscriptionProvider.GOOGLE,
+        models=(("gemini-3.7-flash", "Gemini 3.7 Flash"),),
+    )
+    client = TestClient(
+        create_app(
+            data_dir=tmp_path,
+            subscription_backends={SubscriptionProvider.GOOGLE: backend},
+        )
+    )
+    request = {"stage": "stage1", "auth_mode": "subscription"}
+
+    first = client.get("/models/gemini", params=request)
+    backend.models = (
+        SubscriptionModel(
+            model_id="gemini-3.8-flash",
+            display_name="Gemini 3.8 Flash",
+            reasoning=resolve_reasoning_profile(
+                "google-antigravity", "gemini-3.8-flash"
+            ),
+        ),
+    )
+    cached = client.get("/models/gemini", params=request)
+    refreshed = client.get(
+        "/models/gemini",
+        params={**request, "force": "true"},
+    )
+
+    assert first.json()["available"][0]["model_id"] == "gemini/gemini-3.7-flash"
+    assert cached.json()["available"][0]["model_id"] == "gemini/gemini-3.7-flash"
+    assert refreshed.status_code == 200
+    assert refreshed.json()["source"] == "live"
+    assert refreshed.json()["available"][0]["model_id"] == "gemini/gemini-3.8-flash"
+    assert backend.list_calls == 2

@@ -938,6 +938,21 @@ def test_google_cloud_project_environment_is_optional_and_validated() -> None:
     )
 
 
+def test_backend_uses_environment_project_unless_explicitly_overridden(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "environment-project")
+
+    environment_backend = GoogleAntigravityBackend(store=_Store())
+    explicit_backend = GoogleAntigravityBackend(
+        store=_Store(),
+        project_id=_PROJECT_ID,
+    )
+
+    assert environment_backend._project_id == "environment-project"
+    assert explicit_backend._project_id == _PROJECT_ID
+
+
 def test_google_oauth_registration_environment_overrides_defaults() -> None:
     environment = {
         "MUDIDI_GOOGLE_OAUTH_CLIENT_ID": _CLIENT_ID,

@@ -64,5 +64,5 @@ Three defects found during that smoke were repaired before release:
 
 The release candidate passed 1,383 repository tests with 10 intentional skips,
 the strict MkDocs build, generated-reference verification, Ruff, and live
-post-repair web and CLI checks. Current main passes 1,384 tests, including the
+post-repair web and CLI checks. Current main passes 1,385 tests, including the
 legacy-preset migration regression.
