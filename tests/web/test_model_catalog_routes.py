@@ -350,8 +350,8 @@ def test_authenticated_google_subscription_catalog_comes_from_antigravity(
         (item["model_id"], item["display_name"])
         for item in response.json()["available"]
     ] == [
-        ("gemini/gemini-3.8-flash", "Gemini 3.8 Flash"),
         ("gemini/gemini-3.1-pro", "Gemini 3.1 Pro"),
+        ("gemini/gemini-3.8-flash", "Gemini 3.8 Flash"),
     ]
     assert backend.list_calls == 1
     assert discovery.calls == []

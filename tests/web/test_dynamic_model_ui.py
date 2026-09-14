@@ -96,6 +96,7 @@ def test_browser_script_fetches_grouped_catalogs_and_filters_auth_panels() -> No
     assert 'document.createElement("optgroup")' in script
     assert "Recommended for this stage" in script
     assert "Available from your account" in script
+    assert "Available from your subscription — Pro first" in script
     assert "Available from your subscription — newest first" in script
     assert "if (!subscription) {" in script
     assert "const synchronizeCredentialPanels" in script

@@ -738,7 +738,9 @@ const applyModelCatalog = (
   if (subscription) {
     appendModelGroup(
       select,
-      "Available from your subscription — newest first",
+      provider === "gemini"
+        ? "Available from your subscription — Pro first"
+        : "Available from your subscription — newest first",
       [...(payload.recommended || []), ...(payload.available || [])],
       provider,
     );

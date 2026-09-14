@@ -15,7 +15,7 @@ MUDIDI can now run production dictionary digitization through authenticated Open
 ### Live model selection
 
 - Load stage-compatible models from the authenticated account rather than a fixed OpenAI, Gemini, or Claude list.
-- Sort subscription models newest first while retaining provider release and ordering metadata.
+- Sort Google subscription models with Pro before Flash while preserving newest-first order within each family and for other providers.
 - Show only the reasoning levels supported by the selected model, including adaptive Claude and effort-qualified Gemini models.
 - Configure Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, evaluator, and rewriter models independently where the workflow permits it.
 - Preserve entitlement-only split-model selections in saved presets while the live catalog refreshes.
