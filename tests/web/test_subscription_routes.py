@@ -714,29 +714,6 @@ def test_subscription_login_launch_requires_unexpired_pending_transaction(
         assert "refresh-secret" not in response.text
 
 
-def test_google_login_reports_missing_oauth_configuration(
-    tmp_path: Path,
-) -> None:
-    backend = _LoginErrorBackend(
-        SubscriptionProvider.GOOGLE,
-        SubscriptionAuthError(
-            "Google OAuth is not configured",
-            provider=SubscriptionProvider.GOOGLE,
-            metadata={"reason": "oauth_client_configuration_missing"},
-        ),
-    )
-    response = TestClient(
-        _app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend})
-    ).post("/subscriptions/google/login")
-
-    assert response.status_code == 409
-    assert response.json()["category"] == "authentication"
-    assert (
-        response.json()["message"]
-        == "Google OAuth is not configured; set "
-        "MUDIDI_GOOGLE_OAUTH_CLIENT_ID and restart MUDIDI"
-    )
-    assert "client_secret" not in response.text
 
 
 def test_claude_login_reports_provider_policy_errors_without_secrets(
@@ -1186,8 +1163,6 @@ def test_real_google_callback_persists_for_new_runtime(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("MUDIDI_GOOGLE_OAUTH_CLIENT_ID", "configured-client")
-    monkeypatch.setenv("MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET", "configured-secret")
 
     class FakeOAuth:
         def build_authorization_url(
@@ -1201,6 +1176,10 @@ def test_real_google_callback_persists_for_new_runtime(
             assert endpoint == "https://oauth2.googleapis.com/token"
             assert kwargs["code"] == "authorization-code"
             assert kwargs["code_verifier"]
+            assert (
+                kwargs["client_id"]
+                == "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+            )
             return {
                 "access_token": "google-access-secret",
                 "refresh_token": "google-refresh-secret",
@@ -1230,6 +1209,16 @@ def test_real_google_callback_persists_for_new_runtime(
     assert authorization_query["redirect_uri"] == [
         "http://127.0.0.1:51121/oauth-callback"
     ]
+    assert authorization_query["client_id"] == [
+        "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+    ]
+    assert set(authorization_query["scope"][0].split()) == {
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/cclog",
+        "https://www.googleapis.com/auth/experimentsandconfigs",
+    }
 
     with urlopen(
         "http://127.0.0.1:51121/oauth-callback?"
@@ -1247,6 +1236,13 @@ def test_real_google_callback_persists_for_new_runtime(
     assert runtime is not None
     assert runtime.backend.status().authenticated
     assert "google-refresh-secret" not in callback_body
+    logged_out = client.post("/subscriptions/google/logout")
+
+    assert logged_out.status_code == 200
+    assert logged_out.json()["authenticated"] is False
+    assert logged_out.json()["credential_present"] is False
+    assert logged_out.json()["removable"] is False
+    assert not runtime.backend.status().authenticated
 
 
 def test_real_claude_adapter_callback_uses_provider_redirect_alias(

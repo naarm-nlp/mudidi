@@ -32,6 +32,7 @@ from mudidi.llm.subscriptions.google_antigravity import (
     google_cloud_project_from_environment,
     google_oauth_client_id_from_environment,
     google_oauth_client_secret_from_environment,
+    google_oauth_registration,
 )
 
 
@@ -771,23 +772,38 @@ def test_configured_project_is_used_when_onboarding_response_omits_project() -> 
         "https://daily-cloudcode-pa.googleapis.com/v1internal:onboardUser",
     ]
 
+def test_google_oauth_registration_uses_antigravity_defaults() -> None:
+    client_id, client_secret = google_oauth_registration(environ={})
 
-def test_google_oauth_registration_requires_explicit_environment() -> None:
-    assert google_oauth_client_id_from_environment({}) is None
-    assert google_oauth_client_secret_from_environment({}) is None
+    assert (
+        client_id
+        == "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+    )
+    assert client_secret is not None
+    assert len(client_secret) > 20
 
-def test_google_login_reports_missing_deployment_registration(
+
+def test_google_login_uses_antigravity_registration_without_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("MUDIDI_GOOGLE_OAUTH_CLIENT_ID", raising=False)
     monkeypatch.delenv("MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET", raising=False)
     backend = GoogleAntigravityBackend(store=_Store())
 
-    with pytest.raises(
-        SubscriptionAuthError,
-        match="MUDIDI_GOOGLE_OAUTH_CLIENT_ID",
-    ):
-        backend.begin_login(backend.login_redirect_uri)
+    transaction = backend.begin_login(backend.login_redirect_uri)
+    query = parse_qs(transaction.authorization_url.split("?", 1)[1])
+
+    assert query["client_id"] == [
+        "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+    ]
+    assert query["redirect_uri"] == ["http://127.0.0.1:51121/oauth-callback"]
+    assert set(query["scope"][0].split()) == {
+        "https://www.googleapis.com/auth/cloud-platform",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/cclog",
+        "https://www.googleapis.com/auth/experimentsandconfigs",
+    }
 
 
 def test_authenticated_model_discovery_collapses_effort_variants() -> None:
@@ -930,6 +946,10 @@ def test_google_oauth_registration_environment_overrides_defaults() -> None:
 
     assert google_oauth_client_id_from_environment(environment) == _CLIENT_ID
     assert google_oauth_client_secret_from_environment(environment) == _CLIENT_SECRET
+    assert google_oauth_registration(environ=environment) == (
+        _CLIENT_ID,
+        _CLIENT_SECRET,
+    )
 
 
 def test_login_rejects_callback_state_mismatch_before_token_exchange() -> None:
