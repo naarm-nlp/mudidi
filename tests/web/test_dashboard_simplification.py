@@ -48,7 +48,8 @@ def _form(tmp_path: Path, **overrides: object) -> NewRunForm:
         "dictionary_pages": "1",
         "output_directory": tmp_path / "output",
         "pipeline": "complete",
-        "provider": "anthropic",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
         "model": "anthropic/claude-sonnet-5",
         "reasoning": "low",
     }
@@ -297,14 +298,11 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
     assert 'name="mdf_manual_source" value="upload"' in response.text
     assert 'name="mdf_manual_source" value="bundled"' not in response.text
     assert 'name="custom_mdf_manual" type="file"' in response.text
-    assert (
-        'class="mdf-guide-file-input" data-mdf-manual-file-input' in response.text
-    )
+    assert 'class="mdf-guide-file-input" data-mdf-manual-file-input' in response.text
     assert "<span>Choose PDF</span>" in response.text
     assert (
         'id="mdf-manual-file-status" class="mdf-guide-file-status" '
-        "data-mdf-manual-file-status"
-        in response.text
+        "data-mdf-manual-file-status" in response.text
     )
     assert (
         '<fieldset class="choice-group mdf-manual additional-context-group"'
@@ -379,7 +377,8 @@ def test_dashboard_rejects_an_image_and_highlights_dictionary_pdf(
             "output_directory": str(tmp_path / "output"),
             "dictionary_pages": "1",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
         },
@@ -401,7 +400,8 @@ def test_dashboard_rejects_multiple_dictionary_pdfs(tmp_path: Path) -> None:
             "output_directory": str(tmp_path / "output"),
             "dictionary_pages": "1",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
         },
@@ -424,7 +424,8 @@ def test_dashboard_requires_dictionary_pages_and_marks_the_field_red(
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
         },
@@ -448,7 +449,8 @@ def test_dashboard_rejects_page_numbers_beyond_the_uploaded_pdf(
             "output_directory": str(tmp_path / "output"),
             "dictionary_pages": "1-4",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
         },
@@ -474,7 +476,8 @@ def test_dashboard_accepts_the_uploaded_pdf_last_page(tmp_path: Path) -> None:
             "output_directory": str(tmp_path / "output"),
             "dictionary_pages": "1-3",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
         },
@@ -508,7 +511,8 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
         data={
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "dictionary_pages": "1-4",

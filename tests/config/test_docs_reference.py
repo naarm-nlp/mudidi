@@ -38,6 +38,7 @@ def test_config_reference_is_exhaustive_yaml_shaped_documentation() -> None:
     assert "```json" not in rendered
     assert '"$defs"' not in rendered
     assert "source_config:" not in rendered
+    assert "temperature" not in rendered
     for kind in (
         "inference",
         "benchmark_run",

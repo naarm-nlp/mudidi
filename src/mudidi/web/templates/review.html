@@ -2,6 +2,12 @@
 {% block title %}Review run · MUDIDI{% endblock %}
 {% block main %}
     <div class="page-shell">
+    {% if preset_saved %}
+    <div class="preset-save-notification" role="status" aria-live="polite">
+      <strong>Preset saved</strong>
+      <span>You can keep reviewing or start this run.</span>
+    </div>
+    {% endif %}
       <div class="review-page">
       <a class="back-link" href="/">← Edit configuration</a>
       <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
@@ -19,6 +25,7 @@
             ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
             ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'stage_1_instructions', 'stage_2_instructions']),
             ('Model', ['stage_1_model', 'stage_2_pass_1_model', 'stage_2_pass_2_model']),
+            ('Authentication', ['auth_mode', 'auth_providers', 'billing_label']),
             ('Agentic', ['agentic'])
           ] %}
           <div class="review-groups">

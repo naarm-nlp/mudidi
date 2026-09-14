@@ -108,6 +108,24 @@ surprise: true
 
     with pytest.raises(ValidationError, match="surprise"):
         load_yaml_config(path)
+def test_yaml_config_rejects_removed_temperature(tmp_path: Path) -> None:
+    path = tmp_path / "removed-temperature.yaml"
+    path.write_text(
+        """
+version: 1
+kind: inference
+input:
+  pages: dictionary.pdf
+output:
+  directory: output
+models:
+  temperature: 0.1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="temperature"):
+        load_yaml_config(path)
 
 
 def test_yaml_config_rejects_removed_catastrophic_recovery_option(

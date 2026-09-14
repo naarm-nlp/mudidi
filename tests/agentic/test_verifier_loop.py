@@ -830,3 +830,63 @@ def test_loop_allows_large_rewrite_when_delta_gate_disabled(tmp_path: Path) -> N
     assert result.output == "completely unrelated regenerated page"
     assert result.stop_reason == "accepted"
     assert result.rewrite_count == 1
+
+
+def test_subscription_billing_mode_survives_agentic_usage_aggregation(
+    tmp_path: Path,
+) -> None:
+    decisions = [
+        AgenticVerifierDecision(
+            decision="retry",
+            confidence=0.9,
+            issues=[
+                AgenticIssue(
+                    type="text_error",
+                    evidence="wrong spelling",
+                    suggested_fix="replace it",
+                )
+            ],
+        ),
+        AgenticVerifierDecision(decision="accept", confidence=0.95),
+    ]
+
+    def verify(output: str, attempt: int):
+        return (
+            decisions[attempt],
+            {
+                "prompt_tokens": 4,
+                "completion_tokens": 2,
+                "total_tokens": 6,
+                "cost_usd": None,
+                "billing_mode": "subscription",
+            },
+        )
+
+    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return (
+            "corrected",
+            {
+                "prompt_tokens": 3,
+                "completion_tokens": 1,
+                "total_tokens": 4,
+                "cost_usd": None,
+                "billing_mode": "subscription",
+            },
+        )
+
+    result = run_bounded_verifier_loop(
+        stage="stage1",
+        initial_output="incorrect",
+        artifact_dir=tmp_path,
+        output_suffix=".txt",
+        verify=verify,
+        rewrite=rewrite,
+        config=AgenticLoopConfig(
+            max_iterations=2,
+            prefer_verifier_patches=False,
+        ),
+    )
+
+    assert result.agentic_usage_summary["billing_mode"] == "subscription"
+    assert result.agentic_usage_summary["verifier"]["billing_mode"] == "subscription"
+    assert result.agentic_usage_summary["rewriter"]["billing_mode"] == "subscription"

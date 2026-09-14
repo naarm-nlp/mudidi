@@ -7,16 +7,35 @@ from pathlib import Path
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_validator,
+)
 
 from mudidi.config.yaml_config import (
     AgenticConfig,
+    AuthConfig,
     InferenceConfig,
     InputConfig,
     ModelsConfig,
     OutputConfig,
     PipelineConfig,
     RuntimeConfig,
+)
+from mudidi.llm.reasoning import (
+    ReasoningChoice,
+    choose_supported_effort,
+    resolve_reasoning_profile,
+)
+from mudidi.llm.subscriptions import (
+    AuthMode,
+    SubscriptionProvider,
+    subscription_default_model,
+    resolve_subscription_model,
+    subscription_provider_for_model,
 )
 from mudidi.web.inputs import read_managed_instruction_metadata
 from mudidi.schemas.dictionary_profile import (
@@ -35,8 +54,9 @@ class PipelineChoice(StrEnum):
     TRANSCRIPTION = "transcription"
     STRUCTURE = "structure"
 
+
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
-ReasoningChoice = Literal["none", "low", "medium", "high"]
+SubscriptionProviderName = Literal["openai", "google", "claude"]
 MdfManualSource = Literal["none", "upload"]
 InstructionSource = Literal["typed", "file"]
 InstructionScope = Literal["pass1", "pass2", "both"]
@@ -47,7 +67,23 @@ _PIPELINE_STAGE = {
     PipelineChoice.STRUCTURE: "2",
 }
 
+_SUBSCRIPTION_PROVIDER_BY_ROUTE = {
+    Provider.OPENAI: SubscriptionProvider.OPENAI,
+    Provider.GEMINI: SubscriptionProvider.GOOGLE,
+    Provider.ANTHROPIC: SubscriptionProvider.CLAUDE,
+}
 
+
+def _subscription_provider(
+    provider: Provider,
+    label: str,
+) -> SubscriptionProvider:
+    try:
+        return _SUBSCRIPTION_PROVIDER_BY_ROUTE[provider]
+    except KeyError as exc:
+        raise ValueError(
+            f"{label} provider {provider.value!r} does not support subscription billing"
+        ) from exc
 
 
 def instruction_review_summary(
@@ -63,15 +99,15 @@ def instruction_review_summary(
         mode = str(metadata.get("source_mode") or "file")
         suffix = str(metadata.get("suffix") or "").lower()
         kind = str(metadata.get("kind") or ("pdf" if suffix == ".pdf" else "text"))
-        original_filename = metadata.get("original_filename") if mode == "file" else None
+        original_filename = (
+            metadata.get("original_filename") if mode == "file" else None
+        )
         selected_pages = _metadata_pages(metadata.get("selected_pages"))
         pdf_page_count = _metadata_int(metadata.get("pdf_page_count"))
         if stage2_scope is None:
             raw_scope = metadata.get("stage2_scope")
             stage2_scope = (
-                raw_scope
-                if raw_scope in {"pass1", "pass2", "both"}
-                else None
+                raw_scope if raw_scope in {"pass1", "pass2", "both"} else None
             )
     elif path is not None and path.is_file() and not path.is_symlink():
         suffix = path.suffix.lower()
@@ -187,7 +223,9 @@ class NewRunForm(BaseModel):
     stage2_additional_instructions: str | None = Field(default=None, max_length=20_000)
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
-    provider: ProviderName
+    auth_mode: AuthMode = AuthMode.API_KEY
+    stage1_provider: ProviderName = Provider.ANTHROPIC
+    stage2_provider: ProviderName = Provider.ANTHROPIC
     model: str | None = None
     reasoning: ReasoningChoice | None = None
     stage1_model: str | None = None
@@ -200,7 +238,6 @@ class NewRunForm(BaseModel):
     stage2_pass2_custom_model: str | None = None
     stage2_pass2_reasoning: ReasoningChoice | None = None
     openrouter_provider: str | None = Field(default=None, max_length=100)
-    temperature: float = Field(default=0.1, ge=0.0)
 
     agentic: bool = False
     verify_stage1: bool = False
@@ -219,6 +256,7 @@ class NewRunForm(BaseModel):
     rewriter_reasoning: ReasoningChoice | None = "low"
 
     batch_size: int = Field(default=1, ge=1, le=32)
+
     @field_validator(
         "dictionary_pages",
         "introduction_pages",
@@ -286,13 +324,67 @@ class NewRunForm(BaseModel):
         default_model, stage1_model, pass1_model, pass2_model = self._stage_models()
         legacy_reasoning = self.reasoning or "low"
         stage1_reasoning = _effective_reasoning(
-            self.stage1_reasoning or legacy_reasoning
+            self.stage1_reasoning or legacy_reasoning,
+            stage1_model or default_model,
         )
         pass1_reasoning = _effective_reasoning(
-            self.stage2_pass1_reasoning or legacy_reasoning
+            self.stage2_pass1_reasoning or legacy_reasoning,
+            pass1_model or default_model,
         )
         pass2_reasoning = _effective_reasoning(
-            self.stage2_pass2_reasoning or legacy_reasoning
+            self.stage2_pass2_reasoning or legacy_reasoning,
+            pass2_model or default_model,
+        )
+        evaluator_model = self._resolve_agentic_model(
+            self.evaluator_provider,
+            self.evaluator_model,
+            self.evaluator_custom_model,
+            "Evaluator",
+        )
+        rewriter_model = self._resolve_agentic_model(
+            self.rewriter_provider,
+            self.rewriter_model,
+            self.rewriter_custom_model,
+            "Rewriter",
+        )
+        evaluator_reasoning = (
+            _effective_reasoning(
+                self.evaluator_reasoning,
+                evaluator_model or stage1_model or pass2_model or default_model,
+            )
+            if self.evaluator_reasoning is not None
+            else None
+        )
+        rewriter_reasoning = (
+            _effective_reasoning(
+                self.rewriter_reasoning,
+                rewriter_model or stage1_model or pass2_model or default_model,
+            )
+            if self.rewriter_reasoning is not None
+            else None
+        )
+        active_models: list[str] = []
+        if runs_stage1:
+            active_models.append(stage1_model or default_model)
+        if runs_stage2:
+            active_models.extend(
+                (pass1_model or default_model, pass2_model or default_model)
+            )
+        if verify_stage1 or verify_stage2:
+            active_models.extend(
+                model
+                for model in (evaluator_model, rewriter_model)
+                if model is not None
+            )
+        auth_providers = (
+            tuple(
+                sorted(
+                    {subscription_provider_for_model(model) for model in active_models},
+                    key=lambda provider: provider.value,
+                )
+            )
+            if self.auth_mode is AuthMode.SUBSCRIPTION
+            else ()
         )
         return InferenceConfig(
             input=InputConfig(
@@ -316,6 +408,7 @@ class NewRunForm(BaseModel):
                 ),
             ),
             output=OutputConfig(directory=output),
+            auth=AuthConfig(mode=self.auth_mode, providers=auth_providers),
             pipeline=PipelineConfig(
                 stage=stage,
                 strategy="two_stage",
@@ -357,27 +450,16 @@ class NewRunForm(BaseModel):
                 stage2_reasoning=pass2_reasoning,
                 stage2_pass1_reasoning=pass1_reasoning,
                 stage2_pass2_reasoning=pass2_reasoning,
-                temperature=self.temperature,
             ),
             agentic=AgenticConfig(
                 stage1=verify_stage1,
                 stage2=verify_stage2,
                 max_iterations=self.max_iterations,
-                evaluator_model=self._resolve_agentic_model(
-                    self.evaluator_provider,
-                    self.evaluator_model,
-                    self.evaluator_custom_model,
-                    "Evaluator",
-                ),
-                rewriter_model=self._resolve_agentic_model(
-                    self.rewriter_provider,
-                    self.rewriter_model,
-                    self.rewriter_custom_model,
-                    "Rewriter",
-                ),
+                evaluator_model=evaluator_model,
+                rewriter_model=rewriter_model,
                 reasoning=stage1_reasoning if runs_stage1 else pass2_reasoning,
-                evaluator_reasoning=self.evaluator_reasoning,
-                rewriter_reasoning=self.rewriter_reasoning,
+                evaluator_reasoning=evaluator_reasoning,
+                rewriter_reasoning=rewriter_reasoning,
                 min_retry_confidence=self.min_retry_confidence,
                 verifier_patches=self.verifier_patches,
                 require_concrete_retry=self.require_concrete_retry,
@@ -468,9 +550,59 @@ class NewRunForm(BaseModel):
         stage1_summary = (stage1_model or default_model) if runs_stage1 else "Not used"
         pass1_summary = (pass1_model or default_model) if runs_stage2 else "Not used"
         pass2_summary = (pass2_model or default_model) if runs_stage2 else "Not used"
+        summary_models = [
+            model
+            for model in (stage1_summary, pass1_summary, pass2_summary)
+            if model != "Not used"
+        ]
+        verify_stage1, verify_stage2 = self._verification_stages()
+        if verify_stage1 or verify_stage2:
+            summary_models.extend(
+                model
+                for model in (
+                    self._resolve_agentic_model(
+                        self.evaluator_provider,
+                        self.evaluator_model,
+                        self.evaluator_custom_model,
+                        "Evaluator",
+                    ),
+                    self._resolve_agentic_model(
+                        self.rewriter_provider,
+                        self.rewriter_model,
+                        self.rewriter_custom_model,
+                        "Rewriter",
+                    ),
+                )
+                if model is not None
+            )
+        auth_provider_summary = "None"
+        if self.auth_mode is AuthMode.SUBSCRIPTION:
+            auth_provider_summary = ", ".join(
+                provider.value
+                for provider in sorted(
+                    {
+                        subscription_provider_for_model(model)
+                        for model in summary_models
+                    },
+                    key=lambda provider: provider.value,
+                )
+            )
         return {
             "input": str(self.pages),
             "output": str(self.output_directory),
+            "auth_mode": self.auth_mode.value,
+            "auth_providers": auth_provider_summary,
+            "stage_1_provider": self.stage1_provider,
+            "stage_2_provider": self.stage2_provider,
+            "billing_mode": self.auth_mode.value,
+            "billing": (
+                "subscription" if self.auth_mode is AuthMode.SUBSCRIPTION else "api_key"
+            ),
+            "billing_label": (
+                "Subscription billing"
+                if self.auth_mode is AuthMode.SUBSCRIPTION
+                else "API-key billing"
+            ),
             "pipeline": self.pipeline.value,
             "dictionary_pages": self.dictionary_pages or "All provided pages",
             "parse_rule_pages": parse_rule_pages,
@@ -480,19 +612,13 @@ class NewRunForm(BaseModel):
             "agentic": self._agentic_summary(),
             "stage_1_instructions": instruction_review_summary(
                 self.stage1_guides,
-                page_spec=(
-                    self.stage1_instruction_pdf_pages if runs_stage1 else None
-                ),
+                page_spec=(self.stage1_instruction_pdf_pages if runs_stage1 else None),
                 stage2_scope=None,
             ),
             "stage_2_instructions": instruction_review_summary(
                 self.stage2_guides,
-                page_spec=(
-                    self.stage2_instruction_pdf_pages if runs_stage2 else None
-                ),
-                stage2_scope=(
-                    self.stage2_instruction_scope if runs_stage2 else None
-                ),
+                page_spec=(self.stage2_instruction_pdf_pages if runs_stage2 else None),
+                stage2_scope=(self.stage2_instruction_scope if runs_stage2 else None),
             ),
             "mdf_manual": {
                 "none": "Not used",
@@ -519,11 +645,8 @@ class NewRunForm(BaseModel):
 
         for stage, active in (("stage1", runs_stage1), ("stage2", runs_stage2)):
             source = getattr(self, f"{stage}_instruction_source")
-            source_field = f"{stage}_instruction_source"
             file_field = f"{stage}_instruction_file"
-            text = _clean_optional(
-                getattr(self, f"{stage}_additional_instructions")
-            )
+            text = _clean_optional(getattr(self, f"{stage}_additional_instructions"))
             path = getattr(self, f"{stage}_guides")
             page_spec = getattr(self, f"{stage}_instruction_pdf_pages")
             file_value = getattr(self, file_field)
@@ -534,18 +657,9 @@ class NewRunForm(BaseModel):
                     or path is not None
                     or page_spec is not None
                     or file_value is not None
-                    or (
-                        stage == "stage2"
-                        and self.stage2_instruction_scope != "both"
-                    )
-                    or (
-                        stage == "stage1"
-                        and self.stage1_instruction_keep_existing
-                    )
-                    or (
-                        stage == "stage2"
-                        and self.stage2_instruction_keep_existing
-                    )
+                    or (stage == "stage2" and self.stage2_instruction_scope != "both")
+                    or (stage == "stage1" and self.stage1_instruction_keep_existing)
+                    or (stage == "stage2" and self.stage2_instruction_keep_existing)
                 )
                 if inactive:
                     raise FormFieldError(
@@ -601,20 +715,25 @@ class NewRunForm(BaseModel):
         return "Off"
 
     def _stage_models(self) -> tuple[str, str | None, str | None, str | None]:
-        """Resolve legacy and provider-aware stage model fields."""
+        """Resolve independent provider and model selections for each stage."""
 
         legacy = _clean_optional(self.model)
         selected = {
             "stage1": self._resolve_model(
-                self.stage1_model, self.stage1_custom_model, "Stage 1"
+                self.stage1_provider,
+                self.stage1_model or legacy,
+                self.stage1_custom_model,
+                "Stage 1",
             ),
             "pass1": self._resolve_model(
-                self.stage2_pass1_model,
+                self.stage2_provider,
+                self.stage2_pass1_model or legacy,
                 self.stage2_pass1_custom_model,
                 "Stage 2 Pass 1",
             ),
             "pass2": self._resolve_model(
-                self.stage2_pass2_model,
+                self.stage2_provider,
+                self.stage2_pass2_model or legacy,
                 self.stage2_pass2_custom_model,
                 "Stage 2 Pass 2",
             ),
@@ -624,26 +743,47 @@ class NewRunForm(BaseModel):
             PipelineChoice.TRANSCRIPTION: ("stage1",),
             PipelineChoice.STRUCTURE: ("pass1", "pass2"),
         }[self.pipeline]
-        if legacy is None:
-            missing = [name for name in required if selected[name] is None]
-            if missing:
-                raise ValueError(
-                    "Select a model for each active pipeline stage: "
-                    + ", ".join(missing)
+        if self.auth_mode is AuthMode.SUBSCRIPTION:
+            stage_specs: dict[str, tuple[ProviderName, str]] = {
+                "stage1": (self.stage1_provider, "Stage 1"),
+                "pass1": (self.stage2_provider, "Stage 2 Pass 1"),
+                "pass2": (self.stage2_provider, "Stage 2 Pass 2"),
+            }
+            for name in required:
+                if selected[name] is not None:
+                    continue
+                provider_name, label = stage_specs[name]
+                provider = _subscription_provider(Provider(provider_name), label)
+                selected[name] = self._resolve_model(
+                    provider_name,
+                    subscription_default_model(provider),
+                    None,
+                    label,
                 )
-        default = legacy or next(
-            selected[name] for name in required if selected[name] is not None
-        )
+        missing = [name for name in required if selected[name] is None]
+        if missing:
+            raise ValueError(
+                "Select a model for each active pipeline stage: " + ", ".join(missing)
+            )
+        default = selected["pass2"] or selected["stage1"] or selected["pass1"]
+        assert default is not None
         return default, selected["stage1"], selected["pass1"], selected["pass2"]
 
     def _resolve_model(
         self,
+        provider_name: ProviderName,
         selected: str | None,
         custom: str | None,
         label: str,
     ) -> str | None:
         selected = _clean_optional(selected)
         custom = _clean_optional(custom)
+        if self.auth_mode is AuthMode.SUBSCRIPTION and (
+            selected == "__other__" or custom is not None
+        ):
+            raise ValueError(
+                f"{label} must use a model available from the authenticated subscription"
+            )
         if selected is None and custom is None:
             return None
         if selected == "__other__":
@@ -653,9 +793,18 @@ class NewRunForm(BaseModel):
         elif selected is None:
             selected = custom
         assert selected is not None
-        provider = Provider(self.provider)
-        if provider is not Provider.OPENROUTER and "/" in selected:
-            return selected
+        provider = Provider(provider_name)
+        if self.auth_mode is AuthMode.SUBSCRIPTION:
+            subscription_provider = _subscription_provider(provider, label)
+            selected = resolve_subscription_model(subscription_provider, selected)
+        if (
+            provider not in {Provider.OPENROUTER, Provider.CUSTOM}
+            and "/" in selected
+            and not selected.startswith(f"{provider.value}/")
+        ):
+            raise ValueError(
+                f"{label} model must use the selected {provider.value!r} provider"
+            )
         return normalize_custom_model(provider, selected)
 
     def _resolve_agentic_model(
@@ -665,27 +814,23 @@ class NewRunForm(BaseModel):
         custom: str | None,
         label: str,
     ) -> str | None:
-        selected = _clean_optional(selected)
-        custom = _clean_optional(custom)
-        if selected is None and custom is None:
+        if _clean_optional(selected) is None and _clean_optional(custom) is None:
             return None
-        if selected == "__other__":
-            if custom is None:
-                raise ValueError(f"{label} requires a custom model name")
-            selected = custom
-        elif selected is None:
-            selected = custom
-        assert selected is not None
-        provider = Provider(provider_name or self.provider)
-        if provider is not Provider.OPENROUTER and "/" in selected:
-            return selected
-        return normalize_custom_model(provider, selected)
+        if provider_name is None:
+            raise ValueError(f"{label} requires a provider")
+        return self._resolve_model(provider_name, selected, custom, label)
 
     def _resolved_openrouter_provider(self) -> str | None:
         """Return automatic or pinned OpenRouter endpoint routing."""
 
         selected = _clean_optional(self.openrouter_provider)
-        if self.provider != Provider.OPENROUTER.value:
+        providers = {self.stage1_provider, self.stage2_provider}
+        providers.update(
+            provider
+            for provider in (self.evaluator_provider, self.rewriter_provider)
+            if provider is not None
+        )
+        if Provider.OPENROUTER.value not in providers:
             if selected not in {None, "auto"}:
                 raise ValueError(
                     "openrouter_provider is only valid with the OpenRouter provider"
@@ -761,10 +906,12 @@ def _clean_optional(value: str | None) -> str | None:
     return cleaned or None
 
 
-def _effective_reasoning(value: ReasoningChoice) -> Literal["low", "medium", "high"]:
-    """Map the dashboard's portable ``none`` choice to the lowest level."""
+def _effective_reasoning(value: ReasoningChoice, model: str) -> ReasoningChoice:
+    """Clamp one portable choice to the effective model's capabilities."""
 
-    return "low" if value == "none" else value
+    provider = model.split("/", maxsplit=1)[0] if "/" in model else "custom"
+    profile = resolve_reasoning_profile(provider, model)
+    return choose_supported_effort(profile, value) or value
 
 
 def _check_page_bounds(

@@ -57,6 +57,9 @@ input:  # InputConfig; required
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
   directory: "path/to/output"  # path; required
+auth:  # AuthConfig; optional
+  mode: "api_key"  # AuthMode; default: "api_key"
+  providers: []  # list[SubscriptionProvider]; default: []
 pipeline:  # PipelineConfig; optional
   stage: "all"  # one of "1", "2", "all", "2-pass-1", "2-pass-2"; default: "all"
   strategy: "two_stage"  # one of "two_stage", "vlm_ocr", "mathpix_ocr"; default: "two_stage"
@@ -79,20 +82,19 @@ models:  # ModelsConfig; optional
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
   openrouter_provider: null  # string | null; default: null
-  stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-  stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
-  stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
-  stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
-  temperature: 0.1  # number; default: 0.1; >= 0.0
+  stage1_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  stage2_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  stage2_pass1_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+  stage2_pass2_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
   stage2: false  # boolean; default: false
   max_iterations: 2  # integer; default: 2; >= 0
   evaluator_model: null  # string | null; default: null
   rewriter_model: null  # string | null; default: null
-  reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-  evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
-  rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
+  reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  evaluator_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+  rewriter_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
   min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
@@ -170,6 +172,9 @@ input:  # InputConfig; required
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
   directory: "path/to/output"  # path; required
+auth:  # AuthConfig; optional
+  mode: "api_key"  # AuthMode; default: "api_key"
+  providers: []  # list[SubscriptionProvider]; default: []
 pipeline:  # PipelineConfig; optional
   stage: "all"  # one of "1", "2", "all", "2-pass-1", "2-pass-2"; default: "all"
   strategy: "two_stage"  # one of "two_stage", "vlm_ocr", "mathpix_ocr"; default: "two_stage"
@@ -192,20 +197,19 @@ models:  # ModelsConfig; optional
   stage2_pass1: null  # string | null; default: null
   stage2_pass2: null  # string | null; default: null
   openrouter_provider: null  # string | null; default: null
-  stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-  stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
-  stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
-  stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
-  temperature: 0.1  # number; default: 0.1; >= 0.0
+  stage1_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  stage2_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  stage2_pass1_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+  stage2_pass2_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
   stage2: false  # boolean; default: false
   max_iterations: 2  # integer; default: 2; >= 0
   evaluator_model: null  # string | null; default: null
   rewriter_model: null  # string | null; default: null
-  reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-  evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
-  rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
+  reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+  evaluator_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+  rewriter_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
   min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
@@ -287,6 +291,9 @@ base:  # BenchmarkRunConfig; required
     languages: null  # list[string] | null; default: null
   output:  # OutputConfig; required
     directory: "path/to/output"  # path; required
+  auth:  # AuthConfig; optional
+    mode: "api_key"  # AuthMode; default: "api_key"
+    providers: []  # list[SubscriptionProvider]; default: []
   pipeline:  # PipelineConfig; optional
     stage: "all"  # one of "1", "2", "all", "2-pass-1", "2-pass-2"; default: "all"
     strategy: "two_stage"  # one of "two_stage", "vlm_ocr", "mathpix_ocr"; default: "two_stage"
@@ -309,20 +316,19 @@ base:  # BenchmarkRunConfig; required
     stage2_pass1: null  # string | null; default: null
     stage2_pass2: null  # string | null; default: null
     openrouter_provider: null  # string | null; default: null
-    stage1_reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-    stage2_reasoning: "low"  # one of "low", "medium", "high"; default: "low"
-    stage2_pass1_reasoning: null  # one of "low", "medium", "high" | null; default: null
-    stage2_pass2_reasoning: null  # one of "low", "medium", "high" | null; default: null
-    temperature: 0.1  # number; default: 0.1; >= 0.0
+    stage1_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+    stage2_reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+    stage2_pass1_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+    stage2_pass2_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
   agentic:  # AgenticConfig; optional
     stage1: false  # boolean; default: false
     stage2: false  # boolean; default: false
     max_iterations: 2  # integer; default: 2; >= 0
     evaluator_model: null  # string | null; default: null
     rewriter_model: null  # string | null; default: null
-    reasoning: "low"  # one of "none", "low", "medium", "high"; default: "low"
-    evaluator_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
-    rewriter_reasoning: null  # one of "none", "low", "medium", "high" | null; default: null
+    reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
+    evaluator_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
+    rewriter_reasoning: null  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max" | null; default: null
     min_retry_confidence: 0.55  # number; default: 0.55; >= 0.0; <= 1.0
     verifier_patches: true  # boolean; default: true
     require_concrete_retry: true  # boolean; default: true

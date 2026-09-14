@@ -18,6 +18,7 @@ from mudidi.config.prompt_cache import MediaReferenceMode, PromptCacheMode
 from mudidi.config.run_config import PromptMode
 from mudidi.llm import client as llm
 from mudidi.llm.prompt_mode import prompt_id_for_mode
+from mudidi.llm.subscriptions import SubscriptionBackend, SubscriptionRuntime
 from mudidi.llm.prompt_store import get_prompt_store
 from mudidi.schemas.field_map import FieldMapPrompt
 from mudidi.utils.image import (
@@ -352,7 +353,6 @@ def build_direct_mdf_messages(
         instruction_context=instruction_context,
         instruction_scope=instruction_scope,
     ).messages
-
 def extract_direct_mdf(
     *,
     transcription: str,
@@ -360,7 +360,6 @@ def extract_direct_mdf(
     field_map: FieldMapPrompt,
     model: str,
     reasoning_effort: str,
-    temperature: float = 0.1,
     guides: str = "",
     toolbox_pdf: Optional[Path] = None,
     mode: PromptMode = "benchmark",
@@ -370,6 +369,7 @@ def extract_direct_mdf(
     prompt_cache_key: Optional[str] = None,
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
+    backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> tuple[str, str, dict, list]:
     """
     Run Pass 2 direct MDF extraction.
@@ -402,12 +402,14 @@ def extract_direct_mdf(
             instruction_context=instruction_context,
             instruction_scope=instruction_scope,
         )
-    raw, usage = llm.complete_with_usage(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        reasoning_effort=reasoning_effort,  # type: ignore[arg-type]
-        prompt_cache_key=effective_cache_key,
-    )
+    completion_kwargs: dict[str, object] = {
+        "model": model,
+        "messages": messages,
+        "reasoning_effort": reasoning_effort,
+        "prompt_cache_key": effective_cache_key,
+    }
+    if backend is not None:
+        completion_kwargs["backend"] = backend
+    raw, usage = llm.complete_with_usage(**completion_kwargs)
     mdf_text = normalize_mdf_text(strip_markdown_fences(raw))
     return mdf_text, raw, usage, messages

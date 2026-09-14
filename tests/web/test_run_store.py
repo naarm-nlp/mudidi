@@ -1,6 +1,9 @@
 """Tests for durable local-web run state and authorization metadata."""
 
 from __future__ import annotations
+import json
+import sqlite3
+
 
 from pathlib import Path
 
@@ -63,16 +66,17 @@ def test_pass2_authorization_is_rejected_from_queued_state(store: RunStore) -> N
         )
 
 
-def test_interrupted_preapproval_run_resumes_to_review(store: RunStore) -> None:
+def test_interrupted_discovery_resumes_to_queued_pass1(store: RunStore) -> None:
     store.create_run("run-1")
     store.transition("run-1", RunStatus.VALIDATED)
     store.transition("run-1", RunStatus.QUEUED)
     store.transition("run-1", RunStatus.DISCOVERING_PARSE_RULES)
-    store.interrupt("run-1")
+    interrupted = store.interrupt("run-1")
+    assert interrupted.resume_phase == "stage2_pass1"
 
     run = store.resume("run-1", credentials_available=True)
 
-    assert run.status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    assert run.status is RunStatus.QUEUED
 
 
 def test_resume_requires_temporary_credentials(store: RunStore) -> None:
@@ -139,6 +143,63 @@ def test_presets_round_trip_non_secret_typed_configuration(
     assert store.list_presets() == [loaded]
 
 
+def test_store_migrates_legacy_subscription_preset_auth_provider(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    pages = tmp_path / "legacy-pages"
+    pages.mkdir()
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / "legacy-output"},
+            "auth": {"mode": "subscription", "providers": ["claude"]},
+            "models": {"default": "anthropic/claude-sonnet-4-6"},
+            "pipeline": {"stage": "1"},
+        }
+    )
+    preset = store.create_preset(
+        "legacy-preset",
+        name="Legacy subscription",
+        provider="anthropic",
+        config=config,
+    )
+    payload = json.loads(config.model_dump_json())
+    payload["auth"]["provider"] = payload["auth"].pop("providers")[0]
+    with sqlite3.connect(store.database_path) as connection:
+        connection.execute(
+            "UPDATE presets SET config_json = ? WHERE preset_id = ?",
+            (json.dumps(payload), preset.preset_id),
+        )
+        connection.execute("DELETE FROM schema_migrations WHERE version = 4")
+
+    migrated_store = RunStore(store.database_path)
+    migrated = migrated_store.get_preset(preset.preset_id)
+
+    assert [provider.value for provider in migrated.config.auth.providers] == ["claude"]
+    with sqlite3.connect(store.database_path) as connection:
+        stored = json.loads(
+            connection.execute(
+                "SELECT config_json FROM presets WHERE preset_id = ?",
+                (preset.preset_id,),
+            ).fetchone()[0]
+        )
+    assert "provider" not in stored["auth"]
+    assert stored["auth"]["providers"] == ["claude"]
+
+    with sqlite3.connect(store.database_path) as connection:
+        connection.execute(
+            "UPDATE presets SET config_json = ? WHERE preset_id = ?",
+            (json.dumps(payload), preset.preset_id),
+        )
+
+    read_migrated = migrated_store.list_presets()[0]
+
+    assert [provider.value for provider in read_migrated.config.auth.providers] == [
+        "claude"
+    ]
+
+
 def test_delete_preset_removes_metadata_and_raises_for_missing_id(
     store: RunStore,
     tmp_path: Path,
@@ -178,7 +239,9 @@ def test_saving_an_existing_preset_name_replaces_the_old_preset(
         }
     )
     replacement = original.model_copy(
-        update={"output": original.output.model_copy(update={"directory": tmp_path / "new"})}
+        update={
+            "output": original.output.model_copy(update={"directory": tmp_path / "new"})
+        }
     )
     store.create_preset(
         "preset-old",

@@ -112,8 +112,8 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - OCR hints and Stage 1 column mode;
 - MinerU, PaddleOCR-VL, GLM-OCR, and Mathpix settings.
 
-These remain supported through YAML and the CLI. Temperature, reasoning,
-runtime controls, and custom models remain available in the dashboard.
+These remain supported through YAML and the CLI. Reasoning, runtime controls,
+and custom models remain available in the dashboard.
 
 Benchmark inputs, gold-source controls, sweep fields, evaluation thresholds,
 experiment layout names, configuration `kind`/`version`, and internal output
@@ -121,25 +121,30 @@ subdirectories are not part of the production UI.
 
 ## Model selection
 
-The model picker combines:
+API-key model pickers combine:
 
 1. A bundled, dated catalog of MUDIDI-tested models.
 2. Models returned by the configured provider's model-list API.
 3. An always-available custom LiteLLM identifier.
 
+Subscription pickers instead show every model returned by the authenticated
+OpenAI, Google, or Claude account in one newest-first list. They do not accept
+manual identifiers; the server validates selections against the authenticated
+catalog.
+
 Providers are explicit: direct Gemini, direct Anthropic, direct OpenAI,
 OpenRouter, or **Other / advanced provider** routing through a user-supplied
 LiteLLM identifier. A direct provider is never silently sent through OpenRouter.
 
-Known models are annotated for image input, structured output, reasoning, and
-recommended stages. Unknown custom models are accepted with a capability
-warning. Model lists may be cached locally, but API keys may not be cached with
-them.
+Known models expose only their reviewed or provider-advertised reasoning levels.
+Unknown API-key/custom models expose the complete portable set from `minimal`
+through `max`. Model lists may be cached locally, but API keys may not be cached
+with them.
 
 Each active pipeline stage has its own provider-filtered picker. Inactive stage
-pickers are hidden and disabled. OpenRouter uses manual per-stage model entry
-and additionally accepts an optional **OpenRouter Provider** slug; blank means
-automatic OpenRouter routing.
+pickers are hidden and disabled. OpenRouter accepts both discovered API-key
+models and manual per-stage model entry, plus an optional **OpenRouter
+Provider** slug; blank means automatic OpenRouter routing.
 
 ## Out of scope for the first release
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 from docx import Document
@@ -12,11 +13,17 @@ from docx import Document
 import pytest
 from fastapi.testclient import TestClient
 
-from mudidi.web.app import _preset_asset_links, _read_preset_text, create_app
+from mudidi.web.app import (
+    _preset_asset_links,
+    _preset_form_state,
+    _read_preset_text,
+    create_app,
+)
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.credentials import CredentialVault
 from mudidi.web.models import Provider
-from mudidi.web.runs import RunStatus
+from mudidi.web.runs import PresetRecord, RunStatus
+
 
 def _preview(
     client: TestClient,
@@ -26,7 +33,8 @@ def _preview(
     data = {
         "output_directory": str(tmp_path / "output"),
         "pipeline": "complete",
-        "provider": "anthropic",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
         "model": "anthropic/claude-sonnet-5",
         "reasoning": "low",
         "agentic": "true",
@@ -39,9 +47,7 @@ def _preview(
     response = client.post(
         "/runs/preview",
         data=data,
-        files={
-            "dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")
-        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
     assert response.status_code == 200
     match = re.search(r'action="/runs/([^/]+)/start"', response.text)
@@ -61,6 +67,43 @@ def _pdf_bytes(page_count: int = 1) -> bytes:
         document.close()
 
 
+def test_subscription_preset_preserves_live_catalog_models(tmp_path: Path) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "input": {"pages": tmp_path / "dictionary.pdf"},
+            "output": {"directory": tmp_path / "output"},
+            "auth": {"mode": "subscription", "providers": ["google"]},
+            "pipeline": {"stage": "all"},
+            "models": {
+                "default": "gemini/gemini-3.5-flash-lite",
+                "stage1": "gemini/gemini-3.8-flash",
+                "stage2_pass1": "gemini/gemini-3.7-flash",
+                "stage2_pass2": "gemini/gemini-3.5-flash-lite",
+            },
+        }
+    )
+    preset = PresetRecord(
+        preset_id="preset-live-models",
+        name="Live models",
+        provider="gemini",
+        config=config,
+        created_at=datetime.now(timezone.utc),
+    )
+
+    state = _preset_form_state(
+        preset,
+        known_models={"gemini/gemini-3.8-flash"},
+        presets_root=None,
+    )
+
+    assert state["stage1_model"] == ["gemini/gemini-3.8-flash"]
+    assert state["stage2_pass1_model"] == ["gemini/gemini-3.7-flash"]
+    assert state["stage2_pass2_model"] == ["gemini/gemini-3.5-flash-lite"]
+    assert "stage1_custom_model" not in state
+    assert "stage2_pass1_custom_model" not in state
+    assert "stage2_pass2_custom_model" not in state
+
+
 def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
     response = TestClient(app).post(
@@ -70,10 +113,11 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
             "pipeline": "complete",
             "dictionary_pages": "10-12",
             "parse_rules_pages": "10,12",
-            "provider": "anthropic",
+            "stage1_provider": "gemini",
+            "stage2_provider": "anthropic",
             "stage1_model": "gemini/gemini-3.1-pro-preview",
             "stage2_pass1_model": "anthropic/claude-opus-4-6",
-            "stage2_pass2_model": "openai/gpt-5.4",
+            "stage2_pass2_model": "anthropic/claude-sonnet-4-6",
             "reasoning": "low",
             "agentic": "false",
         },
@@ -101,7 +145,10 @@ def test_review_page_shows_page_ranges_and_each_stage_model(tmp_path: Path) -> N
     assert "Stage 2 Pass 1 Model" in response.text
     assert "anthropic/claude-opus-4-6" in response.text
     assert "Stage 2 Pass 2 Model" in response.text
-    assert "openai/gpt-5.4" in response.text
+    assert "anthropic/claude-sonnet-4-6" in response.text
+    assert "policy_warning" not in response.text
+    assert "subscription-policy-warning" not in response.text
+
 
 @pytest.mark.parametrize(
     ("pipeline", "stage1_instructions", "stage2_instructions"),
@@ -126,7 +173,8 @@ def test_preview_review_summarizes_enabled_instruction_metadata(
     data = {
         "output_directory": str(tmp_path / "output"),
         "pipeline": pipeline,
-        "provider": "anthropic",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
         "model": "anthropic/claude-sonnet-5",
         "reasoning": "low",
         "dictionary_pages": "1",
@@ -192,6 +240,8 @@ def test_prepared_review_preserves_instruction_metadata_summary(
     assert "Source: Typed" in recovered.text
     assert "Keep uncertain letters marked." not in recovered.text
     assert "Use the custom nt marker." not in recovered.text
+
+
 @pytest.mark.parametrize(
     ("inherited_stage1", "inherited_stage2", "pipeline"),
     [
@@ -242,7 +292,8 @@ def test_reused_preset_cleared_instructions_match_recovered_review(
             "preset_id": preset.preset_id,
             "output_directory": str(tmp_path / f"{pipeline}-output"),
             "pipeline": pipeline,
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
@@ -283,9 +334,6 @@ def test_reused_preset_cleared_instructions_match_recovered_review(
     )
 
 
-
-
-
 def test_prepared_review_recovery_route_is_read_only_and_safe(
     tmp_path: Path,
 ) -> None:
@@ -305,7 +353,9 @@ def test_prepared_review_recovery_route_is_read_only_and_safe(
     assert "Review your run" in recovered.text
     assert 'class="review-actions panel"' in recovered.text
     assert app.state.run_store.get_run(run_id).status is prepared_status
-    assert app.state.job_controller.config_path(run_id).stat().st_mtime_ns == config_mtime
+    assert (
+        app.state.job_controller.config_path(run_id).stat().st_mtime_ns == config_mtime
+    )
 
     blocked = client.post(f"/runs/{run_id}/start")
     assert blocked.status_code == 409
@@ -333,7 +383,8 @@ def test_recovered_review_labels_uploaded_guide_as_direct_use(
             "pipeline": "complete",
             "dictionary_pages": "1",
             "parse_rules_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
@@ -376,13 +427,10 @@ def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
     parse_blocked = client.post(f"/runs/{parse_run_id}/resume")
 
     assert parse_blocked.status_code == 409
-    assert (
-        f'data-continue-action="/runs/{parse_run_id}/resume"'
-        in parse_blocked.text
-    )
+    assert f'data-continue-action="/runs/{parse_run_id}/resume"' in parse_blocked.text
     parse_run = app.state.run_store.get_run(parse_run_id)
     assert parse_run.status is RunStatus.CREDENTIALS_REQUIRED
-    assert parse_run.resume_phase == "parse_rule_review"
+    assert parse_run.resume_phase == "stage2_pass1"
     parse_review = client.get(f"/runs/{parse_run_id}/review")
     assert parse_review.status_code == 200
     assert f'action="/runs/{parse_run_id}/resume"' in parse_review.text
@@ -404,10 +452,7 @@ def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
     pass2_blocked = client.post(f"/runs/{pass2_run_id}/resume")
 
     assert pass2_blocked.status_code == 409
-    assert (
-        f'data-continue-action="/runs/{pass2_run_id}/resume"'
-        in pass2_blocked.text
-    )
+    assert f'data-continue-action="/runs/{pass2_run_id}/resume"' in pass2_blocked.text
     pass2_review = client.get(f"/runs/{pass2_run_id}/review")
     assert pass2_review.status_code == 200
     assert f'action="/runs/{pass2_run_id}/resume"' in pass2_review.text
@@ -422,9 +467,11 @@ def test_credential_blocked_resume_preserves_phase_and_approval_provenance(
     continued = client.post(f"/runs/{parse_run_id}/resume", follow_redirects=False)
 
     assert continued.status_code == 303
-    assert app.state.run_store.get_run(
-        parse_run_id
-    ).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    app.state.job_controller.wait(parse_run_id, timeout=10)
+    assert (
+        app.state.run_store.get_run(parse_run_id).status
+        is RunStatus.AWAITING_PARSE_RULES_REVIEW
+    )
 
 
 def test_initial_credential_block_uses_start_continuation(
@@ -442,6 +489,7 @@ def test_initial_credential_block_uses_start_continuation(
 
     assert blocked.status_code == 409
     assert f'data-continue-action="/runs/{run_id}/start"' in blocked.text
+
 
 def test_review_recovery_returns_safe_404_for_unknown_or_unprepared_runs(
     tmp_path: Path,
@@ -508,6 +556,7 @@ def test_missing_key_moves_prepared_run_to_credentials_required(
     assert "API credential required" in response.text
     assert app.state.run_store.get_run(run_id).status is RunStatus.CREDENTIALS_REQUIRED
 
+
 def test_credentials_required_page_has_one_provider_recovery_card(
     tmp_path: Path,
 ) -> None:
@@ -522,13 +571,13 @@ def test_credentials_required_page_has_one_provider_recovery_card(
     response = client.post(f"/runs/{run_id}/start")
 
     assert response.status_code == 409
-    assert response.text.count('data-credential-card') == 1
-    assert f'data-provider="anthropic"' in response.text
-    assert 'data-save-key' in response.text
+    assert response.text.count("data-credential-card") == 1
+    assert 'data-provider="anthropic"' in response.text
+    assert "data-save-key" in response.text
     assert f'data-continue-action="/runs/{run_id}/start"' in response.text
     assert f'href="/runs/{run_id}/review"' in response.text
     assert "Save and continue" in response.text
-    assert "/static/app.js?v=dashboard-ui-8" in response.text
+    assert "/static/app.js?v=dashboard-ui-15" in response.text
     assert "api_key" not in response.text
 
 
@@ -576,11 +625,11 @@ def test_live_log_is_managed_bounded_and_redacts_provider_key(tmp_path: Path) ->
     assert "[REDACTED]" in response.text
     assert "sk-ant-live-log-secret" not in response.text
     assert "Older log output was truncated" in response.text
-    assert response.text.count('<pre data-log-console') == 1
+    assert response.text.count("<pre data-log-console") == 1
     for marker in (
-        'data-stream-status',
-        'data-live-toggle',
-        'data-log-copy',
+        "data-stream-status",
+        "data-live-toggle",
+        "data-log-copy",
         "Pause",
         "Resume",
         "Copy visible text",
@@ -616,14 +665,16 @@ def test_logs_use_terminal_event_as_inactive_state_for_stale_run(
     store.append_event(run_id, terminal_event)
 
     response = client.get(f"/runs/{run_id}/logs")
-
     assert response.status_code == 200
     assert 'meta name="mudidi-events"' not in response.text
-    assert 'data-stream-status role="status">Idle</span>' in response.text
-
+    assert 'data-stream-status role="status">Finished</span>' in response.text
+    assert "data-live-toggle" not in response.text
+    assert ">Pause<" not in response.text
+    assert ">Resume<" not in response.text
     stream = client.get(f"/runs/{run_id}/events?after=1")
     assert stream.status_code == 200
     assert stream.text == ""
+
 
 def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
@@ -650,6 +701,66 @@ def test_failed_run_surfaces_error_in_overview_and_logs(tmp_path: Path) -> None:
     assert "Offline worker failure requested" in logs.text
 
 
+def test_retried_failed_run_ignores_older_terminal_event(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data", offline_inference=True)
+    client = TestClient(app)
+    run_id = _preview(client, tmp_path)
+    store = app.state.run_store
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(
+        run_id,
+        {
+            "version": 1,
+            "type": "stage.started",
+            "run_id": run_id,
+            "sequence": 1,
+            "occurred_at": "2026-09-06T00:00:00+00:00",
+            "stage": "stage1",
+            "total_pages": 1,
+        },
+    )
+    store.append_event(
+        run_id,
+        {
+            "version": 1,
+            "type": "run.failed",
+            "run_id": run_id,
+            "sequence": 2,
+            "occurred_at": "2026-09-06T00:00:01+00:00",
+            "stage": "stage1",
+            "message": "first attempt failed",
+        },
+    )
+    store.transition(run_id, RunStatus.FAILED)
+    store.resume(run_id, credentials_available=True)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    store.append_event(
+        run_id,
+        {
+            "version": 1,
+            "type": "stage.started",
+            "run_id": run_id,
+            "sequence": 3,
+            "occurred_at": "2026-09-06T00:00:02+00:00",
+            "stage": "stage1",
+            "total_pages": 1,
+        },
+    )
+
+    logs = client.get(f"/runs/{run_id}/logs")
+    overview = client.get(f"/runs/{run_id}")
+
+    assert logs.status_code == 200
+    assert 'meta name="mudidi-events"' in logs.text
+    assert 'data-stream-status role="status">Live</span>' in logs.text
+    assert "Run failure" not in logs.text
+    assert "first attempt failed" not in logs.text
+    assert overview.status_code == 200
+    assert "Failure details" not in overview.text
+    assert "first attempt failed" not in overview.text
+
+
 def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     tmp_path: Path,
 ) -> None:
@@ -660,9 +771,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     guide = run_bundle / "mdf_guide" / "saved-guide.json"
     guide.parent.mkdir()
     guide.write_text(
-        json.dumps(
-            {"markers": [{"marker": "lx", "description": "Headword"}]}
-        ),
+        json.dumps({"markers": [{"marker": "lx", "description": "Headword"}]}),
         encoding="utf-8",
     )
     manual = run_bundle / "mdf_manual" / "saved-manual.pdf"
@@ -689,6 +798,12 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     )
 
     assert saved.status_code == 303
+    assert saved.headers["location"] == (f"/runs/{run_id}/review?preset_saved=1")
+    saved_review = client.get(saved.headers["location"])
+    assert saved_review.status_code == 200
+    assert 'class="preset-save-notification"' in saved_review.text
+    assert 'role="status" aria-live="polite"' in saved_review.text
+    assert "Preset saved" in saved_review.text
     preset = app.state.run_store.list_presets()[0]
     assert preset.config.input.pages is not None
     assert preset.config.input.pages.resolve().is_relative_to(
@@ -699,14 +814,14 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert "My verified setup" in page.text
     assert f'href="/?preset={preset.preset_id}"' in page.text
     assert "Use preset" in page.text
-    assert f'aria-label="Use preset My verified setup"' in page.text
+    assert 'aria-label="Use preset My verified setup"' in page.text
     assert "Updated" in page.text
     assert "Provider" in page.text
     assert "Pipeline" in page.text
     assert "Primary model" in page.text
     assert "Agentic" in page.text
     assert "Remove" in page.text
-    assert f'aria-label="Remove preset My verified setup"' in page.text
+    assert 'aria-label="Remove preset My verified setup"' in page.text
     assert 'data-confirm-preset-delete="My verified setup"' in page.text
     assert 'action="/presets/' + preset.preset_id + '/delete"' in page.text
 
@@ -723,13 +838,15 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert "Loaded preset: My verified setup" in loaded.text
     assert 'id="dictionary-pdf"' in loaded.text
     assert re.search(r'id="dictionary-pdf"[^>]*disabled', loaded.text) is None
-    assert re.search(r'name="existing_mdf_guide_file"[^>]*disabled', loaded.text) is None
+    assert (
+        re.search(r'name="existing_mdf_guide_file"[^>]*disabled', loaded.text) is None
+    )
     assert "dictionary.pdf" in loaded.text
     assert "saved-guide.json" in loaded.text
     assert "saved-manual.pdf" in loaded.text
-    assert f'/presets/{preset.preset_id}/files/pages/0' in loaded.text
-    assert f'/presets/{preset.preset_id}/files/mdf-guide' in loaded.text
-    assert f'/presets/{preset.preset_id}/files/mdf-manual' in loaded.text
+    assert f"/presets/{preset.preset_id}/files/pages/0" in loaded.text
+    assert f"/presets/{preset.preset_id}/files/mdf-guide" in loaded.text
+    assert f"/presets/{preset.preset_id}/files/mdf-manual" in loaded.text
 
     saved_page = client.get(f"/presets/{preset.preset_id}/files/pages/0")
     saved_guide = client.get(f"/presets/{preset.preset_id}/files/mdf-guide")
@@ -749,7 +866,8 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "output_directory": str(edited_output),
             "output_policy": "resume",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
@@ -762,7 +880,9 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert "Review your run" in review.text
     assert str(edited_output) in review.text
     assert len(app.state.run_store.list_runs()) == 2
-    cloned = next(run for run in app.state.run_store.list_runs() if run.run_id != run_id)
+    cloned = next(
+        run for run in app.state.run_store.list_runs() if run.run_id != run_id
+    )
     cloned_config = app.state.job_controller.load_inference_config(cloned.run_id)
     assert cloned_config.input.pages is not None
     assert cloned_config.input.pages.resolve().is_relative_to(
@@ -776,7 +896,8 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "output_directory": str(tmp_path / "replacement-output"),
             "output_policy": "resume",
             "pipeline": "complete",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
@@ -792,9 +913,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
                 "existing_mdf_guide_file",
                 (
                     "replacement-guide.json",
-                    json.dumps(
-                        {"markers": [{"marker": "ge", "description": "Gloss"}]}
-                    ),
+                    json.dumps({"markers": [{"marker": "ge", "description": "Gloss"}]}),
                     "application/json",
                 ),
             ),
@@ -902,7 +1021,8 @@ def test_preview_materializes_stage1_selected_pdf_instruction(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -949,7 +1069,8 @@ def test_preview_materializes_stage2_markdown_for_pass1_only(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -999,7 +1120,8 @@ def test_preview_materializes_instruction_uploads_and_review_metadata(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1078,7 +1200,8 @@ def test_preview_rejects_instruction_source_mixing(
         "output_directory": str(tmp_path / "output"),
         "pipeline": "complete",
         "dictionary_pages": "1",
-        "provider": "anthropic",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
         "model": "anthropic/claude-sonnet-5",
         "reasoning": "low",
         "stage1_instruction_source": source,
@@ -1109,7 +1232,8 @@ def test_preview_rejects_forged_stage2_values_when_pipeline_is_inactive(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -1137,7 +1261,8 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
             "output_directory": str(tmp_path / "source-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1185,7 +1310,8 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
             "output_directory": str(tmp_path / "kept-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1212,7 +1338,8 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
             "output_directory": str(tmp_path / "replaced-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1236,7 +1363,10 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
     )
     assert replaced_config.pipeline.stage1_guides is not None
     assert replaced_config.pipeline.stage1_guides.name == "replacement.txt"
-    assert replaced_config.pipeline.stage1_guides.read_text(encoding="utf-8") == "replacement"
+    assert (
+        replaced_config.pipeline.stage1_guides.read_text(encoding="utf-8")
+        == "replacement"
+    )
 
     cleared = client.post(
         "/runs/preview",
@@ -1245,7 +1375,8 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
             "output_directory": str(tmp_path / "cleared-output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "typed",
@@ -1264,9 +1395,7 @@ def test_instruction_preset_keep_replace_and_clear_preserves_sidecars(
     assert cleared_config.pipeline.stage1_guides is None
     assert cleared_config.pipeline.stage2_guides is not None
     assert not (
-        app.state.inputs.bundle(cleared_run_id.group(1))
-        / "instructions"
-        / "stage1"
+        app.state.inputs.bundle(cleared_run_id.group(1)) / "instructions" / "stage1"
     ).exists()
 
 
@@ -1394,7 +1523,10 @@ def test_preview_instruction_failures_use_safe_error_key(
         ("model", "anthropic/claude-sonnet-5"),
         ("reasoning", "low"),
         ("stage1_instruction_source", source),
-        ("stage2_instruction_source", source if pipeline == "transcription" else "typed"),
+        (
+            "stage2_instruction_source",
+            source if pipeline == "transcription" else "typed",
+        ),
     ]
     if page_spec is not None:
         data.append(("stage1_instruction_pdf_pages", page_spec))
@@ -1402,11 +1534,7 @@ def test_preview_instruction_failures_use_safe_error_key(
     file_field = f"{stage}_instruction_file"
     filename = "guide.pdf" if content.startswith(b"%PDF-") else "guide.txt"
     if stage == "stage2":
-        data = [
-            item
-            for item in data
-            if item[0] != "stage1_instruction_source"
-        ]
+        data = [item for item in data if item[0] != "stage1_instruction_source"]
     multipart: list[tuple[str, object]] = [
         ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(), "application/pdf")),
     ]
@@ -1417,9 +1545,7 @@ def test_preview_instruction_failures_use_safe_error_key(
             (
                 filename,
                 content,
-                "application/pdf"
-                if filename.endswith(".pdf")
-                else "text/plain",
+                "application/pdf" if filename.endswith(".pdf") else "text/plain",
             ),
         )
     )
@@ -1440,7 +1566,8 @@ def test_preview_normalizes_whitespace_padded_instruction_source_and_scope(
         ("output_directory", (None, str(tmp_path / "output"))),
         ("pipeline", (None, "complete")),
         ("dictionary_pages", (None, "1")),
-        ("provider", (None, "anthropic")),
+        ("stage1_provider", (None, "anthropic")),
+        ("stage2_provider", (None, "anthropic")),
         ("model", (None, "anthropic/claude-sonnet-5")),
         ("reasoning", (None, "low")),
         ("stage1_instruction_source", (None, " file ")),
@@ -1534,7 +1661,8 @@ def test_uploaded_instruction_review_matches_recovered_review_metadata(
             "output_directory": str(tmp_path / "output"),
             "pipeline": "complete",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1586,7 +1714,8 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             "output_directory": str(tmp_path / "selected-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -1646,7 +1775,8 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             "output_directory": str(tmp_path / "selected-kept-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -1680,7 +1810,8 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             "output_directory": str(tmp_path / "all-pages-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -1715,7 +1846,8 @@ def test_pdf_preset_restores_pages_and_explicit_blank_keep_preserves_all_pages(
             "output_directory": str(tmp_path / "all-pages-kept-output"),
             "pipeline": "structure",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage2_instruction_source": "file",
@@ -1754,7 +1886,8 @@ def test_typed_blank_deletes_managed_and_legacy_instruction_paths(
             "output_directory": str(tmp_path / "managed-output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "file",
@@ -1784,7 +1917,8 @@ def test_typed_blank_deletes_managed_and_legacy_instruction_paths(
             "output_directory": str(tmp_path / "managed-cleared-output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "typed",
@@ -1824,7 +1958,8 @@ def test_typed_blank_deletes_managed_and_legacy_instruction_paths(
             "output_directory": str(tmp_path / "legacy-cleared-output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "typed",
@@ -1915,7 +2050,8 @@ def test_real_legacy_docx_preset_restores_typed_instruction_state(
             "output_directory": str(tmp_path / "restored-output"),
             "pipeline": "transcription",
             "dictionary_pages": "1",
-            "provider": "anthropic",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "stage1_instruction_source": "typed",

@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 import json
+import logging
+import secrets
 import shutil
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
+from threading import RLock, Thread
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -23,11 +28,34 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
+from mudidi.llm.client import resolve_subscription_runtime
+from mudidi.llm.subscriptions import (
+    AuthMode,
+    SubscriptionError,
+    SubscriptionLifecycleBackend,
+    SubscriptionLoginTransaction,
+    SubscriptionProvider,
+    SubscriptionModel,
+    subscription_provider_for_model,
+    SubscriptionStatus,
+)
+from mudidi.llm.subscriptions.storage import SubscriptionStore
+from mudidi.llm.subscriptions.oauth import (
+    LoopbackOAuthReceiver,
+    OAuthCallback,
+    is_allowed_callback_source,
+    validate_loopback_redirect_uri,
+)
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from mudidi.config.yaml_config import AuthConfig, InferenceConfig, validate_config_paths
 from mudidi.instructions import read_instruction_text
-from mudidi.config.yaml_config import InferenceConfig, validate_config_paths
-from mudidi.web.credentials import CredentialVault, PersistentCredentialStore
+from mudidi.web.credentials import (
+    CredentialVault,
+    PersistentCredentialStore,
+    ResolvedCredential,
+    subscription_store_path,
+)
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
 from mudidi.web.forms import (
     FormFieldError,
@@ -43,7 +71,12 @@ from mudidi.web.inputs import (
     rebase_managed_config,
 )
 from mudidi.web.models import (
+    CatalogAuthMode,
+    CatalogStage,
+    LiveModelOption,
     ModelCatalog,
+    ModelCatalogService,
+    ModelDiscoveryError,
     ModelDiscovery,
     Provider,
 )
@@ -57,10 +90,18 @@ from mudidi.web.runs import (
     RunStore,
 )
 
+_SUBSCRIPTION_LOGGER = logging.getLogger("mudidi.web.subscription")
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
 _MAX_REQUEST_BYTES = 110 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
+
+_SUBSCRIPTION_TRANSACTION_TTL = timedelta(minutes=10)
+_SUBSCRIPTION_CALLBACK_PATHS = {
+    SubscriptionProvider.OPENAI: "/auth/callback",
+    SubscriptionProvider.GOOGLE: "/oauth2callback",
+    SubscriptionProvider.CLAUDE: "/callback",
+}
 _ALLOW_SAME_ORIGIN_FRAME_HEADER = "X-MUDIDI-Allow-Same-Origin-Frame"
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _CONTAINER_OUTPUT_ROOT = Path("/app/outputs")
@@ -72,9 +113,7 @@ _LIVE_RUN_STATUSES = {
     RunStatus.RUNNING_STAGE2,
 }
 
-_TERMINAL_EVENT_TYPES = frozenset(
-    {"run.completed", "run.failed", "run.cancelled"}
-)
+_TERMINAL_EVENT_TYPES = frozenset({"run.completed", "run.failed", "run.cancelled"})
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; connect-src 'self'; form-action 'self'; "
@@ -111,10 +150,41 @@ def _exception_group_contains(
     )
 
 
+def _safe_subscription_diagnostic_token(value: object, *, default: str) -> str:
+    if (
+        isinstance(value, str)
+        and 0 < len(value) <= 64
+        and value.isascii()
+        and all(character.isalnum() or character in {"_", "-"} for character in value)
+    ):
+        return value
+    return default
+
+
+def _default_subscription_backends(
+    store: SubscriptionStore,
+) -> dict[SubscriptionProvider, object]:
+    """Build provider adapters over the dedicated local subscription store."""
+
+    from mudidi.llm.subscriptions.claude_research import ClaudeResearchBackend
+    from mudidi.llm.subscriptions.google_antigravity import (
+        GoogleAntigravityBackend,
+    )
+    from mudidi.llm.subscriptions.openai_codex import OpenAICodexBackend
+
+    return {
+        SubscriptionProvider.OPENAI: OpenAICodexBackend(store=store),
+        SubscriptionProvider.GOOGLE: GoogleAntigravityBackend(store=store),
+        SubscriptionProvider.CLAUDE: ClaudeResearchBackend(store=store),
+    }
+
+
 def create_app(
     *,
     data_dir: Path | None = None,
     credential_vault: CredentialVault | None = None,
+    subscription_store: SubscriptionStore | None = None,
+    subscription_backends: Mapping[SubscriptionProvider | str, object] | None = None,
     offline_inference: bool = False,
     model_discovery: ModelDiscovery | None = None,
     container_mode: bool = False,
@@ -157,9 +227,118 @@ def create_app(
             key_path=resolved_data_dir / ".credential-key",
         ),
     )
+    app.state.subscription_store = subscription_store or SubscriptionStore(
+        subscription_store_path(resolved_data_dir)
+    )
+    raw_subscription_backends = (
+        subscription_backends
+        if subscription_backends is not None
+        else _default_subscription_backends(app.state.subscription_store)
+    )
+    app.state.subscription_backends = {}
+    for raw_provider, backend in raw_subscription_backends.items():
+        try:
+            selected_provider = (
+                raw_provider
+                if isinstance(raw_provider, SubscriptionProvider)
+                else SubscriptionProvider(raw_provider)
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("unsupported subscription provider") from exc
+        app.state.subscription_backends[selected_provider] = backend
+    app.state.subscription_transactions = {}
+    app.state.subscription_receivers = {}
+    app.state.subscription_receiver_providers = {}
+    app.state.subscription_transaction_lock = RLock()
+    app.state.subscription_lifecycle_locks = {
+        provider: RLock() for provider in SubscriptionProvider
+    }
+
+    def subscription_catalog_authenticated(provider: Provider) -> bool | str:
+        subscription_provider = {
+            Provider.OPENAI: SubscriptionProvider.OPENAI,
+            Provider.GEMINI: SubscriptionProvider.GOOGLE,
+            Provider.ANTHROPIC: SubscriptionProvider.CLAUDE,
+        }.get(provider)
+        if subscription_provider is None:
+            return False
+        backend = app.state.subscription_backends.get(subscription_provider)
+        if backend is None:
+            return False
+        probe_status = getattr(backend, "probe_status", None)
+        try:
+            status = probe_status() if callable(probe_status) else backend.status()
+        except Exception:
+            return False
+        if not isinstance(status, SubscriptionStatus) or not status.authenticated:
+            return False
+        identity = getattr(backend, "catalog_identity", None)
+        if callable(identity):
+            try:
+                value = identity()
+            except Exception:
+                return False
+            if isinstance(value, str) and value:
+                return value
+        return True
+
+    def discover_subscription_models(
+        provider: Provider,
+    ) -> tuple[LiveModelOption, ...]:
+        subscription_provider = {
+            Provider.OPENAI: SubscriptionProvider.OPENAI,
+            Provider.GEMINI: SubscriptionProvider.GOOGLE,
+            Provider.ANTHROPIC: SubscriptionProvider.CLAUDE,
+        }.get(provider)
+        if subscription_provider is None:
+            raise ModelDiscoveryError(
+                f"{provider.value} subscription model discovery is unavailable"
+            )
+        backend = app.state.subscription_backends.get(subscription_provider)
+        list_models = getattr(backend, "list_models", None)
+        if not callable(list_models):
+            raise ModelDiscoveryError(
+                f"{provider.value} subscription model discovery is unavailable"
+            )
+        try:
+            raw_models = list_models()
+        except Exception:
+            raise ModelDiscoveryError(
+                f"{provider.value} subscription model discovery failed"
+            ) from None
+        prefix = {
+            Provider.OPENAI: "openai",
+            Provider.GEMINI: "gemini",
+            Provider.ANTHROPIC: "anthropic",
+        }[provider]
+        models: list[LiveModelOption] = []
+        for item in raw_models:
+            if not isinstance(item, SubscriptionModel):
+                raise ModelDiscoveryError(
+                    f"{provider.value} subscription model discovery returned invalid data"
+                )
+            models.append(
+                LiveModelOption(
+                    model_id=f"{prefix}/{item.model_id}",
+                    display_name=item.display_name,
+                    provider=provider,
+                    image_input=True,
+                    reasoning=item.reasoning,
+                    release_at=item.release_at,
+                    provider_order=item.provider_order,
+                )
+            )
+        return tuple(models)
+
     app.state.model_catalog = ModelCatalog.bundled()
     app.state.model_discovery = model_discovery or ModelDiscovery()
-    app.state.live_models = {}
+    app.state.model_catalog_service = ModelCatalogService(
+        catalog=app.state.model_catalog,
+        discovery=app.state.model_discovery,
+        credential_resolver=app.state.credential_vault.resolve,
+        subscription_auth_resolver=subscription_catalog_authenticated,
+        subscription_discovery_resolver=discover_subscription_models,
+    )
     app.state.run_store = RunStore(resolved_data_dir / "mudidi-web.sqlite3")
     app.state.parse_rule_reviews = ParseRuleReviewService(
         store=app.state.run_store,
@@ -177,9 +356,7 @@ def create_app(
         max_total_bytes=max_upload_bytes,
     )
     app.state.job_controller.reconcile_startup()
-    app.state.inputs.reconcile(
-        {run.run_id for run in app.state.run_store.list_runs()}
-    )
+    app.state.inputs.reconcile({run.run_id for run in app.state.run_store.list_runs()})
     allowed_hosts = ["127.0.0.1", "localhost", "testserver"]
     if container_mode:
         allowed_hosts.extend(
@@ -263,6 +440,13 @@ def create_app(
                 Provider.OPENROUTER,
             )
         }
+        subscription_statuses = {
+            provider.value: subscription_status_payload(
+                provider,
+                subscription_backend(provider, required=False),
+            )
+            for provider in SubscriptionProvider
+        }
         selected_preset = None
         preset_state = None
         preset_assets: dict[str, object] = {}
@@ -289,6 +473,7 @@ def create_app(
             "preset_state": preset_state,
             "preset_assets": preset_assets,
             "credential_statuses": credential_statuses,
+            "subscription_statuses": subscription_statuses,
             "credential_ready_count": sum(
                 status.available for status in credential_statuses.values()
             ),
@@ -315,6 +500,828 @@ def create_app(
         """Return a stable, non-secret liveness response."""
 
         return {"status": "ok", "protocol_version": 1}
+
+    @app.get("/models/{provider_name}")
+    def provider_models(
+        provider_name: str,
+        stage: CatalogStage,
+        auth_mode: CatalogAuthMode,
+        force: bool = False,
+    ) -> JSONResponse:
+        """Return a non-secret stage-aware model catalog."""
+
+        try:
+            provider = Provider(provider_name)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="unknown provider") from exc
+        if provider is Provider.CUSTOM:
+            raise HTTPException(
+                status_code=422,
+                detail="custom routing uses manual model entry",
+            )
+        if auth_mode is CatalogAuthMode.SUBSCRIPTION:
+            if provider is Provider.OPENROUTER:
+                raise HTTPException(
+                    status_code=422,
+                    detail="provider does not support subscription model discovery",
+                )
+            if force:
+                raise HTTPException(
+                    status_code=422,
+                    detail="subscription catalogs cannot be refreshed",
+                )
+        result = app.state.model_catalog_service.list_models(
+            provider,
+            stage=stage,
+            auth_mode=auth_mode,
+            force_refresh=force,
+        )
+        return JSONResponse(
+            result.to_payload(),
+            headers={"Cache-Control": "no-store"},
+        )
+
+    def require_local_subscription_request(request: Request) -> None:
+        """Reject subscription lifecycle requests outside local boundaries."""
+
+        client = request.client
+        client_host = client.host if client is not None else None
+        trusted_test_or_loopback = client_host in {
+            "127.0.0.1",
+            "::1",
+            "localhost",
+            "testclient",
+            "testserver",
+        }
+        trusted_container_gateway = container_mode and is_allowed_callback_source(
+            client_host,
+            container_mode=True,
+        )
+        if not (trusted_test_or_loopback or trusted_container_gateway):
+            raise HTTPException(
+                status_code=403, detail="subscription routes are local-only"
+            )
+
+    def subscription_provider(provider_name: str) -> SubscriptionProvider:
+        try:
+            return SubscriptionProvider(provider_name)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(
+                status_code=404, detail="unknown subscription provider"
+            ) from exc
+
+    def subscription_backend(
+        provider: SubscriptionProvider,
+        *,
+        required: bool = True,
+    ) -> object | None:
+        backend = app.state.subscription_backends.get(provider)
+        if backend is None and required:
+            raise HTTPException(
+                status_code=404, detail="subscription provider unavailable"
+            )
+        return backend
+
+    def subscription_category(
+        status: SubscriptionStatus,
+        *,
+        provider: SubscriptionProvider,
+    ) -> str:
+        del provider
+        metadata = status.metadata if isinstance(status.metadata, Mapping) else {}
+        explicit = metadata.get("category")
+        if isinstance(explicit, str) and explicit in {
+            "authenticated",
+            "missing",
+            "expired_session",
+            "policy",
+            "authentication",
+            "transport",
+            "unsupported_capability",
+        }:
+            return explicit
+        if status.authenticated:
+            return "authenticated"
+        if status.expires_at is not None:
+            return "expired_session"
+        return "missing"
+
+    def subscription_credential_flags(
+        status: SubscriptionStatus,
+    ) -> tuple[bool, bool]:
+        """Return safe stored-credential and removal state."""
+
+        metadata = status.metadata if isinstance(status.metadata, Mapping) else {}
+        explicit_presence = metadata.get("credential_present")
+        if isinstance(explicit_presence, bool):
+            credential_present = explicit_presence
+        else:
+            credential_present = bool(
+                status.authenticated
+                or status.expires_at is not None
+                or (
+                    isinstance(status.account_label, str)
+                    and status.account_label.strip()
+                )
+                or metadata.get("account_id")
+            )
+        removable = credential_present
+        return credential_present, removable
+
+    def subscription_status_payload(
+        provider: SubscriptionProvider,
+        backend: object | None,
+    ) -> dict[str, object]:
+        """Build a status body from only explicitly safe identity fields."""
+
+        if backend is None:
+            return {
+                "provider": provider.value,
+                "authenticated": False,
+                "credential_present": False,
+                "removable": False,
+                "account_label": None,
+                "expires_at": None,
+                "category": "unavailable",
+                "available": False,
+            }
+        try:
+            status = backend.status()  # type: ignore[attr-defined]
+            if not isinstance(status, SubscriptionStatus):
+                status = SubscriptionStatus.model_validate(status)
+        except SubscriptionError as exc:
+            category = subscription_error_category(exc)
+            return {
+                "provider": provider.value,
+                "authenticated": False,
+                "credential_present": False,
+                "removable": False,
+                "account_label": None,
+                "expires_at": None,
+                "category": category,
+                "available": True,
+            }
+        except Exception:
+            return {
+                "provider": provider.value,
+                "authenticated": False,
+                "credential_present": False,
+                "removable": False,
+                "account_label": None,
+                "expires_at": None,
+                "category": "unavailable",
+                "available": False,
+            }
+        credential_present, removable = subscription_credential_flags(status)
+        payload: dict[str, object] = {
+            "provider": provider.value,
+            "authenticated": bool(status.authenticated),
+            "credential_present": credential_present,
+            "removable": removable,
+            "account_label": status.account_label,
+            "expires_at": (
+                status.expires_at.isoformat() if status.expires_at is not None else None
+            ),
+            "category": subscription_category(
+                status,
+                provider=provider,
+            ),
+            "available": True,
+        }
+        return payload
+
+    def subscription_error_category(exc: SubscriptionError) -> str:
+        category = str(getattr(exc, "category", "authentication"))
+        if category in {
+            "authentication",
+            "expired_session",
+            "transport",
+            "policy",
+            "unsupported_capability",
+        }:
+            return category
+        return "authentication"
+
+    def subscription_error_message(
+        exc: SubscriptionError,
+        *,
+        provider: SubscriptionProvider,
+    ) -> str:
+        del provider
+        category = subscription_error_category(exc)
+        return {
+            "authentication": "Subscription authentication failed",
+            "expired_session": "Subscription session expired; log in again",
+            "transport": "Subscription provider is unavailable",
+            "policy": "Subscription request was blocked by provider policy",
+            "unsupported_capability": "Subscription request is unsupported by this provider",
+        }.get(category, "Subscription request failed")
+
+    def subscription_error_status(exc: SubscriptionError) -> int:
+        category = subscription_error_category(exc)
+        return {
+            "policy": 403,
+            "unsupported_capability": 422,
+            "transport": 503,
+            "expired_session": 401,
+            "authentication": 409,
+        }.get(category, 409)
+
+    def subscription_response(
+        payload: Mapping[str, object],
+        *,
+        status_code: int = 200,
+    ) -> JSONResponse:
+        return JSONResponse(
+            dict(payload),
+            status_code=status_code,
+            headers={"Cache-Control": "no-store"},
+        )
+
+    def subscription_lifecycle_error(
+        provider: SubscriptionProvider,
+        *,
+        category: str,
+        message: str,
+        status_code: int,
+    ) -> JSONResponse:
+        """Return one uniformly safe lifecycle error response."""
+
+        return subscription_response(
+            {
+                "provider": provider.value,
+                "status": "error",
+                "category": category,
+                "message": message,
+            },
+            status_code=status_code,
+        )
+
+    def subscription_callback_uri(
+        request: Request,
+        provider: SubscriptionProvider,
+    ) -> str:
+        """Construct the adapter-specific loopback redirect URI."""
+
+        port = request.url.port or 80
+        if provider is SubscriptionProvider.GOOGLE:
+            return f"http://127.0.0.1:{port}/oauth2callback"
+        callback_path = _SUBSCRIPTION_CALLBACK_PATHS[provider]
+        return f"http://127.0.0.1:{port}/subscriptions/{provider.value}{callback_path}"
+
+    def subscription_callback_route_allowed(
+        request: Request,
+        provider: SubscriptionProvider,
+    ) -> bool:
+        callback_path = _SUBSCRIPTION_CALLBACK_PATHS[provider]
+        allowed_paths = {
+            f"/subscriptions/{provider.value}{callback_path}",
+            f"/subscriptions/{provider.value}/callback",
+            f"/auth/subscriptions/{provider.value}{callback_path}",
+            f"/auth/subscriptions/{provider.value}/callback",
+            f"/auth/subscription/{provider.value}{callback_path}",
+            f"/auth/subscription/{provider.value}/callback",
+        }
+        if provider is SubscriptionProvider.GOOGLE:
+            allowed_paths.add("/oauth2callback")
+        return request.url.path in allowed_paths
+
+    def save_subscription_transaction(
+        provider: SubscriptionProvider,
+        transaction: SubscriptionLoginTransaction,
+    ) -> tuple[str, datetime]:
+        handle = secrets.token_urlsafe(32)
+        expires_at = datetime.now(UTC) + _SUBSCRIPTION_TRANSACTION_TTL
+        with app.state.subscription_transaction_lock:
+            app.state.subscription_transactions[handle] = (
+                provider,
+                transaction,
+                expires_at,
+            )
+        return handle, expires_at
+
+    def register_subscription_receiver(
+        provider: SubscriptionProvider,
+        handle: str,
+        receiver: object,
+    ) -> None:
+        with app.state.subscription_transaction_lock:
+            if handle in app.state.subscription_transactions:
+                app.state.subscription_receivers[handle] = receiver
+                app.state.subscription_receiver_providers[handle] = provider
+
+    def close_subscription_receivers(receivers: list[object]) -> None:
+        for receiver in receivers:
+            close_receiver = getattr(receiver, "close", None)
+            if callable(close_receiver):
+                try:
+                    close_receiver()
+                except Exception:
+                    pass
+
+    def remove_subscription_receiver(handle: str, *, close: bool = False) -> None:
+        with app.state.subscription_transaction_lock:
+            receiver = app.state.subscription_receivers.pop(handle, None)
+            app.state.subscription_receiver_providers.pop(handle, None)
+        if close:
+            close_subscription_receivers([receiver] if receiver is not None else [])
+
+    def supersede_subscription_transactions(provider: SubscriptionProvider) -> None:
+        receivers: list[object] = []
+        with app.state.subscription_transaction_lock:
+            for handle, (pending_provider, _transaction, _expires_at) in list(
+                app.state.subscription_transactions.items()
+            ):
+                if pending_provider is provider:
+                    del app.state.subscription_transactions[handle]
+            for handle, receiver_provider in list(
+                app.state.subscription_receiver_providers.items()
+            ):
+                if receiver_provider is not provider:
+                    continue
+                del app.state.subscription_receiver_providers[handle]
+                receiver = app.state.subscription_receivers.pop(handle, None)
+                if receiver is not None:
+                    receivers.append(receiver)
+        close_subscription_receivers(receivers)
+
+    def discard_subscription_transaction(handle: str) -> None:
+        with app.state.subscription_transaction_lock:
+            app.state.subscription_transactions.pop(handle, None)
+
+    def take_subscription_transaction(
+        provider: SubscriptionProvider,
+        state: str,
+    ) -> tuple[str, SubscriptionLoginTransaction] | None:
+        now = datetime.now(UTC)
+        selected: tuple[str, SubscriptionLoginTransaction] | None = None
+        expired_handles: list[str] = []
+        with app.state.subscription_transaction_lock:
+            for handle, (pending_provider, transaction, expires_at) in list(
+                app.state.subscription_transactions.items()
+            ):
+                if expires_at <= now:
+                    del app.state.subscription_transactions[handle]
+                    expired_handles.append(handle)
+                    continue
+                state_matches = secrets.compare_digest(transaction.state, state)
+                if pending_provider is provider and state_matches:
+                    del app.state.subscription_transactions[handle]
+                    selected = (handle, transaction)
+                    break
+        for handle in expired_handles:
+            remove_subscription_receiver(handle, close=True)
+        return selected
+
+    def consume_subscription_transaction(
+        provider: SubscriptionProvider,
+        state: str,
+    ) -> SubscriptionLoginTransaction | None:
+        lifecycle_lock = app.state.subscription_lifecycle_locks[provider]
+        with lifecycle_lock:
+            selected = take_subscription_transaction(provider, state)
+        return selected[1] if selected is not None else None
+
+    def pending_subscription_transaction(
+        provider: SubscriptionProvider,
+    ) -> SubscriptionLoginTransaction | None:
+        now = datetime.now(UTC)
+        selected: SubscriptionLoginTransaction | None = None
+        expired_handles: list[str] = []
+        with app.state.subscription_transaction_lock:
+            for handle, (pending_provider, transaction, expires_at) in list(
+                app.state.subscription_transactions.items()
+            ):
+                if expires_at <= now:
+                    del app.state.subscription_transactions[handle]
+                    expired_handles.append(handle)
+                    continue
+                if pending_provider is provider:
+                    selected = transaction
+                    break
+        for handle in expired_handles:
+            remove_subscription_receiver(handle, close=True)
+        return selected
+
+    def complete_subscription_transaction(
+        provider: SubscriptionProvider,
+        backend: object | None,
+        *,
+        code: str,
+        state: str,
+        close_receiver: bool,
+    ) -> None:
+        lifecycle_lock = app.state.subscription_lifecycle_locks[provider]
+        if not lifecycle_lock.acquire(blocking=False):
+            raise SubscriptionError(
+                "OAuth callback transaction is unavailable",
+                provider=provider,
+                category="authentication",
+            )
+        try:
+            selected = take_subscription_transaction(provider, state)
+            if selected is None:
+                raise SubscriptionError(
+                    "OAuth callback transaction is unavailable",
+                    provider=provider,
+                    category="authentication",
+                )
+            handle, transaction = selected
+            try:
+                if not isinstance(backend, SubscriptionLifecycleBackend):
+                    raise SubscriptionError(
+                        "OAuth callback transaction is unavailable",
+                        provider=provider,
+                        category="authentication",
+                    )
+                backend.complete_login(code, state, transaction)
+            finally:
+                if close_receiver:
+                    remove_subscription_receiver(handle, close=True)
+        finally:
+            lifecycle_lock.release()
+
+    def start_subscription_receiver(
+        provider: SubscriptionProvider,
+        backend: object,
+        transaction: SubscriptionLoginTransaction,
+        handle: str,
+        redirect_uri: str,
+    ) -> None:
+        try:
+            parsed = validate_loopback_redirect_uri(redirect_uri)
+            if parsed.hostname is None or parsed.port is None:
+                raise ValueError("OAuth callback URI is incomplete")
+        except Exception:
+            discard_subscription_transaction(handle)
+            raise SubscriptionError(
+                "OAuth callback URI is invalid",
+                provider=provider,
+                category="authentication",
+            ) from None
+
+        def callback_handler(callback: OAuthCallback) -> None:
+            complete_subscription_transaction(
+                provider,
+                backend,
+                code=callback.code,
+                state=callback.state,
+                close_receiver=False,
+            )
+
+        try:
+            receiver = LoopbackOAuthReceiver(
+                expected_state=transaction.state,
+                pkce=transaction,
+                host="0.0.0.0" if container_mode else "127.0.0.1",
+                port=parsed.port,
+                path=parsed.path,
+                redirect_host=parsed.hostname,
+                allow_fixed_port=True,
+                container_mode=container_mode,
+                timeout=_SUBSCRIPTION_TRANSACTION_TTL.total_seconds(),
+                callback_handler=callback_handler,
+            )
+            register_subscription_receiver(provider, handle, receiver)
+        except Exception:
+            discard_subscription_transaction(handle)
+            raise SubscriptionError(
+                "OAuth callback listener is unavailable",
+                provider=provider,
+                category="transport",
+            ) from None
+
+        def wait_for_callback() -> None:
+            try:
+                receiver.receive()
+            except BaseException as exc:
+                if isinstance(exc, SubscriptionError):
+                    category = _safe_subscription_diagnostic_token(
+                        exc.category,
+                        default="provider_error",
+                    )
+                    status = (
+                        exc.status
+                        if isinstance(exc.status, int) and 100 <= exc.status <= 599
+                        else None
+                    )
+                    reason = _safe_subscription_diagnostic_token(
+                        exc.metadata.get("reason"),
+                        default="unknown",
+                    )
+                else:
+                    category = "internal"
+                    status = None
+                    reason = "unexpected_error"
+                _SUBSCRIPTION_LOGGER.warning(
+                    "Subscription OAuth callback failed "
+                    "provider=%s category=%s status=%s reason=%s",
+                    provider.value,
+                    category,
+                    status,
+                    reason,
+                )
+            finally:
+                discard_subscription_transaction(handle)
+                remove_subscription_receiver(handle, close=True)
+
+        try:
+            waiter = Thread(
+                target=wait_for_callback,
+                daemon=True,
+                name="mudidi-subscription-oauth-callback",
+            )
+            waiter.start()
+        except BaseException:
+            discard_subscription_transaction(handle)
+            remove_subscription_receiver(handle, close=True)
+            raise SubscriptionError(
+                "OAuth callback listener could not start",
+                provider=provider,
+                category="transport",
+            ) from None
+
+    @app.get("/subscriptions/status")
+    @app.get("/auth/subscriptions/status")
+    @app.get("/auth/subscription/status")
+    async def subscription_status(request: Request) -> JSONResponse:
+        require_local_subscription_request(request)
+        providers = [
+            subscription_status_payload(
+                provider,
+                subscription_backend(provider, required=False),
+            )
+            for provider in SubscriptionProvider
+        ]
+        return subscription_response({"providers": providers})
+
+    @app.get("/subscriptions/providers")
+    @app.get("/auth/subscriptions/providers")
+    @app.get("/auth/subscription/providers")
+    async def subscription_providers(request: Request) -> JSONResponse:
+        require_local_subscription_request(request)
+        providers: list[dict[str, object]] = []
+        for provider in SubscriptionProvider:
+            backend = subscription_backend(provider, required=False)
+            payload = subscription_status_payload(provider, backend)
+            if backend is not None:
+                capabilities = getattr(backend, "capabilities", None)
+                if capabilities is not None:
+                    try:
+                        values = capabilities.model_dump()
+                    except AttributeError:
+                        values = {}
+                    if isinstance(values, Mapping):
+                        payload["capabilities"] = {
+                            str(key): bool(value) for key, value in values.items()
+                        }
+            providers.append(payload)
+        return subscription_response({"providers": providers})
+
+    @app.get("/subscriptions/{provider_name}/status")
+    @app.get("/auth/subscriptions/{provider_name}/status")
+    @app.get("/auth/subscription/{provider_name}/status")
+    async def subscription_provider_status(
+        request: Request,
+        provider_name: str,
+    ) -> JSONResponse:
+        require_local_subscription_request(request)
+        provider = subscription_provider(provider_name)
+        backend = subscription_backend(provider)
+        probe_status = getattr(backend, "probe_status", None)
+        if provider is SubscriptionProvider.GOOGLE and callable(probe_status):
+            probe_status(force=True)
+        return subscription_response(subscription_status_payload(provider, backend))
+
+    @app.get("/subscriptions/{provider_name}/login/launch")
+    @app.get("/auth/subscriptions/{provider_name}/login/launch")
+    @app.get("/auth/subscription/{provider_name}/login/launch")
+    async def subscription_login_launch(
+        request: Request,
+        provider_name: str,
+    ) -> Response:
+        require_local_subscription_request(request)
+        provider = subscription_provider(provider_name)
+        subscription_backend(provider)
+        with app.state.subscription_lifecycle_locks[provider]:
+            transaction = pending_subscription_transaction(provider)
+            if transaction is None:
+                return subscription_lifecycle_error(
+                    provider,
+                    category="authentication",
+                    message="Subscription authentication failed",
+                    status_code=409,
+                )
+            return RedirectResponse(
+                transaction.authorization_url,
+                status_code=307,
+                headers={"Cache-Control": "no-store"},
+            )
+
+    @app.post("/subscriptions/{provider_name}/login")
+    @app.post("/auth/subscriptions/{provider_name}/login")
+    @app.post("/auth/subscription/{provider_name}/login")
+    async def subscription_login(
+        request: Request,
+        provider_name: str,
+    ) -> JSONResponse:
+        require_local_subscription_request(request)
+        provider = subscription_provider(provider_name)
+        backend = subscription_backend(provider)
+        with app.state.subscription_lifecycle_locks[provider]:
+            try:
+                if not isinstance(backend, SubscriptionLifecycleBackend):
+                    raise SubscriptionError(
+                        "subscription login is unavailable",
+                        provider=provider,
+                        category="authentication",
+                    )
+                advertised_redirect_uri = getattr(backend, "login_redirect_uri", None)
+                redirect_uri = (
+                    advertised_redirect_uri
+                    if isinstance(advertised_redirect_uri, str)
+                    and advertised_redirect_uri
+                    else subscription_callback_uri(request, provider)
+                )
+                transaction = backend.begin_login(redirect_uri)
+                if not isinstance(transaction, SubscriptionLoginTransaction):
+                    raise SubscriptionError(
+                        "subscription login transaction is invalid",
+                        provider=provider,
+                        category="authentication",
+                    )
+                supersede_subscription_transactions(provider)
+                handle, expires_at = save_subscription_transaction(
+                    provider, transaction
+                )
+                if isinstance(advertised_redirect_uri, str) and advertised_redirect_uri:
+                    start_subscription_receiver(
+                        provider,
+                        backend,
+                        transaction,
+                        handle,
+                        advertised_redirect_uri,
+                    )
+                return subscription_response(
+                    {
+                        "provider": provider.value,
+                        "status": "pending",
+                        "launch_url": f"/subscriptions/{provider.value}/login/launch",
+                        "expires_at": expires_at.isoformat(),
+                    }
+                )
+            except SubscriptionError as exc:
+                return subscription_lifecycle_error(
+                    provider,
+                    category=subscription_error_category(exc),
+                    message=subscription_error_message(
+                        exc,
+                        provider=provider,
+                    ),
+                    status_code=subscription_error_status(exc),
+                )
+            except Exception:
+                return subscription_lifecycle_error(
+                    provider,
+                    category="authentication",
+                    message="Subscription authentication failed",
+                    status_code=409,
+                )
+
+    @app.get("/subscriptions/{provider_name}/auth/callback")
+    @app.get("/subscriptions/{provider_name}/oauth2callback")
+    @app.get("/auth/subscriptions/{provider_name}/auth/callback")
+    @app.get("/auth/subscriptions/{provider_name}/oauth2callback")
+    @app.get("/auth/subscription/{provider_name}/auth/callback")
+    @app.get("/auth/subscription/{provider_name}/oauth2callback")
+    @app.get("/subscriptions/{provider_name}/callback")
+    @app.get("/auth/subscriptions/{provider_name}/callback")
+    @app.get("/auth/subscription/{provider_name}/callback")
+    async def subscription_callback(
+        request: Request,
+        provider_name: str,
+    ) -> JSONResponse:
+        require_local_subscription_request(request)
+        provider = subscription_provider(provider_name)
+        backend = subscription_backend(provider, required=False)
+        if backend is None:
+            return subscription_lifecycle_error(
+                provider,
+                category="authentication",
+                message="subscription provider unavailable",
+                status_code=404,
+            )
+        if not subscription_callback_route_allowed(request, provider):
+            return subscription_lifecycle_error(
+                provider,
+                category="authentication",
+                message="OAuth callback path is invalid",
+                status_code=400,
+            )
+        codes = request.query_params.getlist("code")
+        states = request.query_params.getlist("state")
+        if len(codes) != 1 or len(states) != 1 or not codes[0] or not states[0]:
+            return subscription_lifecycle_error(
+                provider,
+                category="authentication",
+                message="OAuth callback is invalid",
+                status_code=400,
+            )
+        try:
+            complete_subscription_transaction(
+                provider,
+                backend,
+                code=codes[0],
+                state=states[0],
+                close_receiver=True,
+            )
+            payload = subscription_status_payload(provider, backend)
+            payload["status"] = "authenticated"
+            return subscription_response(payload)
+        except SubscriptionError as exc:
+            _SUBSCRIPTION_LOGGER.warning(
+                "Subscription OAuth callback failed "
+                "provider=%s category=%s status=%s reason=%s",
+                provider.value,
+                _safe_subscription_diagnostic_token(
+                    exc.category,
+                    default="provider_error",
+                ),
+                (
+                    exc.status
+                    if isinstance(exc.status, int) and 100 <= exc.status <= 599
+                    else None
+                ),
+                _safe_subscription_diagnostic_token(
+                    exc.metadata.get("reason"),
+                    default="unknown",
+                ),
+            )
+            return subscription_lifecycle_error(
+                provider,
+                category=subscription_error_category(exc),
+                message=subscription_error_message(
+                    exc,
+                    provider=provider,
+                ),
+                status_code=subscription_error_status(exc),
+            )
+        except Exception:
+            return subscription_lifecycle_error(
+                provider,
+                category="authentication",
+                message="OAuth callback could not be completed",
+                status_code=400,
+            )
+
+    @app.get("/oauth2callback")
+    async def google_subscription_callback(request: Request) -> JSONResponse:
+        return await subscription_callback(request, "google")
+
+    @app.post("/subscriptions/{provider_name}/logout")
+    @app.delete("/subscriptions/{provider_name}/logout")
+    @app.post("/auth/subscriptions/{provider_name}/logout")
+    @app.delete("/auth/subscriptions/{provider_name}/logout")
+    @app.post("/auth/subscription/{provider_name}/logout")
+    @app.delete("/auth/subscription/{provider_name}/logout")
+    async def subscription_logout(
+        request: Request,
+        provider_name: str,
+    ) -> JSONResponse:
+        require_local_subscription_request(request)
+        provider = subscription_provider(provider_name)
+        backend = subscription_backend(provider)
+        with app.state.subscription_lifecycle_locks[provider]:
+            supersede_subscription_transactions(provider)
+            try:
+                logout = getattr(backend, "logout", None)
+                if not callable(logout):
+                    raise SubscriptionError(
+                        "subscription logout is unavailable",
+                        provider=provider,
+                        category="authentication",
+                    )
+                logout()
+                payload = subscription_status_payload(provider, backend)
+                payload["status"] = "logged_out"
+                return subscription_response(payload)
+            except SubscriptionError as exc:
+                return subscription_lifecycle_error(
+                    provider,
+                    category=subscription_error_category(exc),
+                    message=subscription_error_message(
+                        exc,
+                        provider=provider,
+                    ),
+                    status_code=subscription_error_status(exc),
+                )
+            except Exception:
+                return subscription_lifecycle_error(
+                    provider,
+                    category="authentication",
+                    message="Subscription logout failed",
+                    status_code=409,
+                )
 
     @app.post("/runs/preview", response_class=HTMLResponse)
     async def preview_run(request: Request) -> HTMLResponse:
@@ -422,6 +1429,7 @@ def create_app(
                     f"{field.replace('_', ' ').title()} must be a text value.",
                 )
             return value, True
+
         async def process_instruction_stage(stage: str, *, active: bool) -> None:
             """Apply one stage's typed/file instruction state to ``payload``."""
 
@@ -487,10 +1495,7 @@ def create_app(
                 or page_spec
                 or keep_existing
                 or source != "typed"
-                or (
-                    stage == "stage2"
-                    and scope not in {None, "both"}
-                )
+                or (stage == "stage2" and scope not in {None, "both"})
             )
             if source not in {"typed", "file"}:
                 raise FormFieldError(
@@ -548,11 +1553,9 @@ def create_app(
                 stage_dir = instructions_root / stage
                 if resolved.is_relative_to(stage_dir) and stage_dir.is_dir():
                     shutil.rmtree(stage_dir, ignore_errors=True)
-                elif (
-                    resolved.is_relative_to(instructions_root)
-                    and resolved.is_file()
-                ):
+                elif resolved.is_relative_to(instructions_root) and resolved.is_file():
                     resolved.unlink(missing_ok=True)
+
             if source == "typed":
                 if files:
                     raise FormFieldError(
@@ -589,20 +1592,18 @@ def create_app(
                 raise FormFieldError(file_field, "Upload exactly one instruction file.")
             if files:
                 try:
-                    payload[guide_field] = (
-                        await app.state.inputs.materialize_instruction_upload(
-                            run_id,
-                            stage,
-                            files[0],
-                            page_spec=page_spec,
-                            stage2_scope=scope,
-                            replace=preset_config is not None,
-                        )
+                    payload[
+                        guide_field
+                    ] = await app.state.inputs.materialize_instruction_upload(
+                        run_id,
+                        stage,
+                        files[0],
+                        page_spec=page_spec,
+                        stage2_scope=scope,
+                        replace=preset_config is not None,
                     )
                 except InstructionMaterializationError as exc:
-                    error_field = (
-                        pages_field if exc.category == "pages" else file_field
-                    )
+                    error_field = pages_field if exc.category == "pages" else file_field
                     raise FormFieldError(error_field, str(exc)) from exc
                 except ValueError as exc:
                     raise FormFieldError(file_field, str(exc)) from exc
@@ -612,19 +1613,15 @@ def create_app(
                     page_spec if page_was_submitted else inherited_page_spec
                 )
                 try:
-                    payload[guide_field] = (
-                        app.state.inputs.refresh_managed_instruction(
-                            run_id,
-                            stage,
-                            inherited,
-                            page_spec=effective_page_spec,
-                            stage2_scope=scope,
-                        )
+                    payload[guide_field] = app.state.inputs.refresh_managed_instruction(
+                        run_id,
+                        stage,
+                        inherited,
+                        page_spec=effective_page_spec,
+                        stage2_scope=scope,
                     )
                 except InstructionMaterializationError as exc:
-                    error_field = (
-                        pages_field if exc.category == "pages" else file_field
-                    )
+                    error_field = pages_field if exc.category == "pages" else file_field
                     raise FormFieldError(error_field, str(exc)) from exc
                 except ValueError as exc:
                     raise FormFieldError(file_field, str(exc)) from exc
@@ -658,7 +1655,9 @@ def create_app(
                 "stage2_guides",
             }
             if forbidden_paths.intersection(submitted.keys()):
-                raise ValueError("dashboard input paths must be selected in the browser")
+                raise ValueError(
+                    "dashboard input paths must be selected in the browser"
+                )
             if str(submitted.get("pages", "")).strip():
                 raise ValueError("select dictionary files in the browser")
             if retired_page_uploads:
@@ -698,14 +1697,16 @@ def create_app(
             if len(guide_files) > 1:
                 raise ValueError("select exactly one existing MDF parsing guide")
             if guide_files and not runs_stage2:
-                raise ValueError("an MDF parsing guide requires an MDF parsing pipeline")
+                raise ValueError(
+                    "an MDF parsing guide requires an MDF parsing pipeline"
+                )
             if guide_files:
-                payload["parse_rules_file"] = (
-                    await app.state.inputs.materialize_mdf_guide(
-                        run_id,
-                        guide_files[0],
-                        replace=preset_config is not None,
-                    )
+                payload[
+                    "parse_rules_file"
+                ] = await app.state.inputs.materialize_mdf_guide(
+                    run_id,
+                    guide_files[0],
+                    replace=preset_config is not None,
                 )
             elif preset_config is not None and runs_stage2:
                 payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
@@ -722,12 +1723,12 @@ def create_app(
                 payload["mdf_manual_source"] = "none"
             if manual_source == "upload":
                 if len(manual_files) == 1:
-                    payload["toolbox_pdf"] = (
-                        await app.state.inputs.materialize_mdf_manual(
-                            run_id,
-                            manual_files[0],
-                            replace=preset_config is not None,
-                        )
+                    payload[
+                        "toolbox_pdf"
+                    ] = await app.state.inputs.materialize_mdf_manual(
+                        run_id,
+                        manual_files[0],
+                        replace=preset_config is not None,
                     )
                 elif preset_config is not None and preset_config.input.toolbox_pdf:
                     payload["toolbox_pdf"] = preset_config.input.toolbox_pdf
@@ -743,6 +1744,98 @@ def create_app(
             run_form = NewRunForm.model_validate(payload)
             config = run_form.to_inference_config()
             validate_config_paths(config)
+            if config.auth.mode is AuthMode.SUBSCRIPTION:
+                for provider in config.auth.providers:
+                    backend = subscription_backend(provider, required=False)
+                    if backend is None:
+                        raise FormFieldError(
+                            "auth_mode",
+                            f"Log in to the {provider.value} subscription before "
+                            "starting a run.",
+                        )
+                    try:
+                        resolve_subscription_runtime(
+                            AuthConfig(
+                                mode=AuthMode.SUBSCRIPTION,
+                                providers=(provider,),
+                            ),
+                            backend=backend,
+                        )
+                    except SubscriptionError as exc:
+                        message = (
+                            f"Log in to the {provider.value} subscription before "
+                            "starting a run."
+                            if exc.metadata.get("reason") == "missing_credential"
+                            else subscription_error_message(exc, provider=provider)
+                        )
+                        raise FormFieldError("auth_mode", message) from exc
+                    except Exception as exc:
+                        raise FormFieldError(
+                            "auth_mode",
+                            f"{provider.value} subscription authentication failed",
+                        ) from exc
+                    status_payload = subscription_status_payload(provider, backend)
+                    if not bool(status_payload.get("authenticated")):
+                        category = str(status_payload.get("category", "authentication"))
+                        if category == "expired_session":
+                            message = "Subscription session expired; log in again"
+                        elif category == "transport":
+                            message = "Subscription provider is unavailable"
+                        else:
+                            message = (
+                                f"Log in to the {provider.value} subscription before "
+                                "starting a run."
+                            )
+                        raise FormFieldError("auth_mode", message)
+                    web_provider = {
+                        SubscriptionProvider.OPENAI: Provider.OPENAI,
+                        SubscriptionProvider.GOOGLE: Provider.GEMINI,
+                        SubscriptionProvider.CLAUDE: Provider.ANTHROPIC,
+                    }[provider]
+                    catalog_result = app.state.model_catalog_service.list_models(
+                        web_provider,
+                        stage=CatalogStage.STAGE1,
+                        auth_mode=CatalogAuthMode.SUBSCRIPTION,
+                    )
+                    if catalog_result.source in {
+                        "authentication_required",
+                        "unavailable",
+                    }:
+                        raise FormFieldError(
+                            "auth_mode",
+                            f"{provider.value} subscription model catalog is unavailable",
+                        )
+                    allowed_models = {
+                        item.model_id
+                        for item in (
+                            *catalog_result.recommended,
+                            *catalog_result.available,
+                        )
+                    }
+                    configured_models: list[tuple[str, str | None]] = [
+                        ("model", config.models.default),
+                        ("stage1_model", config.models.stage1),
+                        ("stage2_pass1_model", config.models.stage2_pass1),
+                        ("stage2_pass2_model", config.models.stage2_pass2),
+                    ]
+                    if config.agentic.stage1 or config.agentic.stage2:
+                        configured_models.extend(
+                            (
+                                ("evaluator_model", config.agentic.evaluator_model),
+                                ("rewriter_model", config.agentic.rewriter_model),
+                            )
+                        )
+                    for field, model_id in configured_models:
+                        if (
+                            model_id is not None
+                            and subscription_provider_for_model(model_id) is provider
+                            and model_id not in allowed_models
+                        ):
+                            raise FormFieldError(
+                                field,
+                                f"Select a model currently available from the "
+                                f"{provider.value} subscription.",
+                            )
         except (ValidationError, ValueError) as exc:
             app.state.inputs.discard(run_id)
             validation_errors = _validation_errors(exc)
@@ -760,7 +1853,7 @@ def create_app(
             app.state.job_controller.prepare_inference(
                 run_id,
                 config=config,
-                provider=Provider(run_form.provider),
+                provider=_primary_provider_for_config(config),
             )
         except Exception:
             app.state.inputs.discard(run_id)
@@ -775,8 +1868,13 @@ def create_app(
                 "continuation_label": "Start run",
             },
         )
+
     @app.get("/runs/{run_id}/review", response_class=HTMLResponse)
-    async def review_prepared_run(request: Request, run_id: str) -> HTMLResponse:
+    async def review_prepared_run(
+        request: Request,
+        run_id: str,
+        preset_saved: bool = False,
+    ) -> HTMLResponse:
         """Render the persisted non-secret review for a prepared run."""
 
         try:
@@ -793,9 +1891,9 @@ def create_app(
                 "run_id": run_id,
                 "continuation_action": continuation_action,
                 "continuation_label": continuation_label,
+                "preset_saved": preset_saved,
             },
         )
-
 
     @app.post("/runs/{run_id}/start")
     async def start_prepared_run(request: Request, run_id: str) -> HTMLResponse:
@@ -803,14 +1901,17 @@ def create_app(
 
         try:
             run = app.state.run_store.get_run(run_id)
-        except KeyError as exc:
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
-        try:
-            provider = Provider(str(run.provider))
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail="invalid run provider") from exc
-        credential = app.state.credential_vault.resolve(provider)
-        if credential is None and provider is not Provider.CUSTOM:
+        subscription = config.auth.mode is AuthMode.SUBSCRIPTION
+        credentials, missing = (
+            ((), ())
+            if subscription
+            else _resolve_api_credentials(config, app.state.credential_vault)
+        )
+        if missing:
+            provider = missing[0]
             if run.status is RunStatus.VALIDATED:
                 app.state.run_store.transition(run_id, RunStatus.CREDENTIALS_REQUIRED)
             return _TEMPLATES.TemplateResponse(
@@ -826,7 +1927,7 @@ def create_app(
         try:
             app.state.job_controller.start_inference(
                 run_id,
-                credential=credential,
+                credentials=credentials,
                 offline_executor=app.state.offline_inference,
             )
         except (OSError, RuntimeError, ValueError) as exc:
@@ -849,7 +1950,10 @@ def create_app(
         try:
             app.state.credential_vault.set_persistent(provider, api_key)
         except ValueError as exc:
-            raise HTTPException(status_code=422, detail="API key cannot be empty") from exc
+            raise HTTPException(
+                status_code=422, detail="API key cannot be empty"
+            ) from exc
+        app.state.model_catalog_service.invalidate(provider)
         return JSONResponse(
             {"status": "saved", "provider": provider.value},
             headers={"Cache-Control": "no-store"},
@@ -882,6 +1986,7 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=404, detail="unknown provider") from exc
         app.state.credential_vault.clear_persistent(provider)
+        app.state.model_catalog_service.invalidate(provider)
         status = app.state.credential_vault.status(provider)
         return JSONResponse(
             {
@@ -970,7 +2075,9 @@ def create_app(
                 "providers": tuple(
                     provider for provider in Provider if provider is not Provider.CUSTOM
                 ),
-                "has_deletable_runs": any(can_delete_run(run.status) for run in all_runs),
+                "has_deletable_runs": any(
+                    can_delete_run(run.status) for run in all_runs
+                ),
             },
         )
 
@@ -1012,7 +2119,6 @@ def create_app(
             raise HTTPException(status_code=404, detail="preset file not found")
         return FileResponse(path, headers={"Cache-Control": "private, no-store"})
 
-
     @app.post("/runs/{run_id}/presets")
     async def save_run_preset(request: Request, run_id: str) -> RedirectResponse:
         """Save the prepared run's typed configuration as a reusable preset."""
@@ -1044,7 +2150,10 @@ def create_app(
         except (ValueError, sqlite3.IntegrityError) as exc:
             app.state.inputs.discard_preset(preset_id)
             raise HTTPException(status_code=409, detail=str(exc)) from exc
-        return RedirectResponse("/presets", status_code=303)
+        return RedirectResponse(
+            f"/runs/{run_id}/review?preset_saved=1",
+            status_code=303,
+        )
 
     @app.post("/presets/{preset_id}/prepare", response_class=HTMLResponse)
     async def prepare_preset(request: Request, preset_id: str) -> HTMLResponse:
@@ -1090,6 +2199,30 @@ def create_app(
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
         run_view = _run_view(app.state.run_store, run)
+        try:
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError, ValueError):
+            config = None
+        if config is not None:
+            billing_mode = config.auth.mode.value
+            providers = (
+                ", ".join(provider.value for provider in config.auth.providers) or None
+            )
+            run_view.update(
+                {
+                    "auth_mode": billing_mode,
+                    "auth_providers": providers or "None",
+                    "billing_mode": billing_mode,
+                    "billing": (
+                        "subscription" if billing_mode == "subscription" else "api_key"
+                    ),
+                    "billing_label": (
+                        "Subscription billing"
+                        if billing_mode == "subscription"
+                        else "API-key billing"
+                    ),
+                }
+            )
         run_view["workspace_available"] = _managed_config_available(
             app.state.job_controller,
             run_id,
@@ -1158,11 +2291,7 @@ def create_app(
             run = app.state.run_store.get_run(run_id)
             events = app.state.run_store.list_events(run_id)
             pages = app.state.artifacts.list_pages(run_id)
-            page = next(
-                item
-                for item in pages
-                if item.page_id == page_id
-            )
+            page = next(item for item in pages if item.page_id == page_id)
             page_index = pages.index(page)
             source = app.state.artifacts.source_page(run_id, page_id)
             stage1 = (
@@ -1200,9 +2329,7 @@ def create_app(
                 "artifacts": related,
                 "page_index": page_index,
                 "page_count": len(pages),
-                "page_urls": [
-                    f"/runs/{run_id}/pages/{item.page_id}" for item in pages
-                ],
+                "page_urls": [f"/runs/{run_id}/pages/{item.page_id}" for item in pages],
                 "page_labels": [item.page_id.removeprefix("page_") for item in pages],
                 "previous_page": pages[page_index - 1] if page_index > 0 else None,
                 "next_page": (
@@ -1358,20 +2485,26 @@ def create_app(
         """Explicitly approve the current valid rules and authorize Pass 2."""
 
         try:
-            credential = None
+            credentials: tuple[ResolvedCredential, ...] = ()
             managed_config = app.state.job_controller.config_path(run_id)
             if managed_config.is_file():
-                run = app.state.run_store.get_run(run_id)
-                provider = Provider(str(run.provider))
-                credential = app.state.credential_vault.resolve(provider)
-                if credential is None and provider is not Provider.CUSTOM:
-                    return _render_parse_rule_editor(
-                        request,
-                        app,
-                        run_id,
-                        message="API credential required before Pass 2 can start",
-                        status_code=409,
+                config = app.state.job_controller.load_inference_config(run_id)
+                if config.auth.mode is not AuthMode.SUBSCRIPTION:
+                    credentials, missing = _resolve_api_credentials(
+                        config,
+                        app.state.credential_vault,
                     )
+                    if missing:
+                        return _render_parse_rule_editor(
+                            request,
+                            app,
+                            run_id,
+                            message=(
+                                "API credential required before Pass 2 can start: "
+                                + ", ".join(provider.value for provider in missing)
+                            ),
+                            status_code=409,
+                        )
             submitted = await request.form()
             if submitted:
                 app.state.parse_rule_reviews.save_draft(
@@ -1383,7 +2516,7 @@ def create_app(
                 app.state.job_controller.start_pass2(
                     run_id,
                     approval=approval,
-                    credential=credential,
+                    credentials=credentials,
                     offline_executor=app.state.offline_inference,
                 )
         except (KeyError, ValueError) as exc:
@@ -1434,12 +2567,20 @@ def create_app(
 
         try:
             run = app.state.run_store.get_run(run_id)
-            provider = Provider(str(run.provider))
-        except (KeyError, ValueError) as exc:
+            config = app.state.job_controller.load_inference_config(run_id)
+        except (KeyError, OSError, ValidationError, ValueError) as exc:
             raise HTTPException(status_code=404, detail="run not found") from exc
-        credential = app.state.credential_vault.resolve(provider)
-        if credential is None and provider is not Provider.CUSTOM:
-            if run.status is RunStatus.INTERRUPTED:
+        subscription = config.auth.mode is AuthMode.SUBSCRIPTION
+        credentials, missing = (
+            ((), ())
+            if subscription
+            else _resolve_api_credentials(config, app.state.credential_vault)
+        )
+        if missing:
+            provider = missing[0]
+            if run.status in {RunStatus.INTERRUPTED, RunStatus.FAILED}:
+                if run.status is RunStatus.FAILED and run.resume_phase is None:
+                    app.state.job_controller.prepare_failed_retry(run_id)
                 app.state.run_store.resume(run_id, credentials_available=False)
             return _TEMPLATES.TemplateResponse(
                 request=request,
@@ -1454,7 +2595,7 @@ def create_app(
         try:
             app.state.job_controller.resume_inference(
                 run_id,
-                credential=credential,
+                credentials=credentials,
                 offline_executor=app.state.offline_inference,
             )
         except (OSError, RuntimeError, ValueError) as exc:
@@ -1520,8 +2661,8 @@ def _container_output_directory(value: str) -> Path:
     ):
         candidate = submitted
     elif "outputs" in submitted.parts:
-        outputs_index = len(submitted.parts) - 1 - submitted.parts[::-1].index(
-            "outputs"
+        outputs_index = (
+            len(submitted.parts) - 1 - submitted.parts[::-1].index("outputs")
         )
         candidate = _CONTAINER_OUTPUT_ROOT.joinpath(
             *submitted.parts[outputs_index + 1 :]
@@ -1556,9 +2697,7 @@ def _validation_errors(exc: ValidationError | ValueError) -> list[dict[str, str]
             }
         ]
     if not isinstance(exc, ValidationError):
-        return [
-            {"key": "configuration", "field": "Configuration", "message": str(exc)}
-        ]
+        return [{"key": "configuration", "field": "Configuration", "message": str(exc)}]
 
     issues: list[dict[str, str]] = []
     for error in exc.errors():
@@ -1595,8 +2734,15 @@ def _preset_form_state(
                 config.pipeline.stage
             ]
         ],
-        "provider": [preset.provider],
-        "temperature": [str(config.models.temperature)],
+        "auth_mode": [config.auth.mode.value],
+        "stage1_provider": [
+            (config.models.stage1 or config.models.default).split("/", maxsplit=1)[0]
+        ],
+        "stage2_provider": [
+            (config.models.stage2_pass1 or config.models.default).split(
+                "/", maxsplit=1
+            )[0]
+        ],
         "batch_size": [str(config.runtime.batch_size)],
         "stage1_reasoning": [config.models.stage1_reasoning],
         "stage2_pass1_reasoning": [
@@ -1613,9 +2759,7 @@ def _preset_form_state(
         "max_iterations": [str(config.agentic.max_iterations)],
         "min_retry_confidence": [str(config.agentic.min_retry_confidence)],
         "verifier_patches": [str(config.agentic.verifier_patches).lower()],
-        "require_concrete_retry": [
-            str(config.agentic.require_concrete_retry).lower()
-        ],
+        "require_concrete_retry": [str(config.agentic.require_concrete_retry).lower()],
         "mdf_manual_source": [
             "upload" if config.input.toolbox_pdf is not None else "none"
         ],
@@ -1634,7 +2778,7 @@ def _preset_form_state(
     def put_model(field: str, custom_field: str, model: str | None) -> None:
         if model is None:
             return
-        if model in known_models:
+        if config.auth.mode is AuthMode.SUBSCRIPTION or model in known_models:
             put(field, model)
         else:
             put(field, "__other__")
@@ -1644,7 +2788,9 @@ def _preset_form_state(
         if model is None:
             return
         prefix = model.split("/", 1)[0]
-        provider = prefix if prefix in {item.value for item in Provider} else preset.provider
+        provider = (
+            prefix if prefix in {item.value for item in Provider} else preset.provider
+        )
         put(f"{role}_provider", provider)
         put_model(f"{role}_model", f"{role}_custom_model", model)
 
@@ -1712,9 +2858,7 @@ def _preset_form_state(
         put("parse_rules_pages", ",".join(config.pipeline.parse_rules_pages))
     put(
         "character_inventory",
-        _read_preset_text(
-            managed_guide(config.input.alphabet, "character-inventory")
-        ),
+        _read_preset_text(managed_guide(config.input.alphabet, "character-inventory")),
     )
     put_instruction_state(
         "stage1",
@@ -1746,7 +2890,7 @@ def _preset_form_state(
 
 
 _RESUMABLE_REVIEW_PHASES = frozenset(
-    {"stage1", "parse_rule_review", "stage2_pass2"}
+    {"stage1", "stage2_pass1", "parse_rule_review", "stage2_pass2"}
 )
 
 
@@ -1777,6 +2921,69 @@ def _read_preset_text(path: Path | None) -> str | None:
         return None
 
 
+def _active_config_models(config: InferenceConfig) -> tuple[str, ...]:
+    """Return every model route used by the selected pipeline and verifier."""
+
+    models: list[str] = []
+    if config.pipeline.stage in {"1", "all"}:
+        models.append(config.models.stage1 or config.models.default)
+    if config.pipeline.stage in {"2", "all", "2-pass-1", "2-pass-2"}:
+        if config.pipeline.stage != "2-pass-2":
+            models.append(config.models.stage2_pass1 or config.models.default)
+        if config.pipeline.stage not in {"2-pass-1"}:
+            models.append(config.models.stage2_pass2 or config.models.default)
+    if config.agentic.stage1 or config.agentic.stage2:
+        models.extend(
+            model
+            for model in (
+                config.agentic.evaluator_model,
+                config.agentic.rewriter_model,
+            )
+            if model is not None
+        )
+    return tuple(dict.fromkeys(models))
+
+
+def _api_providers_for_config(config: InferenceConfig) -> tuple[Provider, ...]:
+    """Return API-key providers required by active model routes."""
+
+    providers: list[Provider] = []
+    for model in _active_config_models(config):
+        prefix = model.split("/", maxsplit=1)[0]
+        try:
+            provider = Provider(prefix)
+        except ValueError:
+            provider = Provider.CUSTOM
+        if provider is not Provider.CUSTOM and provider not in providers:
+            providers.append(provider)
+    return tuple(providers)
+
+
+def _primary_provider_for_config(config: InferenceConfig) -> Provider:
+    providers = _api_providers_for_config(config)
+    if providers:
+        return providers[0]
+    try:
+        return Provider(config.models.default.split("/", maxsplit=1)[0])
+    except ValueError:
+        return Provider.CUSTOM
+
+
+def _resolve_api_credentials(
+    config: InferenceConfig,
+    vault: CredentialVault,
+) -> tuple[tuple[ResolvedCredential, ...], tuple[Provider, ...]]:
+    credentials: list[ResolvedCredential] = []
+    missing: list[Provider] = []
+    for provider in _api_providers_for_config(config):
+        credential = vault.resolve(provider)
+        if credential is None:
+            missing.append(provider)
+        else:
+            credentials.append(credential)
+    return tuple(credentials), tuple(missing)
+
+
 def _config_summary(config: InferenceConfig) -> dict[str, object]:
     """Build the same metadata-only Review summary for every route."""
 
@@ -1804,17 +3011,34 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
             else "Automatic selection"
         )
     stage1_summary = (
-        config.models.stage1 or config.models.default
-    ) if runs_stage1 else "Not used"
+        (config.models.stage1 or config.models.default) if runs_stage1 else "Not used"
+    )
     pass1_summary = (
-        config.models.stage2_pass1 or config.models.default
-    ) if runs_stage2 else "Not used"
+        (config.models.stage2_pass1 or config.models.default)
+        if runs_stage2
+        else "Not used"
+    )
     pass2_summary = (
-        config.models.stage2_pass2 or config.models.default
-    ) if runs_stage2 else "Not used"
+        (config.models.stage2_pass2 or config.models.default)
+        if runs_stage2
+        else "Not used"
+    )
+    billing_mode = config.auth.mode.value
+    auth_providers = (
+        ", ".join(provider.value for provider in config.auth.providers) or None
+    )
     return {
         "input": str(config.input.pages),
         "output": str(config.output.directory),
+        "auth_mode": billing_mode,
+        "auth_providers": auth_providers or "None",
+        "billing_mode": billing_mode,
+        "billing": "subscription" if billing_mode == "subscription" else "api_key",
+        "billing_label": (
+            "Subscription billing"
+            if billing_mode == "subscription"
+            else "API-key billing"
+        ),
         "pipeline": str(config.pipeline.stage),
         "dictionary_pages": config.input.dictionary_pages or "All provided pages",
         "parse_rule_pages": parse_rule_pages,
@@ -1824,36 +3048,27 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",
         "stage_1_instructions": instruction_review_summary(
             config.pipeline.stage1_guides,
-            page_spec=(
-                config.pipeline.stage1_guides_pages if runs_stage1 else None
-            ),
+            page_spec=(config.pipeline.stage1_guides_pages if runs_stage1 else None),
             stage2_scope=None,
         ),
         "stage_2_instructions": instruction_review_summary(
             config.pipeline.stage2_guides,
-            page_spec=(
-                config.pipeline.stage2_guides_pages if runs_stage2 else None
-            ),
-            stage2_scope=(
-                config.pipeline.stage2_guides_scope if runs_stage2 else None
-            ),
+            page_spec=(config.pipeline.stage2_guides_pages if runs_stage2 else None),
+            stage2_scope=(config.pipeline.stage2_guides_scope if runs_stage2 else None),
         ),
         "mdf_parsing_guide": (
             "Human approval required"
-            if config.pipeline.stage != "1"
-            and config.pipeline.parse_rules_file is None
+            if config.pipeline.stage != "1" and config.pipeline.parse_rules_file is None
             else (
                 "Uploaded guide used directly"
                 if config.pipeline.parse_rules_file is not None
                 else "Not used"
             )
         ),
-        "mdf_manual": (
-            "Not used"
-            if manual is None
-            else "Custom upload"
-        ),
+        "mdf_manual": ("Not used" if manual is None else "Custom upload"),
     }
+
+
 def _read_log_tail(path: Path, *, redactions: tuple[str, ...]) -> tuple[str, bool]:
     if not path.is_file() or path.is_symlink():
         return "", False
@@ -1945,6 +3160,7 @@ def _preset_asset_links(
     """Build template-safe labels and local URLs for saved preset inputs."""
 
     paths = _preset_asset_paths(preset, presets_root=presets_root)
+
     def link_for(key: str) -> dict[str, object] | None:
         path = paths.get(key)
         if path is None:
@@ -2006,11 +3222,15 @@ def _preset_asset_links(
 
 
 def _all_models(app: FastAPI) -> tuple[object, ...]:
-    live = tuple(model for models in app.state.live_models.values() for model in models)
-    bundled_ids = {model.model_id for model in app.state.model_catalog.options}
-    return app.state.model_catalog.options + tuple(
-        model for model in live if model.model_id not in bundled_ids
-    )
+    models = app.state.model_catalog.options
+    seen: set[str] = set()
+    unique: list[object] = []
+    for model in models:
+        if model.model_id in seen:
+            continue
+        seen.add(model.model_id)
+        unique.append(model)
+    return tuple(unique)
 
 
 def _history_output_directory(controller: JobController, run_id: str) -> str:
@@ -2021,6 +3241,7 @@ def _history_output_directory(controller: JobController, run_id: str) -> str:
     except (KeyError, OSError, ValidationError):
         return "Unavailable"
     return str(config.output.directory)
+
 
 def _managed_config_available(controller: JobController, run_id: str) -> bool:
     """Return whether config-dependent run workspace views can load safely."""
@@ -2036,11 +3257,29 @@ def _run_is_active(
     run: RunRecord,
     events: list[dict[str, object]],
 ) -> bool:
-    """Treat persisted terminal events as authoritative for live views."""
+    """Ignore terminal events from attempts older than the current worker."""
 
-    return run.status in _LIVE_RUN_STATUSES and not any(
-        str(event.get("type", "")) in _TERMINAL_EVENT_TYPES for event in events
+    if run.status not in _LIVE_RUN_STATUSES:
+        return False
+    if run.status is RunStatus.QUEUED:
+        return True
+    latest_terminal = max(
+        (
+            int(event.get("sequence", 0))
+            for event in events
+            if str(event.get("type", "")) in _TERMINAL_EVENT_TYPES
+        ),
+        default=0,
     )
+    latest_start = max(
+        (
+            int(event.get("sequence", 0))
+            for event in events
+            if event.get("type") == "stage.started"
+        ),
+        default=0,
+    )
+    return latest_start > latest_terminal or latest_terminal == 0
 
 
 def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
@@ -2077,7 +3316,11 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         event.get("type") == "page.completed" for event in stage_events
     )
     started = next(
-        (event for event in reversed(stage_events) if event.get("type") == "stage.started"),
+        (
+            event
+            for event in reversed(stage_events)
+            if event.get("type") == "stage.started"
+        ),
         {},
     )
     total_pages = int(started.get("total_pages") or completed_pages or 0)
@@ -2130,17 +3373,30 @@ def _run_view(store: RunStore, run: RunRecord) -> dict[str, object]:
         "review_available": review_row is not None,
         "review_status": review_row.get("status") if review_row else None,
         "resume_available": run.status
-        in {RunStatus.INTERRUPTED, RunStatus.CREDENTIALS_REQUIRED},
+        in {
+            RunStatus.INTERRUPTED,
+            RunStatus.CREDENTIALS_REQUIRED,
+            RunStatus.FAILED,
+        },
+        "resume_label": "Retry run" if run.status is RunStatus.FAILED else "Resume run",
     }
 
 
 def _failure_message(events: list[dict[str, object]]) -> str | None:
-    """Return the latest persisted worker failure without exposing credentials."""
+    """Return the current attempt's persisted worker failure, if any."""
 
-    for event in reversed(events):
-        if event.get("type") == "run.failed" and event.get("message"):
-            return str(event["message"])
-    return None
+    latest_failure: tuple[int, str] | None = None
+    latest_recovery = 0
+    for event in events:
+        sequence = int(event.get("sequence", 0))
+        event_type = str(event.get("type", ""))
+        if event_type == "run.failed" and event.get("message"):
+            latest_failure = (sequence, str(event["message"]))
+        elif event_type in {"stage.started", "run.completed", "run.cancelled"}:
+            latest_recovery = max(latest_recovery, sequence)
+    if latest_failure is None or latest_recovery > latest_failure[0]:
+        return None
+    return latest_failure[1]
 
 
 def _sse_event(event: dict[str, object]) -> str:
@@ -2179,10 +3435,15 @@ def _pipeline_steps(
 ) -> list[dict[str, str]]:
     """Build the fixed pipeline timeline from durable worker events."""
 
-    started_stages = {str(event.get("stage")) for event in events if event.get("type") == "stage.started"}
+    started_stages = {
+        str(event.get("stage"))
+        for event in events
+        if event.get("type") == "stage.started"
+    }
     completed_by_stage = {
         str(event.get("stage")): sum(
-            item.get("type") == "page.completed" and item.get("stage") == event.get("stage")
+            item.get("type") == "page.completed"
+            and item.get("stage") == event.get("stage")
             for item in events
         )
         for event in events
@@ -2197,18 +3458,18 @@ def _pipeline_steps(
         if event.get("type") == "stage.started"
     }
     guide_ready = any(event.get("type") == "parse_rules.generated" for event in events)
-    stage1_done = "stage2_pass1" in started_stages or "stage2_pass2" in started_stages or (
-        totals.get("stage1", 0) > 0
-        and completed_by_stage.get("stage1", 0) >= totals["stage1"]
+    stage1_done = (
+        "stage2_pass1" in started_stages
+        or "stage2_pass2" in started_stages
+        or (
+            totals.get("stage1", 0) > 0
+            and completed_by_stage.get("stage1", 0) >= totals["stage1"]
+        )
     )
     stage1_completed = (
-        totals.get("stage1", 0)
-        if stage1_done
-        else completed_by_stage.get("stage1", 0)
+        totals.get("stage1", 0) if stage1_done else completed_by_stage.get("stage1", 0)
     )
-    stage2_done = (
-        status is RunStatus.COMPLETED and "stage2_pass2" in started_stages
-    )
+    stage2_done = status is RunStatus.COMPLETED and "stage2_pass2" in started_stages
     stage2_completed = (
         totals.get("stage2_pass2", 0)
         if stage2_done
@@ -2217,28 +3478,52 @@ def _pipeline_steps(
     return [
         {
             "label": "Stage 1 — Transcription",
-            "state": "completed" if stage1_done else "running" if status is RunStatus.RUNNING_STAGE1 else "pending",
+            "state": "completed"
+            if stage1_done
+            else "running"
+            if status is RunStatus.RUNNING_STAGE1
+            else "pending",
             "detail": (
-                _page_progress_detail(
-                    stage1_completed, totals.get("stage1", 0)
-                )
+                _page_progress_detail(stage1_completed, totals.get("stage1", 0))
                 if "stage1" in started_stages
                 else ""
             ),
         },
         {
             "label": "MDF parsing guide discovery",
-            "state": "completed" if guide_ready else "running" if status is RunStatus.DISCOVERING_PARSE_RULES else "pending",
-            "detail": "Guide ready for review" if guide_ready else "Starts after Stage 1 is complete",
+            "state": "completed"
+            if guide_ready
+            else "running"
+            if status is RunStatus.DISCOVERING_PARSE_RULES
+            else "pending",
+            "detail": (
+                "Guide ready for review"
+                if guide_ready
+                else (
+                    "Inferring guide from representative pages"
+                    if status is RunStatus.DISCOVERING_PARSE_RULES
+                    else "Starts after Stage 1 is complete"
+                )
+            ),
         },
         {
             "label": "Review parsing guide",
-            "state": "completed" if "stage2_pass2" in started_stages else "running" if status is RunStatus.AWAITING_PARSE_RULES_REVIEW else "pending",
-            "detail": "Approval is required before MDF conversion" if status is RunStatus.AWAITING_PARSE_RULES_REVIEW else "",
+            "state": "completed"
+            if "stage2_pass2" in started_stages
+            else "running"
+            if status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+            else "pending",
+            "detail": "Approval is required before MDF conversion"
+            if status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+            else "",
         },
         {
             "label": "Stage 2 — MDF conversion",
-            "state": "completed" if stage2_done else "running" if status is RunStatus.RUNNING_STAGE2 else "pending",
+            "state": "completed"
+            if stage2_done
+            else "running"
+            if status is RunStatus.RUNNING_STAGE2
+            else "pending",
             "detail": (
                 _page_progress_detail(
                     stage2_completed,

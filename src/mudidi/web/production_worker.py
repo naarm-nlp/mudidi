@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import os
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,6 +27,11 @@ from mudidi.execution.events import (
     RunFailed,
     StageStarted,
 )
+from mudidi.llm.subscriptions import (
+    AuthMode,
+    SubscriptionError,
+)
+
 from mudidi.paths import MDF_PARSING_GUIDE_FILENAME
 from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 from mudidi.utils.pdf_split import parse_page_spec
@@ -42,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument(
+        "--subscription-store",
+        type=Path,
+        help="Managed encrypted subscription-store directory.",
+    )
+    parser.add_argument(
         "--phase", choices=[phase.value for phase in InferencePhase], required=True
     )
     parser.add_argument("--sequence-start", type=int, default=0)
@@ -56,20 +68,33 @@ def main(argv: list[str] | None = None) -> int:
 
     args = build_parser().parse_args(argv)
     protocol_stream = sys.stdout
-    credential_message = sys.stdin.readline().strip()
-    # Empty redaction sentinel; populated only from the private credential message.
-    secret_value = ""  # nosec B105
+    credential_message = sys.stdin.readline().strip() or "{}"
+    # Values are retained only to redact failures crossing the worker boundary.
+    secret_values: tuple[str, ...] = ()
     sequence = args.sequence_start
+    descriptor = None
+    subscription_mode = False
     try:
-        if credential_message and credential_message != "{}":
+        descriptor = apply_credential_message(credential_message)
+        if descriptor is None and credential_message != "{}":
             parsed = json.loads(credential_message)
-            secret_value = (
-                str(parsed.get("api_key", "")) if isinstance(parsed, dict) else ""
-            )
-            apply_credential_message(credential_message)
+            if isinstance(parsed, dict) and isinstance(parsed.get("credentials"), dict):
+                secret_values = tuple(
+                    value
+                    for value in parsed["credentials"].values()
+                    if isinstance(value, str)
+                )
         config = InferenceConfig.model_validate_json(
             args.config.read_text(encoding="utf-8")
         )
+        subscription_mode = config.auth.mode is AuthMode.SUBSCRIPTION
+        if subscription_mode:
+            if descriptor is None:
+                raise ValueError("subscription descriptor is required")
+            if set(descriptor.providers) != set(config.auth.providers):
+                raise ValueError("subscription descriptor does not match config")
+        elif descriptor is not None:
+            raise ValueError("subscription descriptor requires subscription mode")
         phase = InferencePhase(args.phase)
         approved_rules = (
             _load_approval(args.approval_manifest)
@@ -128,18 +153,25 @@ def main(argv: list[str] | None = None) -> int:
                 progress_callback=emit_page,
             )
 
-        with args.log_file.open("a", encoding="utf-8") as log_stream:
-            with (
-                contextlib.redirect_stdout(log_stream),
-                contextlib.redirect_stderr(log_stream),
-            ):
-                result = run_inference_phase(
-                    config,
-                    phase,
-                    execute=execute_with_progress,
-                    approved_rules=approved_rules,
-                    on_stage_started=emit_stage,
-                )
+        with (
+            _subscription_store_environment(
+                args.subscription_store or _default_subscription_store_path(args.config)
+            )
+            if subscription_mode
+            else contextlib.nullcontext()
+        ):
+            with args.log_file.open("a", encoding="utf-8") as log_stream:
+                with (
+                    contextlib.redirect_stdout(log_stream),
+                    contextlib.redirect_stderr(log_stream),
+                ):
+                    result = run_inference_phase(
+                        config,
+                        phase,
+                        execute=execute_with_progress,
+                        approved_rules=approved_rules,
+                        on_stage_started=emit_stage,
+                    )
         if result.return_code != 0:
             raise RuntimeError(f"extraction returned {result.return_code}")
         sequence += 1
@@ -169,9 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
     except Exception as exc:
-        message = f"{type(exc).__name__}: {exc}"
-        if secret_value:
-            message = message.replace(secret_value, "[REDACTED]")
+        message = _safe_failure_message(exc, secret_values=secret_values)
         sequence += 1
         _emit(
             RunFailed(
@@ -198,6 +228,99 @@ def _load_approval(path: Path | None) -> object:
         approved_at=datetime.fromisoformat(str(payload["approved_at"])),
     )
     return load_approved_parse_rules(approval).rules
+
+
+_SECRET_ASSIGNMENT_RE = re.compile(
+    r"""(?P<prefix>\b(?:access[_ -]?token|refresh[_ -]?token|id[_ -]?token|api[_ -]?key|"""
+    r"""authorization(?:[_ -]?code)?|verifier|token)\b\s*[:=]\s*)"""
+    r"""(?P<quote>["']?)(?P<value>[^"'\s,;)}\]]+)(?P=quote)""",
+    re.IGNORECASE,
+)
+_BEARER_RE = re.compile(
+    r"\bBearer\s+(?!\[[Rr][Ee][Dd][Aa][Cc][Tt][Ee][Dd]\])[^\s,;)}\]]+",
+    re.IGNORECASE,
+)
+_JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")
+
+
+def _safe_failure_message(
+    exc: BaseException,
+    *,
+    secret_value: str = "",
+    secret_values: tuple[str, ...] = (),
+) -> str:
+    """Return a bounded worker failure without credential-shaped values."""
+
+    message = f"{type(exc).__name__}: {exc}"
+    if isinstance(exc, SubscriptionError):
+        provider_name = exc.provider.value if exc.provider else "provider"
+        category = exc.category or "request"
+        message = f"{provider_name} subscription {category} failed"
+    for value in (secret_value, *secret_values):
+        if value:
+            message = message.replace(value, "[REDACTED]")
+    message = _SECRET_ASSIGNMENT_RE.sub(
+        lambda match: (
+            f"{match.group('prefix')}{match.group('quote')}"
+            "[REDACTED]"
+            f"{match.group('quote')}"
+        ),
+        message,
+    )
+    message = _BEARER_RE.sub("Bearer [REDACTED]", message)
+    return _JWT_RE.sub("[REDACTED]", message)
+
+
+_SUBSCRIPTION_ENVIRONMENT_ALLOWLIST = frozenset(
+    {
+        "PATH",
+        "PYTHONPATH",
+        "VIRTUAL_ENV",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "SYSTEMROOT",
+        "WINDIR",
+        "MUDIDI_GOOGLE_OAUTH_CLIENT_ID",
+        "MUDIDI_AGENTIC_VERIFIER_MAX_TOKENS",
+    }
+)
+
+
+def _default_subscription_store_path(config_path: Path) -> Path:
+    """Derive the managed store from a conventional web run config path."""
+
+    resolved = config_path.expanduser().resolve()
+    runs_dir = resolved.parent.parent
+    data_dir = runs_dir.parent if runs_dir.name == "runs" else resolved.parent
+    return data_dir / "subscriptions"
+
+
+@contextlib.contextmanager
+def _subscription_store_environment(path: Path):
+    """Expose only the managed store and explicit non-secret controls,
+    including the deployment-local Google OAuth client ID."""
+
+    previous = dict(os.environ)
+    environment = {
+        key: value
+        for key, value in previous.items()
+        if key in _SUBSCRIPTION_ENVIRONMENT_ALLOWLIST
+    }
+    environment["MUDIDI_SUBSCRIPTION_STORE"] = str(path.expanduser())
+    os.environ.clear()
+    os.environ.update(environment)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(previous)
 
 
 def _event_stage(phase: InferencePhase) -> str:
