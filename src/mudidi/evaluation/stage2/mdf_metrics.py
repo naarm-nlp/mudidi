@@ -34,7 +34,7 @@ class PrfCounts:
 
 @dataclass
 class ReadOrderMetrics:
-    """OmniDocBench-style read order over matched record indices."""
+    """OmniDocBench-style read order over gold and predicted records."""
 
     read_order_edit: float = 0.0
     edit_distance: int = 0
@@ -97,7 +97,9 @@ class MdfPageMetrics:
         default_factory=CharacterQualityMetrics
     )
     language_quality: Dict[str, CharacterQualityMetrics] = field(default_factory=dict)
-    language_script_quality: Dict[str, CharacterQualityMetrics] = field(default_factory=dict)
+    language_script_quality: Dict[str, CharacterQualityMetrics] = field(
+        default_factory=dict
+    )
     marker_confusion: Dict[str, Dict[str, int]] = field(default_factory=dict)
     record_samples: List[RecordSample] = field(default_factory=list)
     marker_error_samples: List[MarkerErrorSample] = field(default_factory=list)
@@ -105,11 +107,11 @@ class MdfPageMetrics:
     extra_record_samples: List[RecordIndexSample] = field(default_factory=list)
 
     @property
-    def record_accuracy(self) -> float:
-        """Fraction of gold records correctly matched (``TP / (TP + FN)``)."""
-        return self.record.recall
+    def entry_f1(self) -> float:
+        """F1 over matched, extra, and missing dictionary entries."""
+        return self.record.f1
 
     @property
     def mdf_fields_f1(self) -> float:
-        """F1 over MDF field-line marker assignment within matched records."""
+        """F1 over MDF field-line marker assignment across all records."""
         return self.marker.f1

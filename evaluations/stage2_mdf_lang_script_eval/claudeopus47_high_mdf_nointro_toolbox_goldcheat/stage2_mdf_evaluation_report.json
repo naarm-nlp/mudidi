@@ -10,17 +10,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Evenki-Russian/Stage 2 MDF file/page_1/page_1.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Evenki-Russian/stage-2/claudeopus47_high_mdf_nointro_toolbox_goldcheat/page_1/page_1.mdf.txt",
       "n_pred_records": 28,
-      "Record_Accuracy": 1.0,
-      "MDF_Fields_F1": 0.888337,
+      "Entry_F1": 1.0,
+      "MDF_Fields_F1": 0.907731,
       "record_counts": {
         "tp": 28,
         "fp": 0,
         "fn": 0
       },
       "marker_counts": {
-        "tp": 179,
-        "fp": 10,
-        "fn": 35
+        "tp": 182,
+        "fp": 7,
+        "fn": 30
       },
       "read_order": {
         "ReadOrderEdit": 0.0,
@@ -38,9 +38,9 @@
         "Headword_WER": 0.035714
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.114366,
-        "Gloss_GCER": 0.130435,
-        "Gloss_WER": 0.651786
+        "Gloss_TextEdit": 0.108019,
+        "Gloss_GCER": 0.122563,
+        "Gloss_WER": 0.642202
       },
       "language_quality": {
         "source": {
@@ -49,34 +49,24 @@
           "source_WER": 0.032258
         },
         "target": {
-          "target_TextEdit": 0.114366,
-          "target_GCER": 0.130435,
-          "target_WER": 0.651786
+          "target_TextEdit": 0.108019,
+          "target_GCER": 0.122563,
+          "target_WER": 0.642202
         }
       },
       "language_script_quality": {
-        "Evenki-Cyrillic": {
-          "LangScript_Evenki-Cyrillic_TextEdit": 0.247628,
-          "LangScript_Evenki-Cyrillic_GCER": 0.218579,
-          "LangScript_Evenki-Cyrillic_WER": 0.293478
+        "Evenki": {
+          "LangScript_Evenki_TextEdit": 0.247628,
+          "LangScript_Evenki_GCER": 0.218579,
+          "LangScript_Evenki_WER": 0.293478
         },
-        "Russian-Cyrillic": {
-          "LangScript_Russian-Cyrillic_TextEdit": 0.210169,
-          "LangScript_Russian-Cyrillic_GCER": 0.17976,
-          "LangScript_Russian-Cyrillic_WER": 0.764706
+        "Russian": {
+          "LangScript_Russian_TextEdit": 0.210169,
+          "LangScript_Russian_GCER": 0.17976,
+          "LangScript_Russian_WER": 0.764706
         }
       },
-      "marker_confusion": {
-        "3s": {
-          "pd": 1
-        },
-        "un": {
-          "lt": 1
-        },
-        "pn": {
-          "sn": 1
-        }
-      },
+      "marker_confusion": {},
       "record_samples": [
         {
           "gold_index": 9,
@@ -153,36 +143,17 @@
         {
           "gold_index": 16,
           "pred_index": 16,
-          "similarity": 0.687,
+          "similarity": 0.692,
           "headword_gold": "авгӯ",
           "headword_pred": "авгӯ",
-          "gold_lines": 28,
+          "gold_lines": 26,
           "pred_lines": 20,
           "line_pairs": 18,
-          "missing_lines": 10,
+          "missing_lines": 8,
           "extra_lines": 2
         }
       ],
-      "marker_error_samples": [
-        {
-          "headword": "авгара̄-мӣ",
-          "gold": "\\3s авгара̄рэн",
-          "pred": "\\pd 3 л. авгара̄рэн",
-          "value_sim": 0.8
-        },
-        {
-          "headword": "авгара̄т",
-          "gold": "\\un букв. здоро́во живи́",
-          "pred": "\\lt здорово живи",
-          "value_sim": 0.75
-        },
-        {
-          "headword": "авгӯ",
-          "gold": "\\pn 1",
-          "pred": "\\sn 1",
-          "value_sim": 1.0
-        }
-      ],
+      "marker_error_samples": [],
       "missing_record_samples": [],
       "extra_record_samples": []
     }

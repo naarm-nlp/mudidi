@@ -21,7 +21,8 @@ process only. Dependency direction is **annotation → mudidi** (never the rever
 | `label_studio/span_schema.py` | Compat shim re-exporting `mudidi.schemas.language_span` for flat imports. |
 | `examples/` | Runnable shell scripts (see below). |
 | `examples/run_labeler.sh` | Run the script labeler over dictionaries → `outputs/`. |
-| `examples/start_label_studio.sh` | Start the Label Studio dashboard for NER review. |
+| `examples/start_label_studio_local.sh` | Start the local Label Studio dashboard for NER review. |
+| `examples/start_label_studio_public.sh` | Start Label Studio with an automatic public ngrok tunnel. |
 | `outputs/` | Generated `*_lang.json` span maps, one subfolder per dictionary (matches the dataset folder names). |
 | `spikes/` | Exploratory only — not part of the pipeline. |
 | `spikes/lid_spike.py` | LID-vs-script-check coverage spike (needs `lingua`). |

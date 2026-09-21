@@ -1,0 +1,270 @@
+[
+  {
+    "page_id": "Chukchi-Russian/page_26",
+    "character_quality": {
+      "TextEdit": 0.03096,
+      "GCER": 0.023891,
+      "WER": 0.134921,
+      "total_graphemes_gold": 879,
+      "total_graphemes_pred": 872,
+      "total_grapheme_edits": 21,
+      "total_words_gold": 126,
+      "total_word_edits": 17,
+      "matched_spans": 33,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 29,
+        "fp": 0,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 12,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 41,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 33
+    },
+    "per_language_script": {
+      "blended_gcer": 0.029957,
+      "blended_grapheme_edits": 21,
+      "blended_graphemes_gold": 701,
+      "per_language": {
+        "Chukchi": {
+          "gold_word_count": 29,
+          "gold_grapheme_count": 194,
+          "GCER": 0.097938,
+          "WER": 0.517241,
+          "TextEdit": 0.097938,
+          "total_graphemes_pred": 187,
+          "total_grapheme_edits": 19,
+          "total_word_edits": 15,
+          "precision": 0.9358,
+          "recall": 0.9021,
+          "f1": 0.9186
+        },
+        "Russian": {
+          "gold_word_count": 87,
+          "gold_grapheme_count": 507,
+          "GCER": 0.003945,
+          "WER": 0.022989,
+          "TextEdit": 0.003945,
+          "total_graphemes_pred": 507,
+          "total_grapheme_edits": 2,
+          "total_word_edits": 2,
+          "precision": 0.9961,
+          "recall": 0.9961,
+          "f1": 0.9961
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Chukchi-Russian/page_3",
+    "character_quality": {
+      "TextEdit": 0.049245,
+      "GCER": 0.023474,
+      "WER": 0.150442,
+      "total_graphemes_gold": 852,
+      "total_graphemes_pred": 854,
+      "total_grapheme_edits": 20,
+      "total_words_gold": 113,
+      "total_word_edits": 17,
+      "matched_spans": 33,
+      "missing_spans": 0,
+      "extra_spans": 1
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9737,
+        "recall": 0.9487,
+        "f1": 0.961,
+        "tp": 37,
+        "fp": 1,
+        "fn": 2
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 17,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.9818,
+        "recall": 0.9643,
+        "f1": 0.973,
+        "tp": 54,
+        "fp": 1,
+        "fn": 2
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 33
+    },
+    "per_language_script": {
+      "blended_gcer": 0.027473,
+      "blended_grapheme_edits": 20,
+      "blended_graphemes_gold": 728,
+      "per_language": {
+        "Chukchi": {
+          "gold_word_count": 39,
+          "gold_grapheme_count": 275,
+          "GCER": 0.072727,
+          "WER": 0.410256,
+          "TextEdit": 0.072202,
+          "total_graphemes_pred": 277,
+          "total_grapheme_edits": 20,
+          "total_word_edits": 16,
+          "precision": 0.9278,
+          "recall": 0.9345,
+          "f1": 0.9312
+        },
+        "Russian": {
+          "gold_word_count": 77,
+          "gold_grapheme_count": 453,
+          "GCER": 0.0,
+          "WER": 0.0,
+          "TextEdit": 0.0,
+          "total_graphemes_pred": 453,
+          "total_grapheme_edits": 0,
+          "total_word_edits": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Chukchi-Russian/page_48",
+    "character_quality": {
+      "TextEdit": 0.011236,
+      "GCER": 0.014808,
+      "WER": 0.107914,
+      "total_graphemes_gold": 1013,
+      "total_graphemes_pred": 1013,
+      "total_grapheme_edits": 15,
+      "total_words_gold": 139,
+      "total_word_edits": 15,
+      "matched_spans": 34,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 38,
+        "fp": 0,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 20,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 58,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 34
+    },
+    "per_language_script": {
+      "blended_gcer": 0.017626,
+      "blended_grapheme_edits": 15,
+      "blended_graphemes_gold": 851,
+      "per_language": {
+        "Chukchi": {
+          "gold_word_count": 40,
+          "gold_grapheme_count": 281,
+          "GCER": 0.0,
+          "WER": 0.0,
+          "TextEdit": 0.0,
+          "total_graphemes_pred": 281,
+          "total_grapheme_edits": 0,
+          "total_word_edits": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "Russian": {
+          "gold_word_count": 104,
+          "gold_grapheme_count": 570,
+          "GCER": 0.026316,
+          "WER": 0.144231,
+          "TextEdit": 0.026316,
+          "total_graphemes_pred": 570,
+          "total_grapheme_edits": 15,
+          "total_word_edits": 15,
+          "precision": 0.9737,
+          "recall": 0.9737,
+          "f1": 0.9737
+        }
+      }
+    }
+  },
+  {
+    "page_id": "__aggregate__",
+    "character_quality": {
+      "TextEdit": 0.030476,
+      "GCER": 0.020408,
+      "WER": 0.12963
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.9905,
+        "recall": 0.9811,
+        "f1": 0.9858
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "typography": {
+        "precision": 0.9935,
+        "recall": 0.9871,
+        "f1": 0.9903
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0
+    }
+  }
+]

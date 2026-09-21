@@ -29,7 +29,7 @@ LANGUAGES=(
     Greek-English
     Efik-English
     Circassian-English-Turkish
-    "Iñupiatun Eskimo-English"
+    "Iñupiatun Eskimo-English"
 )
 
 uv run mudidi benchmark evaluate stage2 \

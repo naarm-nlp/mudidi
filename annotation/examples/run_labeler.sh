@@ -25,29 +25,35 @@ LABELER_MODE="llm"
 MODEL="gemini/gemini-3.1-pro-preview"
 REASONING_EFFORT="high"
 DRIFT_GATE=0.02
-BATCH_SIZE=5
+TEMPERATURE=0.2
+BATCH_SIZE=1
 STAGE="all"
 
 RULES=()
 # RULES+=( "dataset/MUDIDI/dictionaries/Evenki-Russian/language_rules.yaml" )
 
-# Set to 1 to re-label pages that already have a *_lang.json.
-OVERWRITE=1
+# Keep existing span maps; label only pages without a *_lang.json.
+OVERWRITE=0
 
 # Dictionaries to process (folder names under INPUT_DIR). Empty = all with gold pages.
 DICTIONARIES=(
-  "Thai-Russian"
+  "Yiddish-English"
 )
 
+# Newly synced gold pages that do not yet have span maps. The page filter is
+# applied to each selected dictionary; nonexistent page numbers are ignored.
 PAGES=(
-  591
-  756
+  2
+  37
+  41
+  303
 )
 # ----------------------------------------------------------------------------
 
 script_args=( --dictionaries-root "$INPUT_DIR" --output-root "$OUTPUT_ROOT" )
 llm_args=( --dictionaries-root "$INPUT_DIR" --output-root "$OUTPUT_ROOT"
            --model "$MODEL" --reasoning-effort "$REASONING_EFFORT"
+           --temperature "$TEMPERATURE" --max-drift "$DRIFT_GATE"
            --batch-size "$BATCH_SIZE" --stage "$STAGE" )
 [ "$OVERWRITE" = "1" ] && script_args+=( --overwrite ) && llm_args+=( --overwrite )
 if [ "${#RULES[@]}" -gt 0 ]; then

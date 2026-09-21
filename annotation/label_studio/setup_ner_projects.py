@@ -47,6 +47,7 @@ _PROJECT_PREFIX = "NER: "
 # Minimal Label Studio HTTP client
 # ---------------------------------------------------------------------------
 
+
 class LabelStudioClient:
     """Thin wrapper around the Label Studio HTTP API.
 
@@ -109,15 +110,21 @@ class LabelStudioClient:
     def delete_project(self, project_id: int) -> None:
         self._request("DELETE", f"/api/projects/{project_id}/").raise_for_status()
 
-    def create_project(self, title: str, label_config: str, description: str = "") -> dict:
-        resp = self._request("POST", "/api/projects/", json={
-            "title": title,
-            "description": description,
-            "label_config": label_config,
-            "is_published": True,
-            "show_skip_button": True,
-            "enable_empty_annotation": True,
-        })
+    def create_project(
+        self, title: str, label_config: str, description: str = ""
+    ) -> dict:
+        resp = self._request(
+            "POST",
+            "/api/projects/",
+            json={
+                "title": title,
+                "description": description,
+                "label_config": label_config,
+                "is_published": True,
+                "show_skip_button": True,
+                "enable_empty_annotation": True,
+            },
+        )
         resp.raise_for_status()
         return resp.json()
 
@@ -126,6 +133,38 @@ class LabelStudioClient:
         resp.raise_for_status()
         return resp.json()
 
+    def replace_task_prediction(
+        self, project_id: int, task: dict, desired: dict
+    ) -> None:
+        """Replace an unreviewed task's data and predictions without deleting the task."""
+        task_id = int(task["id"])
+        response = self._request(
+            "PATCH", f"/api/tasks/{task_id}/", json={"data": desired["data"]}
+        )
+        response.raise_for_status()
+        prediction = dict(desired["predictions"][-1])
+        prediction.update({"task": task_id, "project": project_id})
+        response = self._request("POST", "/api/predictions/", json=prediction)
+        response.raise_for_status()
+        new_prediction_id = response.json().get("id")
+        for existing in task.get("predictions", []):
+            prediction_id = (
+                existing.get("id") if isinstance(existing, dict) else existing
+            )
+            if prediction_id and prediction_id != new_prediction_id:
+                self._request(
+                    "DELETE", f"/api/predictions/{prediction_id}/"
+                ).raise_for_status()
+
+    def list_task_predictions(self, task_id: int) -> list[dict]:
+        """Return expanded predictions for one task."""
+        response = self._request("GET", "/api/predictions/", params={"task": task_id})
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, list):
+            return payload
+        return payload.get("results", [])
+
     def update_label_config(self, project_id: int, label_config: str) -> bool:
         """PATCH a project's labelling config in place (non-destructive; keeps tasks)."""
         resp = self._request(
@@ -133,7 +172,9 @@ class LabelStudioClient:
         )
         if resp.ok:
             return True
-        logger.error("  config update failed (%s): %s", resp.status_code, resp.text[:300])
+        logger.error(
+            "  config update failed (%s): %s", resp.status_code, resp.text[:300]
+        )
         return False
 
     def export_tasks(self, project_id: int) -> list[dict]:
@@ -154,21 +195,28 @@ class LabelStudioClient:
         subdirectory of LOCAL_FILES_DOCUMENT_ROOT. We do not sync it (tasks are
         imported via the API) — it exists only to satisfy the serving permission.
         """
-        resp = self._request("POST", "/api/storages/localfiles", json={
-            "path": path,
-            "project": project_id,
-            "use_blob_urls": True,
-            "title": "Page renders",
-        })
+        resp = self._request(
+            "POST",
+            "/api/storages/localfiles",
+            json={
+                "path": path,
+                "project": project_id,
+                "use_blob_urls": True,
+                "title": "Page renders",
+            },
+        )
         if resp.ok:
             return True
-        logger.error("  local storage create failed (%s): %s", resp.status_code, resp.text[:300])
+        logger.error(
+            "  local storage create failed (%s): %s", resp.status_code, resp.text[:300]
+        )
         return False
 
 
 # ---------------------------------------------------------------------------
 # Gold text lookup
 # ---------------------------------------------------------------------------
+
 
 def find_raw_gold(dictionary_dir: Path, page: int) -> Path | None:
     """Return the flat gold text file for a given page, or None if not found."""
@@ -181,6 +229,7 @@ def find_raw_gold(dictionary_dir: Path, page: int) -> Path | None:
 # ---------------------------------------------------------------------------
 # Original page image lookup (served to Label Studio as a read-only reference)
 # ---------------------------------------------------------------------------
+
 
 def _render_pdf_first_page(pdf_path: Path, out_path: Path, *, dpi: int = 150) -> bool:
     """Render the first page of a PDF to PNG at ``out_path``. Returns success."""
@@ -233,7 +282,9 @@ def resolve_page_image(
     except ValueError:
         logger.warning(
             "  page %d render %s is outside the document root %s — no reference shown",
-            page, out, document_root,
+            page,
+            out,
+            document_root,
         )
         return None
     return "/data/local-files/?d=" + urllib.parse.quote(str(rel))
@@ -242,6 +293,7 @@ def resolve_page_image(
 # ---------------------------------------------------------------------------
 # Non-destructive recolor (PATCH label config in place, keep annotations)
 # ---------------------------------------------------------------------------
+
 
 def recolor_project(client: LabelStudioClient, dict_name: str, project: dict) -> bool:
     """Re-emit a project's label config with distinct colours, preserving its tasks.
@@ -268,6 +320,7 @@ def recolor_project(client: LabelStudioClient, dict_name: str, project: dict) ->
 # Per-dictionary project setup
 # ---------------------------------------------------------------------------
 
+
 def setup_dictionary(
     client: LabelStudioClient,
     dict_name: str,
@@ -289,7 +342,9 @@ def setup_dictionary(
     missing_gold = 0
     images_found = 0
     for lang_path in sorted(lang_json_paths, key=lambda p: int(p.stem.split("_")[1])):
-        page_map = PageLanguageMap.model_validate_json(lang_path.read_text(encoding="utf-8"))
+        page_map = PageLanguageMap.model_validate_json(
+            lang_path.read_text(encoding="utf-8")
+        )
         gold_path = find_raw_gold(dictionary_dir, page_map.page)
         if gold_path is None:
             logger.warning("  [skip] page %d: gold text not found", page_map.page)
@@ -298,7 +353,8 @@ def setup_dictionary(
         raw_text = gold_path.read_text(encoding="utf-8")
         if sha256_of(raw_text) != page_map.source_text_sha:
             logger.warning(
-                "  [skip] page %d: sha256 mismatch (gold may have changed)", page_map.page
+                "  [skip] page %d: sha256 mismatch (gold may have changed)",
+                page_map.page,
             )
             missing_gold += 1
             continue
@@ -321,7 +377,9 @@ def setup_dictionary(
     if 0 < images_found < len(tasks):
         logger.warning(
             "%s: only %d/%d pages have a reference image — image panel disabled",
-            dict_name, images_found, len(tasks),
+            dict_name,
+            images_found,
+            len(tasks),
         )
 
     if title in existing_by_title:
@@ -332,7 +390,9 @@ def setup_dictionary(
                 existing_by_title[title],
             )
             return True
-        logger.info("%s: deleting existing project (id=%d)", dict_name, existing_by_title[title])
+        logger.info(
+            "%s: deleting existing project (id=%d)", dict_name, existing_by_title[title]
+        )
         client.delete_project(existing_by_title[title])
 
     # Merge base languages (from yaml) with any languages actually used in maps.
@@ -370,6 +430,7 @@ def setup_dictionary(
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -441,7 +502,7 @@ def _recolor_only(
         title = project.get("title", "")
         if not title.startswith(_PROJECT_PREFIX):
             continue
-        dict_name = title[len(_PROJECT_PREFIX):]
+        dict_name = title[len(_PROJECT_PREFIX) :]
         if requested is None or dict_name in requested:
             targets.append((dict_name, project))
 

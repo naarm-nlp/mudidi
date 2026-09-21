@@ -1,0 +1,24 @@
+========================================================================
+STAGE 1 OCR EVALUATION REPORT
+========================================================================
+
+--- Chukchi-Russian/page_3 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0511
+    GCER: 0.0246  (2.46%)
+    WER:  0.1504  (15.04%)
+    Spans: 33 matched, 0 missing, 1 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9912  (TP=56 FP=1 FN=0)
+    Bold   — P: 0.9750  R: 1.0000  F1: 0.9873  (TP=39 FP=1 FN=0)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=17 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.076   0.410     0.076     275
+    Russian                0.000   0.000     0.000     453

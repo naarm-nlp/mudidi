@@ -131,6 +131,88 @@ def test_clean_prediction_is_zero(tmp_path):
         assert metrics.wer == 0.0
 
 
+def test_gold_words_follow_language_span_boundaries(tmp_path):
+    raw_gold = "<b>अळोप</b>(alop)English\n"
+    gold_path = tmp_path / "page_1_stage1_GOLD_flat.txt"
+    pred_path = tmp_path / "page_1_stage1.txt"
+    map_path = tmp_path / "page_1_lang.json"
+    gold_path.write_text(raw_gold, encoding="utf-8")
+    pred_path.write_text(raw_gold, encoding="utf-8")
+    PageLanguageMap(
+        dictionary="Gojri-English",
+        page=1,
+        source_text_sha=sha256_of(raw_gold),
+        labeled_via="heuristic",
+        spans=[
+            LanguageSpan(start=0, end=11, language="Gojri-Devanagari"),
+            LanguageSpan(start=11, end=17, language="Gojri-Latin"),
+            LanguageSpan(start=17, end=24, language="English-Latin"),
+            LanguageSpan(start=24, end=25, language=SPACE),
+        ],
+    ).save(map_path)
+
+    report = evaluate_per_language(pred_path, gold_path, map_path)
+
+    assert report.per_language["Gojri-Devanagari"].total_words_gold == 1
+    assert report.per_language["Gojri-Latin"].total_words_gold == 1
+    assert report.per_language["English-Latin"].total_words_gold == 1
+
+
+def test_no_whitespace_script_spans_are_independent_gold_words(tmp_path):
+    raw_gold = "字カナword\n"
+    gold_path = tmp_path / "page_1_stage1_GOLD_flat.txt"
+    pred_path = tmp_path / "page_1_stage1.txt"
+    map_path = tmp_path / "page_1_lang.json"
+    gold_path.write_text(raw_gold, encoding="utf-8")
+    pred_path.write_text(raw_gold, encoding="utf-8")
+    PageLanguageMap(
+        dictionary="Japanese-English",
+        page=1,
+        source_text_sha=sha256_of(raw_gold),
+        labeled_via="heuristic",
+        spans=[
+            LanguageSpan(start=0, end=1, language="Japanese-Kanji"),
+            LanguageSpan(start=1, end=3, language="Japanese-Katakana"),
+            LanguageSpan(start=3, end=7, language="English-Latin"),
+            LanguageSpan(start=7, end=8, language=SPACE),
+        ],
+    ).save(map_path)
+
+    report = evaluate_per_language(pred_path, gold_path, map_path)
+
+    assert report.per_language["Japanese-Kanji"].total_words_gold == 1
+    assert report.per_language["Japanese-Katakana"].total_words_gold == 1
+    assert report.per_language["English-Latin"].total_words_gold == 1
+
+
+def test_span_word_edit_is_attributed_to_own_language(tmp_path):
+    raw_gold = "<b>अळोप</b>(alop)English\n"
+    pred_text = "<b>अलो</b>(alop)English\n"
+    gold_path = tmp_path / "page_1_stage1_GOLD_flat.txt"
+    pred_path = tmp_path / "page_1_stage1.txt"
+    map_path = tmp_path / "page_1_lang.json"
+    gold_path.write_text(raw_gold, encoding="utf-8")
+    pred_path.write_text(pred_text, encoding="utf-8")
+    PageLanguageMap(
+        dictionary="Gojri-English",
+        page=1,
+        source_text_sha=sha256_of(raw_gold),
+        labeled_via="heuristic",
+        spans=[
+            LanguageSpan(start=0, end=11, language="Gojri-Devanagari"),
+            LanguageSpan(start=11, end=17, language="Gojri-Latin"),
+            LanguageSpan(start=17, end=24, language="English-Latin"),
+            LanguageSpan(start=24, end=25, language=SPACE),
+        ],
+    ).save(map_path)
+
+    report = evaluate_per_language(pred_path, gold_path, map_path)
+
+    assert report.per_language["Gojri-Devanagari"].total_word_edits == 1
+    assert report.per_language["Gojri-Latin"].total_word_edits == 0
+    assert report.per_language["English-Latin"].total_word_edits == 0
+
+
 def test_empty_prediction_oracle_holds(tmp_path):
     pred_path, gold_path, map_path = _write_case(tmp_path, GOLD, "")
     report = evaluate_per_language(pred_path, gold_path, map_path)
@@ -141,7 +223,9 @@ def test_empty_prediction_oracle_holds(tmp_path):
 
 def test_sha_mismatch_refuses(tmp_path):
     pred_path, gold_path, map_path = _write_case(tmp_path, GOLD, GOLD)
-    gold_path.write_text(GOLD + "tampered\n", encoding="utf-8")  # gold changed after labelling
+    gold_path.write_text(
+        GOLD + "tampered\n", encoding="utf-8"
+    )  # gold changed after labelling
     with pytest.raises(SpanMapError):
         evaluate_per_language(pred_path, gold_path, map_path)
 
@@ -283,7 +367,9 @@ def test_lang_map_path_for_gold_accepts_str():
 # ---------------------------------------------------------------------------
 
 
-def _build_two_span_map(raw: str, boundary: int, first: str, second: str) -> PageLanguageMap:
+def _build_two_span_map(
+    raw: str, boundary: int, first: str, second: str
+) -> PageLanguageMap:
     """Label ``raw[:boundary]`` as *first* and ``raw[boundary:]`` as *second*."""
     spans = [LanguageSpan(start=0, end=boundary, language=first)]
     if boundary < len(raw):
@@ -414,7 +500,9 @@ def _tagged_kanji_word_lang_map(raw: str) -> PageLanguageMap:
     spans = [
         LanguageSpan(start=0, end=8, language="Japanese-Kanji"),  # "<b>字</b>"
         LanguageSpan(start=8, end=9, language=SPACE),  # " "
-        LanguageSpan(start=9, end=len(raw), language="English-Latin"),  # "<i>word</i>\n"
+        LanguageSpan(
+            start=9, end=len(raw), language="English-Latin"
+        ),  # "<i>word</i>\n"
     ]
     return PageLanguageMap(
         dictionary="Test-Test",

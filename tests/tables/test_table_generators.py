@@ -55,5 +55,39 @@ def test_generator_reproduces_tracked_tables(
         ).read_bytes()
 
 
+def test_stage2_generator_rejects_obsolete_record_accuracy_schema(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "repo"
+    source = (
+        repo_root
+        / "evaluations"
+        / "stage2_mdf_lang_script_eval"
+        / "stage2_mdf_eval_summary.csv"
+    )
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "experiment,language,Record_Accuracy,MDF_Fields_F1,ReadOrderEdit\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPTS_DIR / "stage2_summary_table.py"),
+            "--repo-root",
+            str(repo_root),
+            "--output-dir",
+            str(tmp_path / "output"),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "missing required columns: Entry_F1" in result.stderr
+
+
 def test_r_table_generators_are_fully_removed() -> None:
     assert list(SCRIPTS_DIR.glob("*_table.R")) == []
