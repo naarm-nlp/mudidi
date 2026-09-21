@@ -173,7 +173,7 @@ def _write_stage2_agentic_attempt_metrics(
             "attempt": attempt,
             "output_path": str(attempt_path),
             **verifier,
-            "Record_Accuracy": round(metrics.record_accuracy, 6),
+            "Entry_F1": round(metrics.entry_f1, 6),
             "MDF_Fields_F1": round(metrics.mdf_fields_f1, 6),
             "ReadOrderEdit": round(metrics.read_order.read_order_edit, 6),
             "Field_Value_GCER": round(metrics.field_value_quality.gcer, 6),

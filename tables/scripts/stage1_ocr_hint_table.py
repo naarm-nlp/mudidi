@@ -4,8 +4,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from decimal import Decimal, ROUND_HALF_UP
+import unicodedata
 from pathlib import Path
-from statistics import fmean
 
 from table_utils import (
     TableDataError,
@@ -15,6 +16,7 @@ from table_utils import (
     parse_float,
     parse_paths,
     read_delimited,
+    read_stage1_aggregate,
     write_text_atomic,
 )
 
@@ -25,40 +27,62 @@ HIGHER_IS_BETTER = {metric: metric == "typography_f1" for metric in METRICS}
 REQUIRED_COLUMNS = ("experiment", "language", "alphabet", "ocr-hint", *METRICS)
 
 
-def _load_experiment(path: Path, experiment: str, *, expect_hint: bool) -> dict[str, dict[str, object]]:
+def _load_experiment(
+    path: Path, experiment: str, *, expect_hint: bool
+) -> dict[str, dict[str, object]]:
     raw_rows = read_delimited(path, required_columns=REQUIRED_COLUMNS)
     selected = [row for row in raw_rows if row["experiment"] == experiment]
-    unexpected = sorted({row["experiment"] for row in raw_rows if row["experiment"] != experiment})
+    unexpected = sorted(
+        {row["experiment"] for row in raw_rows if row["experiment"] != experiment}
+    )
     if unexpected:
-        raise TableDataError(f"{path}: unexpected experiment(s): {', '.join(unexpected)}")
+        raise TableDataError(
+            f"{path}: unexpected experiment(s): {', '.join(unexpected)}"
+        )
     keyed = index_unique(selected, ("language",), source=path)
     if len(keyed) != 30:
-        raise TableDataError(f"{path}: {experiment} has {len(keyed)} dictionaries, expected 30")
+        raise TableDataError(
+            f"{path}: {experiment} has {len(keyed)} dictionaries, expected 30"
+        )
 
     parsed: dict[str, dict[str, object]] = {}
     for row_number, row in enumerate(selected, start=2):
-        alphabet = parse_bool(row["alphabet"], source=path, field="alphabet", row_number=row_number)
-        hint = parse_bool(row["ocr-hint"], source=path, field="ocr-hint", row_number=row_number)
+        alphabet = parse_bool(
+            row["alphabet"], source=path, field="alphabet", row_number=row_number
+        )
+        hint = parse_bool(
+            row["ocr-hint"], source=path, field="ocr-hint", row_number=row_number
+        )
         if not alphabet:
-            raise TableDataError(f"{path}: row {row_number}: fixed protocol requires alphabet=true")
+            raise TableDataError(
+                f"{path}: row {row_number}: fixed protocol requires alphabet=true"
+            )
         if hint != expect_hint:
             raise TableDataError(
                 f"{path}: row {row_number}: expected ocr-hint={str(expect_hint).lower()}"
             )
         parsed[row["language"]] = {
-            metric: parse_float(row[metric], source=path, field=metric, row_number=row_number)
+            metric: parse_float(
+                row[metric], source=path, field=metric, row_number=row_number
+            )
             for metric in METRICS
         }
     return parsed
 
 
-def _paired_rows(repo_root: Path) -> list[tuple[str, dict[str, object], dict[str, object]]]:
+def _paired_rows(
+    repo_root: Path,
+) -> list[tuple[str, dict[str, object], dict[str, object]]]:
     evaluation_root = repo_root / "evaluations" / "stage1_flat_per_lang_script_eval"
     baseline_source = evaluation_root / "stage1_flat_eval_summary.csv"
     hint_source = evaluation_root / "stage1_flat_eval_ocr_hint_summary.csv"
 
-    all_baseline_rows = read_delimited(baseline_source, required_columns=REQUIRED_COLUMNS)
-    baseline_only = [row for row in all_baseline_rows if row["experiment"] == BASELINE_EXPERIMENT]
+    all_baseline_rows = read_delimited(
+        baseline_source, required_columns=REQUIRED_COLUMNS
+    )
+    baseline_only = [
+        row for row in all_baseline_rows if row["experiment"] == BASELINE_EXPERIMENT
+    ]
     if len(baseline_only) != 30:
         raise TableDataError(
             f"{baseline_source}: {BASELINE_EXPERIMENT} has {len(baseline_only)} dictionaries, expected 30"
@@ -68,8 +92,18 @@ def _paired_rows(repo_root: Path) -> list[tuple[str, dict[str, object], dict[str
     index_unique(baseline_only, ("language",), source=baseline_source)
     baseline: dict[str, dict[str, object]] = {}
     for row_number, row in enumerate(baseline_only, start=2):
-        alphabet = parse_bool(row["alphabet"], source=baseline_source, field="alphabet", row_number=row_number)
-        hint = parse_bool(row["ocr-hint"], source=baseline_source, field="ocr-hint", row_number=row_number)
+        alphabet = parse_bool(
+            row["alphabet"],
+            source=baseline_source,
+            field="alphabet",
+            row_number=row_number,
+        )
+        hint = parse_bool(
+            row["ocr-hint"],
+            source=baseline_source,
+            field="ocr-hint",
+            row_number=row_number,
+        )
         if not alphabet or hint:
             raise TableDataError(
                 f"{baseline_source}: {row['language']}: fixed baseline requires alphabet=true and ocr-hint=false"
@@ -88,14 +122,34 @@ def _paired_rows(repo_root: Path) -> list[tuple[str, dict[str, object], dict[str
             f"missing={sorted(set(baseline) - set(hints))}, "
             f"extra={sorted(set(hints) - set(baseline))}"
         )
-    return [(language, baseline[language], hints[language]) for language in sorted(baseline)]
+    return [
+        (language, baseline[language], hints[language]) for language in sorted(baseline)
+    ]
 
 
-def _pair_cells(baseline: float, hint: float, *, higher_is_better: bool, digits: int) -> tuple[str, str]:
-    baseline_text = f"{baseline:.{digits}f}"
-    hint_text = f"{hint:.{digits}f}"
+def _pair_cells(
+    baseline: float,
+    hint: float,
+    *,
+    higher_is_better: bool,
+    digits: int,
+    round_half_up: bool = False,
+) -> tuple[str, str]:
+    if round_half_up:
+        quantum = Decimal(1).scaleb(-digits)
+        baseline_text = format(
+            Decimal(str(baseline)).quantize(quantum, rounding=ROUND_HALF_UP),
+            f".{digits}f",
+        )
+        hint_text = format(
+            Decimal(str(hint)).quantize(quantum, rounding=ROUND_HALF_UP),
+            f".{digits}f",
+        )
+    else:
+        baseline_text = f"{baseline:.{digits}f}"
+        hint_text = f"{hint:.{digits}f}"
     if baseline == hint:
-        return baseline_text, hint_text
+        return rf"\textbf{{{baseline_text}}}", rf"\textbf{{{hint_text}}}"
     baseline_wins = baseline > hint if higher_is_better else baseline < hint
     return (
         rf"\textbf{{{baseline_text}}}" if baseline_wins else baseline_text,
@@ -118,29 +172,37 @@ def render_tables(repo_root: Path) -> tuple[str, str]:
                     digits=3,
                 )
             )
-        display_language = language.replace("Kurdish_Turkish", "Kurdish-Turkish")
+        display_language = unicodedata.normalize(
+            "NFC", language.replace("Kurdish_Turkish", "Kurdish-Turkish")
+        )
         data_lines.append(
             f"{display_language} & Gemini-Pro & \\cmark & {' & '.join(cells)} \\\\"
         )
 
-    means = {
-        "baseline": {metric: fmean(float(baseline[metric]) for _, baseline, _ in rows) for metric in METRICS},
-        "hint": {metric: fmean(float(hint[metric]) for _, _, hint in rows) for metric in METRICS},
+    evaluation_root = repo_root / "evaluations" / "stage1_flat_per_lang_script_eval"
+    aggregates = {
+        "baseline": read_stage1_aggregate(
+            evaluation_root / BASELINE_EXPERIMENT / "stage1_flat_evaluation_report.json"
+        ),
+        "hint": read_stage1_aggregate(
+            evaluation_root / HINT_EXPERIMENT / "stage1_flat_evaluation_report.json"
+        ),
     }
-    mean_cells: list[str] = []
+    aggregate_cells: list[str] = []
     baseline_cells: list[str] = []
     hint_cells: list[str] = []
     delta_cells: list[str] = []
     for metric in METRICS:
-        baseline_value = means["baseline"][metric]
-        hint_value = means["hint"][metric]
+        baseline_value = aggregates["baseline"][metric]
+        hint_value = aggregates["hint"][metric]
         pair = _pair_cells(
             baseline_value,
             hint_value,
             higher_is_better=HIGHER_IS_BETTER[metric],
             digits=3,
+            round_half_up=True,
         )
-        mean_cells.extend(pair)
+        aggregate_cells.extend(pair)
         baseline_cells.append(pair[0])
         hint_cells.append(pair[1])
         delta_cells.append(f"${hint_value - baseline_value:+.3f}$")
@@ -151,6 +213,7 @@ def render_tables(repo_root: Path) -> tuple[str, str]:
         r"\label{sec:app-ocr-asst}",
         r"\begin{table*}[!h]",
         r"\centering",
+        r"\caption{Per-dictionary breakdown of the Stage 1 OCR-hint ablation summarised in Table~\ref{tab:stage1-aggregate-ocr-hint}. Each metric is shown as a paired (without hint, with hint) value. \textit{Best score per pair is bolded; lower is better except for Markup F1.}}",
         r"\scriptsize",
         r"\setlength{\tabcolsep}{3pt}",
         r"\renewcommand{\arraystretch}{1.08}",
@@ -163,22 +226,21 @@ def render_tables(repo_root: Path) -> tuple[str, str]:
         r"\midrule",
         *data_lines,
         r"\midrule",
-        f"\\textit{{Mean}} &  &  & {' & '.join(mean_cells)} \\\\",
+        f"\\textit{{Aggregate}} &  &  & {' & '.join(aggregate_cells)} \\\\",
         r"\bottomrule",
         r"\end{tabular}",
         r"\end{adjustbox}",
-        r"\caption{Per-dictionary breakdown of the Stage 1 OCR-hint ablation summarised in Table~\ref{tab:stage1-aggregate-ocr-hint}. Gemini~3.1 Pro receives the source-language alphabet in both conditions; each metric is shown as a paired (without hint, with hint) value. \textit{Best score per pair is bolded; lower is better except for Markup F1.}}",
         r"\label{tab:stage1-ocr-hint-per-language}",
         r"\end{table*}",
     ]
     summary_lines = [
         "% Auto-generated by tables/scripts/stage1_ocr_hint_table.py -- do not edit by hand.",
-        "% Fixed Gemini 3.1 Pro + alphabet OCR-hint ablation, averaged over 30 dictionaries.",
+        "% Fixed Gemini 3.1 Pro + alphabet OCR-hint ablation, pooled across all test pages.",
         r"\begin{table}[!h]",
         r"\centering",
         r"\small",
         r"\setlength{\tabcolsep}{3pt}",
-        r"\caption{Stage 1 OCR-hint ablation study, averaged over 30 dictionaries. We hold Gemini~3.1 Pro with alphabet input fixed and compare transcription with vs.\ without a preliminary OCR transcript supplied to the model. \textit{Best score per metric is bolded.}}",
+        r"\caption{Stage 1 OCR-hint ablation study, aggregated over 30 dictionaries. For each dictionary, we hold Gemini~3.1 Pro with alphabet input fixed and compare transcription with vs.\ without a preliminary OCR transcript supplied to the model. \textit{Best score per metric is bolded.}}",
         r"\label{tab:stage1-aggregate-ocr-hint}",
         r"\begin{tabular}{lcrrrrr}",
         r"\toprule",

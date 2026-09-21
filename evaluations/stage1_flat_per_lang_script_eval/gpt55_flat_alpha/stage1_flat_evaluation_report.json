@@ -2,14 +2,14 @@
   {
     "page_id": "Assyrian-English/page_352",
     "character_quality": {
-      "TextEdit": 0.327306,
-      "GCER": 0.302254,
-      "WER": 0.37594,
-      "total_graphemes_gold": 2263,
+      "TextEdit": 0.276016,
+      "GCER": 0.139496,
+      "WER": 0.251479,
+      "total_graphemes_gold": 1785,
       "total_graphemes_pred": 1825,
-      "total_grapheme_edits": 684,
-      "total_words_gold": 399,
-      "total_word_edits": 150,
+      "total_grapheme_edits": 249,
+      "total_words_gold": 338,
+      "total_word_edits": 85,
       "matched_spans": 36,
       "missing_spans": 0,
       "extra_spans": 0
@@ -21,7 +21,7 @@
         "f1": 0.0,
         "tp": 0,
         "fp": 0,
-        "fn": 69
+        "fn": 58
       },
       "italic": {
         "precision": 1.0,
@@ -33,22 +33,22 @@
       },
       "typography": {
         "precision": 1.0,
-        "recall": 0.5229,
-        "f1": 0.6867,
+        "recall": 0.5634,
+        "f1": 0.7207,
         "tp": 80,
         "fp": 0,
-        "fn": 73
+        "fn": 62
       }
     },
     "read_order": {
-      "ReadOrderEdit": 0.222222,
-      "edit_distance": 8,
+      "ReadOrderEdit": 0.111111,
+      "edit_distance": 4,
       "max_length": 36
     },
     "per_language_script": {
-      "blended_gcer": 0.252263,
-      "blended_grapheme_edits": 418,
-      "blended_graphemes_gold": 1657,
+      "blended_gcer": 0.157857,
+      "blended_grapheme_edits": 218,
+      "blended_graphemes_gold": 1381,
       "per_language": {
         "Arabic-Arabic": {
           "gold_word_count": 1,
@@ -78,55 +78,55 @@
         },
         "Assyrian-Cuneiform": {
           "gold_word_count": 51,
-          "gold_grapheme_count": 131,
-          "GCER": 0.969466,
-          "WER": 1.0,
-          "TextEdit": 0.969466,
-          "total_graphemes_pred": 71,
-          "total_grapheme_edits": 127,
-          "total_word_edits": 51,
-          "precision": 0.0563,
-          "recall": 0.0305,
-          "f1": 0.0396
+          "gold_grapheme_count": 118,
+          "GCER": 1.271186,
+          "WER": 0.980392,
+          "TextEdit": 0.967742,
+          "total_graphemes_pred": 155,
+          "total_grapheme_edits": 150,
+          "total_word_edits": 50,
+          "precision": 0.0323,
+          "recall": 0.0424,
+          "f1": 0.0366
         },
         "Assyrian-Latin": {
-          "gold_word_count": 111,
-          "gold_grapheme_count": 498,
-          "GCER": 0.560241,
-          "WER": 0.684685,
-          "TextEdit": 0.560241,
-          "total_graphemes_pred": 361,
-          "total_grapheme_edits": 279,
-          "total_word_edits": 76,
-          "precision": 0.6066,
-          "recall": 0.4398,
-          "f1": 0.5099
+          "gold_word_count": 53,
+          "gold_grapheme_count": 235,
+          "GCER": 0.140426,
+          "WER": 0.396226,
+          "TextEdit": 0.133065,
+          "total_graphemes_pred": 248,
+          "total_grapheme_edits": 33,
+          "total_word_edits": 21,
+          "precision": 0.8669,
+          "recall": 0.9149,
+          "f1": 0.8903
         },
         "English-Latin": {
-          "gold_word_count": 225,
+          "gold_word_count": 229,
           "gold_grapheme_count": 998,
-          "GCER": 0.003006,
-          "WER": 0.026667,
-          "TextEdit": 0.003006,
-          "total_graphemes_pred": 995,
-          "total_grapheme_edits": 3,
-          "total_word_edits": 6,
-          "precision": 1.0,
-          "recall": 0.997,
-          "f1": 0.9985
+          "GCER": 0.023046,
+          "WER": 0.008734,
+          "TextEdit": 0.022527,
+          "total_graphemes_pred": 1021,
+          "total_grapheme_edits": 23,
+          "total_word_edits": 2,
+          "precision": 0.9775,
+          "recall": 1.0,
+          "f1": 0.9886
         },
         "Hebrew-Hebrew": {
           "gold_word_count": 3,
           "gold_grapheme_count": 10,
-          "GCER": 0.4,
+          "GCER": 0.7,
           "WER": 0.666667,
-          "TextEdit": 0.4,
-          "total_graphemes_pred": 10,
-          "total_grapheme_edits": 4,
+          "TextEdit": 0.538462,
+          "total_graphemes_pred": 13,
+          "total_grapheme_edits": 7,
           "total_word_edits": 2,
-          "precision": 0.6,
+          "precision": 0.4615,
           "recall": 0.6,
-          "f1": 0.6
+          "f1": 0.5217
         },
         "Latin-Latin": {
           "gold_word_count": 2,
@@ -147,14 +147,14 @@
   {
     "page_id": "Assyrian-English/page_39",
     "character_quality": {
-      "TextEdit": 0.417329,
-      "GCER": 0.431469,
-      "WER": 0.466667,
-      "total_graphemes_gold": 1627,
+      "TextEdit": 0.341916,
+      "GCER": 0.283186,
+      "WER": 0.3125,
+      "total_graphemes_gold": 1130,
       "total_graphemes_pred": 1230,
-      "total_grapheme_edits": 702,
-      "total_words_gold": 270,
-      "total_word_edits": 126,
+      "total_grapheme_edits": 320,
+      "total_words_gold": 208,
+      "total_word_edits": 65,
       "matched_spans": 29,
       "missing_spans": 2,
       "extra_spans": 0
@@ -191,48 +191,48 @@
       "max_length": 31
     },
     "per_language_script": {
-      "blended_gcer": 0.368272,
-      "blended_grapheme_edits": 390,
-      "blended_graphemes_gold": 1059,
+      "blended_gcer": 0.169154,
+      "blended_grapheme_edits": 136,
+      "blended_graphemes_gold": 804,
       "per_language": {
         "Assyrian-Cuneiform": {
-          "gold_word_count": 59,
-          "gold_grapheme_count": 151,
-          "GCER": 0.993377,
+          "gold_word_count": 40,
+          "gold_grapheme_count": 109,
+          "GCER": 1.0,
           "WER": 1.0,
-          "TextEdit": 0.993377,
+          "TextEdit": 1.0,
           "total_graphemes_pred": 2,
-          "total_grapheme_edits": 150,
-          "total_word_edits": 59,
-          "precision": 0.5,
-          "recall": 0.0066,
-          "f1": 0.0131
+          "total_grapheme_edits": 109,
+          "total_word_edits": 40,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
         },
         "Assyrian-Latin": {
-          "gold_word_count": 73,
-          "gold_grapheme_count": 397,
-          "GCER": 0.584383,
-          "WER": 0.60274,
-          "TextEdit": 0.584383,
-          "total_graphemes_pred": 168,
-          "total_grapheme_edits": 232,
-          "total_word_edits": 44,
-          "precision": 0.9821,
-          "recall": 0.4156,
-          "f1": 0.5841
+          "gold_word_count": 36,
+          "gold_grapheme_count": 184,
+          "GCER": 0.11413,
+          "WER": 0.222222,
+          "TextEdit": 0.11413,
+          "total_graphemes_pred": 166,
+          "total_grapheme_edits": 21,
+          "total_word_edits": 8,
+          "precision": 0.9819,
+          "recall": 0.8859,
+          "f1": 0.9314
         },
         "English-Latin": {
           "gold_word_count": 127,
           "gold_grapheme_count": 494,
-          "GCER": 0.010121,
-          "WER": 0.055118,
-          "TextEdit": 0.010121,
-          "total_graphemes_pred": 489,
-          "total_grapheme_edits": 5,
-          "total_word_edits": 7,
+          "GCER": 0.006073,
+          "WER": 0.007874,
+          "TextEdit": 0.006073,
+          "total_graphemes_pred": 491,
+          "total_grapheme_edits": 3,
+          "total_word_edits": 1,
           "precision": 1.0,
-          "recall": 0.9899,
-          "f1": 0.9949
+          "recall": 0.9939,
+          "f1": 0.997
         },
         "Greek-Greek": {
           "gold_word_count": 1,
@@ -266,14 +266,14 @@
   {
     "page_id": "Assyrian-English/page_842",
     "character_quality": {
-      "TextEdit": 0.310723,
-      "GCER": 0.306818,
-      "WER": 0.419437,
-      "total_graphemes_gold": 2200,
+      "TextEdit": 0.266713,
+      "GCER": 0.146243,
+      "WER": 0.301538,
+      "total_graphemes_gold": 1730,
       "total_graphemes_pred": 1781,
-      "total_grapheme_edits": 675,
-      "total_words_gold": 391,
-      "total_word_edits": 164,
+      "total_grapheme_edits": 253,
+      "total_words_gold": 325,
+      "total_word_edits": 98,
       "matched_spans": 36,
       "missing_spans": 0,
       "extra_spans": 0
@@ -305,63 +305,63 @@
       }
     },
     "read_order": {
-      "ReadOrderEdit": 0.138889,
-      "edit_distance": 5,
+      "ReadOrderEdit": 0.111111,
+      "edit_distance": 4,
       "max_length": 36
     },
     "per_language_script": {
-      "blended_gcer": 0.261313,
-      "blended_grapheme_edits": 410,
-      "blended_graphemes_gold": 1569,
+      "blended_gcer": 0.170262,
+      "blended_grapheme_edits": 221,
+      "blended_graphemes_gold": 1298,
       "per_language": {
         "Assyrian-Cuneiform": {
           "gold_word_count": 56,
-          "gold_grapheme_count": 139,
-          "GCER": 0.956835,
-          "WER": 1.0,
-          "TextEdit": 0.956835,
-          "total_graphemes_pred": 88,
-          "total_grapheme_edits": 133,
-          "total_word_edits": 56,
-          "precision": 0.0682,
-          "recall": 0.0432,
-          "f1": 0.0529
+          "gold_grapheme_count": 125,
+          "GCER": 1.4,
+          "WER": 0.982143,
+          "TextEdit": 0.966851,
+          "total_graphemes_pred": 181,
+          "total_grapheme_edits": 175,
+          "total_word_edits": 55,
+          "precision": 0.0331,
+          "recall": 0.048,
+          "f1": 0.0392
         },
         "Assyrian-Latin": {
-          "gold_word_count": 115,
-          "gold_grapheme_count": 501,
-          "GCER": 0.536926,
-          "WER": 0.686957,
-          "TextEdit": 0.536926,
-          "total_graphemes_pred": 362,
-          "total_grapheme_edits": 269,
-          "total_word_edits": 79,
-          "precision": 0.6409,
-          "recall": 0.4631,
-          "f1": 0.5377
+          "gold_word_count": 51,
+          "gold_grapheme_count": 244,
+          "GCER": 0.057377,
+          "WER": 0.254902,
+          "TextEdit": 0.057377,
+          "total_graphemes_pred": 243,
+          "total_grapheme_edits": 14,
+          "total_word_edits": 13,
+          "precision": 0.9465,
+          "recall": 0.9426,
+          "f1": 0.9446
         },
         "English-Latin": {
-          "gold_word_count": 206,
+          "gold_word_count": 217,
           "gold_grapheme_count": 869,
-          "GCER": 0.003452,
-          "WER": 0.038835,
-          "TextEdit": 0.00344,
-          "total_graphemes_pred": 872,
-          "total_grapheme_edits": 3,
-          "total_word_edits": 8,
-          "precision": 0.9966,
+          "GCER": 0.03107,
+          "WER": 0.018433,
+          "TextEdit": 0.030134,
+          "total_graphemes_pred": 896,
+          "total_grapheme_edits": 27,
+          "total_word_edits": 4,
+          "precision": 0.9699,
           "recall": 1.0,
-          "f1": 0.9983
+          "f1": 0.9847
         },
         "Old Persian-Latin": {
           "gold_word_count": 10,
           "gold_grapheme_count": 60,
           "GCER": 0.083333,
-          "WER": 0.7,
+          "WER": 0.5,
           "TextEdit": 0.083333,
           "total_graphemes_pred": 60,
           "total_grapheme_edits": 5,
-          "total_word_edits": 7,
+          "total_word_edits": 5,
           "precision": 0.9167,
           "recall": 0.9167,
           "f1": 0.9167
@@ -420,24 +420,24 @@
       "blended_grapheme_edits": 31,
       "blended_graphemes_gold": 2484,
       "per_language": {
-        "Bengalese-Bengali": {
-          "gold_word_count": 97,
+        "Bengalese": {
+          "gold_word_count": 98,
           "gold_grapheme_count": 485,
           "GCER": 0.061856,
-          "WER": 0.206186,
+          "WER": 0.183673,
           "TextEdit": 0.061856,
           "total_graphemes_pred": 481,
           "total_grapheme_edits": 30,
-          "total_word_edits": 20,
+          "total_word_edits": 18,
           "precision": 0.948,
           "recall": 0.9402,
           "f1": 0.9441
         },
-        "English-Latin": {
-          "gold_word_count": 442,
+        "English": {
+          "gold_word_count": 457,
           "gold_grapheme_count": 1999,
           "GCER": 0.0005,
-          "WER": 0.002262,
+          "WER": 0.002188,
           "TextEdit": 0.0005,
           "total_graphemes_pred": 1999,
           "total_grapheme_edits": 1,
@@ -500,7 +500,7 @@
       "blended_grapheme_edits": 19,
       "blended_graphemes_gold": 2526,
       "per_language": {
-        "Bengalese-Bengali": {
+        "Bengalese": {
           "gold_word_count": 69,
           "gold_grapheme_count": 287,
           "GCER": 0.062718,
@@ -513,11 +513,11 @@
           "recall": 0.9408,
           "f1": 0.9424
         },
-        "English-Latin": {
-          "gold_word_count": 537,
+        "English": {
+          "gold_word_count": 543,
           "gold_grapheme_count": 2239,
           "GCER": 0.000447,
-          "WER": 0.001862,
+          "WER": 0.001842,
           "TextEdit": 0.000447,
           "total_graphemes_pred": 2238,
           "total_grapheme_edits": 1,
@@ -580,7 +580,7 @@
       "blended_grapheme_edits": 30,
       "blended_graphemes_gold": 2601,
       "per_language": {
-        "Bengalese-Bengali": {
+        "Bengalese": {
           "gold_word_count": 94,
           "gold_grapheme_count": 509,
           "GCER": 0.05501,
@@ -593,15 +593,15 @@
           "recall": 0.947,
           "f1": 0.9507
         },
-        "English-Latin": {
-          "gold_word_count": 442,
+        "English": {
+          "gold_word_count": 454,
           "gold_grapheme_count": 2092,
           "GCER": 0.000956,
-          "WER": 0.006787,
+          "WER": 0.002203,
           "TextEdit": 0.000956,
           "total_graphemes_pred": 2092,
           "total_grapheme_edits": 2,
-          "total_word_edits": 3,
+          "total_word_edits": 1,
           "precision": 0.9995,
           "recall": 0.9995,
           "f1": 0.9995
@@ -661,27 +661,27 @@
       "blended_graphemes_gold": 1448,
       "per_language": {
         "Canala-Latin": {
-          "gold_word_count": 89,
+          "gold_word_count": 92,
           "gold_grapheme_count": 348,
           "GCER": 0.123563,
-          "WER": 0.348315,
+          "WER": 0.358696,
           "TextEdit": 0.123563,
           "total_graphemes_pred": 348,
           "total_grapheme_edits": 43,
-          "total_word_edits": 31,
+          "total_word_edits": 33,
           "precision": 0.8764,
           "recall": 0.8764,
           "f1": 0.8764
         },
         "English-Latin": {
-          "gold_word_count": 211,
+          "gold_word_count": 243,
           "gold_grapheme_count": 1062,
           "GCER": 0.0,
-          "WER": 0.009479,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1062,
           "total_grapheme_edits": 0,
-          "total_word_edits": 2,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -753,28 +753,28 @@
       "blended_grapheme_edits": 35,
       "blended_graphemes_gold": 1205,
       "per_language": {
-        "Canala-Latin": {
-          "gold_word_count": 73,
+        "Canala": {
+          "gold_word_count": 81,
           "gold_grapheme_count": 300,
           "GCER": 0.116667,
-          "WER": 0.342466,
+          "WER": 0.345679,
           "TextEdit": 0.116667,
           "total_graphemes_pred": 300,
           "total_grapheme_edits": 35,
-          "total_word_edits": 25,
+          "total_word_edits": 28,
           "precision": 0.8833,
           "recall": 0.8833,
           "f1": 0.8833
         },
-        "English-Latin": {
-          "gold_word_count": 197,
+        "English": {
+          "gold_word_count": 219,
           "gold_grapheme_count": 905,
           "GCER": 0.0,
-          "WER": 0.015228,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 905,
           "total_grapheme_edits": 0,
-          "total_word_edits": 3,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -833,28 +833,28 @@
       "blended_grapheme_edits": 25,
       "blended_graphemes_gold": 1445,
       "per_language": {
-        "Canala-Latin": {
-          "gold_word_count": 81,
+        "Canala": {
+          "gold_word_count": 84,
           "gold_grapheme_count": 395,
           "GCER": 0.063291,
-          "WER": 0.246914,
+          "WER": 0.22619,
           "TextEdit": 0.063291,
           "total_graphemes_pred": 395,
           "total_grapheme_edits": 25,
-          "total_word_edits": 20,
+          "total_word_edits": 19,
           "precision": 0.9367,
           "recall": 0.9367,
           "f1": 0.9367
         },
-        "English-Latin": {
-          "gold_word_count": 229,
+        "English": {
+          "gold_word_count": 260,
           "gold_grapheme_count": 1050,
           "GCER": 0.0,
-          "WER": 0.004367,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1050,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -913,28 +913,28 @@
       "blended_grapheme_edits": 21,
       "blended_graphemes_gold": 1965,
       "per_language": {
-        "Chepang-Latin": {
+        "Chepang": {
           "gold_word_count": 116,
           "gold_grapheme_count": 662,
           "GCER": 0.02568,
-          "WER": 0.12069,
+          "WER": 0.103448,
           "TextEdit": 0.02568,
           "total_graphemes_pred": 659,
           "total_grapheme_edits": 17,
-          "total_word_edits": 14,
+          "total_word_edits": 12,
           "precision": 0.9803,
           "recall": 0.9758,
           "f1": 0.978
         },
-        "English-Latin": {
-          "gold_word_count": 289,
+        "English": {
+          "gold_word_count": 310,
           "gold_grapheme_count": 1303,
           "GCER": 0.00307,
-          "WER": 0.00692,
+          "WER": 0.012903,
           "TextEdit": 0.003065,
           "total_graphemes_pred": 1305,
           "total_grapheme_edits": 4,
-          "total_word_edits": 2,
+          "total_word_edits": 4,
           "precision": 0.9969,
           "recall": 0.9985,
           "f1": 0.9977
@@ -993,7 +993,7 @@
       "blended_grapheme_edits": 4,
       "blended_graphemes_gold": 2025,
       "per_language": {
-        "Chepang-Latin": {
+        "Chepang": {
           "gold_word_count": 109,
           "gold_grapheme_count": 586,
           "GCER": 0.003413,
@@ -1006,11 +1006,11 @@
           "recall": 0.9966,
           "f1": 0.9966
         },
-        "English-Latin": {
-          "gold_word_count": 324,
+        "English": {
+          "gold_word_count": 350,
           "gold_grapheme_count": 1439,
           "GCER": 0.00139,
-          "WER": 0.006173,
+          "WER": 0.005714,
           "TextEdit": 0.00139,
           "total_graphemes_pred": 1437,
           "total_grapheme_edits": 2,
@@ -1087,20 +1087,20 @@
           "f1": 0.9947
         },
         "English-Latin": {
-          "gold_word_count": 286,
+          "gold_word_count": 314,
           "gold_grapheme_count": 1332,
           "GCER": 0.024775,
-          "WER": 0.031469,
+          "WER": 0.009554,
           "TextEdit": 0.024211,
           "total_graphemes_pred": 1363,
           "total_grapheme_edits": 33,
-          "total_word_edits": 9,
+          "total_word_edits": 3,
           "precision": 0.9765,
           "recall": 0.9992,
           "f1": 0.9878
         },
         "Nepali-Latin": {
-          "gold_word_count": 0,
+          "gold_word_count": 2,
           "gold_grapheme_count": 2,
           "GCER": 0.0,
           "WER": 0.0,
@@ -1118,12 +1118,12 @@
   {
     "page_id": "Chukchi-Russian/page_26",
     "character_quality": {
-      "TextEdit": 0.091191,
-      "GCER": 0.093288,
+      "TextEdit": 0.092569,
+      "GCER": 0.094425,
       "WER": 0.444444,
       "total_graphemes_gold": 879,
       "total_graphemes_pred": 878,
-      "total_grapheme_edits": 82,
+      "total_grapheme_edits": 83,
       "total_words_gold": 126,
       "total_word_edits": 56,
       "matched_spans": 33,
@@ -1161,7 +1161,39 @@
       "edit_distance": 0,
       "max_length": 33
     },
-    "per_language_script": null
+    "per_language_script": {
+      "blended_gcer": 0.092725,
+      "blended_grapheme_edits": 65,
+      "blended_graphemes_gold": 701,
+      "per_language": {
+        "Chukchi": {
+          "gold_word_count": 29,
+          "gold_grapheme_count": 194,
+          "GCER": 0.170103,
+          "WER": 0.758621,
+          "TextEdit": 0.170103,
+          "total_graphemes_pred": 193,
+          "total_grapheme_edits": 33,
+          "total_word_edits": 22,
+          "precision": 0.8446,
+          "recall": 0.8402,
+          "f1": 0.8424
+        },
+        "Russian": {
+          "gold_word_count": 87,
+          "gold_grapheme_count": 507,
+          "GCER": 0.063116,
+          "WER": 0.367816,
+          "TextEdit": 0.063116,
+          "total_graphemes_pred": 507,
+          "total_grapheme_edits": 32,
+          "total_word_edits": 32,
+          "precision": 0.9369,
+          "recall": 0.9369,
+          "f1": 0.9369
+        }
+      }
+    }
   },
   {
     "page_id": "Chukchi-Russian/page_3",
@@ -1214,7 +1246,7 @@
       "blended_grapheme_edits": 69,
       "blended_graphemes_gold": 728,
       "per_language": {
-        "Chukchi-Cyrillic Extended": {
+        "Chukchi": {
           "gold_word_count": 39,
           "gold_grapheme_count": 275,
           "GCER": 0.105455,
@@ -1227,11 +1259,11 @@
           "recall": 0.9018,
           "f1": 0.9084
         },
-        "Russian-Cyrillic": {
-          "gold_word_count": 70,
+        "Russian": {
+          "gold_word_count": 77,
           "gold_grapheme_count": 453,
           "GCER": 0.0883,
-          "WER": 0.542857,
+          "WER": 0.493506,
           "TextEdit": 0.0883,
           "total_graphemes_pred": 453,
           "total_grapheme_edits": 40,
@@ -1294,7 +1326,7 @@
       "blended_grapheme_edits": 72,
       "blended_graphemes_gold": 851,
       "per_language": {
-        "Chukchi-Cyrillic Extended": {
+        "Chukchi": {
           "gold_word_count": 40,
           "gold_grapheme_count": 281,
           "GCER": 0.177936,
@@ -1307,15 +1339,15 @@
           "recall": 0.8399,
           "f1": 0.8339
         },
-        "Russian-Cyrillic": {
-          "gold_word_count": 97,
+        "Russian": {
+          "gold_word_count": 104,
           "gold_grapheme_count": 570,
           "GCER": 0.038596,
-          "WER": 0.206186,
+          "WER": 0.182692,
           "TextEdit": 0.038529,
           "total_graphemes_pred": 571,
           "total_grapheme_edits": 22,
-          "total_word_edits": 20,
+          "total_word_edits": 19,
           "precision": 0.9615,
           "recall": 0.9632,
           "f1": 0.9623
@@ -1378,11 +1410,11 @@
           "gold_word_count": 39,
           "gold_grapheme_count": 166,
           "GCER": 0.837349,
-          "WER": 1.0,
+          "WER": 0.974359,
           "TextEdit": 0.837349,
           "total_graphemes_pred": 154,
           "total_grapheme_edits": 139,
-          "total_word_edits": 39,
+          "total_word_edits": 38,
           "precision": 0.2208,
           "recall": 0.2048,
           "f1": 0.2125
@@ -1391,24 +1423,24 @@
           "gold_word_count": 33,
           "gold_grapheme_count": 227,
           "GCER": 0.801762,
-          "WER": 0.969697,
+          "WER": 0.939394,
           "TextEdit": 0.801762,
           "total_graphemes_pred": 208,
           "total_grapheme_edits": 182,
-          "total_word_edits": 32,
+          "total_word_edits": 31,
           "precision": 0.2692,
           "recall": 0.2467,
           "f1": 0.2575
         },
         "English-Latin": {
-          "gold_word_count": 54,
+          "gold_word_count": 61,
           "gold_grapheme_count": 276,
           "GCER": 0.757246,
-          "WER": 0.592593,
+          "WER": 0.737705,
           "TextEdit": 0.757246,
           "total_graphemes_pred": 268,
           "total_grapheme_edits": 209,
-          "total_word_edits": 32,
+          "total_word_edits": 45,
           "precision": 0.3134,
           "recall": 0.3043,
           "f1": 0.3088
@@ -1507,14 +1539,14 @@
           "f1": 0.932
         },
         "English-Latin": {
-          "gold_word_count": 86,
+          "gold_word_count": 48,
           "gold_grapheme_count": 193,
           "GCER": 0.010363,
-          "WER": 0.488372,
+          "WER": 0.020833,
           "TextEdit": 0.010256,
           "total_graphemes_pred": 195,
           "total_grapheme_edits": 2,
-          "total_word_edits": 42,
+          "total_word_edits": 1,
           "precision": 0.9897,
           "recall": 1.0,
           "f1": 0.9948
@@ -1523,11 +1555,11 @@
           "gold_word_count": 27,
           "gold_grapheme_count": 109,
           "GCER": 0.192661,
-          "WER": 0.62963,
+          "WER": 0.592593,
           "TextEdit": 0.192661,
           "total_graphemes_pred": 107,
           "total_grapheme_edits": 21,
-          "total_word_edits": 17,
+          "total_word_edits": 16,
           "precision": 0.8505,
           "recall": 0.8349,
           "f1": 0.8426
@@ -1590,11 +1622,11 @@
           "gold_word_count": 28,
           "gold_grapheme_count": 124,
           "GCER": 1.209677,
-          "WER": 1.0,
+          "WER": 0.964286,
           "TextEdit": 0.974026,
           "total_graphemes_pred": 154,
           "total_grapheme_edits": 150,
-          "total_word_edits": 28,
+          "total_word_edits": 27,
           "precision": 0.2338,
           "recall": 0.2903,
           "f1": 0.259
@@ -1603,37 +1635,37 @@
           "gold_word_count": 24,
           "gold_grapheme_count": 166,
           "GCER": 0.506024,
-          "WER": 0.875,
+          "WER": 0.625,
           "TextEdit": 0.488372,
           "total_graphemes_pred": 172,
           "total_grapheme_edits": 84,
-          "total_word_edits": 21,
+          "total_word_edits": 15,
           "precision": 0.5465,
           "recall": 0.5663,
           "f1": 0.5562
         },
         "English-Latin": {
-          "gold_word_count": 53,
+          "gold_word_count": 57,
           "gold_grapheme_count": 241,
           "GCER": 0.680498,
-          "WER": 0.830189,
+          "WER": 0.649123,
           "TextEdit": 0.680498,
           "total_graphemes_pred": 203,
           "total_grapheme_edits": 164,
-          "total_word_edits": 44,
+          "total_word_edits": 37,
           "precision": 0.4877,
           "recall": 0.4108,
           "f1": 0.4459
         },
         "French-Latin": {
-          "gold_word_count": 1,
+          "gold_word_count": 2,
           "gold_grapheme_count": 6,
           "GCER": 1.0,
-          "WER": 0.0,
+          "WER": 0.5,
           "TextEdit": 0.5,
           "total_graphemes_pred": 12,
           "total_grapheme_edits": 6,
-          "total_word_edits": 0,
+          "total_word_edits": 1,
           "precision": 0.5,
           "recall": 1.0,
           "f1": 0.6667
@@ -1642,11 +1674,11 @@
           "gold_word_count": 32,
           "gold_grapheme_count": 115,
           "GCER": 0.895652,
-          "WER": 0.9375,
+          "WER": 1.0,
           "TextEdit": 0.895652,
           "total_graphemes_pred": 85,
           "total_grapheme_edits": 103,
-          "total_word_edits": 30,
+          "total_word_edits": 32,
           "precision": 0.2235,
           "recall": 0.1652,
           "f1": 0.19
@@ -1705,7 +1737,7 @@
       "blended_grapheme_edits": 14,
       "blended_graphemes_gold": 1630,
       "per_language": {
-        "Efik-Latin": {
+        "Efik": {
           "gold_word_count": 119,
           "gold_grapheme_count": 505,
           "GCER": 0.027723,
@@ -1718,7 +1750,7 @@
           "recall": 0.9743,
           "f1": 0.9733
         },
-        "English-Latin": {
+        "English": {
           "gold_word_count": 279,
           "gold_grapheme_count": 1125,
           "GCER": 0.0,
@@ -1785,11 +1817,11 @@
       "blended_grapheme_edits": 18,
       "blended_graphemes_gold": 1958,
       "per_language": {
-        "Efik-Latin": {
-          "gold_word_count": 125,
+        "Efik": {
+          "gold_word_count": 126,
           "gold_grapheme_count": 615,
           "GCER": 0.027642,
-          "WER": 0.104,
+          "WER": 0.103175,
           "TextEdit": 0.027597,
           "total_graphemes_pred": 616,
           "total_grapheme_edits": 17,
@@ -1798,15 +1830,15 @@
           "recall": 0.974,
           "f1": 0.9732
         },
-        "English-Latin": {
-          "gold_word_count": 343,
+        "English": {
+          "gold_word_count": 353,
           "gold_grapheme_count": 1343,
           "GCER": 0.000745,
-          "WER": 0.008746,
+          "WER": 0.002833,
           "TextEdit": 0.000745,
           "total_graphemes_pred": 1343,
           "total_grapheme_edits": 1,
-          "total_word_edits": 3,
+          "total_word_edits": 1,
           "precision": 0.9993,
           "recall": 0.9993,
           "f1": 0.9993
@@ -1865,20 +1897,20 @@
       "blended_grapheme_edits": 27,
       "blended_graphemes_gold": 1838,
       "per_language": {
-        "Efik-Latin": {
+        "Efik": {
           "gold_word_count": 122,
           "gold_grapheme_count": 603,
           "GCER": 0.044776,
-          "WER": 0.188525,
+          "WER": 0.180328,
           "TextEdit": 0.044702,
           "total_graphemes_pred": 604,
           "total_grapheme_edits": 27,
-          "total_word_edits": 23,
+          "total_word_edits": 22,
           "precision": 0.9553,
           "recall": 0.9569,
           "f1": 0.9561
         },
-        "English-Latin": {
+        "English": {
           "gold_word_count": 273,
           "gold_grapheme_count": 1235,
           "GCER": 0.0,
@@ -1945,24 +1977,24 @@
       "blended_grapheme_edits": 145,
       "blended_graphemes_gold": 1364,
       "per_language": {
-        "Evenki-Cyrillic": {
+        "Evenki": {
           "gold_word_count": 109,
           "gold_grapheme_count": 641,
           "GCER": 0.104524,
-          "WER": 0.477064,
+          "WER": 0.46789,
           "TextEdit": 0.104524,
           "total_graphemes_pred": 640,
           "total_grapheme_edits": 67,
-          "total_word_edits": 52,
+          "total_word_edits": 51,
           "precision": 0.9016,
           "recall": 0.9002,
           "f1": 0.9009
         },
-        "Russian-Cyrillic": {
-          "gold_word_count": 130,
+        "Russian": {
+          "gold_word_count": 142,
           "gold_grapheme_count": 723,
           "GCER": 0.107884,
-          "WER": 0.584615,
+          "WER": 0.535211,
           "TextEdit": 0.107884,
           "total_graphemes_pred": 722,
           "total_grapheme_edits": 78,
@@ -2025,11 +2057,11 @@
       "blended_grapheme_edits": 114,
       "blended_graphemes_gold": 1329,
       "per_language": {
-        "Evenki-Cyrillic": {
-          "gold_word_count": 110,
+        "Evenki": {
+          "gold_word_count": 111,
           "gold_grapheme_count": 675,
           "GCER": 0.066667,
-          "WER": 0.272727,
+          "WER": 0.27027,
           "TextEdit": 0.066667,
           "total_graphemes_pred": 672,
           "total_grapheme_edits": 45,
@@ -2038,11 +2070,11 @@
           "recall": 0.9437,
           "f1": 0.9458
         },
-        "Russian-Cyrillic": {
-          "gold_word_count": 88,
+        "Russian": {
+          "gold_word_count": 92,
           "gold_grapheme_count": 654,
           "GCER": 0.105505,
-          "WER": 0.761364,
+          "WER": 0.728261,
           "TextEdit": 0.105505,
           "total_graphemes_pred": 653,
           "total_grapheme_edits": 69,
@@ -2105,7 +2137,7 @@
       "blended_grapheme_edits": 134,
       "blended_graphemes_gold": 1445,
       "per_language": {
-        "Evenki-Cyrillic": {
+        "Evenki": {
           "gold_word_count": 83,
           "gold_grapheme_count": 595,
           "GCER": 0.152941,
@@ -2118,11 +2150,11 @@
           "recall": 0.8471,
           "f1": 0.8528
         },
-        "Russian-Cyrillic": {
-          "gold_word_count": 139,
+        "Russian": {
+          "gold_word_count": 157,
           "gold_grapheme_count": 850,
           "GCER": 0.050588,
-          "WER": 0.294964,
+          "WER": 0.261146,
           "TextEdit": 0.050588,
           "total_graphemes_pred": 848,
           "total_grapheme_edits": 43,
@@ -2186,30 +2218,190 @@
       "blended_graphemes_gold": 1221,
       "per_language": {
         "Georgian-Georgian": {
-          "gold_word_count": 59,
+          "gold_word_count": 60,
           "gold_grapheme_count": 477,
           "GCER": 0.083857,
-          "WER": 0.338983,
+          "WER": 0.316667,
           "TextEdit": 0.083857,
           "total_graphemes_pred": 476,
           "total_grapheme_edits": 40,
-          "total_word_edits": 20,
+          "total_word_edits": 19,
           "precision": 0.9307,
           "recall": 0.9287,
           "f1": 0.9297
         },
         "Russian-Cyrillic": {
-          "gold_word_count": 128,
+          "gold_word_count": 150,
           "gold_grapheme_count": 744,
           "GCER": 0.012097,
-          "WER": 0.085938,
+          "WER": 0.06,
           "TextEdit": 0.012097,
           "total_graphemes_pred": 741,
           "total_grapheme_edits": 9,
-          "total_word_edits": 11,
+          "total_word_edits": 9,
           "precision": 0.9919,
           "recall": 0.9879,
           "f1": 0.9899
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Georgian-Russian/page_303",
+    "character_quality": {
+      "TextEdit": 0.224484,
+      "GCER": 0.212928,
+      "WER": 0.50838,
+      "total_graphemes_gold": 1578,
+      "total_graphemes_pred": 1546,
+      "total_grapheme_edits": 336,
+      "total_words_gold": 179,
+      "total_word_edits": 91,
+      "matched_spans": 87,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 48
+      },
+      "italic": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 48
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.16092,
+      "edit_distance": 14,
+      "max_length": 87
+    },
+    "per_language_script": {
+      "blended_gcer": 0.232372,
+      "blended_grapheme_edits": 290,
+      "blended_graphemes_gold": 1248,
+      "per_language": {
+        "Georgian-Georgian": {
+          "gold_word_count": 50,
+          "gold_grapheme_count": 384,
+          "GCER": 0.307292,
+          "WER": 0.62,
+          "TextEdit": 0.307292,
+          "total_graphemes_pred": 367,
+          "total_grapheme_edits": 118,
+          "total_word_edits": 31,
+          "precision": 0.752,
+          "recall": 0.7188,
+          "f1": 0.735
+        },
+        "Russian-Cyrillic": {
+          "gold_word_count": 155,
+          "gold_grapheme_count": 864,
+          "GCER": 0.199074,
+          "WER": 0.258065,
+          "TextEdit": 0.199074,
+          "total_graphemes_pred": 861,
+          "total_grapheme_edits": 172,
+          "total_word_edits": 40,
+          "precision": 0.8142,
+          "recall": 0.8113,
+          "f1": 0.8128
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Georgian-Russian/page_37",
+    "character_quality": {
+      "TextEdit": 0.06341,
+      "GCER": 0.062303,
+      "WER": 0.416667,
+      "total_graphemes_gold": 1589,
+      "total_graphemes_pred": 1591,
+      "total_grapheme_edits": 99,
+      "total_words_gold": 216,
+      "total_word_edits": 90,
+      "matched_spans": 86,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 59
+      },
+      "italic": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 15
+      },
+      "typography": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 74
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.023256,
+      "edit_distance": 2,
+      "max_length": 86
+    },
+    "per_language_script": {
+      "blended_gcer": 0.076742,
+      "blended_grapheme_edits": 98,
+      "blended_graphemes_gold": 1277,
+      "per_language": {
+        "Georgian-Georgian": {
+          "gold_word_count": 79,
+          "gold_grapheme_count": 522,
+          "GCER": 0.021073,
+          "WER": 0.101266,
+          "TextEdit": 0.021073,
+          "total_graphemes_pred": 522,
+          "total_grapheme_edits": 11,
+          "total_word_edits": 8,
+          "precision": 0.9789,
+          "recall": 0.9789,
+          "f1": 0.9789
+        },
+        "Russian-Cyrillic": {
+          "gold_word_count": 144,
+          "gold_grapheme_count": 755,
+          "GCER": 0.115232,
+          "WER": 0.5625,
+          "TextEdit": 0.114776,
+          "total_graphemes_pred": 758,
+          "total_grapheme_edits": 87,
+          "total_word_edits": 81,
+          "precision": 0.8852,
+          "recall": 0.8887,
+          "f1": 0.887
         }
       }
     }
@@ -2266,49 +2458,49 @@
       "blended_graphemes_gold": 1237,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 57,
+          "gold_word_count": 62,
           "gold_grapheme_count": 666,
           "GCER": 0.0,
-          "WER": 0.157895,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 666,
           "total_grapheme_edits": 0,
-          "total_word_edits": 9,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Gojri-Devanagari": {
-          "gold_word_count": 11,
+          "gold_word_count": 31,
           "gold_grapheme_count": 96,
           "GCER": 0.104167,
-          "WER": 0.181818,
+          "WER": 0.290323,
           "TextEdit": 0.103093,
           "total_graphemes_pred": 97,
           "total_grapheme_edits": 10,
-          "total_word_edits": 2,
+          "total_word_edits": 9,
           "precision": 0.8969,
           "recall": 0.9062,
           "f1": 0.9016
         },
         "Gojri-Latin": {
-          "gold_word_count": 3,
+          "gold_word_count": 22,
           "gold_grapheme_count": 149,
           "GCER": 0.0,
-          "WER": 0.333333,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 149,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Hindi-Devanagari": {
-          "gold_word_count": 61,
+          "gold_word_count": 69,
           "gold_grapheme_count": 326,
           "GCER": 0.01227,
-          "WER": 0.065574,
+          "WER": 0.057971,
           "TextEdit": 0.01227,
           "total_graphemes_pred": 325,
           "total_grapheme_edits": 4,
@@ -2372,49 +2564,49 @@
       "blended_graphemes_gold": 1133,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 53,
+          "gold_word_count": 56,
           "gold_grapheme_count": 651,
           "GCER": 0.001536,
-          "WER": 0.264151,
+          "WER": 0.017857,
           "TextEdit": 0.001536,
           "total_graphemes_pred": 651,
           "total_grapheme_edits": 1,
-          "total_word_edits": 14,
+          "total_word_edits": 1,
           "precision": 0.9985,
           "recall": 0.9985,
           "f1": 0.9985
         },
         "Gojri-Devanagari": {
-          "gold_word_count": 1,
+          "gold_word_count": 29,
           "gold_grapheme_count": 105,
           "GCER": 0.114286,
-          "WER": 1.0,
+          "WER": 0.344828,
           "TextEdit": 0.114286,
           "total_graphemes_pred": 105,
           "total_grapheme_edits": 12,
-          "total_word_edits": 1,
+          "total_word_edits": 10,
           "precision": 0.8857,
           "recall": 0.8857,
           "f1": 0.8857
         },
         "Gojri-Latin": {
-          "gold_word_count": 3,
+          "gold_word_count": 29,
           "gold_grapheme_count": 173,
           "GCER": 0.00578,
-          "WER": 0.0,
+          "WER": 0.034483,
           "TextEdit": 0.005747,
           "total_graphemes_pred": 174,
           "total_grapheme_edits": 1,
-          "total_word_edits": 0,
+          "total_word_edits": 1,
           "precision": 0.9943,
           "recall": 1.0,
           "f1": 0.9971
         },
         "Hindi-Devanagari": {
-          "gold_word_count": 48,
+          "gold_word_count": 52,
           "gold_grapheme_count": 204,
           "GCER": 0.053922,
-          "WER": 0.145833,
+          "WER": 0.134615,
           "TextEdit": 0.053659,
           "total_graphemes_pred": 205,
           "total_grapheme_edits": 11,
@@ -2478,7 +2670,7 @@
       "blended_graphemes_gold": 1133,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 61,
+          "gold_word_count": 70,
           "gold_grapheme_count": 610,
           "GCER": 0.0,
           "WER": 0.0,
@@ -2491,7 +2683,7 @@
           "f1": 1.0
         },
         "Gojri-Devanagari": {
-          "gold_word_count": 1,
+          "gold_word_count": 24,
           "gold_grapheme_count": 72,
           "GCER": 0.0,
           "WER": 0.0,
@@ -2504,7 +2696,7 @@
           "f1": 1.0
         },
         "Gojri-Latin": {
-          "gold_word_count": 5,
+          "gold_word_count": 24,
           "gold_grapheme_count": 143,
           "GCER": 0.0,
           "WER": 0.0,
@@ -2517,14 +2709,14 @@
           "f1": 1.0
         },
         "Hindi-Devanagari": {
-          "gold_word_count": 72,
+          "gold_word_count": 79,
           "gold_grapheme_count": 308,
           "GCER": 0.048701,
-          "WER": 0.111111,
+          "WER": 0.113924,
           "TextEdit": 0.048701,
           "total_graphemes_pred": 308,
           "total_grapheme_edits": 15,
-          "total_word_edits": 8,
+          "total_word_edits": 9,
           "precision": 0.9545,
           "recall": 0.9545,
           "f1": 0.9545
@@ -2583,8 +2775,8 @@
       "blended_grapheme_edits": 25,
       "blended_graphemes_gold": 2474,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 425,
+        "English": {
+          "gold_word_count": 438,
           "gold_grapheme_count": 1548,
           "GCER": 0.0,
           "WER": 0.0,
@@ -2596,11 +2788,11 @@
           "recall": 1.0,
           "f1": 1.0
         },
-        "Greek-Greek": {
-          "gold_word_count": 171,
+        "Greek": {
+          "gold_word_count": 172,
           "gold_grapheme_count": 926,
           "GCER": 0.026998,
-          "WER": 0.134503,
+          "WER": 0.133721,
           "TextEdit": 0.026998,
           "total_graphemes_pred": 926,
           "total_grapheme_edits": 25,
@@ -2663,28 +2855,28 @@
       "blended_grapheme_edits": 25,
       "blended_graphemes_gold": 2708,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 391,
+        "English": {
+          "gold_word_count": 395,
           "gold_grapheme_count": 1813,
           "GCER": 0.000552,
-          "WER": 0.007673,
+          "WER": 0.002532,
           "TextEdit": 0.000551,
           "total_graphemes_pred": 1814,
           "total_grapheme_edits": 1,
-          "total_word_edits": 3,
+          "total_word_edits": 1,
           "precision": 0.9994,
           "recall": 1.0,
           "f1": 0.9997
         },
-        "Greek-Greek": {
-          "gold_word_count": 147,
+        "Greek": {
+          "gold_word_count": 151,
           "gold_grapheme_count": 895,
           "GCER": 0.026816,
-          "WER": 0.163265,
+          "WER": 0.13245,
           "TextEdit": 0.026786,
           "total_graphemes_pred": 896,
           "total_grapheme_edits": 24,
-          "total_word_edits": 24,
+          "total_word_edits": 20,
           "precision": 0.9732,
           "recall": 0.9743,
           "f1": 0.9738
@@ -2743,24 +2935,24 @@
       "blended_grapheme_edits": 20,
       "blended_graphemes_gold": 2455,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 402,
+        "English": {
+          "gold_word_count": 404,
           "gold_grapheme_count": 1763,
           "GCER": 0.0,
-          "WER": 0.004975,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1763,
           "total_grapheme_edits": 0,
-          "total_word_edits": 2,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
-        "Greek-Greek": {
-          "gold_word_count": 110,
+        "Greek": {
+          "gold_word_count": 111,
           "gold_grapheme_count": 692,
           "GCER": 0.028902,
-          "WER": 0.172727,
+          "WER": 0.171171,
           "TextEdit": 0.028902,
           "total_graphemes_pred": 692,
           "total_grapheme_edits": 20,
@@ -2823,28 +3015,28 @@
       "blended_grapheme_edits": 16,
       "blended_graphemes_gold": 1292,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 279,
+        "English": {
+          "gold_word_count": 285,
           "gold_grapheme_count": 1115,
           "GCER": 0.000897,
-          "WER": 0.25448,
+          "WER": 0.003509,
           "TextEdit": 0.000897,
           "total_graphemes_pred": 1114,
           "total_grapheme_edits": 1,
-          "total_word_edits": 71,
+          "total_word_edits": 1,
           "precision": 1.0,
           "recall": 0.9991,
           "f1": 0.9996
         },
-        "Gujarati-Gujarati": {
-          "gold_word_count": 47,
+        "Gujarati": {
+          "gold_word_count": 49,
           "gold_grapheme_count": 177,
           "GCER": 0.084746,
-          "WER": 0.361702,
+          "WER": 0.22449,
           "TextEdit": 0.084746,
           "total_graphemes_pred": 173,
           "total_grapheme_edits": 15,
-          "total_word_edits": 17,
+          "total_word_edits": 11,
           "precision": 0.9364,
           "recall": 0.9153,
           "f1": 0.9257
@@ -2903,28 +3095,28 @@
       "blended_grapheme_edits": 18,
       "blended_graphemes_gold": 1335,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 253,
+        "English": {
+          "gold_word_count": 255,
           "gold_grapheme_count": 1182,
           "GCER": 0.0,
-          "WER": 0.031621,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1182,
           "total_grapheme_edits": 0,
-          "total_word_edits": 8,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
-        "Gujarati-Gujarati": {
-          "gold_word_count": 37,
+        "Gujarati": {
+          "gold_word_count": 39,
           "gold_grapheme_count": 153,
           "GCER": 0.117647,
-          "WER": 0.378378,
+          "WER": 0.282051,
           "TextEdit": 0.117647,
           "total_graphemes_pred": 150,
           "total_grapheme_edits": 18,
-          "total_word_edits": 14,
+          "total_word_edits": 11,
           "precision": 0.9067,
           "recall": 0.8889,
           "f1": 0.8977
@@ -2983,28 +3175,28 @@
       "blended_grapheme_edits": 32,
       "blended_graphemes_gold": 1220,
       "per_language": {
-        "English-Latin": {
-          "gold_word_count": 244,
+        "English": {
+          "gold_word_count": 253,
           "gold_grapheme_count": 1052,
           "GCER": 0.001901,
-          "WER": 0.040984,
+          "WER": 0.007905,
           "TextEdit": 0.001901,
           "total_graphemes_pred": 1052,
           "total_grapheme_edits": 2,
-          "total_word_edits": 10,
+          "total_word_edits": 2,
           "precision": 0.9981,
           "recall": 0.9981,
           "f1": 0.9981
         },
-        "Gujarati-Gujarati": {
+        "Gujarati": {
           "gold_word_count": 50,
           "gold_grapheme_count": 168,
           "GCER": 0.178571,
-          "WER": 0.48,
+          "WER": 0.34,
           "TextEdit": 0.178571,
           "total_graphemes_pred": 162,
           "total_grapheme_edits": 30,
-          "total_word_edits": 24,
+          "total_word_edits": 17,
           "precision": 0.8519,
           "recall": 0.8214,
           "f1": 0.8364
@@ -3013,7 +3205,7 @@
     }
   },
   {
-    "page_id": "Iñupiatun Eskimo-English/page_201",
+    "page_id": "Iñupiatun Eskimo-English/page_201",
     "character_quality": {
       "TextEdit": 0.004094,
       "GCER": 0.00408,
@@ -3064,14 +3256,14 @@
       "blended_graphemes_gold": 3014,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 489,
+          "gold_word_count": 502,
           "gold_grapheme_count": 2034,
           "GCER": 0.0,
-          "WER": 0.00409,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 2034,
           "total_grapheme_edits": 0,
-          "total_word_edits": 2,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -3106,7 +3298,7 @@
     }
   },
   {
-    "page_id": "Iñupiatun Eskimo-English/page_206",
+    "page_id": "Iñupiatun Eskimo-English/page_206",
     "character_quality": {
       "TextEdit": 0.010376,
       "GCER": 0.009588,
@@ -3157,10 +3349,10 @@
       "blended_graphemes_gold": 3064,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 454,
+          "gold_word_count": 485,
           "gold_grapheme_count": 2199,
           "GCER": 0.001364,
-          "WER": 0.002203,
+          "WER": 0.002062,
           "TextEdit": 0.001364,
           "total_graphemes_pred": 2196,
           "total_grapheme_edits": 3,
@@ -3186,7 +3378,7 @@
     }
   },
   {
-    "page_id": "Iñupiatun Eskimo-English/page_42",
+    "page_id": "Iñupiatun Eskimo-English/page_42",
     "character_quality": {
       "TextEdit": 0.010138,
       "GCER": 0.009194,
@@ -3237,7 +3429,7 @@
       "blended_graphemes_gold": 3205,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 481,
+          "gold_word_count": 493,
           "gold_grapheme_count": 1988,
           "GCER": 0.0,
           "WER": 0.0,
@@ -3317,27 +3509,27 @@
       "blended_graphemes_gold": 3012,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 523,
+          "gold_word_count": 524,
           "gold_grapheme_count": 1865,
           "GCER": 0.0,
-          "WER": 0.001912,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1865,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Japanese-Kanji": {
-          "gold_word_count": 29,
+          "gold_word_count": 30,
           "gold_grapheme_count": 62,
           "GCER": 0.33871,
-          "WER": 0.62069,
+          "WER": 0.633333,
           "TextEdit": 0.33871,
           "total_graphemes_pred": 61,
           "total_grapheme_edits": 21,
-          "total_word_edits": 18,
+          "total_word_edits": 19,
           "precision": 0.6721,
           "recall": 0.6613,
           "f1": 0.6667
@@ -3346,24 +3538,24 @@
           "gold_word_count": 53,
           "gold_grapheme_count": 220,
           "GCER": 0.013636,
-          "WER": 0.075472,
+          "WER": 0.056604,
           "TextEdit": 0.013636,
           "total_graphemes_pred": 220,
           "total_grapheme_edits": 3,
-          "total_word_edits": 4,
+          "total_word_edits": 3,
           "precision": 0.9864,
           "recall": 0.9864,
           "f1": 0.9864
         },
         "Japanese-Latin": {
-          "gold_word_count": 154,
+          "gold_word_count": 156,
           "gold_grapheme_count": 865,
           "GCER": 0.045087,
-          "WER": 0.084416,
+          "WER": 0.089744,
           "TextEdit": 0.045087,
           "total_graphemes_pred": 863,
           "total_grapheme_edits": 39,
-          "total_word_edits": 13,
+          "total_word_edits": 14,
           "precision": 0.9722,
           "recall": 0.9699,
           "f1": 0.9711
@@ -3423,10 +3615,10 @@
       "blended_graphemes_gold": 3358,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 525,
+          "gold_word_count": 533,
           "gold_grapheme_count": 2215,
           "GCER": 0.020767,
-          "WER": 0.013333,
+          "WER": 0.013133,
           "TextEdit": 0.020767,
           "total_graphemes_pred": 2169,
           "total_grapheme_edits": 46,
@@ -3436,14 +3628,14 @@
           "f1": 0.9895
         },
         "Japanese-Kanji": {
-          "gold_word_count": 30,
+          "gold_word_count": 36,
           "gold_grapheme_count": 76,
           "GCER": 0.197368,
           "WER": 0.333333,
           "TextEdit": 0.197368,
           "total_graphemes_pred": 75,
           "total_grapheme_edits": 15,
-          "total_word_edits": 10,
+          "total_word_edits": 12,
           "precision": 0.8133,
           "recall": 0.8026,
           "f1": 0.8079
@@ -3465,11 +3657,11 @@
           "gold_word_count": 166,
           "gold_grapheme_count": 882,
           "GCER": 0.013605,
-          "WER": 0.066265,
+          "WER": 0.054217,
           "TextEdit": 0.013605,
           "total_graphemes_pred": 882,
           "total_grapheme_edits": 12,
-          "total_word_edits": 11,
+          "total_word_edits": 9,
           "precision": 0.9875,
           "recall": 0.9875,
           "f1": 0.9875
@@ -3529,36 +3721,36 @@
       "blended_graphemes_gold": 3238,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 453,
+          "gold_word_count": 462,
           "gold_grapheme_count": 2011,
           "GCER": 0.0,
-          "WER": 0.011038,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 2011,
           "total_grapheme_edits": 0,
-          "total_word_edits": 5,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Japanese-Kanji": {
-          "gold_word_count": 28,
+          "gold_word_count": 35,
           "gold_grapheme_count": 62,
           "GCER": 0.241935,
-          "WER": 0.357143,
+          "WER": 0.371429,
           "TextEdit": 0.241935,
           "total_graphemes_pred": 62,
           "total_grapheme_edits": 15,
-          "total_word_edits": 10,
+          "total_word_edits": 13,
           "precision": 0.7581,
           "recall": 0.7581,
           "f1": 0.7581
         },
         "Japanese-Katakana": {
-          "gold_word_count": 45,
+          "gold_word_count": 46,
           "gold_grapheme_count": 170,
           "GCER": 0.011765,
-          "WER": 0.044444,
+          "WER": 0.043478,
           "TextEdit": 0.011765,
           "total_graphemes_pred": 170,
           "total_grapheme_edits": 2,
@@ -3571,11 +3763,11 @@
           "gold_word_count": 197,
           "gold_grapheme_count": 995,
           "GCER": 0.019095,
-          "WER": 0.086294,
+          "WER": 0.06599,
           "TextEdit": 0.019076,
           "total_graphemes_pred": 996,
           "total_grapheme_edits": 19,
-          "total_word_edits": 17,
+          "total_word_edits": 13,
           "precision": 0.9819,
           "recall": 0.9829,
           "f1": 0.9824
@@ -3635,14 +3827,14 @@
       "blended_graphemes_gold": 1082,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 100,
+          "gold_word_count": 149,
           "gold_grapheme_count": 590,
           "GCER": 0.00339,
-          "WER": 0.0,
+          "WER": 0.013423,
           "TextEdit": 0.003378,
           "total_graphemes_pred": 592,
           "total_grapheme_edits": 2,
-          "total_word_edits": 0,
+          "total_word_edits": 2,
           "precision": 0.9966,
           "recall": 1.0,
           "f1": 0.9983
@@ -3651,11 +3843,11 @@
           "gold_word_count": 58,
           "gold_grapheme_count": 202,
           "GCER": 0.331683,
-          "WER": 0.827586,
+          "WER": 0.810345,
           "TextEdit": 0.331683,
           "total_graphemes_pred": 193,
           "total_grapheme_edits": 67,
-          "total_word_edits": 48,
+          "total_word_edits": 47,
           "precision": 0.6995,
           "recall": 0.6683,
           "f1": 0.6835
@@ -3664,11 +3856,11 @@
           "gold_word_count": 54,
           "gold_grapheme_count": 290,
           "GCER": 0.02069,
-          "WER": 0.055556,
+          "WER": 0.074074,
           "TextEdit": 0.02069,
           "total_graphemes_pred": 290,
           "total_grapheme_edits": 6,
-          "total_word_edits": 3,
+          "total_word_edits": 4,
           "precision": 0.9828,
           "recall": 0.9828,
           "f1": 0.9828
@@ -3728,7 +3920,7 @@
       "blended_graphemes_gold": 1054,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 95,
+          "gold_word_count": 145,
           "gold_grapheme_count": 562,
           "GCER": 0.0,
           "WER": 0.0,
@@ -3744,17 +3936,17 @@
           "gold_word_count": 36,
           "gold_grapheme_count": 157,
           "GCER": 0.267516,
-          "WER": 0.833333,
+          "WER": 0.777778,
           "TextEdit": 0.267516,
           "total_graphemes_pred": 155,
           "total_grapheme_edits": 42,
-          "total_word_edits": 30,
+          "total_word_edits": 28,
           "precision": 0.7742,
           "recall": 0.7643,
           "f1": 0.7692
         },
         "Kashmiri-Latin": {
-          "gold_word_count": 50,
+          "gold_word_count": 55,
           "gold_grapheme_count": 335,
           "GCER": 0.0,
           "WER": 0.0,
@@ -3821,10 +4013,10 @@
       "blended_graphemes_gold": 1032,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 68,
+          "gold_word_count": 124,
           "gold_grapheme_count": 476,
           "GCER": 0.004202,
-          "WER": 0.029412,
+          "WER": 0.016129,
           "TextEdit": 0.004193,
           "total_graphemes_pred": 477,
           "total_grapheme_edits": 2,
@@ -3850,11 +4042,11 @@
           "gold_word_count": 58,
           "gold_grapheme_count": 364,
           "GCER": 0.008242,
-          "WER": 0.068966,
+          "WER": 0.051724,
           "TextEdit": 0.008197,
           "total_graphemes_pred": 366,
           "total_grapheme_edits": 3,
-          "total_word_edits": 4,
+          "total_word_edits": 3,
           "precision": 0.9918,
           "recall": 0.9973,
           "f1": 0.9945
@@ -3914,14 +4106,14 @@
       "blended_graphemes_gold": 1474,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 242,
+          "gold_word_count": 254,
           "gold_grapheme_count": 1136,
           "GCER": 0.003521,
-          "WER": 0.012397,
+          "WER": 0.015748,
           "TextEdit": 0.003509,
           "total_graphemes_pred": 1140,
           "total_grapheme_edits": 4,
-          "total_word_edits": 3,
+          "total_word_edits": 4,
           "precision": 0.9965,
           "recall": 1.0,
           "f1": 0.9982
@@ -3994,10 +4186,10 @@
       "blended_graphemes_gold": 1407,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 258,
+          "gold_word_count": 264,
           "gold_grapheme_count": 1183,
           "GCER": 0.006762,
-          "WER": 0.011628,
+          "WER": 0.011364,
           "TextEdit": 0.006751,
           "total_graphemes_pred": 1185,
           "total_grapheme_edits": 8,
@@ -4010,11 +4202,11 @@
           "gold_word_count": 59,
           "gold_grapheme_count": 224,
           "GCER": 0.21875,
-          "WER": 0.423729,
+          "WER": 0.40678,
           "TextEdit": 0.212121,
           "total_graphemes_pred": 231,
           "total_grapheme_edits": 49,
-          "total_word_edits": 25,
+          "total_word_edits": 24,
           "precision": 0.7965,
           "recall": 0.8214,
           "f1": 0.8088
@@ -4074,27 +4266,27 @@
       "blended_graphemes_gold": 965,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 206,
+          "gold_word_count": 218,
           "gold_grapheme_count": 817,
           "GCER": 0.0,
-          "WER": 0.033981,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 817,
           "total_grapheme_edits": 0,
-          "total_word_edits": 7,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Khmer-Khmer": {
-          "gold_word_count": 44,
+          "gold_word_count": 45,
           "gold_grapheme_count": 148,
           "GCER": 0.216216,
-          "WER": 0.295455,
+          "WER": 0.244444,
           "TextEdit": 0.214765,
           "total_graphemes_pred": 149,
           "total_grapheme_edits": 32,
-          "total_word_edits": 13,
+          "total_word_edits": 11,
           "precision": 0.8121,
           "recall": 0.8176,
           "f1": 0.8148
@@ -4154,10 +4346,10 @@
       "blended_graphemes_gold": 1473,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 208,
+          "gold_word_count": 210,
           "gold_grapheme_count": 834,
           "GCER": 0.003597,
-          "WER": 0.009615,
+          "WER": 0.009524,
           "TextEdit": 0.003593,
           "total_graphemes_pred": 835,
           "total_grapheme_edits": 3,
@@ -4170,11 +4362,11 @@
           "gold_word_count": 69,
           "gold_grapheme_count": 288,
           "GCER": 0.149306,
-          "WER": 0.434783,
+          "WER": 0.42029,
           "TextEdit": 0.145763,
           "total_graphemes_pred": 295,
           "total_grapheme_edits": 43,
-          "total_word_edits": 30,
+          "total_word_edits": 29,
           "precision": 0.8678,
           "recall": 0.8889,
           "f1": 0.8782
@@ -4183,11 +4375,11 @@
           "gold_word_count": 70,
           "gold_grapheme_count": 351,
           "GCER": 0.042735,
-          "WER": 0.214286,
+          "WER": 0.171429,
           "TextEdit": 0.042735,
           "total_graphemes_pred": 351,
           "total_grapheme_edits": 15,
-          "total_word_edits": 15,
+          "total_word_edits": 12,
           "precision": 0.9573,
           "recall": 0.9573,
           "f1": 0.9573
@@ -4247,14 +4439,14 @@
       "blended_graphemes_gold": 1414,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 171,
+          "gold_word_count": 172,
           "gold_grapheme_count": 762,
           "GCER": 0.049869,
-          "WER": 0.210526,
+          "WER": 0.203488,
           "TextEdit": 0.049869,
           "total_graphemes_pred": 762,
           "total_grapheme_edits": 38,
-          "total_word_edits": 36,
+          "total_word_edits": 35,
           "precision": 0.9501,
           "recall": 0.9501,
           "f1": 0.9501
@@ -4263,20 +4455,20 @@
           "gold_word_count": 76,
           "gold_grapheme_count": 318,
           "GCER": 0.119497,
-          "WER": 0.381579,
+          "WER": 0.394737,
           "TextEdit": 0.116208,
           "total_graphemes_pred": 327,
           "total_grapheme_edits": 38,
-          "total_word_edits": 29,
+          "total_word_edits": 30,
           "precision": 0.8991,
           "recall": 0.9245,
           "f1": 0.9116
         },
         "Malay-Latin": {
-          "gold_word_count": 61,
+          "gold_word_count": 62,
           "gold_grapheme_count": 334,
           "GCER": 0.041916,
-          "WER": 0.196721,
+          "WER": 0.193548,
           "TextEdit": 0.041543,
           "total_graphemes_pred": 337,
           "total_grapheme_edits": 14,
@@ -4340,14 +4532,14 @@
       "blended_graphemes_gold": 1555,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 228,
+          "gold_word_count": 230,
           "gold_grapheme_count": 982,
           "GCER": 0.001018,
-          "WER": 0.008772,
+          "WER": 0.004348,
           "TextEdit": 0.001018,
           "total_graphemes_pred": 982,
           "total_grapheme_edits": 1,
-          "total_word_edits": 2,
+          "total_word_edits": 1,
           "precision": 0.999,
           "recall": 0.999,
           "f1": 0.999
@@ -4356,24 +4548,24 @@
           "gold_word_count": 54,
           "gold_grapheme_count": 281,
           "GCER": 0.145907,
-          "WER": 0.333333,
+          "WER": 0.314815,
           "TextEdit": 0.145907,
           "total_graphemes_pred": 252,
           "total_grapheme_edits": 41,
-          "total_word_edits": 18,
+          "total_word_edits": 17,
           "precision": 0.9563,
           "recall": 0.8577,
           "f1": 0.9043
         },
         "Malay-Latin": {
-          "gold_word_count": 47,
+          "gold_word_count": 48,
           "gold_grapheme_count": 292,
           "GCER": 0.113014,
-          "WER": 0.319149,
+          "WER": 0.270833,
           "TextEdit": 0.104101,
           "total_graphemes_pred": 317,
           "total_grapheme_edits": 33,
-          "total_word_edits": 15,
+          "total_word_edits": 13,
           "precision": 0.8959,
           "recall": 0.9726,
           "f1": 0.9327
@@ -4433,20 +4625,20 @@
       "blended_graphemes_gold": 2063,
       "per_language": {
         "Chinese-Han": {
-          "gold_word_count": 27,
+          "gold_word_count": 30,
           "gold_grapheme_count": 128,
           "GCER": 0.0,
-          "WER": 0.185185,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 128,
           "total_grapheme_edits": 0,
-          "total_word_edits": 5,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "English-Latin": {
-          "gold_word_count": 195,
+          "gold_word_count": 200,
           "gold_grapheme_count": 862,
           "GCER": 0.0,
           "WER": 0.0,
@@ -4459,7 +4651,7 @@
           "f1": 1.0
         },
         "French-Latin": {
-          "gold_word_count": 143,
+          "gold_word_count": 147,
           "gold_grapheme_count": 708,
           "GCER": 0.0,
           "WER": 0.0,
@@ -4471,18 +4663,31 @@
           "recall": 1.0,
           "f1": 1.0
         },
+        "Na": {
+          "gold_word_count": 49,
+          "gold_grapheme_count": 269,
+          "GCER": 0.200743,
+          "WER": 0.755102,
+          "TextEdit": 0.200743,
+          "total_graphemes_pred": 261,
+          "total_grapheme_edits": 54,
+          "total_word_edits": 37,
+          "precision": 0.8238,
+          "recall": 0.7993,
+          "f1": 0.8113
+        },
         "Na-IPA": {
-          "gold_word_count": 69,
-          "gold_grapheme_count": 324,
-          "GCER": 0.191358,
-          "WER": 0.608696,
-          "TextEdit": 0.191358,
-          "total_graphemes_pred": 313,
-          "total_grapheme_edits": 62,
-          "total_word_edits": 42,
-          "precision": 0.8371,
-          "recall": 0.8086,
-          "f1": 0.8226
+          "gold_word_count": 21,
+          "gold_grapheme_count": 55,
+          "GCER": 0.145455,
+          "WER": 0.285714,
+          "TextEdit": 0.145455,
+          "total_graphemes_pred": 52,
+          "total_grapheme_edits": 8,
+          "total_word_edits": 6,
+          "precision": 0.9038,
+          "recall": 0.8545,
+          "f1": 0.8785
         },
         "Na-Latin": {
           "gold_word_count": 10,
@@ -4555,53 +4760,66 @@
           "gold_word_count": 31,
           "gold_grapheme_count": 156,
           "GCER": 0.0,
-          "WER": 0.129032,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 156,
           "total_grapheme_edits": 0,
-          "total_word_edits": 4,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "English-Latin": {
-          "gold_word_count": 225,
+          "gold_word_count": 234,
           "gold_grapheme_count": 1018,
           "GCER": 0.0,
-          "WER": 0.017778,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1018,
           "total_grapheme_edits": 0,
-          "total_word_edits": 4,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "French-Latin": {
-          "gold_word_count": 166,
+          "gold_word_count": 175,
           "gold_grapheme_count": 768,
           "GCER": 0.001302,
-          "WER": 0.018072,
+          "WER": 0.005714,
           "TextEdit": 0.0013,
           "total_graphemes_pred": 769,
           "total_grapheme_edits": 1,
-          "total_word_edits": 3,
+          "total_word_edits": 1,
           "precision": 0.9987,
           "recall": 1.0,
           "f1": 0.9993
         },
-        "Na-IPA": {
-          "gold_word_count": 46,
-          "gold_grapheme_count": 255,
-          "GCER": 0.4,
+        "Na": {
+          "gold_word_count": 32,
+          "gold_grapheme_count": 171,
+          "GCER": 0.397661,
           "WER": 1.0,
-          "TextEdit": 0.4,
-          "total_graphemes_pred": 246,
-          "total_grapheme_edits": 102,
-          "total_word_edits": 46,
-          "precision": 0.622,
-          "recall": 0.6,
-          "f1": 0.6108
+          "TextEdit": 0.397661,
+          "total_graphemes_pred": 166,
+          "total_grapheme_edits": 68,
+          "total_word_edits": 32,
+          "precision": 0.6205,
+          "recall": 0.6023,
+          "f1": 0.6113
+        },
+        "Na-IPA": {
+          "gold_word_count": 16,
+          "gold_grapheme_count": 84,
+          "GCER": 0.404762,
+          "WER": 1.0,
+          "TextEdit": 0.404762,
+          "total_graphemes_pred": 80,
+          "total_grapheme_edits": 34,
+          "total_word_edits": 16,
+          "precision": 0.625,
+          "recall": 0.5952,
+          "f1": 0.6098
         },
         "Na-Latin": {
           "gold_word_count": 8,
@@ -4674,17 +4892,17 @@
           "gold_word_count": 33,
           "gold_grapheme_count": 130,
           "GCER": 0.0,
-          "WER": 0.181818,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 130,
           "total_grapheme_edits": 0,
-          "total_word_edits": 6,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "English-Latin": {
-          "gold_word_count": 174,
+          "gold_word_count": 176,
           "gold_grapheme_count": 746,
           "GCER": 0.0,
           "WER": 0.0,
@@ -4697,7 +4915,7 @@
           "f1": 1.0
         },
         "French-Latin": {
-          "gold_word_count": 171,
+          "gold_word_count": 174,
           "gold_grapheme_count": 738,
           "GCER": 0.0,
           "WER": 0.0,
@@ -4709,18 +4927,31 @@
           "recall": 1.0,
           "f1": 1.0
         },
+        "Na": {
+          "gold_word_count": 45,
+          "gold_grapheme_count": 315,
+          "GCER": 0.526984,
+          "WER": 0.933333,
+          "TextEdit": 0.523659,
+          "total_graphemes_pred": 317,
+          "total_grapheme_edits": 166,
+          "total_word_edits": 42,
+          "precision": 0.4795,
+          "recall": 0.4825,
+          "f1": 0.481
+        },
         "Na-IPA": {
-          "gold_word_count": 67,
-          "gold_grapheme_count": 412,
-          "GCER": 0.526699,
-          "WER": 0.791045,
-          "TextEdit": 0.526699,
-          "total_graphemes_pred": 411,
-          "total_grapheme_edits": 217,
-          "total_word_edits": 53,
-          "precision": 0.4842,
-          "recall": 0.483,
-          "f1": 0.4836
+          "gold_word_count": 22,
+          "gold_grapheme_count": 97,
+          "GCER": 0.525773,
+          "WER": 0.5,
+          "TextEdit": 0.525773,
+          "total_graphemes_pred": 94,
+          "total_grapheme_edits": 51,
+          "total_word_edits": 11,
+          "precision": 0.5,
+          "recall": 0.4845,
+          "f1": 0.4921
         },
         "Na-Latin": {
           "gold_word_count": 13,
@@ -4790,14 +5021,14 @@
       "blended_graphemes_gold": 3535,
       "per_language": {
         "French-Latin": {
-          "gold_word_count": 456,
+          "gold_word_count": 462,
           "gold_grapheme_count": 2033,
           "GCER": 0.004919,
-          "WER": 0.026316,
+          "WER": 0.021645,
           "TextEdit": 0.004919,
           "total_graphemes_pred": 2033,
           "total_grapheme_edits": 10,
-          "total_word_edits": 12,
+          "total_word_edits": 10,
           "precision": 0.9951,
           "recall": 0.9951,
           "f1": 0.9951
@@ -4870,14 +5101,14 @@
       "blended_graphemes_gold": 3451,
       "per_language": {
         "French-Latin": {
-          "gold_word_count": 523,
+          "gold_word_count": 534,
           "gold_grapheme_count": 2203,
           "GCER": 0.001362,
-          "WER": 0.003824,
+          "WER": 0.001873,
           "TextEdit": 0.001362,
           "total_graphemes_pred": 2203,
           "total_grapheme_edits": 3,
-          "total_word_edits": 2,
+          "total_word_edits": 1,
           "precision": 0.9991,
           "recall": 0.9991,
           "f1": 0.9991
@@ -4950,14 +5181,14 @@
       "blended_graphemes_gold": 3208,
       "per_language": {
         "French-Latin": {
-          "gold_word_count": 400,
+          "gold_word_count": 407,
           "gold_grapheme_count": 1728,
           "GCER": 0.135417,
-          "WER": 0.05,
+          "WER": 0.039312,
           "TextEdit": 0.119693,
           "total_graphemes_pred": 1955,
           "total_grapheme_edits": 234,
-          "total_word_edits": 20,
+          "total_word_edits": 16,
           "precision": 0.8803,
           "recall": 0.9959,
           "f1": 0.9346
@@ -4976,7 +5207,7 @@
           "f1": 0.9069
         },
         "Spanish-Latin": {
-          "gold_word_count": 3,
+          "gold_word_count": 4,
           "gold_grapheme_count": 15,
           "GCER": 0.0,
           "WER": 0.0,
@@ -5043,23 +5274,23 @@
       "blended_graphemes_gold": 2551,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 555,
+          "gold_word_count": 559,
           "gold_grapheme_count": 1796,
           "GCER": 0.007795,
-          "WER": 0.021622,
+          "WER": 0.005367,
           "TextEdit": 0.007795,
           "total_graphemes_pred": 1796,
           "total_grapheme_edits": 14,
-          "total_word_edits": 12,
+          "total_word_edits": 3,
           "precision": 0.9961,
           "recall": 0.9961,
           "f1": 0.9961
         },
         "Punjabi-Gurmukhi": {
-          "gold_word_count": 110,
+          "gold_word_count": 111,
           "gold_grapheme_count": 281,
           "GCER": 0.11032,
-          "WER": 0.218182,
+          "WER": 0.216216,
           "TextEdit": 0.11032,
           "total_graphemes_pred": 279,
           "total_grapheme_edits": 31,
@@ -5069,10 +5300,10 @@
           "f1": 0.8929
         },
         "Punjabi-Latin": {
-          "gold_word_count": 84,
+          "gold_word_count": 85,
           "gold_grapheme_count": 474,
           "GCER": 0.172996,
-          "WER": 0.845238,
+          "WER": 0.835294,
           "TextEdit": 0.172996,
           "total_graphemes_pred": 411,
           "total_grapheme_edits": 82,
@@ -5136,10 +5367,10 @@
       "blended_graphemes_gold": 2549,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 522,
+          "gold_word_count": 528,
           "gold_grapheme_count": 1852,
           "GCER": 0.00054,
-          "WER": 0.001916,
+          "WER": 0.001894,
           "TextEdit": 0.00054,
           "total_graphemes_pred": 1852,
           "total_grapheme_edits": 1,
@@ -5224,35 +5455,35 @@
       "max_length": 146
     },
     "per_language_script": {
-      "blended_gcer": 0.029295,
-      "blended_grapheme_edits": 74,
-      "blended_graphemes_gold": 2526,
+      "blended_gcer": 0.029992,
+      "blended_grapheme_edits": 76,
+      "blended_graphemes_gold": 2534,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 550,
+          "gold_word_count": 564,
           "gold_grapheme_count": 1962,
           "GCER": 0.001019,
-          "WER": 0.061818,
+          "WER": 0.003546,
           "TextEdit": 0.001019,
           "total_graphemes_pred": 1962,
           "total_grapheme_edits": 2,
-          "total_word_edits": 34,
+          "total_word_edits": 2,
           "precision": 0.999,
           "recall": 0.999,
           "f1": 0.999
         },
         "Punjabi-Gurmukhi": {
-          "gold_word_count": 72,
-          "gold_grapheme_count": 210,
-          "GCER": 0.080952,
-          "WER": 0.222222,
-          "TextEdit": 0.080569,
-          "total_graphemes_pred": 211,
-          "total_grapheme_edits": 17,
-          "total_word_edits": 16,
-          "precision": 0.9194,
-          "recall": 0.9238,
-          "f1": 0.9216
+          "gold_word_count": 75,
+          "gold_grapheme_count": 218,
+          "GCER": 0.087156,
+          "WER": 0.2,
+          "TextEdit": 0.086758,
+          "total_graphemes_pred": 219,
+          "total_grapheme_edits": 19,
+          "total_word_edits": 15,
+          "precision": 0.9132,
+          "recall": 0.9174,
+          "f1": 0.9153
         },
         "Punjabi-Latin": {
           "gold_word_count": 60,
@@ -5322,10 +5553,10 @@
       "blended_graphemes_gold": 765,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 95,
+          "gold_word_count": 96,
           "gold_grapheme_count": 337,
           "GCER": 0.005935,
-          "WER": 0.021053,
+          "WER": 0.020833,
           "TextEdit": 0.005935,
           "total_graphemes_pred": 335,
           "total_grapheme_edits": 2,
@@ -5335,27 +5566,27 @@
           "f1": 0.997
         },
         "Reel-IPA": {
-          "gold_word_count": 5,
+          "gold_word_count": 22,
           "gold_grapheme_count": 99,
           "GCER": 0.161616,
-          "WER": 1.0,
+          "WER": 0.636364,
           "TextEdit": 0.161616,
           "total_graphemes_pred": 99,
           "total_grapheme_edits": 16,
-          "total_word_edits": 5,
+          "total_word_edits": 14,
           "precision": 0.8384,
           "recall": 0.8384,
           "f1": 0.8384
         },
         "Reel-Latin": {
-          "gold_word_count": 59,
+          "gold_word_count": 64,
           "gold_grapheme_count": 329,
           "GCER": 0.0,
-          "WER": 0.152542,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 329,
           "total_grapheme_edits": 0,
-          "total_word_edits": 9,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -5415,10 +5646,10 @@
       "blended_graphemes_gold": 839,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 113,
+          "gold_word_count": 114,
           "gold_grapheme_count": 418,
           "GCER": 0.002392,
-          "WER": 0.00885,
+          "WER": 0.008772,
           "TextEdit": 0.002392,
           "total_graphemes_pred": 417,
           "total_grapheme_edits": 1,
@@ -5428,27 +5659,27 @@
           "f1": 0.9988
         },
         "Reel-IPA": {
-          "gold_word_count": 11,
+          "gold_word_count": 20,
           "gold_grapheme_count": 69,
           "GCER": 0.449275,
-          "WER": 0.727273,
+          "WER": 0.8,
           "TextEdit": 0.449275,
           "total_graphemes_pred": 69,
           "total_grapheme_edits": 31,
-          "total_word_edits": 8,
+          "total_word_edits": 16,
           "precision": 0.5507,
           "recall": 0.5507,
           "f1": 0.5507
         },
         "Reel-Latin": {
-          "gold_word_count": 79,
+          "gold_word_count": 87,
           "gold_grapheme_count": 352,
           "GCER": 0.042614,
-          "WER": 0.265823,
+          "WER": 0.16092,
           "TextEdit": 0.042614,
           "total_graphemes_pred": 349,
           "total_grapheme_edits": 15,
-          "total_word_edits": 21,
+          "total_word_edits": 14,
           "precision": 0.9656,
           "recall": 0.9574,
           "f1": 0.9615
@@ -5508,40 +5739,40 @@
       "blended_graphemes_gold": 859,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 111,
+          "gold_word_count": 116,
           "gold_grapheme_count": 503,
           "GCER": 0.0,
-          "WER": 0.009009,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 503,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Reel-IPA": {
-          "gold_word_count": 11,
+          "gold_word_count": 16,
           "gold_grapheme_count": 68,
           "GCER": 0.647059,
           "WER": 1.0,
           "TextEdit": 0.647059,
           "total_graphemes_pred": 68,
           "total_grapheme_edits": 44,
-          "total_word_edits": 11,
+          "total_word_edits": 16,
           "precision": 0.3529,
           "recall": 0.3529,
           "f1": 0.3529
         },
         "Reel-Latin": {
-          "gold_word_count": 52,
+          "gold_word_count": 68,
           "gold_grapheme_count": 288,
           "GCER": 0.25,
           "WER": 0.75,
           "TextEdit": 0.249135,
           "total_graphemes_pred": 289,
           "total_grapheme_edits": 72,
-          "total_word_edits": 39,
+          "total_word_edits": 51,
           "precision": 0.7543,
           "recall": 0.7569,
           "f1": 0.7556
@@ -5601,20 +5832,20 @@
       "blended_graphemes_gold": 1521,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 235,
+          "gold_word_count": 249,
           "gold_grapheme_count": 1054,
           "GCER": 0.000949,
-          "WER": 0.012766,
+          "WER": 0.004016,
           "TextEdit": 0.000949,
           "total_graphemes_pred": 1053,
           "total_grapheme_edits": 1,
-          "total_word_edits": 3,
+          "total_word_edits": 1,
           "precision": 1.0,
           "recall": 0.9991,
           "f1": 0.9995
         },
         "Latin-Latin": {
-          "gold_word_count": 9,
+          "gold_word_count": 10,
           "gold_grapheme_count": 73,
           "GCER": 0.0,
           "WER": 0.0,
@@ -5627,14 +5858,14 @@
           "f1": 1.0
         },
         "Ritharngu-Latin": {
-          "gold_word_count": 64,
+          "gold_word_count": 65,
           "gold_grapheme_count": 394,
           "GCER": 0.060914,
-          "WER": 0.265625,
+          "WER": 0.276923,
           "TextEdit": 0.060914,
           "total_graphemes_pred": 393,
           "total_grapheme_edits": 24,
-          "total_word_edits": 17,
+          "total_word_edits": 18,
           "precision": 0.9415,
           "recall": 0.9391,
           "f1": 0.9403
@@ -5694,14 +5925,14 @@
       "blended_graphemes_gold": 1594,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 219,
+          "gold_word_count": 236,
           "gold_grapheme_count": 941,
           "GCER": 0.0,
-          "WER": 0.004566,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 941,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -5720,10 +5951,10 @@
           "f1": 1.0
         },
         "Ritharngu-Latin": {
-          "gold_word_count": 86,
+          "gold_word_count": 87,
           "gold_grapheme_count": 569,
           "GCER": 0.107206,
-          "WER": 0.534884,
+          "WER": 0.528736,
           "TextEdit": 0.107206,
           "total_graphemes_pred": 569,
           "total_grapheme_edits": 61,
@@ -5800,7 +6031,7 @@
           "f1": 1.0
         },
         "English-Latin": {
-          "gold_word_count": 271,
+          "gold_word_count": 294,
           "gold_grapheme_count": 1189,
           "GCER": 0.0,
           "WER": 0.0,
@@ -5813,10 +6044,10 @@
           "f1": 1.0
         },
         "Ritharngu-Latin": {
-          "gold_word_count": 68,
+          "gold_word_count": 69,
           "gold_grapheme_count": 464,
           "GCER": 0.090517,
-          "WER": 0.470588,
+          "WER": 0.463768,
           "TextEdit": 0.090129,
           "total_graphemes_pred": 466,
           "total_grapheme_edits": 42,
@@ -5880,27 +6111,27 @@
       "blended_graphemes_gold": 1369,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 294,
+          "gold_word_count": 297,
           "gold_grapheme_count": 1036,
           "GCER": 0.061776,
-          "WER": 0.037415,
+          "WER": 0.006734,
           "TextEdit": 0.058235,
           "total_graphemes_pred": 1099,
           "total_grapheme_edits": 64,
-          "total_word_edits": 11,
+          "total_word_edits": 2,
           "precision": 0.9418,
           "recall": 0.999,
           "f1": 0.9696
         },
         "Sanskrit-Devanagari": {
-          "gold_word_count": 58,
+          "gold_word_count": 95,
           "gold_grapheme_count": 296,
           "GCER": 0.219595,
-          "WER": 0.603448,
+          "WER": 0.431579,
           "TextEdit": 0.214521,
           "total_graphemes_pred": 303,
           "total_grapheme_edits": 65,
-          "total_word_edits": 35,
+          "total_word_edits": 41,
           "precision": 0.7987,
           "recall": 0.8176,
           "f1": 0.808
@@ -5973,27 +6204,27 @@
       "blended_graphemes_gold": 1296,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 255,
+          "gold_word_count": 260,
           "gold_grapheme_count": 896,
           "GCER": 0.0,
-          "WER": 0.0,
+          "WER": 0.003846,
           "TextEdit": 0.0,
           "total_graphemes_pred": 896,
           "total_grapheme_edits": 0,
-          "total_word_edits": 0,
+          "total_word_edits": 1,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Sanskrit-Devanagari": {
-          "gold_word_count": 73,
+          "gold_word_count": 119,
           "gold_grapheme_count": 378,
           "GCER": 0.23545,
-          "WER": 0.520548,
+          "WER": 0.436975,
           "TextEdit": 0.23545,
           "total_graphemes_pred": 369,
           "total_grapheme_edits": 89,
-          "total_word_edits": 38,
+          "total_word_edits": 52,
           "precision": 0.8022,
           "recall": 0.7831,
           "f1": 0.7925
@@ -6066,27 +6297,27 @@
       "blended_graphemes_gold": 1196,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 237,
+          "gold_word_count": 238,
           "gold_grapheme_count": 836,
           "GCER": 0.077751,
-          "WER": 0.054852,
+          "WER": 0.012605,
           "TextEdit": 0.072142,
           "total_graphemes_pred": 901,
           "total_grapheme_edits": 65,
-          "total_word_edits": 13,
+          "total_word_edits": 3,
           "precision": 0.9279,
           "recall": 1.0,
           "f1": 0.9626
         },
         "Sanskrit-Devanagari": {
-          "gold_word_count": 56,
+          "gold_word_count": 106,
           "gold_grapheme_count": 360,
           "GCER": 0.325,
-          "WER": 0.910714,
+          "WER": 0.669811,
           "TextEdit": 0.325,
           "total_graphemes_pred": 327,
           "total_grapheme_edits": 117,
-          "total_word_edits": 51,
+          "total_word_edits": 71,
           "precision": 0.7431,
           "recall": 0.675,
           "f1": 0.7074
@@ -6146,7 +6377,7 @@
       "blended_graphemes_gold": 2450,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 396,
+          "gold_word_count": 454,
           "gold_grapheme_count": 2225,
           "GCER": 0.0,
           "WER": 0.0,
@@ -6159,10 +6390,10 @@
           "f1": 1.0
         },
         "Shilluk-Latin": {
-          "gold_word_count": 39,
+          "gold_word_count": 42,
           "gold_grapheme_count": 225,
           "GCER": 0.062222,
-          "WER": 0.307692,
+          "WER": 0.285714,
           "TextEdit": 0.062222,
           "total_graphemes_pred": 225,
           "total_grapheme_edits": 14,
@@ -6226,7 +6457,7 @@
       "blended_graphemes_gold": 1989,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 293,
+          "gold_word_count": 341,
           "gold_grapheme_count": 1707,
           "GCER": 0.0,
           "WER": 0.0,
@@ -6239,7 +6470,7 @@
           "f1": 1.0
         },
         "Shilluk-Latin": {
-          "gold_word_count": 55,
+          "gold_word_count": 59,
           "gold_grapheme_count": 282,
           "GCER": 0.0,
           "WER": 0.0,
@@ -6306,23 +6537,23 @@
       "blended_graphemes_gold": 2353,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 350,
+          "gold_word_count": 413,
           "gold_grapheme_count": 2025,
           "GCER": 0.0,
-          "WER": 0.005714,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 2025,
           "total_grapheme_edits": 0,
-          "total_word_edits": 2,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Shilluk-Latin": {
-          "gold_word_count": 51,
+          "gold_word_count": 56,
           "gold_grapheme_count": 328,
           "GCER": 0.021341,
-          "WER": 0.137255,
+          "WER": 0.125,
           "TextEdit": 0.021341,
           "total_graphemes_pred": 328,
           "total_grapheme_edits": 7,
@@ -6386,14 +6617,14 @@
       "blended_graphemes_gold": 1073,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 191,
+          "gold_word_count": 214,
           "gold_grapheme_count": 797,
           "GCER": 0.002509,
-          "WER": 0.0,
+          "WER": 0.009346,
           "TextEdit": 0.002503,
           "total_graphemes_pred": 799,
           "total_grapheme_edits": 2,
-          "total_word_edits": 0,
+          "total_word_edits": 2,
           "precision": 0.9975,
           "recall": 1.0,
           "f1": 0.9987
@@ -6412,14 +6643,14 @@
           "f1": 0.88
         },
         "Syriac-Syriac": {
-          "gold_word_count": 40,
+          "gold_word_count": 53,
           "gold_grapheme_count": 206,
           "GCER": 0.781553,
-          "WER": 0.975,
+          "WER": 0.981132,
           "TextEdit": 0.781553,
           "total_graphemes_pred": 201,
           "total_grapheme_edits": 161,
-          "total_word_edits": 39,
+          "total_word_edits": 52,
           "precision": 0.3284,
           "recall": 0.3204,
           "f1": 0.3243
@@ -6492,14 +6723,14 @@
       "blended_graphemes_gold": 1104,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 187,
+          "gold_word_count": 199,
           "gold_grapheme_count": 741,
           "GCER": 0.014845,
-          "WER": 0.005348,
+          "WER": 0.030151,
           "TextEdit": 0.014628,
           "total_graphemes_pred": 752,
           "total_grapheme_edits": 11,
-          "total_word_edits": 1,
+          "total_word_edits": 6,
           "precision": 0.9854,
           "recall": 1.0,
           "f1": 0.9926
@@ -6521,24 +6752,24 @@
           "gold_word_count": 6,
           "gold_grapheme_count": 31,
           "GCER": 0.354839,
-          "WER": 0.666667,
+          "WER": 0.5,
           "TextEdit": 0.354839,
           "total_graphemes_pred": 29,
           "total_grapheme_edits": 11,
-          "total_word_edits": 4,
+          "total_word_edits": 3,
           "precision": 0.7241,
           "recall": 0.6774,
           "f1": 0.7
         },
         "Syriac-Syriac": {
-          "gold_word_count": 63,
+          "gold_word_count": 68,
           "gold_grapheme_count": 318,
           "GCER": 0.694969,
-          "WER": 0.984127,
+          "WER": 0.985294,
           "TextEdit": 0.694969,
           "total_graphemes_pred": 258,
           "total_grapheme_edits": 221,
-          "total_word_edits": 62,
+          "total_word_edits": 67,
           "precision": 0.4031,
           "recall": 0.327,
           "f1": 0.3611
@@ -6598,14 +6829,14 @@
       "blended_graphemes_gold": 1212,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 193,
+          "gold_word_count": 205,
           "gold_grapheme_count": 806,
           "GCER": 0.002481,
-          "WER": 0.015544,
+          "WER": 0.009756,
           "TextEdit": 0.002475,
           "total_graphemes_pred": 808,
           "total_grapheme_edits": 2,
-          "total_word_edits": 3,
+          "total_word_edits": 2,
           "precision": 0.9975,
           "recall": 1.0,
           "f1": 0.9988
@@ -6614,11 +6845,11 @@
           "gold_word_count": 3,
           "gold_grapheme_count": 25,
           "GCER": 0.0,
-          "WER": 0.333333,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 25,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -6650,14 +6881,14 @@
           "f1": 0.931
         },
         "Syriac-Syriac": {
-          "gold_word_count": 55,
+          "gold_word_count": 66,
           "gold_grapheme_count": 344,
           "GCER": 0.514535,
-          "WER": 0.963636,
+          "WER": 0.984848,
           "TextEdit": 0.514535,
           "total_graphemes_pred": 311,
           "total_grapheme_edits": 177,
-          "total_word_edits": 53,
+          "total_word_edits": 65,
           "precision": 0.5498,
           "recall": 0.4971,
           "f1": 0.5221
@@ -6717,14 +6948,14 @@
       "blended_graphemes_gold": 1439,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 219,
+          "gold_word_count": 221,
           "gold_grapheme_count": 1237,
           "GCER": 0.037187,
-          "WER": 0.077626,
+          "WER": 0.031674,
           "TextEdit": 0.037187,
           "total_graphemes_pred": 1191,
           "total_grapheme_edits": 46,
-          "total_word_edits": 17,
+          "total_word_edits": 7,
           "precision": 1.0,
           "recall": 0.9628,
           "f1": 0.9811
@@ -6733,11 +6964,11 @@
           "gold_word_count": 45,
           "gold_grapheme_count": 202,
           "GCER": 0.029703,
-          "WER": 0.266667,
+          "WER": 0.133333,
           "TextEdit": 0.029703,
           "total_graphemes_pred": 201,
           "total_grapheme_edits": 6,
-          "total_word_edits": 12,
+          "total_word_edits": 6,
           "precision": 0.9751,
           "recall": 0.9703,
           "f1": 0.9727
@@ -6797,14 +7028,14 @@
       "blended_graphemes_gold": 1318,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 290,
+          "gold_word_count": 294,
           "gold_grapheme_count": 1113,
           "GCER": 0.0,
-          "WER": 0.175862,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1113,
           "total_grapheme_edits": 0,
-          "total_word_edits": 51,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -6813,11 +7044,11 @@
           "gold_word_count": 50,
           "gold_grapheme_count": 205,
           "GCER": 0.434146,
-          "WER": 0.96,
+          "WER": 0.92,
           "TextEdit": 0.434146,
           "total_graphemes_pred": 204,
           "total_grapheme_edits": 89,
-          "total_word_edits": 48,
+          "total_word_edits": 46,
           "precision": 0.5735,
           "recall": 0.5707,
           "f1": 0.5721
@@ -6877,14 +7108,14 @@
       "blended_graphemes_gold": 1197,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 277,
+          "gold_word_count": 280,
           "gold_grapheme_count": 1030,
           "GCER": 0.0,
-          "WER": 0.01083,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 1030,
           "total_grapheme_edits": 0,
-          "total_word_edits": 3,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -6893,11 +7124,11 @@
           "gold_word_count": 44,
           "gold_grapheme_count": 167,
           "GCER": 0.179641,
-          "WER": 0.454545,
+          "WER": 0.431818,
           "TextEdit": 0.179641,
           "total_graphemes_pred": 164,
           "total_grapheme_edits": 30,
-          "total_word_edits": 20,
+          "total_word_edits": 19,
           "precision": 0.8354,
           "recall": 0.8204,
           "f1": 0.8278
@@ -6960,24 +7191,24 @@
           "gold_word_count": 11,
           "gold_grapheme_count": 79,
           "GCER": 0.0,
-          "WER": 0.090909,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 79,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Russian-Cyrillic": {
-          "gold_word_count": 159,
+          "gold_word_count": 174,
           "gold_grapheme_count": 898,
           "GCER": 0.021158,
-          "WER": 0.037736,
+          "WER": 0.04023,
           "TextEdit": 0.021158,
           "total_graphemes_pred": 885,
           "total_grapheme_edits": 19,
-          "total_word_edits": 6,
+          "total_word_edits": 7,
           "precision": 0.9932,
           "recall": 0.9788,
           "f1": 0.986
@@ -7063,7 +7294,7 @@
       "blended_graphemes_gold": 1564,
       "per_language": {
         "Latin-Latin": {
-          "gold_word_count": 1,
+          "gold_word_count": 2,
           "gold_grapheme_count": 12,
           "GCER": 0.0,
           "WER": 0.0,
@@ -7076,7 +7307,7 @@
           "f1": 1.0
         },
         "Russian-Cyrillic": {
-          "gold_word_count": 183,
+          "gold_word_count": 189,
           "gold_grapheme_count": 1009,
           "GCER": 0.0,
           "WER": 0.0,
@@ -7164,28 +7395,41 @@
       "max_length": 65
     },
     "per_language_script": {
-      "blended_gcer": 0.139114,
+      "blended_gcer": 0.138854,
       "blended_grapheme_edits": 223,
-      "blended_graphemes_gold": 1603,
+      "blended_graphemes_gold": 1606,
       "per_language": {
         "Latin-Latin": {
           "gold_word_count": 2,
           "gold_grapheme_count": 15,
           "GCER": 0.0,
-          "WER": 0.5,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 15,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "Meta": {
+          "gold_word_count": 1,
+          "gold_grapheme_count": 3,
+          "GCER": 0.0,
+          "WER": 0.0,
+          "TextEdit": 0.0,
+          "total_graphemes_pred": 3,
+          "total_grapheme_edits": 0,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "Russian-Cyrillic": {
-          "gold_word_count": 166,
+          "gold_word_count": 170,
           "gold_grapheme_count": 949,
           "GCER": 0.093783,
-          "WER": 0.53012,
+          "WER": 0.517647,
           "TextEdit": 0.093684,
           "total_graphemes_pred": 950,
           "total_grapheme_edits": 89,
@@ -7211,11 +7455,11 @@
           "gold_word_count": 45,
           "gold_grapheme_count": 265,
           "GCER": 0.0,
-          "WER": 0.022222,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 265,
           "total_grapheme_edits": 0,
-          "total_word_edits": 1,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -7275,7 +7519,7 @@
       "blended_graphemes_gold": 1161,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 191,
+          "gold_word_count": 205,
           "gold_grapheme_count": 853,
           "GCER": 0.0,
           "WER": 0.0,
@@ -7288,7 +7532,7 @@
           "f1": 1.0
         },
         "French-Latin": {
-          "gold_word_count": 1,
+          "gold_word_count": 2,
           "gold_grapheme_count": 10,
           "GCER": 0.0,
           "WER": 0.0,
@@ -7368,14 +7612,14 @@
       "blended_graphemes_gold": 1342,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 234,
+          "gold_word_count": 261,
           "gold_grapheme_count": 985,
           "GCER": 0.0,
-          "WER": 0.008547,
+          "WER": 0.0,
           "TextEdit": 0.0,
           "total_graphemes_pred": 985,
           "total_grapheme_edits": 0,
-          "total_word_edits": 2,
+          "total_word_edits": 0,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
@@ -7384,11 +7628,11 @@
           "gold_word_count": 91,
           "gold_grapheme_count": 357,
           "GCER": 0.098039,
-          "WER": 0.32967,
+          "WER": 0.318681,
           "TextEdit": 0.098039,
           "total_graphemes_pred": 357,
           "total_grapheme_edits": 35,
-          "total_word_edits": 30,
+          "total_word_edits": 29,
           "precision": 0.902,
           "recall": 0.902,
           "f1": 0.902
@@ -7448,7 +7692,7 @@
       "blended_graphemes_gold": 1370,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 220,
+          "gold_word_count": 245,
           "gold_grapheme_count": 1026,
           "GCER": 0.0,
           "WER": 0.0,
@@ -7541,14 +7785,14 @@
       "blended_graphemes_gold": 2255,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 470,
+          "gold_word_count": 481,
           "gold_grapheme_count": 1527,
           "GCER": 0.023576,
-          "WER": 0.023404,
+          "WER": 0.035343,
           "TextEdit": 0.023166,
           "total_graphemes_pred": 1554,
           "total_grapheme_edits": 36,
-          "total_word_edits": 11,
+          "total_word_edits": 17,
           "precision": 0.9788,
           "recall": 0.9961,
           "f1": 0.9873
@@ -7580,27 +7824,27 @@
           "f1": 1.0
         },
         "Vernacular Syriac-Latin": {
-          "gold_word_count": 44,
+          "gold_word_count": 45,
           "gold_grapheme_count": 287,
           "GCER": 0.10453,
-          "WER": 0.522727,
+          "WER": 0.444444,
           "TextEdit": 0.10453,
           "total_graphemes_pred": 280,
           "total_grapheme_edits": 30,
-          "total_word_edits": 23,
+          "total_word_edits": 20,
           "precision": 0.925,
           "recall": 0.9024,
           "f1": 0.9136
         },
         "Vernacular Syriac-Syriac": {
-          "gold_word_count": 108,
+          "gold_word_count": 110,
           "gold_grapheme_count": 429,
           "GCER": 0.738928,
-          "WER": 0.990741,
+          "WER": 0.981818,
           "TextEdit": 0.738928,
           "total_graphemes_pred": 375,
           "total_grapheme_edits": 317,
-          "total_word_edits": 107,
+          "total_word_edits": 108,
           "precision": 0.312,
           "recall": 0.2727,
           "f1": 0.291
@@ -7673,14 +7917,14 @@
           "f1": 0.9211
         },
         "English-Latin": {
-          "gold_word_count": 373,
+          "gold_word_count": 387,
           "gold_grapheme_count": 1204,
           "GCER": 0.038206,
-          "WER": 0.08311,
+          "WER": 0.085271,
           "TextEdit": 0.037338,
           "total_graphemes_pred": 1232,
           "total_grapheme_edits": 46,
-          "total_word_edits": 31,
+          "total_word_edits": 33,
           "precision": 0.9635,
           "recall": 0.9859,
           "f1": 0.9745
@@ -7725,27 +7969,27 @@
           "f1": 0.8
         },
         "Vernacular Syriac-Latin": {
-          "gold_word_count": 58,
+          "gold_word_count": 59,
           "gold_grapheme_count": 317,
           "GCER": 0.078864,
-          "WER": 0.413793,
+          "WER": 0.338983,
           "TextEdit": 0.078864,
           "total_graphemes_pred": 313,
           "total_grapheme_edits": 25,
-          "total_word_edits": 24,
+          "total_word_edits": 20,
           "precision": 0.9393,
           "recall": 0.9274,
           "f1": 0.9333
         },
         "Vernacular Syriac-Syriac": {
-          "gold_word_count": 101,
+          "gold_word_count": 102,
           "gold_grapheme_count": 421,
           "GCER": 0.755344,
           "WER": 1.0,
           "TextEdit": 0.755344,
           "total_graphemes_pred": 391,
           "total_grapheme_edits": 318,
-          "total_word_edits": 101,
+          "total_word_edits": 102,
           "precision": 0.2788,
           "recall": 0.2589,
           "f1": 0.2685
@@ -7818,14 +8062,14 @@
           "f1": 0.9667
         },
         "English-Latin": {
-          "gold_word_count": 348,
+          "gold_word_count": 357,
           "gold_grapheme_count": 1213,
           "GCER": 0.006595,
-          "WER": 0.025862,
+          "WER": 0.022409,
           "TextEdit": 0.006579,
           "total_graphemes_pred": 1216,
           "total_grapheme_edits": 8,
-          "total_word_edits": 9,
+          "total_word_edits": 8,
           "precision": 0.9942,
           "recall": 0.9967,
           "f1": 0.9955
@@ -7886,11 +8130,11 @@
           "gold_word_count": 55,
           "gold_grapheme_count": 309,
           "GCER": 0.100324,
-          "WER": 0.381818,
+          "WER": 0.363636,
           "TextEdit": 0.100324,
           "total_graphemes_pred": 306,
           "total_grapheme_edits": 31,
-          "total_word_edits": 21,
+          "total_word_edits": 20,
           "precision": 0.9183,
           "recall": 0.9094,
           "f1": 0.9138
@@ -7914,12 +8158,12 @@
   {
     "page_id": "Yiddish-English/page_1",
     "character_quality": {
-      "TextEdit": 0.120852,
-      "GCER": 0.143426,
+      "TextEdit": 0.120372,
+      "GCER": 0.142287,
       "WER": 0.238839,
-      "total_graphemes_gold": 2259,
+      "total_graphemes_gold": 2256,
       "total_graphemes_pred": 2193,
-      "total_grapheme_edits": 324,
+      "total_grapheme_edits": 321,
       "total_words_gold": 448,
       "total_word_edits": 107,
       "matched_spans": 84,
@@ -7958,35 +8202,195 @@
       "max_length": 85
     },
     "per_language_script": {
-      "blended_gcer": 0.151271,
-      "blended_grapheme_edits": 244,
-      "blended_graphemes_gold": 1613,
+      "blended_gcer": 0.150124,
+      "blended_grapheme_edits": 242,
+      "blended_graphemes_gold": 1612,
       "per_language": {
         "English-Latin": {
-          "gold_word_count": 315,
+          "gold_word_count": 320,
           "gold_grapheme_count": 1152,
           "GCER": 0.03559,
-          "WER": 0.053968,
+          "WER": 0.059375,
           "TextEdit": 0.03559,
           "total_graphemes_pred": 1143,
           "total_grapheme_edits": 41,
-          "total_word_edits": 17,
+          "total_word_edits": 19,
           "precision": 0.9773,
           "recall": 0.9696,
           "f1": 0.9734
         },
         "Yiddish-Hebrew": {
-          "gold_word_count": 85,
-          "gold_grapheme_count": 461,
-          "GCER": 0.440347,
-          "WER": 0.952941,
-          "TextEdit": 0.440347,
-          "total_graphemes_pred": 437,
-          "total_grapheme_edits": 203,
-          "total_word_edits": 81,
-          "precision": 0.6476,
-          "recall": 0.6139,
-          "f1": 0.6303
+          "gold_word_count": 87,
+          "gold_grapheme_count": 460,
+          "GCER": 0.436957,
+          "WER": 0.942529,
+          "TextEdit": 0.436957,
+          "total_graphemes_pred": 438,
+          "total_grapheme_edits": 201,
+          "total_word_edits": 82,
+          "precision": 0.6416,
+          "recall": 0.6109,
+          "f1": 0.6258
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Yiddish-English/page_2",
+    "character_quality": {
+      "TextEdit": 0.110365,
+      "GCER": 0.125135,
+      "WER": 0.242661,
+      "total_graphemes_gold": 2781,
+      "total_graphemes_pred": 2724,
+      "total_grapheme_edits": 348,
+      "total_words_gold": 511,
+      "total_word_edits": 124,
+      "matched_spans": 101,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 111
+      },
+      "italic": {
+        "precision": 0.9286,
+        "recall": 0.8,
+        "f1": 0.8595,
+        "tp": 52,
+        "fp": 4,
+        "fn": 13
+      },
+      "typography": {
+        "precision": 0.9286,
+        "recall": 0.2955,
+        "f1": 0.4483,
+        "tp": 52,
+        "fp": 4,
+        "fn": 124
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.141667,
+      "edit_distance": 17,
+      "max_length": 120
+    },
+    "per_language_script": {
+      "blended_gcer": 0.143541,
+      "blended_grapheme_edits": 300,
+      "blended_graphemes_gold": 2090,
+      "per_language": {
+        "English-Latin": {
+          "gold_word_count": 402,
+          "gold_grapheme_count": 1419,
+          "GCER": 0.016913,
+          "WER": 0.034826,
+          "TextEdit": 0.016901,
+          "total_graphemes_pred": 1420,
+          "total_grapheme_edits": 24,
+          "total_word_edits": 14,
+          "precision": 0.9873,
+          "recall": 0.988,
+          "f1": 0.9877
+        },
+        "Yiddish-Hebrew": {
+          "gold_word_count": 111,
+          "gold_grapheme_count": 671,
+          "GCER": 0.411326,
+          "WER": 0.873874,
+          "TextEdit": 0.411326,
+          "total_graphemes_pred": 626,
+          "total_grapheme_edits": 276,
+          "total_word_edits": 97,
+          "precision": 0.6645,
+          "recall": 0.62,
+          "f1": 0.6415
+        }
+      }
+    }
+  },
+  {
+    "page_id": "Yiddish-English/page_41",
+    "character_quality": {
+      "TextEdit": 0.07549,
+      "GCER": 0.08209,
+      "WER": 0.214118,
+      "total_graphemes_gold": 2680,
+      "total_graphemes_pred": 2609,
+      "total_grapheme_edits": 220,
+      "total_words_gold": 425,
+      "total_word_edits": 91,
+      "matched_spans": 101,
+      "missing_spans": 0,
+      "extra_spans": 1
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 73
+      },
+      "italic": {
+        "precision": 0.9028,
+        "recall": 0.9559,
+        "f1": 0.9286,
+        "tp": 65,
+        "fp": 7,
+        "fn": 3
+      },
+      "typography": {
+        "precision": 0.9028,
+        "recall": 0.461,
+        "f1": 0.6103,
+        "tp": 65,
+        "fp": 7,
+        "fn": 76
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 103
+    },
+    "per_language_script": {
+      "blended_gcer": 0.078997,
+      "blended_grapheme_edits": 167,
+      "blended_graphemes_gold": 2114,
+      "per_language": {
+        "English-Latin": {
+          "gold_word_count": 340,
+          "gold_grapheme_count": 1223,
+          "GCER": 0.012265,
+          "WER": 0.026471,
+          "TextEdit": 0.012265,
+          "total_graphemes_pred": 1220,
+          "total_grapheme_edits": 15,
+          "total_word_edits": 9,
+          "precision": 0.9918,
+          "recall": 0.9894,
+          "f1": 0.9906
+        },
+        "Yiddish-Hebrew": {
+          "gold_word_count": 87,
+          "gold_grapheme_count": 891,
+          "GCER": 0.170595,
+          "WER": 0.793103,
+          "TextEdit": 0.170595,
+          "total_graphemes_pred": 829,
+          "total_grapheme_edits": 152,
+          "total_word_edits": 69,
+          "precision": 0.9083,
+          "recall": 0.8451,
+          "f1": 0.8756
         }
       }
     }
@@ -7994,29 +8398,29 @@
   {
     "page_id": "__aggregate__",
     "character_quality": {
-      "TextEdit": 0.052545,
-      "GCER": 0.057224,
-      "WER": 0.14556
+      "TextEdit": 0.055107,
+      "GCER": 0.054098,
+      "WER": 0.146649
     },
     "markup_quality": {
       "bold": {
         "precision": 0.8883,
-        "recall": 0.2979,
-        "f1": 0.4462
+        "recall": 0.2834,
+        "f1": 0.4297
       },
       "italic": {
-        "precision": 0.9367,
-        "recall": 0.6974,
-        "f1": 0.7996
+        "precision": 0.9359,
+        "recall": 0.7002,
+        "f1": 0.8011
       },
       "typography": {
-        "precision": 0.9202,
-        "recall": 0.4841,
-        "f1": 0.6345
+        "precision": 0.9201,
+        "recall": 0.4757,
+        "f1": 0.6271
       }
     },
     "read_order": {
-      "ReadOrderEdit": 0.023841
+      "ReadOrderEdit": 0.024858
     }
   }
 ]

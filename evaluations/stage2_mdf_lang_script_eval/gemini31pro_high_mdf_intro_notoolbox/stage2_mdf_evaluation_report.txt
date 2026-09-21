@@ -5,7 +5,7 @@ record_threshold=0.6  line_threshold=0.7
 
 --- Chukchi-Russian/page_3 ---
   Records: matched=28 missing=0 extra=0 (pred=28)
-  Record Accuracy: 1.0000
+  Entry F1:        1.0000
   MDF Fields F1:   1.0000
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0000
@@ -13,12 +13,12 @@ record_threshold=0.6  line_threshold=0.7
   Gloss GCER:     0.0000
   source GCER:       0.0000
   target GCER:       0.0000
-  lang-script Chukchi-Cyrillic Extended GCER: 0.0000
-  lang-script Russian-Cyrillic GCER: 0.0000
+  lang-script Chukchi GCER: 0.0000
+  lang-script Russian GCER: 0.0000
 
 --- Circassian-English-Turkish/page_1 ---
   Records: matched=20 missing=0 extra=0 (pred=20)
-  Record Accuracy: 1.0000
+  Entry F1:        1.0000
   MDF Fields F1:   0.9174
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0072
@@ -33,33 +33,33 @@ record_threshold=0.6  line_threshold=0.7
 
 --- Efik-English/page_13 ---
   Records: matched=22 missing=0 extra=0 (pred=22)
-  Record Accuracy: 1.0000
-  MDF Fields F1:   0.8919
+  Entry F1:        1.0000
+  MDF Fields F1:   0.8776
   ReadOrderEdit:   0.0000
-  Field Value GCER:0.0220
+  Field Value GCER:0.0215
   Headword GCER:   0.0000
-  Gloss GCER:     0.0065
+  Gloss GCER:     0.0057
   source GCER:       0.0000
-  target GCER:       0.0065
-  lang-script Efik-Latin GCER: 0.0610
-  lang-script English-Latin GCER: 0.0106
+  target GCER:       0.0057
+  lang-script Efik GCER: 0.0610
+  lang-script English GCER: 0.0053
 
 --- Evenki-Russian/page_1 ---
   Records: matched=26 missing=2 extra=2 (pred=28)
-  Record Accuracy: 0.9286
-  MDF Fields F1:   0.6518
+  Entry F1:        0.9286
+  MDF Fields F1:   0.5459
   ReadOrderEdit:   0.0714
   Field Value GCER:0.0729
   Headword GCER:   0.0000
-  Gloss GCER:     0.1398
+  Gloss GCER:     0.1406
   source GCER:       0.0000
-  target GCER:       0.1398
-  lang-script Evenki-Cyrillic GCER: 0.4877
-  lang-script Russian-Cyrillic GCER: 0.3342
+  target GCER:       0.1406
+  lang-script Evenki GCER: 0.4877
+  lang-script Russian GCER: 0.3342
 
 --- Greek-English/page_38 ---
   Records: matched=59 missing=0 extra=0 (pred=59)
-  Record Accuracy: 1.0000
+  Entry F1:        1.0000
   MDF Fields F1:   0.9208
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0003
@@ -67,12 +67,12 @@ record_threshold=0.6  line_threshold=0.7
   Gloss GCER:     0.0000
   source GCER:       0.0009
   target GCER:       0.0000
-  lang-script English-Latin GCER: 0.0006
-  lang-script Greek-Greek GCER: 0.0000
+  lang-script English GCER: 0.0006
+  lang-script Greek GCER: 0.0000
 
---- Iñupiatun Eskimo-English/page_42 ---
+--- Iñupiatun Eskimo-English/page_42 ---
   Records: matched=62 missing=0 extra=0 (pred=62)
-  Record Accuracy: 1.0000
+  Entry F1:        1.0000
   MDF Fields F1:   1.0000
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0000
@@ -85,8 +85,8 @@ record_threshold=0.6  line_threshold=0.7
 
 --- Kashmiri-English/page_14 ---
   Records: matched=41 missing=0 extra=0 (pred=41)
-  Record Accuracy: 1.0000
-  MDF Fields F1:   0.8772
+  Entry F1:        1.0000
+  MDF Fields F1:   0.8655
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0017
   Headword GCER:   0.0000
@@ -99,7 +99,7 @@ record_threshold=0.6  line_threshold=0.7
 
 --- Na-English-Chinese-French/page_19 ---
   Records: matched=7 missing=0 extra=0 (pred=7)
-  Record Accuracy: 1.0000
+  Entry F1:        1.0000
   MDF Fields F1:   0.6414
   ReadOrderEdit:   0.0000
   Field Value GCER:0.0710
@@ -110,41 +110,43 @@ record_threshold=0.6  line_threshold=0.7
   lang-script Chinese-Han GCER: 0.0705
   lang-script English-Latin GCER: 0.1107
   lang-script French-Latin GCER: 0.0390
+  lang-script Na GCER: 0.0000
   lang-script Na-IPA GCER: 0.0000
   lang-script Na-Latin GCER: 0.0000
 
 --- Nahuatl-French/page_74 ---
   Records: matched=30 missing=1 extra=0 (pred=30)
-  Record Accuracy: 0.9677
-  MDF Fields F1:   0.6802
+  Entry F1:        0.9836
+  MDF Fields F1:   0.6743
   ReadOrderEdit:   0.0323
-  Field Value GCER:0.0535
+  Field Value GCER:0.0366
   Headword GCER:   0.0000
-  Gloss GCER:     0.0726
+  Gloss GCER:     0.0304
   source GCER:       0.0274
-  target GCER:       0.0726
-  lang-script French-Latin GCER: 0.1015
-  lang-script Nahuatl-Latin GCER: 0.0377
+  target GCER:       0.0304
+  lang-script French-Latin GCER: 0.0810
+  lang-script Nahuatl-Latin GCER: 0.0366
 
 --- Tiri-English/page_15 ---
   Records: matched=36 missing=0 extra=3 (pred=39)
-  Record Accuracy: 1.0000
-  MDF Fields F1:   0.9029
-  ReadOrderEdit:   0.0000
-  Field Value GCER:0.0255
+  Entry F1:        0.9600
+  MDF Fields F1:   0.8981
+  ReadOrderEdit:   0.0769
+  Field Value GCER:0.0047
   Headword GCER:   0.0000
-  Gloss GCER:     0.0289
+  Gloss GCER:     0.0021
   source GCER:       0.0000
-  target GCER:       0.0289
-  lang-script English-Latin GCER: 0.0360
+  target GCER:       0.0021
+  lang-script English-Latin GCER: 0.0212
+  lang-script French-Latin GCER: 0.0000
   lang-script Tiri-Latin GCER: 0.0742
 
 ========================================================================
 AGGREGATE (10 pages)
 ========================================================================
-  Record Accuracy: 0.9910
-  MDF Fields F1:   0.8552
-  ReadOrderEdit:   0.0104
-  Field Value GCER:0.0287
+  Entry F1:        0.9881
+  MDF Fields F1:   0.8346
+  ReadOrderEdit:   0.0181
+  Field Value GCER:0.0243
   Headword GCER:   0.0004
-  Gloss GCER:     0.0291
+  Gloss GCER:     0.0217

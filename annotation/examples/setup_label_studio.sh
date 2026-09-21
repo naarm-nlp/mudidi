@@ -10,7 +10,8 @@ OUTPUT_ROOT="annotation/outputs"
 
 # Keep in sync with run_labeler.sh SKIP_DICTIONARIES.
 DICTIONARIES=(
-    "Thai-Russian"
+    "Georgian-Russian"
+    "Yiddish-English"
 )
 
 if [ "${#DICTIONARIES[@]}" -eq 0 ]; then

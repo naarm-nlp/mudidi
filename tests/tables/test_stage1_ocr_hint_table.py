@@ -34,6 +34,9 @@ def test_generator_uses_fixed_gemini_pro_alphabet_protocol(tmp_path: Path) -> No
     assert "GPT-5.5" not in per_dictionary
     assert "Gemini 3.1 Pro + alphabet" in summary
     assert "Best LLM + alphabet per language" not in summary
-    assert r"\textbf{0.053} & \textbf{0.058} & 0.148 & \textbf{0.642} & \textbf{0.039}" in summary
-    assert r"0.066 & 0.067 & \textbf{0.141} & 0.638 & 0.040" in summary
-    assert r"$+0.013$ & $+0.009$ & $-0.007$ & $-0.005$ & $+0.001$" in summary
+    assert r"0.043 & 0.045 & 0.122 & \textbf{0.800} & 0.039" in summary
+    assert (
+        r"\textbf{0.041} & \textbf{0.043} & \textbf{0.112} & 0.784 & \textbf{0.036}"
+        in summary
+    )
+    assert r"$-0.002$ & $-0.002$ & $-0.010$ & $-0.016$ & $-0.004$" in summary

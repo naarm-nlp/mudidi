@@ -24,9 +24,9 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 _AGGREGATE_PAGE_ID = "__aggregate__"
-_NON_METRIC_COLS = frozenset({"experiment", "page_id"})
+_NON_METRIC_COLS = frozenset({"experiment", "page_id", "language", "page"})
 _PREFERRED_METRIC_ORDER = (
-    "Record_Accuracy",
+    "Entry_F1",
     "MDF_Fields_F1",
     "ReadOrderEdit",
     "Field_Value_GCER",
@@ -46,6 +46,18 @@ def _safe_float(value: str | None) -> float | None:
         return float(stripped)
     except ValueError:
         return None
+
+
+def _row_page_id(row: dict[str, str]) -> str:
+    """Return a page identifier from current or legacy summary schemas."""
+    page_id = row.get("page_id", "").strip()
+    if page_id:
+        return page_id
+    language = row.get("language", "").strip()
+    page = row.get("page", "").strip()
+    if _AGGREGATE_PAGE_ID in (language, page):
+        return _AGGREGATE_PAGE_ID
+    return f"{language}/{page}" if language and page else ""
 
 
 def _metric_columns(rows: list[dict[str, str]]) -> list[str]:
@@ -79,7 +91,7 @@ def _write_baseline_comparison_csv(
         for row in csv.DictReader(handle):
             if row.get("experiment") != baseline_experiment:
                 continue
-            page_id = row.get("page_id", "")
+            page_id = _row_page_id(row)
             if page_id == _AGGREGATE_PAGE_ID:
                 continue
             baseline_rows[page_id] = row
@@ -89,7 +101,7 @@ def _write_baseline_comparison_csv(
         new_rows.extend(csv.DictReader(handle))
 
     page_rows = [
-        row for row in new_rows if row.get("page_id") not in ("", _AGGREGATE_PAGE_ID)
+        row for row in new_rows if _row_page_id(row) not in ("", _AGGREGATE_PAGE_ID)
     ]
     metrics = _metric_columns(page_rows)
 
@@ -109,9 +121,10 @@ def _write_baseline_comparison_csv(
         writer.writeheader()
 
         for row in page_rows:
-            baseline = baseline_rows.get(row.get("page_id", ""))
+            page_id = _row_page_id(row)
+            baseline = baseline_rows.get(page_id)
             out: dict[str, str] = {
-                "page_id": row.get("page_id", ""),
+                "page_id": page_id,
                 "baseline_experiment": baseline_experiment,
                 "experiment": row.get("experiment", ""),
             }
@@ -246,8 +259,12 @@ def main(
         page_id = pred.parent.name
         results = [evaluator.evaluate(pred, gold, page_id=page_id)]
         out = Path(args.output_dir) if args.output_dir else pred.parent
-        text = evaluator.generate_text_report(results, out / "stage2_mdf_evaluation_report.txt")
-        evaluator.generate_json_report(results, out / "stage2_mdf_evaluation_report.json")
+        text = evaluator.generate_text_report(
+            results, out / "stage2_mdf_evaluation_report.txt"
+        )
+        evaluator.generate_json_report(
+            results, out / "stage2_mdf_evaluation_report.json"
+        )
         print(text)
         print(f"\nReports saved to: {out}")
         return 0
@@ -273,7 +290,9 @@ def main(
         default_out = pred_root / "stage2_mdf_eval"
     else:
         if not args.samples_dir:
-            parser.error("Provide -p/-g, --samples-dir, or --dataset-dir with --pred-root")
+            parser.error(
+                "Provide -p/-g, --samples-dir, or --dataset-dir with --pred-root"
+            )
         samples = Path(args.samples_dir)
         if not samples.is_dir():
             logger.error("Samples directory not found: %s", samples)
@@ -295,24 +314,34 @@ def main(
     results_by_exp: OrderedDict[str, list] = OrderedDict()
     for task in tasks:
         logger.info("  [eval] %s :: %s", task.experiment, task.page_id)
-        metrics = evaluator.evaluate(task.pred_path, task.gold_path, page_id=task.page_id)
+        metrics = evaluator.evaluate(
+            task.pred_path, task.gold_path, page_id=task.page_id
+        )
         results_by_exp.setdefault(task.experiment, []).append(metrics)
 
     for exp, pages in results_by_exp.items():
         exp_out = out / exp
-        text = evaluator.generate_text_report(pages, exp_out / "stage2_mdf_evaluation_report.txt")
-        evaluator.generate_json_report(pages, exp_out / "stage2_mdf_evaluation_report.json")
+        text = evaluator.generate_text_report(
+            pages, exp_out / "stage2_mdf_evaluation_report.txt"
+        )
+        evaluator.generate_json_report(
+            pages, exp_out / "stage2_mdf_evaluation_report.json"
+        )
         print(f"\n### Experiment: {exp} ({len(pages)} page(s)) ###")
         print(text)
 
     summary_csv = out / "stage2_mdf_eval_summary.csv"
     evaluator.generate_summary_csv(results_by_exp, summary_csv)
-    per_lang_script_detailed_csv = out / "stage2_mdf_eval_per_language_script_detailed.csv"
+    per_lang_script_detailed_csv = (
+        out / "stage2_mdf_eval_per_language_script_detailed.csv"
+    )
     evaluator.generate_per_language_script_detailed_csv(
         results_by_exp,
         per_lang_script_detailed_csv,
     )
-    per_lang_script_summary_csv = out / "stage2_mdf_eval_per_language_script_summary.csv"
+    per_lang_script_summary_csv = (
+        out / "stage2_mdf_eval_per_language_script_summary.csv"
+    )
     evaluator.generate_per_language_script_summary_csv(
         results_by_exp,
         per_lang_script_summary_csv,
@@ -324,7 +353,9 @@ def main(
 
     if args.baseline_summary or args.baseline_experiment:
         if not args.baseline_summary or not args.baseline_experiment:
-            parser.error("--baseline-summary and --baseline-experiment must be used together")
+            parser.error(
+                "--baseline-summary and --baseline-experiment must be used together"
+            )
         baseline_summary = Path(args.baseline_summary)
         if not baseline_summary.is_file():
             logger.error("Baseline summary not found: %s", baseline_summary)

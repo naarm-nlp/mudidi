@@ -1,0 +1,88 @@
+========================================================================
+STAGE 1 OCR EVALUATION REPORT
+========================================================================
+
+--- Chukchi-Russian/page_26 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0310
+    GCER: 0.0239  (2.39%)
+    WER:  0.1349  (13.49%)
+    Spans: 33 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 1.0000  (TP=41 FP=0 FN=0)
+    Bold   — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=29 FP=0 FN=0)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=12 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.098   0.517     0.098     194
+    Russian                0.004   0.023     0.004     507
+
+--- Chukchi-Russian/page_3 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0492
+    GCER: 0.0235  (2.35%)
+    WER:  0.1504  (15.04%)
+    Spans: 33 matched, 0 missing, 1 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9730  (TP=54 FP=1 FN=2)
+    Bold   — P: 0.9737  R: 0.9487  F1: 0.9610  (TP=37 FP=1 FN=2)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=17 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.073   0.410     0.072     275
+    Russian                0.000   0.000     0.000     453
+
+--- Chukchi-Russian/page_48 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.0112
+    GCER: 0.0148  (1.48%)
+    WER:  0.1079  (10.79%)
+    Spans: 34 matched, 0 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 1.0000  (TP=58 FP=0 FN=0)
+    Bold   — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=38 FP=0 FN=0)
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000  (TP=20 FP=0 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.000   0.000     0.000     281
+    Russian                0.026   0.144     0.026     570
+
+========================================================================
+AGGREGATE (3 pages)
+========================================================================
+
+  Character Recognition Quality:
+    TextEdit: 0.0305
+    GCER: 0.0204
+    WER:  0.1296
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.9903
+    Bold   — P: 0.9905  R: 0.9811  F1: 0.9858
+    Italic — P: 1.0000  R: 1.0000  F1: 1.0000
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality (aggregate):
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.052   0.287     0.052     750
+    Russian                0.011   0.063     0.011    1530

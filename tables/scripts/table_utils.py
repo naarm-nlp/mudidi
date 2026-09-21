@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import tempfile
 from collections.abc import Iterable, Sequence
@@ -73,6 +74,55 @@ def read_delimited(
         raise TableDataError(f"{path}: invalid UTF-8: {exc}") from exc
     except csv.Error as exc:
         raise TableDataError(f"{path}: invalid delimited data: {exc}") from exc
+
+
+def read_stage1_aggregate(path: Path) -> dict[str, float]:
+    """Read the terminal pooled aggregate from a Stage 1 JSON report."""
+    if not path.is_file():
+        raise TableDataError(f"Input file not found: {path}")
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError as exc:
+        raise TableDataError(f"{path}: invalid UTF-8: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise TableDataError(f"{path}: invalid JSON: {exc}") from exc
+    if not isinstance(report, list) or not report:
+        raise TableDataError(f"{path}: expected a non-empty JSON array")
+
+    aggregate_indexes = [
+        index
+        for index, row in enumerate(report)
+        if isinstance(row, dict) and row.get("page_id") == "__aggregate__"
+    ]
+    if aggregate_indexes != [len(report) - 1]:
+        raise TableDataError(
+            f"{path}: expected exactly one terminal __aggregate__ record"
+        )
+    aggregate = report[-1]
+    try:
+        raw_metrics = {
+            "TextEdit": aggregate["character_quality"]["TextEdit"],
+            "GCER": aggregate["character_quality"]["GCER"],
+            "WER": aggregate["character_quality"]["WER"],
+            "typography_f1": aggregate["markup_quality"]["typography"]["f1"],
+            "ReadOrderEdit": aggregate["read_order"]["ReadOrderEdit"],
+        }
+    except (KeyError, TypeError) as exc:
+        raise TableDataError(f"{path}: malformed __aggregate__ record: {exc}") from exc
+
+    metrics: dict[str, float] = {}
+    for field, value in raw_metrics.items():
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise TableDataError(
+                f"{path}: __aggregate__.{field} must be numeric, got {value!r}"
+            )
+        number = float(value)
+        if not (float("-inf") < number < float("inf")):
+            raise TableDataError(
+                f"{path}: __aggregate__.{field} must be finite, got {value!r}"
+            )
+        metrics[field] = number
+    return metrics
 
 
 def index_unique(

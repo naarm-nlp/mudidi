@@ -10,17 +10,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Nahuatl-French/stage-2/gpt55_high_mdf_intro_toolbox_goldcheat/page_74/page_74.mdf.txt",
       "n_pred_records": 30,
-      "Record_Accuracy": 0.967742,
-      "MDF_Fields_F1": 0.870056,
+      "Entry_F1": 0.983607,
+      "MDF_Fields_F1": 0.877778,
       "record_counts": {
         "tp": 30,
         "fp": 0,
         "fn": 1
       },
       "marker_counts": {
-        "tp": 154,
-        "fp": 30,
-        "fn": 16
+        "tp": 158,
+        "fp": 26,
+        "fn": 18
       },
       "read_order": {
         "ReadOrderEdit": 0.032258,
@@ -28,9 +28,9 @@
         "max_length": 31
       },
       "field_value_quality": {
-        "FieldValue_TextEdit": 0.065297,
-        "FieldValue_GCER": 0.075613,
-        "FieldValue_WER": 0.233831
+        "FieldValue_TextEdit": 0.058991,
+        "FieldValue_GCER": 0.05896,
+        "FieldValue_WER": 0.212272
       },
       "headword_quality": {
         "Headword_TextEdit": 0.0,
@@ -38,9 +38,9 @@
         "Headword_WER": 0.0
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.066228,
-        "Gloss_GCER": 0.09396,
-        "Gloss_WER": 0.220641
+        "Gloss_TextEdit": 0.066516,
+        "Gloss_GCER": 0.063563,
+        "Gloss_WER": 0.166259
       },
       "language_quality": {
         "source": {
@@ -49,21 +49,21 @@
           "source_WER": 0.232143
         },
         "target": {
-          "target_TextEdit": 0.066228,
-          "target_GCER": 0.09396,
-          "target_WER": 0.220641
+          "target_TextEdit": 0.066516,
+          "target_GCER": 0.063563,
+          "target_WER": 0.166259
         }
       },
       "language_script_quality": {
         "French-Latin": {
-          "LangScript_French-Latin_TextEdit": 0.208633,
-          "LangScript_French-Latin_GCER": 0.127583,
-          "LangScript_French-Latin_WER": 0.263158
+          "LangScript_French-Latin_TextEdit": 0.20059,
+          "LangScript_French-Latin_GCER": 0.107159,
+          "LangScript_French-Latin_WER": 0.246753
         },
         "Nahuatl-Latin": {
-          "LangScript_Nahuatl-Latin_TextEdit": 0.017735,
-          "LangScript_Nahuatl-Latin_GCER": 0.016143,
-          "LangScript_Nahuatl-Latin_WER": 0.106383
+          "LangScript_Nahuatl-Latin_TextEdit": 0.016591,
+          "LangScript_Nahuatl-Latin_GCER": 0.015192,
+          "LangScript_Nahuatl-Latin_WER": 0.094737
         }
       },
       "marker_confusion": {

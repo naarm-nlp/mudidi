@@ -1,0 +1,82 @@
+[
+  {
+    "page_id": "Chukchi-Russian/page_3",
+    "character_quality": {
+      "TextEdit": 0.022328,
+      "GCER": 0.0223,
+      "WER": 0.141593,
+      "total_graphemes_gold": 852,
+      "total_graphemes_pred": 852,
+      "total_grapheme_edits": 19,
+      "total_words_gold": 113,
+      "total_word_edits": 16,
+      "matched_spans": 33,
+      "missing_spans": 0,
+      "extra_spans": 0
+    },
+    "markup_quality": {
+      "bold": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 39,
+        "fp": 0,
+        "fn": 0
+      },
+      "italic": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 17,
+        "fp": 0,
+        "fn": 0
+      },
+      "typography": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 56,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "read_order": {
+      "ReadOrderEdit": 0.0,
+      "edit_distance": 0,
+      "max_length": 33
+    },
+    "per_language_script": {
+      "blended_gcer": 0.026099,
+      "blended_grapheme_edits": 19,
+      "blended_graphemes_gold": 728,
+      "per_language": {
+        "Chukchi": {
+          "gold_word_count": 39,
+          "gold_grapheme_count": 275,
+          "GCER": 0.069091,
+          "WER": 0.410256,
+          "TextEdit": 0.069091,
+          "total_graphemes_pred": 275,
+          "total_grapheme_edits": 19,
+          "total_word_edits": 16,
+          "precision": 0.9309,
+          "recall": 0.9309,
+          "f1": 0.9309
+        },
+        "Russian": {
+          "gold_word_count": 77,
+          "gold_grapheme_count": 453,
+          "GCER": 0.0,
+          "WER": 0.0,
+          "TextEdit": 0.0,
+          "total_graphemes_pred": 453,
+          "total_grapheme_edits": 0,
+          "total_word_edits": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      }
+    }
+  }
+]

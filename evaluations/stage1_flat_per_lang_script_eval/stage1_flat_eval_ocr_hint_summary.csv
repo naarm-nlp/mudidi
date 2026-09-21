@@ -1,17 +1,17 @@
 experiment,language,alphabet,ocr-hint,page_count,TextEdit,GCER,WER,typography_f1,ReadOrderEdit
-gemini31pro_flat_alpha_ocr,Assyrian-English,true,true,3,0.312911,0.277504,0.431132,0.6035,0.08632
+gemini31pro_flat_alpha_ocr,Assyrian-English,true,true,3,0.230059,0.155005,0.494834,0.6181,0.049283
 gemini31pro_flat_alpha_ocr,Bengalese-English,true,true,3,0.015508,0.011339,0.036288,0.8023,0.0
 gemini31pro_flat_alpha_ocr,Canala-English,true,true,3,0.006539,0.006728,0.029126,0.0,0.0
 gemini31pro_flat_alpha_ocr,Chepang-English,true,true,3,0.01948,0.020521,0.073365,0.9657,0.0
-gemini31pro_flat_alpha_ocr,Chukchi-Russian,true,true,3,0.018683,0.020044,0.124339,0.9806,0.0
+gemini31pro_flat_alpha_ocr,Chukchi-Russian,true,true,3,0.021677,0.023688,0.124339,0.9806,0.0
 gemini31pro_flat_alpha_ocr,Circassian-English-Turkish,true,true,3,0.465276,0.482597,0.702277,0.3614,0.360269
 gemini31pro_flat_alpha_ocr,Efik-English,true,true,3,0.014042,0.019083,0.069405,0.9585,0.0
 gemini31pro_flat_alpha_ocr,Evenki-Russian,true,true,3,0.010898,0.009229,0.03935,0.9665,0.0
-gemini31pro_flat_alpha_ocr,Georgian-Russian,true,true,1,0.051023,0.050881,0.369231,0.9241,0.023529
+gemini31pro_flat_alpha_ocr,Georgian-Russian,true,true,3,0.042762,0.038723,0.262712,0.8176,0.049989
 gemini31pro_flat_alpha_ocr,Gojri-English-Hindi,true,true,3,0.000411,0.000457,0.007916,0.0,0.0
 gemini31pro_flat_alpha_ocr,Greek-English,true,true,3,0.013396,0.017728,0.066507,0.3286,0.0
 gemini31pro_flat_alpha_ocr,Gujarati-English,true,true,3,0.017242,0.029248,0.099891,0.8383,0.0
-gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,true,true,3,0.002379,0.00235,0.011589,0.9789,0.0
+gemini31pro_flat_alpha_ocr,Iñupiatun Eskimo-English,true,true,3,0.002379,0.00235,0.011589,0.9789,0.0
 gemini31pro_flat_alpha_ocr,Japanese-English,true,true,3,0.012594,0.010404,0.03514,0.816,0.009951
 gemini31pro_flat_alpha_ocr,Kashmiri-English,true,true,3,0.05074,0.067848,0.213559,0.3495,0.0
 gemini31pro_flat_alpha_ocr,Khmer-English,true,true,3,0.028511,0.029983,0.066292,0.0,0.328866
@@ -28,4 +28,4 @@ gemini31pro_flat_alpha_ocr,Telugu-English,true,true,3,0.030736,0.030553,0.08,0.9
 gemini31pro_flat_alpha_ocr,Thai-Russian,true,true,3,0.077282,0.084099,0.400507,0.8151,0.0
 gemini31pro_flat_alpha_ocr,Tiri-English,true,true,3,0.011463,0.006847,0.035979,0.0,0.0
 gemini31pro_flat_alpha_ocr,Vernacular Syriac-Kurdish_Turkish-English,true,true,3,0.123796,0.105367,0.225173,0.6213,0.010992
-gemini31pro_flat_alpha_ocr,Yiddish-English,true,true,1,0.424873,0.464807,0.410714,0.3232,0.164706
+gemini31pro_flat_alpha_ocr,Yiddish-English,true,true,3,0.2079,0.231427,0.266618,0.3037,0.054902

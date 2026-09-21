@@ -31,7 +31,10 @@ from mudidi.evaluation.stage2.mdf_metrics import (
 )
 from mudidi.evaluation.stage2.mdf_parser import parse_mdf, normalize_field_value
 from mudidi.evaluation.stage1.stage1_metrics import CharacterQualityMetrics
-from mudidi.evaluation.text_quality import aggregate_text_quality, merge_character_quality
+from mudidi.evaluation.text_quality import (
+    aggregate_text_quality,
+    merge_character_quality,
+)
 from mudidi.schemas.language_span import META
 
 logger = logging.getLogger(__name__)
@@ -54,13 +57,16 @@ def compute_read_order_metrics(
     matched_gold_indices: Sequence[int],
     matched_pred_indices: Sequence[int],
     n_gold: int,
+    n_pred: int,
 ) -> ReadOrderMetrics:
-    """Compute ReadOrderEdit from matched record index pairs."""
-    pairs = sorted(zip(matched_gold_indices, matched_pred_indices), key=lambda x: x[1])
+    """Compute ReadOrderEdit, including unmatched predictions as insertions."""
+    pred_to_gold = dict(zip(matched_pred_indices, matched_gold_indices))
     gt = list(range(n_gold))
-    pred_order = [gold_idx for gold_idx, _ in pairs]
+    pred_order = [
+        pred_to_gold.get(pred_idx, n_gold + pred_idx) for pred_idx in range(n_pred)
+    ]
     dist = Levenshtein.distance(gt, pred_order)
-    maxlen = max(len(gt), len(pred_order), 1)
+    maxlen = max(n_gold, n_pred, 1)
     return ReadOrderMetrics(
         read_order_edit=dist / maxlen,
         edit_distance=dist,
@@ -81,7 +87,9 @@ class MdfEvaluator:
     ) -> None:
         self.record_threshold = record_threshold
         self.line_threshold = line_threshold
-        self.marker_sub_list_path = str(marker_sub_list_path) if marker_sub_list_path else None
+        self.marker_sub_list_path = (
+            str(marker_sub_list_path) if marker_sub_list_path else None
+        )
         self.dictionary_languages_path = (
             Path(dictionary_languages_path) if dictionary_languages_path else None
         )
@@ -161,7 +169,9 @@ class MdfEvaluator:
         headword_pairs: List[tuple[str, str]] = []
         gloss_pairs: List[tuple[str, str]] = []
         language_pairs: DefaultDict[str, List[tuple[str, str]]] = defaultdict(list)
-        language_script_pairs: DefaultDict[str, List[tuple[str, str]]] = defaultdict(list)
+        language_script_pairs: DefaultDict[str, List[tuple[str, str]]] = defaultdict(
+            list
+        )
 
         language_map = load_language_map_for_page(
             pred_path,
@@ -248,7 +258,9 @@ class MdfEvaluator:
                 )
 
         for gold_record_idx in record_alignment.missing_gold:
-            for gold_line in gold_records[gold_record_idx].lines:
+            gold_lines = gold_records[gold_record_idx].lines
+            marker_counts.fn += len(gold_lines)
+            for gold_line in gold_lines:
                 self._append_language_script_pair(
                     language_script_pairs,
                     language_by_line=language_script_by_line,
@@ -257,10 +269,14 @@ class MdfEvaluator:
                     pred_value="",
                 )
 
+        for pred_record_idx in record_alignment.extra_pred:
+            marker_counts.fp += len(pred_records[pred_record_idx].lines)
+
         read_order = compute_read_order_metrics(
             [m.gold_index for m in record_alignment.matched],
             [m.pred_index for m in record_alignment.matched],
             len(gold_records),
+            len(pred_records),
         )
 
         language_quality = {
@@ -333,7 +349,9 @@ class MdfEvaluator:
             if not stage2_root.is_dir():
                 continue
             available = sorted(
-                p.name for p in stage2_root.iterdir() if p.is_dir() and not p.name.startswith(".")
+                p.name
+                for p in stage2_root.iterdir()
+                if p.is_dir() and not p.name.startswith(".")
             )
             exp_names = (
                 available
@@ -391,7 +409,11 @@ class MdfEvaluator:
                 for p in stage2_root.iterdir()
                 if p.is_dir() and not p.name.startswith(".")
             )
-            exp_names = available if experiments is None else [e for e in experiments if e in available]
+            exp_names = (
+                available
+                if experiments is None
+                else [e for e in experiments if e in available]
+            )
             for exp in exp_names:
                 for gold_path in sorted(gold_root.glob("*/*.mdf.txt")):
                     stem = gold_path.parent.name
@@ -482,7 +504,7 @@ class MdfEvaluator:
             "gold_path": metrics.gold_path,
             "pred_path": metrics.pred_path,
             "n_pred_records": metrics.n_pred_records,
-            "Record_Accuracy": round(metrics.record_accuracy, 6),
+            "Entry_F1": round(metrics.entry_f1, 6),
             "MDF_Fields_F1": round(metrics.mdf_fields_f1, 6),
             "record_counts": {
                 "tp": metrics.record.tp,
@@ -505,7 +527,9 @@ class MdfEvaluator:
             "headword_quality": MdfEvaluator._quality_fields(
                 "Headword", metrics.headword_quality
             ),
-            "gloss_quality": MdfEvaluator._quality_fields("Gloss", metrics.gloss_quality),
+            "gloss_quality": MdfEvaluator._quality_fields(
+                "Gloss", metrics.gloss_quality
+            ),
             "language_quality": {
                 bucket: MdfEvaluator._quality_fields(bucket.replace(":", "_"), q)
                 for bucket, q in metrics.language_quality.items()
@@ -519,11 +543,15 @@ class MdfEvaluator:
             "marker_confusion": metrics.marker_confusion,
             "record_samples": [asdict(s) for s in metrics.record_samples],
             "marker_error_samples": [asdict(s) for s in metrics.marker_error_samples],
-            "missing_record_samples": [asdict(s) for s in metrics.missing_record_samples],
+            "missing_record_samples": [
+                asdict(s) for s in metrics.missing_record_samples
+            ],
             "extra_record_samples": [asdict(s) for s in metrics.extra_record_samples],
         }
 
-    def generate_json_report(self, results: List[MdfPageMetrics], output_path: Path) -> None:
+    def generate_json_report(
+        self, results: List[MdfPageMetrics], output_path: Path
+    ) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "settings": {
@@ -535,9 +563,13 @@ class MdfEvaluator:
         }
         if len(results) > 1:
             payload["aggregate"] = self._aggregate_dict(results)
-        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        output_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
-    def generate_text_report(self, results: List[MdfPageMetrics], output_path: Path) -> str:
+    def generate_text_report(
+        self, results: List[MdfPageMetrics], output_path: Path
+    ) -> str:
         lines = [
             "=" * 72,
             "STAGE 2 MDF EVALUATION REPORT",
@@ -555,7 +587,7 @@ class MdfEvaluator:
                     "=" * 72,
                     f"AGGREGATE ({len(results)} pages)",
                     "=" * 72,
-                    f"  Record Accuracy: {agg['Record_Accuracy']:.4f}",
+                    f"  Entry F1:        {agg['Entry_F1']:.4f}",
                     f"  MDF Fields F1:   {agg['MDF_Fields_F1']:.4f}",
                     f"  ReadOrderEdit:   {agg['read_order']['ReadOrderEdit']:.4f}",
                     f"  Field Value GCER:{agg['Field_Value_GCER']:.4f}",
@@ -569,14 +601,16 @@ class MdfEvaluator:
         output_path.write_text(report, encoding="utf-8")
         return report
 
-    def generate_summary_csv(self, results_by_exp: Dict[str, List[MdfPageMetrics]], output_path: Path) -> None:
+    def generate_summary_csv(
+        self, results_by_exp: Dict[str, List[MdfPageMetrics]], output_path: Path
+    ) -> None:
         all_pages = [page for pages in results_by_exp.values() for page in pages]
         language_cols = self._language_quality_columns(all_pages)
         base_fields = [
             "experiment",
             "language",
             "page",
-            "Record_Accuracy",
+            "Entry_F1",
             "MDF_Fields_F1",
             "ReadOrderEdit",
             "Field_Value_GCER",
@@ -593,7 +627,7 @@ class MdfEvaluator:
                     "experiment": exp,
                     "language": language,
                     "page": page_name,
-                    "Record_Accuracy": round(page.record_accuracy, 6),
+                    "Entry_F1": round(page.entry_f1, 6),
                     "MDF_Fields_F1": round(page.mdf_fields_f1, 6),
                     "ReadOrderEdit": round(page.read_order.read_order_edit, 6),
                     "Field_Value_GCER": round(page.field_value_quality.gcer, 6),
@@ -609,7 +643,7 @@ class MdfEvaluator:
                     "experiment": exp,
                     "language": "__aggregate__",
                     "page": "__aggregate__",
-                    "Record_Accuracy": agg["Record_Accuracy"],
+                    "Entry_F1": agg["Entry_F1"],
                     "MDF_Fields_F1": agg["MDF_Fields_F1"],
                     "ReadOrderEdit": agg["read_order"]["ReadOrderEdit"],
                     "Field_Value_GCER": agg["Field_Value_GCER"],
@@ -674,7 +708,9 @@ class MdfEvaluator:
         ]
         rows: List[dict] = []
         for exp, pages in results_by_exp.items():
-            grouped: DefaultDict[tuple[str, str], List[CharacterQualityMetrics]] = defaultdict(list)
+            grouped: DefaultDict[tuple[str, str], List[CharacterQualityMetrics]] = (
+                defaultdict(list)
+            )
             for page in pages:
                 language, _page_name = self._parse_page_id(page.page_id)
                 for language_script, quality in page.language_script_quality.items():
@@ -707,7 +743,7 @@ class MdfEvaluator:
             f"--- {metrics.page_id} ---",
             f"  Records: matched={metrics.record.tp} missing={metrics.record.fn} "
             f"extra={metrics.record.fp} (pred={metrics.n_pred_records})",
-            f"  Record Accuracy: {metrics.record_accuracy:.4f}",
+            f"  Entry F1:        {metrics.entry_f1:.4f}",
             f"  MDF Fields F1:   {metrics.mdf_fields_f1:.4f}",
             f"  ReadOrderEdit:   {metrics.read_order.read_order_edit:.4f}",
             f"  Field Value GCER:{metrics.field_value_quality.gcer:.4f}",
@@ -730,13 +766,17 @@ class MdfEvaluator:
         marker_fn = sum(m.marker.fn for m in results)
         ro_edit = sum(m.read_order.read_order_edit for m in results) / len(results)
 
-        record_accuracy = (
-            record_tp / (record_tp + record_fn) if (record_tp + record_fn) else 0.0
+        entry_f1 = PrfCounts(tp=record_tp, fp=record_fp, fn=record_fn).f1
+        marker_p = (
+            marker_tp / (marker_tp + marker_fp) if (marker_tp + marker_fp) else 0.0
         )
-        marker_p = marker_tp / (marker_tp + marker_fp) if (marker_tp + marker_fp) else 0.0
-        marker_r = marker_tp / (marker_tp + marker_fn) if (marker_tp + marker_fn) else 0.0
+        marker_r = (
+            marker_tp / (marker_tp + marker_fn) if (marker_tp + marker_fn) else 0.0
+        )
         mdf_fields_f1 = (
-            2 * marker_p * marker_r / (marker_p + marker_r) if (marker_p + marker_r) else 0.0
+            2 * marker_p * marker_r / (marker_p + marker_r)
+            if (marker_p + marker_r)
+            else 0.0
         )
 
         field_q = merge_character_quality([m.field_value_quality for m in results])
@@ -744,7 +784,7 @@ class MdfEvaluator:
         gloss_q = merge_character_quality([m.gloss_quality for m in results])
 
         agg: dict = {
-            "Record_Accuracy": round(record_accuracy, 6),
+            "Entry_F1": round(entry_f1, 6),
             "MDF_Fields_F1": round(mdf_fields_f1, 6),
             "record_counts": {"tp": record_tp, "fp": record_fp, "fn": record_fn},
             "marker_counts": {"tp": marker_tp, "fp": marker_fp, "fn": marker_fn},
@@ -761,7 +801,11 @@ class MdfEvaluator:
         for bucket in sorted(lang_buckets):
             safe = bucket.replace(":", "_")
             merged = merge_character_quality(
-                [page.language_quality[bucket] for page in results if bucket in page.language_quality]
+                [
+                    page.language_quality[bucket]
+                    for page in results
+                    if bucket in page.language_quality
+                ]
             )
             agg[f"{safe}_GCER"] = round(merged.gcer, 6)
             agg[f"{safe}_WER"] = round(merged.wer, 6)

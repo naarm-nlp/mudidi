@@ -1,5 +1,13 @@
 # Python Table Generators Migration Design
 
+> **Superseded on 2026-09-22.** This document records the initial R-to-Python
+> migration. The subsequent MUDIDI results migration changed the scientific
+> inputs and contracts: Stage 1 aggregate tables now consume the terminal
+> pooled `__aggregate__` report records, the language-script tables aggregate
+> detailed edit/count totals, and Stage 2 uses `Entry_F1` throughout. References
+> below to macro means, `Record_Accuracy`, or leaving the evaluator unchanged
+> describe the earlier migration and are retained only as historical context.
+
 ## Goal
 
 Replace every R-based paper-table generator under `tables/scripts/` with Python while preserving the existing quantitative output contracts, except for the explicitly corrected Stage 1 OCR-hint protocol.

@@ -6,10 +6,11 @@ aligns to, using the page's :class:`~mudidi.schemas.language_span.PageLanguageMa
 Two kinds of content are excluded from per-language-script scoring, for two
 different reasons:
 
-- **Punctuation + whitespace** are *physically stripped* from both the gold and
-  pred scoring strings before any grapheme/word derivation -- symmetric and
+- **Punctuation + whitespace** are removed from each span's scoring surface
+  after its raw ``[start, end)`` boundary is assigned -- symmetric and
   content-derivable (a period is a period on either side), the same technique
   ``tag_parser.strip_tags`` already uses for markup.
+
 - **``SPACE``/``META`` labels** are *not* physically removed from gold before
   alignment -- doing so would make the prediction's real transcription of meta
   content (running heads, editorial markers) look like a giant spurious
@@ -65,13 +66,12 @@ from pathlib import Path
 from typing import Callable, Dict, List, Sequence, Tuple
 
 import grapheme
-import jiwer
 import Levenshtein
+
 
 from mudidi.evaluation.stage1.language_projection import (
     grapheme_languages,
     project_clean_languages,
-    word_languages,
 )
 from mudidi.evaluation.stage1.per_language_metrics import (
     PageLanguageReport,
@@ -80,14 +80,11 @@ from mudidi.evaluation.stage1.per_language_metrics import (
 from mudidi.evaluation.stage1.tag_parser import (
     casefold_letters_for_eval,
     normalize_line_text,
+    normalize_unicode,
     strip_tags,
 )
 from mudidi.schemas.language_span import META, SPACE, PageLanguageMap
 
-# Identical to ``character_quality._JIWER_WORD_TRANSFORM`` (re-declared so this
-# module stays scipy-free; importing ``character_quality`` pulls in ``alignment`` and
-# therefore scipy).
-_JIWER_WORD_TRANSFORM = jiwer.Compose([jiwer.ReduceToListOfListOfWords()])
 
 # Private-use codepoints used to encode grapheme clusters as single characters.
 _PUA_BASE = 0xE000
@@ -152,19 +149,25 @@ def _is_scoring_noise(ch: str) -> bool:
     return ch.isspace() or unicodedata.category(ch).startswith("P")
 
 
-def _is_scoring_punct(ch: str) -> bool:
-    """Punctuation only (not whitespace).
-
-    Used to build the word-level scoring strings: punctuation is stripped so
-    trailing/standalone punctuation doesn't inflate WER, but whitespace is kept
-    because it is the delimiter ``word_languages``/jiwer split words on.
-    """
-    return unicodedata.category(ch).startswith("P")
-
-
 def _filter_text(text: str, noise: Callable[[str], bool]) -> str:
     """Drop characters where ``noise(ch)`` is true."""
     return "".join(ch for ch in text if not noise(ch))
+
+
+def _gold_span_words(raw_gold: str, lang_map: PageLanguageMap) -> List[Tuple[str, str]]:
+    """Return one alignment unit for each non-space raw span."""
+    lang_map.validate_against(raw_gold)
+    words: List[Tuple[str, str]] = []
+    for span in lang_map.spans:
+        if span.language == SPACE:
+            continue
+        word = casefold_letters_for_eval(
+            normalize_unicode(strip_tags(raw_gold[span.start : span.end]))
+        )
+        word = _filter_text(word, _is_scoring_noise)
+        if word:
+            words.append((word, span.language))
+    return words
 
 
 def _filter_text_with_langs(
@@ -300,38 +303,46 @@ class _Accumulator:
                     _bump(self.fp, language)
                     _bump(self.pred_graphemes, language)
 
-    def add_words(
-        self, gold_clean: str, pred_clean: str, word_langs: List[Tuple[str, str]]
-    ) -> None:
-        for _word, language in word_langs:
-            _bump(self.words_gold, language)
+    def add_words(self, gold_words: Sequence[Tuple[str, str]], pred_clean: str) -> None:
+        for _word, language in gold_words:
+            if language not in (SPACE, META):
+                _bump(self.words_gold, language)
 
-        if not gold_clean.split() and not pred_clean.split():
+        gold_graphemes: List[str] = []
+        word_ranges: List[Tuple[int, int, str]] = []
+        for word, language in gold_words:
+            start = len(gold_graphemes)
+            gold_graphemes.extend(grapheme.graphemes(word))
+            word_ranges.append((start, len(gold_graphemes), language))
+
+        pred_text = casefold_letters_for_eval(pred_clean)
+        pred_graphemes = list(
+            grapheme.graphemes(_filter_text(pred_text, _is_scoring_noise))
+        )
+        if not gold_graphemes:
+            if pred_graphemes:
+                _bump(self.word_edits, self.source)
             return
 
-        output = jiwer.process_words(
-            [gold_clean],
-            [pred_clean],
-            reference_transform=_JIWER_WORD_TRANSFORM,
-            hypothesis_transform=_JIWER_WORD_TRANSFORM,
-        )
-        for chunk in output.alignments[0]:
-            if chunk.type == "equal":
-                continue
-            if chunk.type in ("substitute", "delete"):
-                for ref in range(chunk.ref_start_idx, chunk.ref_end_idx):
-                    language = (
-                        word_langs[ref][1] if ref < len(word_langs) else self.source
-                    )
-                    _bump(self.word_edits, language)
-            elif chunk.type == "insert":
-                ref = chunk.ref_start_idx
-                if ref > 0 and word_langs:
-                    language = word_langs[min(ref - 1, len(word_langs) - 1)][1]
-                else:
-                    language = word_langs[0][1] if word_langs else self.source
-                for _hyp in range(chunk.hyp_start_idx, chunk.hyp_end_idx):
-                    _bump(self.word_edits, language)
+        encoded_g, encoded_p = _encode_graphemes(gold_graphemes, pred_graphemes)
+        edited_words: set[int] = set()
+        for tag, i1, i2, _j1, _j2 in Levenshtein.opcodes(encoded_g, encoded_p):
+            if tag in ("replace", "delete"):
+                for index, (start, end, _language) in enumerate(word_ranges):
+                    if start < i2 and end > i1:
+                        edited_words.add(index)
+            elif tag == "insert":
+                target = len(word_ranges) - 1
+                for index, (start, end, _language) in enumerate(word_ranges):
+                    if i1 < end:
+                        target = index
+                        if index > 0 and i1 <= start:
+                            target = index - 1
+                        break
+                edited_words.add(target)
+
+        for index in edited_words:
+            _bump(self.word_edits, word_ranges[index][2])
 
     def to_report(
         self,
@@ -408,7 +419,6 @@ def compute_per_language_quality(
     """
     source_language = _source_language(lang_map)
 
-    gc = casefold_letters_for_eval(gold_clean)
     pc = casefold_letters_for_eval(pred_clean)
 
     # -- Grapheme (character-level) scoring: punctuation + whitespace physically
@@ -417,22 +427,20 @@ def compute_per_language_quality(
     pc_chars = _filter_text(pc, _is_scoring_noise)
     pg = list(grapheme.graphemes(pc_chars))
 
-    # -- Word-level scoring: punctuation stripped, whitespace kept as the delimiter
-    # ``word_languages``/jiwer split words on (stripping it would collapse every
-    # line into a single "word", destroying WER).
-    raw_char_lang = lang_map.language_char_map(raw_gold)
-    clean_lang = project_clean_languages(raw_gold, raw_char_lang, gc)
-    gc_words, clean_lang_words = _filter_text_with_langs(gc, clean_lang, _is_scoring_punct)
-    pc_words = _filter_text(pc, _is_scoring_punct)
-    word_langs = word_languages(gc_words, clean_lang_words, source_language=source_language)
+    # -- Word-level scoring: gold units follow the raw language-map spans.
+    # Punctuation, whitespace, and markup are removed within each unit only;
+    # span boundaries remain authoritative for both counting and attribution.
+    gold_words = _gold_span_words(raw_gold, lang_map)
 
     acc = _Accumulator(source_language)
     acc.add_chars(gg, pg, gold_langs)
-    acc.add_words(gc_words, pc_words, word_langs)
+    acc.add_words(gold_words, pc)
     # SPACE/META buckets form naturally above (unfiltered by construction -- meta
     # content is real text the prediction also transcribes); drop them here and
     # recompute blended totals from the remaining real language-script buckets.
-    return _drop_reserved_buckets(acc.to_report(page_id, blended_edits=0, blended_gold=0))
+    return _drop_reserved_buckets(
+        acc.to_report(page_id, blended_edits=0, blended_gold=0)
+    )
 
 
 def evaluate_per_language(

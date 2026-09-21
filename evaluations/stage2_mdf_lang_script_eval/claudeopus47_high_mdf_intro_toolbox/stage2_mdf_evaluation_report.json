@@ -10,7 +10,7 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Chukchi-Russian/Stage 2 MDF file/page_3/page_3.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Chukchi-Russian/stage-2/claudeopus47_high_mdf_intro_toolbox/page_3/page_3.mdf.txt",
       "n_pred_records": 28,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.968153,
       "record_counts": {
         "tp": 28,
@@ -55,15 +55,15 @@
         }
       },
       "language_script_quality": {
-        "Chukchi-Cyrillic Extended": {
-          "LangScript_Chukchi-Cyrillic Extended_TextEdit": 0.0,
-          "LangScript_Chukchi-Cyrillic Extended_GCER": 0.0,
-          "LangScript_Chukchi-Cyrillic Extended_WER": 0.0
+        "Chukchi": {
+          "LangScript_Chukchi_TextEdit": 0.0,
+          "LangScript_Chukchi_GCER": 0.0,
+          "LangScript_Chukchi_WER": 0.0
         },
-        "Russian-Cyrillic": {
-          "LangScript_Russian-Cyrillic_TextEdit": 0.095238,
-          "LangScript_Russian-Cyrillic_GCER": 0.0883,
-          "LangScript_Russian-Cyrillic_WER": 0.095238
+        "Russian": {
+          "LangScript_Russian_TextEdit": 0.095238,
+          "LangScript_Russian_GCER": 0.0883,
+          "LangScript_Russian_WER": 0.095238
         }
       },
       "marker_confusion": {},
@@ -90,7 +90,7 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Circassian-English-Turkish/Stage 2 MDF file/page_1/page_1.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Circassian-English-Turkish/stage-2/claudeopus47_high_mdf_intro_toolbox/page_1/page_1.mdf.txt",
       "n_pred_records": 20,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.88,
       "record_counts": {
         "tp": 20,
@@ -365,17 +365,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Efik-English/Stage 2 MDF file/page_13/page_13.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Efik-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_13/page_13.mdf.txt",
       "n_pred_records": 22,
-      "Record_Accuracy": 1.0,
-      "MDF_Fields_F1": 0.842809,
+      "Entry_F1": 1.0,
+      "MDF_Fields_F1": 0.841751,
       "record_counts": {
         "tp": 22,
         "fp": 0,
         "fn": 0
       },
       "marker_counts": {
-        "tp": 126,
-        "fp": 28,
-        "fn": 19
+        "tp": 125,
+        "fp": 29,
+        "fn": 18
       },
       "read_order": {
         "ReadOrderEdit": 0.0,
@@ -383,9 +383,9 @@
         "max_length": 22
       },
       "field_value_quality": {
-        "FieldValue_TextEdit": 0.010859,
-        "FieldValue_GCER": 0.0185,
-        "FieldValue_WER": 0.020737
+        "FieldValue_TextEdit": 0.015816,
+        "FieldValue_GCER": 0.026087,
+        "FieldValue_WER": 0.025229
       },
       "headword_quality": {
         "Headword_TextEdit": 0.0,
@@ -393,9 +393,9 @@
         "Headword_WER": 0.0
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.0,
-        "Gloss_GCER": 0.0,
-        "Gloss_WER": 0.0
+        "Gloss_TextEdit": 0.012636,
+        "Gloss_GCER": 0.011653,
+        "Gloss_WER": 0.00738
       },
       "language_quality": {
         "source": {
@@ -404,21 +404,21 @@
           "source_WER": 0.0
         },
         "target": {
-          "target_TextEdit": 0.0,
-          "target_GCER": 0.0,
-          "target_WER": 0.0
+          "target_TextEdit": 0.012636,
+          "target_GCER": 0.011653,
+          "target_WER": 0.00738
         }
       },
       "language_script_quality": {
-        "Efik-Latin": {
-          "LangScript_Efik-Latin_TextEdit": 0.21493,
-          "LangScript_Efik-Latin_GCER": 0.260952,
-          "LangScript_Efik-Latin_WER": 0.27451
+        "Efik": {
+          "LangScript_Efik_TextEdit": 0.21493,
+          "LangScript_Efik_GCER": 0.260952,
+          "LangScript_Efik_WER": 0.27451
         },
-        "English-Latin": {
-          "LangScript_English-Latin_TextEdit": 0.053571,
-          "LangScript_English-Latin_GCER": 0.020246,
-          "LangScript_English-Latin_WER": 0.053571
+        "English": {
+          "LangScript_English_TextEdit": 0.029293,
+          "LangScript_English_GCER": 0.020246,
+          "LangScript_English_WER": 0.055556
         }
       },
       "marker_confusion": {
@@ -428,8 +428,8 @@
         "sy": {
           "lv": 1
         },
-        "xe": {
-          "de": 1
+        "ue": {
+          "de": 2
         }
       },
       "record_samples": [
@@ -509,15 +509,21 @@
         },
         {
           "headword": "DÖÑ",
-          "gold": "\\xe They give a charge concerning it",
+          "gold": "\\ue Others, They give a charge concerning it",
           "pred": "\\de They give a charge concerning it",
-          "value_sim": 1.0
+          "value_sim": 0.889
         },
         {
           "headword": "DÖÑ",
           "gold": "\\cf Der. n., Udön̄-inua, v. ikä",
           "pred": "\\lv Udön̄-inua, v. ikä",
           "value_sim": 0.8
+        },
+        {
+          "headword": "DI-ÖK'-HÖ",
+          "gold": "\\ue Others, To surfeit",
+          "pred": "\\de To surfeit",
+          "value_sim": 0.714
         }
       ],
       "missing_record_samples": [],
@@ -528,17 +534,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Evenki-Russian/Stage 2 MDF file/page_1/page_1.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Evenki-Russian/stage-2/claudeopus47_high_mdf_intro_toolbox/page_1/page_1.mdf.txt",
       "n_pred_records": 28,
-      "Record_Accuracy": 0.928571,
-      "MDF_Fields_F1": 0.732308,
+      "Entry_F1": 0.928571,
+      "MDF_Fields_F1": 0.570071,
       "record_counts": {
         "tp": 26,
         "fp": 2,
         "fn": 2
       },
       "marker_counts": {
-        "tp": 119,
-        "fp": 41,
-        "fn": 46
+        "tp": 120,
+        "fp": 89,
+        "fn": 92
       },
       "read_order": {
         "ReadOrderEdit": 0.071429,
@@ -556,9 +562,9 @@
         "Headword_WER": 0.0
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.126159,
-        "Gloss_GCER": 0.139647,
-        "Gloss_WER": 0.695652
+        "Gloss_TextEdit": 0.118396,
+        "Gloss_GCER": 0.130579,
+        "Gloss_WER": 0.685393
       },
       "language_quality": {
         "source": {
@@ -567,35 +573,32 @@
           "source_WER": 0.0
         },
         "target": {
-          "target_TextEdit": 0.126159,
-          "target_GCER": 0.139647,
-          "target_WER": 0.695652
+          "target_TextEdit": 0.118396,
+          "target_GCER": 0.130579,
+          "target_WER": 0.685393
         }
       },
       "language_script_quality": {
-        "Evenki-Cyrillic": {
-          "LangScript_Evenki-Cyrillic_TextEdit": 0.366107,
-          "LangScript_Evenki-Cyrillic_GCER": 0.370219,
-          "LangScript_Evenki-Cyrillic_WER": 0.402174
+        "Evenki": {
+          "LangScript_Evenki_TextEdit": 0.366107,
+          "LangScript_Evenki_GCER": 0.370219,
+          "LangScript_Evenki_WER": 0.402174
         },
-        "Russian-Cyrillic": {
-          "LangScript_Russian-Cyrillic_TextEdit": 0.398236,
-          "LangScript_Russian-Cyrillic_GCER": 0.334221,
-          "LangScript_Russian-Cyrillic_WER": 0.852941
+        "Russian": {
+          "LangScript_Russian_TextEdit": 0.398236,
+          "LangScript_Russian_GCER": 0.334221,
+          "LangScript_Russian_WER": 0.852941
         }
       },
       "marker_confusion": {
         "dl": {
           "un": 29
         },
-        "3s": {
+        "pd": {
           "ph": 1
         },
         "ln": {
           "cn": 1
-        },
-        "un": {
-          "lt": 1
         }
       },
       "record_samples": [
@@ -792,7 +795,7 @@
         {
           "index": 16,
           "headword": "авгӯ",
-          "fingerprint_preview": "авгӯ 1 1 п-т; н; с-б; брг; з; учр; урм; чмк; сх кото́рый по счёту 2 с-б како́й 2 сх любо́е ме́сто; кро́ме того́; где нах"
+          "fingerprint_preview": "авгӯ 1 п-т; н; с-б; брг; з; учр; урм; чмк; сх кото́рый по счёту 2 с-б како́й сх любо́е ме́сто; кро́ме того́; где нахо́ди"
         },
         {
           "index": 24,
@@ -818,7 +821,7 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Greek-English/Stage 2 MDF file/page_38/page_38.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Greek-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_38/page_38.mdf.txt",
       "n_pred_records": 59,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.842105,
       "record_counts": {
         "tp": 59,
@@ -863,15 +866,15 @@
         }
       },
       "language_script_quality": {
-        "English-Latin": {
-          "LangScript_English-Latin_TextEdit": 0.049147,
-          "LangScript_English-Latin_GCER": 0.071866,
-          "LangScript_English-Latin_WER": 0.0625
+        "English": {
+          "LangScript_English_TextEdit": 0.049147,
+          "LangScript_English_GCER": 0.071866,
+          "LangScript_English_WER": 0.0625
         },
-        "Greek-Greek": {
-          "LangScript_Greek-Greek_TextEdit": 0.001443,
-          "LangScript_Greek-Greek_GCER": 0.001129,
-          "LangScript_Greek-Greek_WER": 0.012987
+        "Greek": {
+          "LangScript_Greek_TextEdit": 0.001443,
+          "LangScript_Greek_GCER": 0.001129,
+          "LangScript_Greek_WER": 0.012987
         }
       },
       "marker_confusion": {
@@ -982,11 +985,11 @@
       "extra_record_samples": []
     },
     {
-      "page_id": "Iñupiatun Eskimo-English/page_42",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_42/page_42.mdf.txt",
+      "page_id": "Iñupiatun Eskimo-English/page_42",
+      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
+      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_42/page_42.mdf.txt",
       "n_pred_records": 62,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.992674,
       "record_counts": {
         "tp": 62,
@@ -1078,7 +1081,7 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Kashmiri-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_14/page_14.mdf.txt",
       "n_pred_records": 41,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.501458,
       "record_counts": {
         "tp": 41,
@@ -1390,7 +1393,7 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Na-English-Chinese-French/stage-2/claudeopus47_high_mdf_intro_toolbox/page_19/page_19.mdf.txt",
       "n_pred_records": 7,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.79476,
       "record_counts": {
         "tp": 7,
@@ -1449,6 +1452,11 @@
           "LangScript_French-Latin_TextEdit": 0.072065,
           "LangScript_French-Latin_GCER": 0.230169,
           "LangScript_French-Latin_WER": 0.142857
+        },
+        "Na": {
+          "LangScript_Na_TextEdit": 0.0,
+          "LangScript_Na_GCER": 0.0,
+          "LangScript_Na_WER": 0.0
         },
         "Na-IPA": {
           "LangScript_Na-IPA_TextEdit": 0.0,
@@ -1577,17 +1585,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Nahuatl-French/stage-2/claudeopus47_high_mdf_intro_toolbox/page_74/page_74.mdf.txt",
       "n_pred_records": 29,
-      "Record_Accuracy": 0.935484,
-      "MDF_Fields_F1": 0.609756,
+      "Entry_F1": 0.966667,
+      "MDF_Fields_F1": 0.60767,
       "record_counts": {
         "tp": 29,
         "fp": 0,
         "fn": 2
       },
       "marker_counts": {
-        "tp": 100,
-        "fp": 63,
-        "fn": 65
+        "tp": 103,
+        "fp": 60,
+        "fn": 73
       },
       "read_order": {
         "ReadOrderEdit": 0.064516,
@@ -1595,9 +1603,9 @@
         "max_length": 31
       },
       "field_value_quality": {
-        "FieldValue_TextEdit": 0.074172,
-        "FieldValue_GCER": 0.082343,
-        "FieldValue_WER": 0.255245
+        "FieldValue_TextEdit": 0.071643,
+        "FieldValue_GCER": 0.068816,
+        "FieldValue_WER": 0.23993
       },
       "headword_quality": {
         "Headword_TextEdit": 0.008046,
@@ -1605,9 +1613,9 @@
         "Headword_WER": 0.103448
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.071816,
-        "Gloss_GCER": 0.104271,
-        "Gloss_WER": 0.24
+        "Gloss_TextEdit": 0.065239,
+        "Gloss_GCER": 0.064383,
+        "Gloss_WER": 0.173697
       },
       "language_quality": {
         "source": {
@@ -1616,21 +1624,21 @@
           "source_WER": 0.25
         },
         "target": {
-          "target_TextEdit": 0.071816,
-          "target_GCER": 0.104271,
-          "target_WER": 0.24
+          "target_TextEdit": 0.065239,
+          "target_GCER": 0.064383,
+          "target_WER": 0.173697
         }
       },
       "language_script_quality": {
         "French-Latin": {
-          "LangScript_French-Latin_TextEdit": 0.28259,
-          "LangScript_French-Latin_GCER": 0.144205,
-          "LangScript_French-Latin_WER": 0.381579
+          "LangScript_French-Latin_TextEdit": 0.275147,
+          "LangScript_French-Latin_GCER": 0.126069,
+          "LangScript_French-Latin_WER": 0.38961
         },
         "Nahuatl-Latin": {
-          "LangScript_Nahuatl-Latin_TextEdit": 0.16485,
-          "LangScript_Nahuatl-Latin_GCER": 0.112108,
-          "LangScript_Nahuatl-Latin_WER": 0.287234
+          "LangScript_Nahuatl-Latin_TextEdit": 0.174598,
+          "LangScript_Nahuatl-Latin_GCER": 0.117069,
+          "LangScript_Nahuatl-Latin_WER": 0.305263
         }
       },
       "marker_confusion": {
@@ -1739,6 +1747,18 @@
           "value_sim": 1.0
         },
         {
+          "headword": "CENTETILIA",
+          "gold": "\\mr centetia",
+          "pred": "\\et centetia",
+          "value_sim": 1.0
+        },
+        {
+          "headword": "CENTETILIA",
+          "gold": "\\pd OCENTETILI",
+          "pred": "\\ps p. OCENTETILI",
+          "value_sim": 0.87
+        },
+        {
           "headword": "CENTIUITZE",
           "gold": "\\mr cen, uitz.",
           "pred": "\\et cen, uitz",
@@ -1761,18 +1781,6 @@
           "gold": "\\mr centelchiua",
           "pred": "\\et centelchiua",
           "value_sim": 1.0
-        },
-        {
-          "headword": "CENTETILIA",
-          "gold": "\\pd p. ocentetili",
-          "pred": "\\ps p. OCENTETILI",
-          "value_sim": 1.0
-        },
-        {
-          "headword": "CENTETILIA",
-          "gold": "\\mr centetia.",
-          "pred": "\\et centetia",
-          "value_sim": 0.941
         },
         {
           "headword": "CENTIACHCAUH",
@@ -1812,17 +1820,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Tiri-English/Stage 2 MDF file/page_15/page_15.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Tiri-English/stage-2/claudeopus47_high_mdf_intro_toolbox/page_15/page_15.mdf.txt",
       "n_pred_records": 36,
-      "Record_Accuracy": 1.0,
-      "MDF_Fields_F1": 0.910798,
+      "Entry_F1": 1.0,
+      "MDF_Fields_F1": 0.940092,
       "record_counts": {
         "tp": 36,
         "fp": 0,
         "fn": 0
       },
       "marker_counts": {
-        "tp": 97,
-        "fp": 14,
-        "fn": 5
+        "tp": 102,
+        "fp": 9,
+        "fn": 4
       },
       "read_order": {
         "ReadOrderEdit": 0.0,
@@ -1830,9 +1838,9 @@
         "max_length": 36
       },
       "field_value_quality": {
-        "FieldValue_TextEdit": 0.020205,
-        "FieldValue_GCER": 0.039641,
-        "FieldValue_WER": 0.062257
+        "FieldValue_TextEdit": 0.008522,
+        "FieldValue_GCER": 0.021053,
+        "FieldValue_WER": 0.046693
       },
       "headword_quality": {
         "Headword_TextEdit": 0.0,
@@ -1840,9 +1848,9 @@
         "Headword_WER": 0.0
       },
       "gloss_quality": {
-        "Gloss_TextEdit": 0.044583,
-        "Gloss_GCER": 0.049266,
-        "Gloss_WER": 0.055249
+        "Gloss_TextEdit": 0.016643,
+        "Gloss_GCER": 0.024845,
+        "Gloss_WER": 0.043716
       },
       "language_quality": {
         "source": {
@@ -1851,16 +1859,21 @@
           "source_WER": 0.0
         },
         "target": {
-          "target_TextEdit": 0.044583,
-          "target_GCER": 0.049266,
-          "target_WER": 0.055249
+          "target_TextEdit": 0.016643,
+          "target_GCER": 0.024845,
+          "target_WER": 0.043716
         }
       },
       "language_script_quality": {
         "English-Latin": {
-          "LangScript_English-Latin_TextEdit": 0.022977,
-          "LangScript_English-Latin_GCER": 0.031323,
-          "LangScript_English-Latin_WER": 0.12
+          "LangScript_English-Latin_TextEdit": 0.009557,
+          "LangScript_English-Latin_GCER": 0.01649,
+          "LangScript_English-Latin_WER": 0.04
+        },
+        "French-Latin": {
+          "LangScript_French-Latin_TextEdit": 0.0,
+          "LangScript_French-Latin_GCER": 0.0,
+          "LangScript_French-Latin_WER": 0.0
         },
         "Tiri-Latin": {
           "LangScript_Tiri-Latin_TextEdit": 0.0,
@@ -1869,14 +1882,14 @@
         }
       },
       "marker_confusion": {
-        "xv": {
-          "se": 1
-        },
         "ge": {
           "ue": 1
         },
         "nt": {
-          "ue": 3
+          "ue": 2
+        },
+        "gn": {
+          "ee": 1
         }
       },
       "record_samples": [
@@ -1894,12 +1907,6 @@
         }
       ],
       "marker_error_samples": [
-        {
-          "headword": "bʷaro",
-          "gold": "\\xv bʷaro meɔ",
-          "pred": "\\se bʷaro meɔ",
-          "value_sim": 1.0
-        },
         {
           "headword": "bʷiwi",
           "gold": "\\ge a cowry (larger than waðiði)",
@@ -1919,10 +1926,10 @@
           "value_sim": 0.95
         },
         {
-          "headword": "çiibə",
-          "gold": "\\nt presumably borrowed",
-          "pred": "\\ue (presumably borrowed)",
-          "value_sim": 0.95
+          "headword": "bʷamera",
+          "gold": "\\gn buse chauve",
+          "pred": "\\ee 'buse chauve'",
+          "value_sim": 0.917
         }
       ],
       "missing_record_samples": [],
@@ -1930,61 +1937,65 @@
     }
   ],
   "aggregate": {
-    "Record_Accuracy": 0.988024,
-    "MDF_Fields_F1": 0.805732,
+    "Entry_F1": 0.990991,
+    "MDF_Fields_F1": 0.783626,
     "record_counts": {
       "tp": 330,
       "fp": 2,
       "fn": 4
     },
     "marker_counts": {
-      "tp": 1265,
-      "fp": 301,
-      "fn": 309
+      "tp": 1273,
+      "fp": 342,
+      "fn": 361
     },
     "read_order": {
       "ReadOrderEdit": 0.013594
     },
-    "Field_Value_GCER": 0.038584,
-    "Field_Value_WER": 0.102087,
+    "Field_Value_GCER": 0.035611,
+    "Field_Value_WER": 0.098957,
     "Headword_GCER": 0.002516,
-    "Gloss_GCER": 0.038939,
-    "source_GCER": 0.013565,
-    "source_WER": 0.040392,
-    "target_GCER": 0.038939,
-    "target_WER": 0.098995,
+    "Gloss_GCER": 0.034271,
+    "source_GCER": 0.013538,
+    "source_WER": 0.040293,
+    "target_GCER": 0.034271,
+    "target_WER": 0.09344,
     "LangScript_Chinese-Han_GCER": 0.121795,
     "LangScript_Chinese-Han_WER": 0.047619,
-    "LangScript_Chukchi-Cyrillic Extended_GCER": 0.0,
-    "LangScript_Chukchi-Cyrillic Extended_WER": 0.0,
+    "LangScript_Chukchi_GCER": 0.0,
+    "LangScript_Chukchi_WER": 0.0,
     "LangScript_Circassian-Arabic_GCER": 0.006024,
     "LangScript_Circassian-Arabic_WER": 0.045455,
     "LangScript_Circassian-Latin_GCER": 0.113537,
     "LangScript_Circassian-Latin_WER": 0.090909,
-    "LangScript_Efik-Latin_GCER": 0.260952,
-    "LangScript_Efik-Latin_WER": 0.27451,
-    "LangScript_English-Latin_GCER": 0.065791,
-    "LangScript_English-Latin_WER": 0.142857,
-    "LangScript_Evenki-Cyrillic_GCER": 0.370219,
-    "LangScript_Evenki-Cyrillic_WER": 0.402174,
-    "LangScript_French-Latin_GCER": 0.166277,
-    "LangScript_French-Latin_WER": 0.329897,
-    "LangScript_Greek-Greek_GCER": 0.001129,
-    "LangScript_Greek-Greek_WER": 0.012987,
+    "LangScript_Efik_GCER": 0.260952,
+    "LangScript_Efik_WER": 0.27451,
+    "LangScript_English_GCER": 0.051859,
+    "LangScript_English_WER": 0.060606,
+    "LangScript_English-Latin_GCER": 0.072248,
+    "LangScript_English-Latin_WER": 0.177778,
+    "LangScript_Evenki_GCER": 0.370219,
+    "LangScript_Evenki_WER": 0.402174,
+    "LangScript_French-Latin_GCER": 0.152333,
+    "LangScript_French-Latin_WER": 0.333333,
+    "LangScript_Greek_GCER": 0.001129,
+    "LangScript_Greek_WER": 0.012987,
     "LangScript_Iñupiatun Eskimo-Latin_GCER": 0.0,
     "LangScript_Iñupiatun Eskimo-Latin_WER": 0.0,
     "LangScript_Kashmiri-Arabic_GCER": 0.0,
     "LangScript_Kashmiri-Arabic_WER": 0.0,
     "LangScript_Kashmiri-Latin_GCER": 0.113793,
     "LangScript_Kashmiri-Latin_WER": 0.191489,
+    "LangScript_Na_GCER": 0.0,
+    "LangScript_Na_WER": 0.0,
     "LangScript_Na-IPA_GCER": 0.0,
     "LangScript_Na-IPA_WER": 0.0,
     "LangScript_Na-Latin_GCER": 0.0,
     "LangScript_Na-Latin_WER": 0.0,
-    "LangScript_Nahuatl-Latin_GCER": 0.112108,
-    "LangScript_Nahuatl-Latin_WER": 0.287234,
-    "LangScript_Russian-Cyrillic_GCER": 0.241694,
-    "LangScript_Russian-Cyrillic_WER": 0.563636,
+    "LangScript_Nahuatl-Latin_GCER": 0.117069,
+    "LangScript_Nahuatl-Latin_WER": 0.305263,
+    "LangScript_Russian_GCER": 0.241694,
+    "LangScript_Russian_WER": 0.563636,
     "LangScript_Tiri-Latin_GCER": 0.0,
     "LangScript_Tiri-Latin_WER": 0.0,
     "LangScript_Turkish-Arabic_GCER": 0.156028,

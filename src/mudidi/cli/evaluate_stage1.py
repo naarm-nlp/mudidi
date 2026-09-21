@@ -81,6 +81,7 @@ def _parallel_eval_worker(
     )
     return experiment, page_id, pred_path, gold_path, metrics
 
+
 # Specialized OCR backends (folder names without "flat"; preds use *_stage1_flat.txt).
 DEFAULT_VLM_OCR_EXPERIMENTS: tuple[str, ...] = (
     "MinerU2.5-Pro",
@@ -139,6 +140,7 @@ def find_flat_and_vlm_ocr_experiments_from_pred_root(
         name_contains="flat",
         stage1_output_subdir=stage1_output_subdir,
     )
+    flat = [name for name in flat if "_agentic" not in name.lower()]
     on_disk = set(
         list_stage1_experiments_from_pred_root(
             pred_root,
@@ -191,6 +193,7 @@ def find_flat_and_vlm_ocr_experiments(
         name_contains="flat",
         stage1_output_subdir=stage1_output_subdir,
     )
+    flat = [name for name in flat if "_agentic" not in name.lower()]
     on_disk = set(
         list_stage1_experiments(
             samples,
@@ -209,7 +212,9 @@ def split_results_by_ocr_hint(
     *,
     stage1_output_subdir: str = "stage-1",
     pred_root: Path | None = None,
-) -> tuple[OrderedDict[str, list[Stage1Metrics]], OrderedDict[str, list[Stage1Metrics]]]:
+) -> tuple[
+    OrderedDict[str, list[Stage1Metrics]], OrderedDict[str, list[Stage1Metrics]]
+]:
     """Partition cached results into non-OCR-hint vs OCR-hint LLM experiments."""
     without_hint: OrderedDict[str, list[Stage1Metrics]] = OrderedDict()
     with_hint: OrderedDict[str, list[Stage1Metrics]] = OrderedDict()
@@ -245,6 +250,7 @@ def experiment_names_for_eval(
     """Resolve which experiment folders to include in batch eval-flat."""
     subdir = getattr(args, "stage1_output_subdir", "stage-1")
     if pred_root is not None:
+
         def list_experiments(**kw: object) -> list[str]:
             return list_stage1_experiments_from_pred_root(pred_root, **kw)
 
@@ -284,7 +290,9 @@ def experiment_names_for_eval(
                 f"No experiments matching name filter {args.experiment_name_contains!r}."
             )
         else:
-            print(f"Experiments (name contains {args.experiment_name_contains!r}): {found}")
+            print(
+                f"Experiments (name contains {args.experiment_name_contains!r}): {found}"
+            )
         return found
     if args.all_experiments:
         return None
@@ -331,8 +339,8 @@ def main(
         "--include-vlm-ocr",
         action="store_true",
         help=(
-            "Evaluate gemini*flat* experiments plus MinerU / Paddle / GLM OCR. "
-            "Does not include column-mode gemini3flash_* or legacy."
+            "Evaluate non-agentic *flat* experiments plus MinerU / Paddle / Mathpix "
+            "OCR. Does not include column-mode gemini3flash_* or legacy."
         ),
     )
     parser.add_argument(
@@ -442,7 +450,9 @@ def main(
         out = Path(args.output_dir) if args.output_dir else pred.parent
         report_path = out / "stage1_flat_evaluation_report.txt"
         text = evaluator.generate_text_report(results, report_path)
-        evaluator.generate_json_report(results, out / "stage1_flat_evaluation_report.json")
+        evaluator.generate_json_report(
+            results, out / "stage1_flat_evaluation_report.json"
+        )
         evaluator.generate_csv_reports(results, out)
         print(text)
         print(f"\nReports saved to: {out}")
@@ -491,7 +501,11 @@ def main(
     out = (
         Path(args.output_dir)
         if args.output_dir
-        else (pred_root / "stage1_flat_eval" if pred_root else samples / "stage1_flat_eval")
+        else (
+            pred_root / "stage1_flat_eval"
+            if pred_root
+            else samples / "stage1_flat_eval"
+        )
     )
     out.mkdir(parents=True, exist_ok=True)
 
@@ -505,6 +519,7 @@ def main(
 
     if use_dataset_layout:
         assert dataset is not None and pred_root is not None
+
         def discover(langs: list[str] | None) -> list[FlatEvalTask]:
             return evaluator.discover_dataset_tasks(
                 dataset,
@@ -515,6 +530,7 @@ def main(
             )
     else:
         assert samples is not None
+
         def discover(langs: list[str] | None) -> list[FlatEvalTask]:
             return evaluator.discover_tasks(
                 samples,
@@ -648,11 +664,13 @@ def main(
         print(text)
 
     tasks_for_csv = discover(args.languages)
-    results_for_csv: OrderedDict[str, list[Stage1Metrics]] = cache.collect_valid_metrics(
-        tasks_for_csv,
-        alignment_threshold=ath,
-        character_alignment=calign,
-        per_language_script=args.per_language_script,
+    results_for_csv: OrderedDict[str, list[Stage1Metrics]] = (
+        cache.collect_valid_metrics(
+            tasks_for_csv,
+            alignment_threshold=ath,
+            character_alignment=calign,
+            per_language_script=args.per_language_script,
+        )
     )
     main_results, ocr_hint_results = split_results_by_ocr_hint(
         results_for_csv,

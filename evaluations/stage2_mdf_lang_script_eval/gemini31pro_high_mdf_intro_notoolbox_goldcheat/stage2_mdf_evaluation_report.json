@@ -6,11 +6,11 @@
   },
   "pages": [
     {
-      "page_id": "Iñupiatun Eskimo-English/page_42",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_42/page_42.mdf.txt",
+      "page_id": "Iñupiatun Eskimo-English/page_42",
+      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
+      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_42/page_42.mdf.txt",
       "n_pred_records": 62,
-      "Record_Accuracy": 1.0,
+      "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.996324,
       "record_counts": {
         "tp": 62,
@@ -77,17 +77,17 @@
       "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
       "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Kashmiri-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_14/page_14.mdf.txt",
       "n_pred_records": 41,
-      "Record_Accuracy": 1.0,
-      "MDF_Fields_F1": 0.942529,
+      "Entry_F1": 1.0,
+      "MDF_Fields_F1": 0.954023,
       "record_counts": {
         "tp": 41,
         "fp": 0,
         "fn": 0
       },
       "marker_counts": {
-        "tp": 164,
-        "fp": 12,
-        "fn": 8
+        "tp": 166,
+        "fp": 10,
+        "fn": 6
       },
       "read_order": {
         "ReadOrderEdit": 0.0,
@@ -139,27 +139,12 @@
         }
       },
       "marker_confusion": {
-        "ps": {
-          "pd": 2
-        },
         "pl": {
           "se": 5
         }
       },
       "record_samples": [],
       "marker_error_samples": [
-        {
-          "headword": "ajA:yibgar",
-          "gold": "\\ps m",
-          "pred": "\\pd m",
-          "value_sim": 1.0
-        },
-        {
-          "headword": "azarvun",
-          "gold": "\\ps m",
-          "pred": "\\pd m",
-          "value_sim": 1.0
-        },
         {
           "headword": "aDIkAj kath",
           "gold": "\\pl aDIkaji kathi",
@@ -196,17 +181,17 @@
     }
   ],
   "aggregate": {
-    "Record_Accuracy": 1.0,
-    "MDF_Fields_F1": 0.975336,
+    "Entry_F1": 1.0,
+    "MDF_Fields_F1": 0.979821,
     "record_counts": {
       "tp": 103,
       "fp": 0,
       "fn": 0
     },
     "marker_counts": {
-      "tp": 435,
-      "fp": 12,
-      "fn": 10
+      "tp": 437,
+      "fp": 10,
+      "fn": 8
     },
     "read_order": {
       "ReadOrderEdit": 0.0
@@ -215,8 +200,8 @@
     "Field_Value_WER": 0.013142,
     "Headword_GCER": 0.009913,
     "Gloss_GCER": 0.001187,
-    "source_GCER": 0.005513,
-    "source_WER": 0.007018,
+    "source_GCER": 0.005521,
+    "source_WER": 0.007067,
     "target_GCER": 0.001187,
     "target_WER": 0.013187,
     "LangScript_English-Latin_GCER": 0.001741,

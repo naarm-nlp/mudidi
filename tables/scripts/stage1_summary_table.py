@@ -5,9 +5,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from statistics import fmean
 
-from table_utils import TableDataError, lines_to_text, parse_float, parse_paths, read_delimited, write_text_atomic
+from table_utils import (
+    lines_to_text,
+    parse_paths,
+    read_stage1_aggregate,
+    write_text_atomic,
+)
 
 METRICS = ("TextEdit", "GCER", "WER", "typography_f1", "ReadOrderEdit")
 HIGHER_IS_BETTER = {metric: metric == "typography_f1" for metric in METRICS}
@@ -30,35 +34,17 @@ ROW_SPEC = (
 )
 
 
-def _aggregate(source: Path) -> list[dict[str, object]]:
-    raw_rows = read_delimited(source, required_columns=("experiment", *METRICS))
-    grouped: dict[str, list[tuple[int, dict[str, str]]]] = {}
-    for row_number, row in enumerate(raw_rows, start=2):
-        grouped.setdefault(row["experiment"], []).append((row_number, row))
-    expected = {spec[0] for spec in ROW_SPEC}
-    if set(grouped) != expected:
-        raise TableDataError(
-            f"{source}: experiment set mismatch; missing={sorted(expected - set(grouped))}, "
-            f"extra={sorted(set(grouped) - expected)}"
-        )
+def _aggregate(evaluation_root: Path) -> list[dict[str, object]]:
     aggregates: list[dict[str, object]] = []
     for experiment, model, alphabet, section in ROW_SPEC:
-        rows = grouped[experiment]
-        if len(rows) != 30:
-            raise TableDataError(f"{source}: {experiment} has {len(rows)} dictionaries, expected 30")
+        report = evaluation_root / experiment / "stage1_flat_evaluation_report.json"
         aggregates.append(
             {
                 "experiment": experiment,
                 "model": model,
                 "alphabet": alphabet,
                 "section": section,
-                **{
-                    metric: fmean(
-                        parse_float(row[metric], source=source, field=metric, row_number=row_number)
-                        for row_number, row in rows
-                    )
-                    for metric in METRICS
-                },
+                **read_stage1_aggregate(report),
             }
         )
     return aggregates
@@ -66,8 +52,8 @@ def _aggregate(source: Path) -> list[dict[str, object]]:
 
 def render_table(repo_root: Path) -> str:
     """Render the Stage 1 aggregate table."""
-    source = repo_root / "evaluations" / "stage1_flat_per_lang_script_eval" / "stage1_flat_eval_summary.csv"
-    rows = _aggregate(source)
+    evaluation_root = repo_root / "evaluations" / "stage1_flat_per_lang_script_eval"
+    rows = _aggregate(evaluation_root)
     best = {
         metric: (
             max(float(row[metric]) for row in rows)
@@ -103,7 +89,9 @@ def render_table(repo_root: Path) -> str:
         if section != current_section:
             if current_section is not None:
                 lines.append(r"\midrule")
-            lines.append(rf"\multicolumn{{7}}{{l}}{{\cellcolor{{gray!10}}\textit{{{section}}}}} \\")
+            lines.append(
+                rf"\multicolumn{{7}}{{l}}{{\cellcolor{{gray!10}}\textit{{{section}}}}} \\"
+            )
             current_section = section
         mark = r"\cmark" if row["alphabet"] else ""
         lines.append(
@@ -119,7 +107,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     repo_root, output_dir = parse_paths(__file__, __doc__ or "", argv)
     output_path = output_dir / "stage1_summary.tex"
     write_text_atomic(output_path, render_table(repo_root))
-    print(f"Wrote {output_path} ({len(ROW_SPEC)} rows, aggregated over 30 dictionaries each)")
+    print(
+        f"Wrote {output_path} ({len(ROW_SPEC)} rows, aggregated over 30 dictionaries each)"
+    )
 
 
 if __name__ == "__main__":

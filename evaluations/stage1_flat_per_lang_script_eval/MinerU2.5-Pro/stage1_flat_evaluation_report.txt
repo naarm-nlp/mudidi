@@ -5,35 +5,35 @@ STAGE 1 OCR EVALUATION REPORT
 --- Assyrian-English/page_352 ---
 
   Character Recognition Quality:
-    TextEdit: 0.5068
-    GCER: 2.0709  (207.09%)
-    WER:  2.6266  (262.66%)
-    Spans: 27 matched, 0 missing, 0 extra
+    TextEdit: 0.4497
+    GCER: 2.4507  (245.07%)
+    WER:  2.9763  (297.63%)
+    Spans: 26 matched, 0 missing, 0 extra
 
   Markup / Typography Preservation:
-    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=0 FN=153)
-    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=69)
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=0 FN=142)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=58)
     Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=84)
 
   Read Order (Structure Preservation):
-    ReadOrderEdit: 0.3333
+    ReadOrderEdit: 0.3056
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
     Arabic-Arabic          1.000   1.000     1.000       3
     Arabic-Latin           0.000   0.000     0.000       5
-    Assyrian-Cuneiform     1.000   1.000     1.000     131
-    Assyrian-Latin         1.900   8.018     0.892     498
-    English-Latin          0.019   0.204     0.019     998
+    Assyrian-Cuneiform     1.000   1.000     1.000     118
+    Assyrian-Latin         0.132   0.358     0.129     235
+    English-Latin          0.077   0.022     0.073     998
     Hebrew-Hebrew          1.000   1.000     1.000      10
     Latin-Latin            0.083   0.500     0.083      12
 
 --- Assyrian-English/page_39 ---
 
   Character Recognition Quality:
-    TextEdit: 0.6870
-    GCER: 1.6301  (163.01%)
-    WER:  2.3926  (239.26%)
+    TextEdit: 0.6803
+    GCER: 2.0980  (209.80%)
+    WER:  2.9375  (293.75%)
     Spans: 20 matched, 8 missing, 0 extra
 
   Markup / Typography Preservation:
@@ -46,19 +46,19 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Assyrian-Cuneiform     1.020   1.000     1.020     151
-    Assyrian-Latin         2.695   0.863     0.908     397
-    English-Latin          0.830   2.953     0.521     494
+    Assyrian-Cuneiform     1.000   1.000     1.000     109
+    Assyrian-Latin         3.793   0.556     0.860     184
+    English-Latin          1.628   0.307     0.674     494
     Greek-Greek            1.000   1.000     1.000       9
     Hebrew-Hebrew          1.000   1.000     1.000       8
 
 --- Assyrian-English/page_842 ---
 
   Character Recognition Quality:
-    TextEdit: 0.6236
-    GCER: 0.9652  (96.52%)
-    WER:  1.4501  (145.01%)
-    Spans: 19 matched, 3 missing, 0 extra
+    TextEdit: 0.5281
+    GCER: 0.9914  (99.14%)
+    WER:  1.5200  (152.00%)
+    Spans: 19 matched, 1 missing, 0 extra
 
   Markup / Typography Preservation:
     Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=38 FN=142)
@@ -66,14 +66,14 @@ STAGE 1 OCR EVALUATION REPORT
     Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=87)
 
   Read Order (Structure Preservation):
-    ReadOrderEdit: 0.3889
+    ReadOrderEdit: 0.3333
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Assyrian-Cuneiform     1.000   1.000     1.000     139
-    Assyrian-Latin         1.557   0.635     0.818     501
-    English-Latin          0.517   1.738     0.359     869
-    Old Persian-Latin      0.017   0.400     0.017      60
+    Assyrian-Cuneiform     1.000   1.000     1.000     125
+    Assyrian-Latin         1.111   0.196     0.565     244
+    English-Latin          0.945   0.023     0.488     869
+    Old Persian-Latin      0.017   0.100     0.017      60
 
 --- Bengalese-English/page_105 ---
 
@@ -93,8 +93,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Bengalese-Bengali      0.412   0.866     0.412     485
-    English-Latin          0.026   0.052     0.025    1999
+    Bengalese              0.412   0.837     0.412     485
+    English                0.026   0.013     0.025    1999
 
 --- Bengalese-English/page_217 ---
 
@@ -114,8 +114,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Bengalese-Bengali      0.411   0.725     0.411     287
-    English-Latin          0.021   0.060     0.021    2239
+    Bengalese              0.411   0.696     0.411     287
+    English                0.021   0.004     0.021    2239
 
 --- Bengalese-English/page_54 ---
 
@@ -135,8 +135,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Bengalese-Bengali      0.491   0.851     0.491     509
-    English-Latin          0.028   0.079     0.027    2092
+    Bengalese              0.491   0.851     0.491     509
+    English                0.028   0.020     0.027    2092
 
 --- Canala-English/page_12 ---
 
@@ -156,9 +156,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Canala-Latin           0.250   0.674     0.250     348
-    English-Latin          0.000   0.043     0.000    1062
-    French-Latin           0.000   0.167     0.000      38
+    Canala-Latin           0.250   0.620     0.250     348
+    English-Latin          0.000   0.000     0.000    1062
+    French-Latin           0.000   0.000     0.000      38
 
 --- Canala-English/page_30 ---
 
@@ -178,8 +178,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Canala-Latin           0.273   0.603     0.273     300
-    English-Latin          0.000   0.071     0.000     905
+    Canala                 0.273   0.605     0.273     300
+    English                0.000   0.000     0.000     905
 
 --- Canala-English/page_64 ---
 
@@ -199,8 +199,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Canala-Latin           0.261   0.716     0.261     395
-    English-Latin          0.002   0.083     0.002    1050
+    Canala                 0.261   0.679     0.261     395
+    English                0.002   0.008     0.002    1050
 
 --- Chepang-English/page_103 ---
 
@@ -220,8 +220,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chepang-Latin          0.202   0.733     0.202     662
-    English-Latin          0.002   0.042     0.002    1303
+    Chepang                0.202   0.672     0.202     662
+    English                0.002   0.006     0.002    1303
 
 --- Chepang-English/page_304 ---
 
@@ -241,8 +241,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chepang-Latin          0.108   0.450     0.108     586
-    English-Latin          0.005   0.015     0.005    1439
+    Chepang                0.108   0.440     0.108     586
+    English                0.005   0.009     0.005    1439
 
 --- Chepang-English/page_37 ---
 
@@ -262,15 +262,15 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chepang-Latin          0.224   0.880     0.224     666
-    English-Latin          0.027   0.140     0.026    1332
+    Chepang-Latin          0.224   0.786     0.224     666
+    English-Latin          0.027   0.019     0.026    1332
     Nepali-Latin           0.000   0.000     0.000       2
 
 --- Chukchi-Russian/page_26 ---
 
   Character Recognition Quality:
-    TextEdit: 0.0984
-    GCER: 0.0940  (9.40%)
+    TextEdit: 0.0968
+    GCER: 0.0929  (9.29%)
     WER:  0.5952  (59.52%)
     Spans: 29 matched, 0 missing, 0 extra
 
@@ -281,6 +281,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Read Order (Structure Preservation):
     ReadOrderEdit: 0.0000
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Chukchi                0.139   0.690     0.139     194
+    Russian                0.105   0.609     0.105     507
 
 --- Chukchi-Russian/page_3 ---
 
@@ -300,8 +305,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chukchi-Cyrillic Extended   0.065   0.410     0.065     275
-    Russian-Cyrillic       0.117   0.743     0.117     453
+    Chukchi                0.065   0.410     0.065     275
+    Russian                0.117   0.675     0.117     453
 
 --- Chukchi-Russian/page_48 ---
 
@@ -321,8 +326,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chukchi-Cyrillic Extended   0.114   0.650     0.114     281
-    Russian-Cyrillic       0.142   0.711     0.142     570
+    Chukchi                0.114   0.650     0.114     281
+    Russian                0.142   0.654     0.142     570
 
 --- Circassian-English-Turkish/page_1 ---
 
@@ -344,7 +349,7 @@ STAGE 1 OCR EVALUATION REPORT
     language-script         GCER     WER  TextEdit  gold_g
     Circassian-Arabic      0.849   0.974     0.849     166
     Circassian-Latin       0.203   0.485     0.203     227
-    English-Latin          0.004   0.093     0.004     276
+    English-Latin          0.004   0.016     0.004     276
     Turkish-Arabic         0.362   0.786     0.362     141
 
 --- Circassian-English-Turkish/page_2 ---
@@ -367,7 +372,7 @@ STAGE 1 OCR EVALUATION REPORT
     language-script         GCER     WER  TextEdit  gold_g
     Circassian-Arabic      0.783   1.000     0.783     152
     Circassian-Latin       0.164   0.387     0.164     201
-    English-Latin          0.047   0.500     0.046     193
+    English-Latin          0.047   0.021     0.046     193
     Turkish-Arabic         0.183   0.481     0.183     109
 
 --- Circassian-English-Turkish/page_3 ---
@@ -388,11 +393,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Circassian-Arabic      0.806   0.964     0.806     124
-    Circassian-Latin       0.096   0.542     0.096     166
-    English-Latin          0.025   0.151     0.024     241
-    French-Latin           0.167   1.000     0.143       6
-    Turkish-Arabic         0.261   0.719     0.261     115
+    Circassian-Arabic      0.806   0.893     0.806     124
+    Circassian-Latin       0.096   0.292     0.096     166
+    English-Latin          0.025   0.018     0.024     241
+    French-Latin           0.167   0.500     0.143       6
+    Turkish-Arabic         0.261   0.688     0.261     115
 
 --- Efik-English/page_13 ---
 
@@ -412,8 +417,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Efik-Latin             0.053   0.193     0.053     505
-    English-Latin          0.041   0.061     0.039    1125
+    Efik                   0.053   0.193     0.053     505
+    English                0.041   0.004     0.039    1125
 
 --- Efik-English/page_25 ---
 
@@ -433,8 +438,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Efik-Latin             0.088   0.376     0.087     615
-    English-Latin          0.037   0.096     0.036    1343
+    Efik                   0.088   0.317     0.087     615
+    English                0.037   0.006     0.036    1343
 
 --- Efik-English/page_32 ---
 
@@ -454,8 +459,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Efik-Latin             0.065   0.279     0.065     603
-    English-Latin          0.038   0.070     0.037    1235
+    Efik                   0.065   0.238     0.065     603
+    English                0.038   0.007     0.037    1235
 
 --- Evenki-Russian/page_1 ---
 
@@ -475,8 +480,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Evenki-Cyrillic        0.101   0.569     0.101     641
-    Russian-Cyrillic       0.120   0.746     0.120     723
+    Evenki                 0.101   0.495     0.101     641
+    Russian                0.120   0.585     0.120     723
 
 --- Evenki-Russian/page_2 ---
 
@@ -496,8 +501,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Evenki-Cyrillic        0.087   0.400     0.087     675
-    Russian-Cyrillic       0.112   0.830     0.112     654
+    Evenki                 0.087   0.342     0.087     675
+    Russian                0.112   0.739     0.112     654
 
 --- Evenki-Russian/page_3 ---
 
@@ -517,8 +522,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Evenki-Cyrillic        0.153   0.723     0.151     595
-    Russian-Cyrillic       0.107   0.727     0.107     850
+    Evenki                 0.153   0.687     0.151     595
+    Russian                0.107   0.529     0.107     850
 
 --- Georgian-Russian/page_116 ---
 
@@ -538,8 +543,50 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Georgian-Georgian      1.002  26.508     1.002     477
-    Russian-Cyrillic       6.687   7.469     0.905     744
+    Georgian-Georgian      1.002   1.000     1.002     477
+    Russian-Cyrillic       6.687   0.393     0.905     744
+
+--- Georgian-Russian/page_303 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.5781
+    GCER: 4.4273  (442.73%)
+    WER:  0.8989  (89.89%)
+    Spans: 57 matched, 11 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=1 FN=48)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=48)
+    Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=1 FN=0)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.7280
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Georgian-Georgian      1.044   1.000     1.044     384
+    Russian-Cyrillic       7.150   0.555     0.917     864
+
+--- Georgian-Russian/page_37 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.4364
+    GCER: 0.9781  (97.81%)
+    WER:  0.8102  (81.02%)
+    Spans: 77 matched, 3 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=9 FN=74)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=59)
+    Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=9 FN=15)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.5538
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    Georgian-Georgian      1.000   1.000     1.000     522
+    Russian-Cyrillic       1.211   0.576     0.590     755
 
 --- Gojri-English-Hindi/page_275 ---
 
@@ -559,10 +606,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.070     0.000     666
-    Gojri-Devanagari       0.021   0.091     0.021      96
+    English-Latin          0.000   0.000     0.000     666
+    Gojri-Devanagari       0.021   0.065     0.021      96
     Gojri-Latin            0.000   0.000     0.000     149
-    Hindi-Devanagari       0.028   0.148     0.028     326
+    Hindi-Devanagari       0.028   0.058     0.028     326
 
 --- Gojri-English-Hindi/page_32 ---
 
@@ -582,10 +629,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.005   0.151     0.005     651
-    Gojri-Devanagari       0.029   0.000     0.029     105
+    English-Latin          0.005   0.054     0.005     651
+    Gojri-Devanagari       0.029   0.103     0.029     105
     Gojri-Latin            0.000   0.000     0.000     173
-    Hindi-Devanagari       0.039   0.083     0.039     204
+    Hindi-Devanagari       0.039   0.115     0.039     204
 
 --- Gojri-English-Hindi/page_76 ---
 
@@ -605,10 +652,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.115     0.000     610
-    Gojri-Devanagari       0.056   0.000     0.054      72
+    English-Latin          0.000   0.000     0.000     610
+    Gojri-Devanagari       0.056   0.167     0.054      72
     Gojri-Latin            0.000   0.000     0.000     143
-    Hindi-Devanagari       0.068   0.278     0.068     308
+    Hindi-Devanagari       0.068   0.215     0.068     308
 
 --- Greek-English/page_302 ---
 
@@ -628,8 +675,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.036   0.087     0.035    1548
-    Greek-Greek            0.060   0.287     0.060     926
+    English                0.036   0.014     0.035    1548
+    Greek                  0.060   0.273     0.060     926
 
 --- Greek-English/page_38 ---
 
@@ -649,8 +696,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.033   0.269     0.032    1813
-    Greek-Greek            0.161   0.626     0.161     895
+    English                0.033   0.025     0.032    1813
+    Greek                  0.161   0.596     0.161     895
 
 --- Greek-English/page_451 ---
 
@@ -670,8 +717,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.036   0.182     0.035    1763
-    Greek-Greek            0.042   0.264     0.042     692
+    English                0.036   0.032     0.035    1763
+    Greek                  0.042   0.243     0.042     692
 
 --- Gujarati-English/page_50 ---
 
@@ -691,8 +738,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.063   0.280     0.059    1115
-    Gujarati-Gujarati      1.000   1.000     1.000     177
+    English                0.063   0.046     0.059    1115
+    Gujarati               1.000   1.000     1.000     177
 
 --- Gujarati-English/page_500 ---
 
@@ -712,8 +759,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.048   0.174     0.046    1182
-    Gujarati-Gujarati      1.000   1.000     1.000     153
+    English                0.048   0.035     0.046    1182
+    Gujarati               1.000   1.000     1.000     153
 
 --- Gujarati-English/page_866 ---
 
@@ -733,10 +780,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.072   0.098     0.067    1052
-    Gujarati-Gujarati      0.976   0.980     0.976     168
+    English                0.072   0.055     0.067    1052
+    Gujarati               0.976   0.980     0.976     168
 
---- Iñupiatun Eskimo-English/page_201 ---
+--- Iñupiatun Eskimo-English/page_201 ---
 
   Character Recognition Quality:
     TextEdit: 0.0552
@@ -754,11 +801,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.006     0.000    2034
+    English-Latin          0.000   0.002     0.000    2034
     Iñupiatun Eskimo-Latin   0.058   0.392     0.058     879
     Latin-Latin            0.000   0.000     0.000     101
 
---- Iñupiatun Eskimo-English/page_206 ---
+--- Iñupiatun Eskimo-English/page_206 ---
 
   Character Recognition Quality:
     TextEdit: 0.0933
@@ -779,7 +826,7 @@ STAGE 1 OCR EVALUATION REPORT
     English-Latin          0.001   0.002     0.001    2199
     Iñupiatun Eskimo-Latin   0.052   0.312     0.052     865
 
---- Iñupiatun Eskimo-English/page_42 ---
+--- Iñupiatun Eskimo-English/page_42 ---
 
   Character Recognition Quality:
     TextEdit: 0.1029
@@ -818,10 +865,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.002   0.033     0.002    1865
-    Japanese-Kanji         0.468   0.828     0.468      62
-    Japanese-Katakana      0.045   0.189     0.045     220
-    Japanese-Latin         0.072   0.143     0.067     865
+    English-Latin          0.002   0.004     0.002    1865
+    Japanese-Kanji         0.468   0.833     0.468      62
+    Japanese-Katakana      0.045   0.170     0.045     220
+    Japanese-Latin         0.072   0.077     0.067     865
 
 --- Japanese-English/page_351 ---
 
@@ -841,10 +888,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.038     0.000    2215
-    Japanese-Kanji         0.237   0.600     0.237      76
-    Japanese-Katakana      0.076   0.367     0.076     185
-    Japanese-Latin         0.014   0.096     0.014     882
+    English-Latin          0.000   0.002     0.000    2215
+    Japanese-Kanji         0.237   0.472     0.237      76
+    Japanese-Katakana      0.076   0.286     0.076     185
+    Japanese-Latin         0.014   0.066     0.014     882
 
 --- Japanese-English/page_419 ---
 
@@ -864,10 +911,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.002   0.038     0.002    2011
-    Japanese-Kanji         0.387   0.607     0.387      62
-    Japanese-Katakana      0.082   0.200     0.081     170
-    Japanese-Latin         0.027   0.142     0.027     995
+    English-Latin          0.002   0.004     0.002    2011
+    Japanese-Kanji         0.387   0.571     0.387      62
+    Japanese-Katakana      0.082   0.217     0.081     170
+    Japanese-Latin         0.027   0.096     0.027     995
 
 --- Kashmiri-English/page_14 ---
 
@@ -887,9 +934,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.654   0.810     0.654     590
+    English-Latin          0.654   0.799     0.654     590
     Kashmiri-Arabic        1.000   1.000     1.000     202
-    Kashmiri-Latin         0.666   0.796     0.666     290
+    Kashmiri-Latin         0.666   0.907     0.666     290
 
 --- Kashmiri-English/page_39 ---
 
@@ -909,9 +956,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.548   0.758     0.548     562
+    English-Latin          0.548   0.648     0.548     562
     Kashmiri-Arabic        1.000   1.000     1.000     157
-    Kashmiri-Latin         0.773   0.820     0.687     335
+    Kashmiri-Latin         0.773   0.873     0.687     335
 
 --- Kashmiri-English/page_71 ---
 
@@ -931,9 +978,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.620   0.853     0.620     476
+    English-Latin          0.620   0.774     0.620     476
     Kashmiri-Arabic        1.000   1.000     1.000     192
-    Kashmiri-Latin         0.657   0.845     0.657     364
+    Kashmiri-Latin         0.657   0.966     0.657     364
 
 --- Khmer-English/page_116 ---
 
@@ -953,8 +1000,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.136   0.120     0.121    1136
-    Khmer-Khmer            1.006   1.031     1.006     338
+    English-Latin          0.136   0.024     0.121    1136
+    Khmer-Khmer            1.006   1.000     1.006     338
 
 --- Khmer-English/page_143 ---
 
@@ -974,8 +1021,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          4.071   6.016     0.805    1183
-    Khmer-Khmer            1.009   1.017     1.009     224
+    English-Latin          4.071   0.152     0.805    1183
+    Khmer-Khmer            1.009   1.000     1.009     224
 
 --- Khmer-English/page_8 ---
 
@@ -995,7 +1042,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.104   0.194     0.094     817
+    English-Latin          0.104   0.028     0.094     817
     Khmer-Khmer            1.000   1.000     1.000     148
 
 --- Malay-English/page_250 ---
@@ -1016,9 +1063,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.126   0.255     0.117     834
-    Malay-Arabic           0.566   0.768     0.566     288
-    Malay-Latin            0.048   0.186     0.047     351
+    English-Latin          0.126   0.186     0.117     834
+    Malay-Arabic           0.566   0.783     0.566     288
+    Malay-Latin            0.048   0.171     0.047     351
 
 --- Malay-English/page_315 ---
 
@@ -1038,9 +1085,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.144   0.269     0.134     762
-    Malay-Arabic           0.472   0.816     0.472     318
-    Malay-Latin            0.051   0.164     0.050     334
+    English-Latin          0.144   0.198     0.134     762
+    Malay-Arabic           0.472   0.803     0.472     318
+    Malay-Latin            0.051   0.161     0.050     334
 
 --- Malay-English/page_404 ---
 
@@ -1060,9 +1107,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.030   0.189     0.030     982
+    English-Latin          0.030   0.113     0.030     982
     Malay-Arabic           0.480   0.778     0.480     281
-    Malay-Latin            0.058   0.277     0.057     292
+    Malay-Latin            0.058   0.250     0.057     292
 
 --- Na-English-Chinese-French/page_186 ---
 
@@ -1082,10 +1129,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chinese-Han            0.000   0.630     0.000     128
-    English-Latin          0.000   0.149     0.000     862
-    French-Latin           0.003   0.168     0.003     708
-    Na-IPA                 0.654   0.971     0.654     324
+    Chinese-Han            0.000   0.000     0.000     128
+    English-Latin          0.000   0.000     0.000     862
+    French-Latin           0.003   0.007     0.003     708
+    Na                     0.658   1.000     0.658     269
+    Na-IPA                 0.636   0.476     0.636      55
     Na-Latin               0.000   0.000     0.000      41
 
 --- Na-English-Chinese-French/page_19 ---
@@ -1106,10 +1154,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chinese-Han            0.000   0.613     0.000     156
-    English-Latin          0.000   0.098     0.000    1018
-    French-Latin           0.000   0.265     0.000     768
-    Na-IPA                 0.663   1.000     0.663     255
+    Chinese-Han            0.000   0.000     0.000     156
+    English-Latin          0.000   0.000     0.000    1018
+    French-Latin           0.000   0.000     0.000     768
+    Na                     0.667   1.000     0.667     171
+    Na-IPA                 0.655   1.000     0.655      84
     Na-Latin               0.000   0.000     0.000      23
 
 --- Na-English-Chinese-French/page_321 ---
@@ -1130,10 +1179,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Chinese-Han            0.000   0.606     0.000     130
-    English-Latin          0.000   0.069     0.000     746
-    French-Latin           0.016   0.193     0.016     738
-    Na-IPA                 0.837   1.060     0.837     412
+    Chinese-Han            0.000   0.000     0.000     130
+    English-Latin          0.000   0.000     0.000     746
+    French-Latin           0.016   0.029     0.016     738
+    Na                     0.813   1.000     0.813     315
+    Na-IPA                 0.918   0.500     0.918      97
     Na-Latin               0.383   0.077     0.277      60
 
 --- Nahuatl-French/page_244 ---
@@ -1154,8 +1204,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    French-Latin           0.003   0.048     0.003    2033
-    Nahuatl-Latin          0.040   0.287     0.040    1502
+    French-Latin           0.003   0.015     0.003    2033
+    Nahuatl-Latin          0.040   0.246     0.040    1502
 
 --- Nahuatl-French/page_74 ---
 
@@ -1175,8 +1225,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    French-Latin           0.002   0.044     0.002    2203
-    Nahuatl-Latin          0.037   0.224     0.037    1248
+    French-Latin           0.002   0.007     0.002    2203
+    Nahuatl-Latin          0.037   0.171     0.037    1248
 
 --- Nahuatl-French/page_75 ---
 
@@ -1196,8 +1246,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    French-Latin           0.001   0.040     0.001    1728
-    Nahuatl-Latin          0.017   0.239     0.017    1465
+    French-Latin           0.001   0.005     0.001    1728
+    Nahuatl-Latin          0.017   0.129     0.017    1465
     Spanish-Latin          0.000   0.000     0.000      15
 
 --- Punjabi-English/page_114 ---
@@ -1218,9 +1268,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.091   0.258     0.084    1796
-    Punjabi-Gurmukhi       1.000   1.009     1.000     281
-    Punjabi-Latin          0.407   0.893     0.407     474
+    English-Latin          0.091   0.086     0.084    1796
+    Punjabi-Gurmukhi       1.000   1.000     1.000     281
+    Punjabi-Latin          0.407   0.847     0.407     474
 
 --- Punjabi-English/page_28 ---
 
@@ -1240,7 +1290,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.053   0.199     0.051    1852
+    English-Latin          0.053   0.083     0.051    1852
     Punjabi-Gurmukhi       1.000   1.000     1.000     315
     Punjabi-Latin          0.492   0.817     0.492     382
 
@@ -1262,8 +1312,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.006   0.120     0.006    1962
-    Punjabi-Gurmukhi       1.000   1.000     1.000     210
+    English-Latin          0.006   0.020     0.006    1962
+    Punjabi-Gurmukhi       1.000   1.000     1.000     218
     Punjabi-Latin          0.271   0.867     0.271     354
 
 --- Reel-English/page_17 ---
@@ -1284,9 +1334,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.074     0.000     337
-    Reel-IPA               0.333   1.000     0.333      99
-    Reel-Latin             0.188   0.678     0.188     329
+    English-Latin          0.000   0.000     0.000     337
+    Reel-IPA               0.333   0.864     0.333      99
+    Reel-Latin             0.188   0.594     0.188     329
 
 --- Reel-English/page_47 ---
 
@@ -1306,9 +1356,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.035     0.000     418
-    Reel-IPA               0.522   0.909     0.522      69
-    Reel-Latin             0.139   0.481     0.139     352
+    English-Latin          0.000   0.000     0.000     418
+    Reel-IPA               0.522   0.950     0.522      69
+    Reel-Latin             0.139   0.368     0.139     352
 
 --- Reel-English/page_89 ---
 
@@ -1328,9 +1378,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.207     0.000     503
+    English-Latin          0.000   0.000     0.000     503
     Reel-IPA               0.618   1.000     0.618      68
-    Reel-Latin             0.420   0.865     0.420     288
+    Reel-Latin             0.420   0.838     0.420     288
 
 --- Ritharngu-English/page_185 ---
 
@@ -1350,9 +1400,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.001   0.034     0.001    1054
+    English-Latin          0.001   0.004     0.001    1054
     Latin-Latin            0.000   0.000     0.000      73
-    Ritharngu-Latin        0.099   0.484     0.099     394
+    Ritharngu-Latin        0.099   0.477     0.099     394
 
 --- Ritharngu-English/page_205 ---
 
@@ -1372,9 +1422,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.001   0.023     0.001     941
+    English-Latin          0.001   0.004     0.001     941
     Latin-Latin            0.000   0.000     0.000      84
-    Ritharngu-Latin        0.148   0.698     0.148     569
+    Ritharngu-Latin        0.148   0.690     0.148     569
 
 --- Ritharngu-English/page_232 ---
 
@@ -1394,9 +1444,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Dayi-Latin             0.000   1.000     0.000       5
+    Dayi-Latin             0.000   0.000     0.000       5
     English-Latin          0.000   0.000     0.000    1189
-    Ritharngu-Latin        0.106   0.559     0.106     464
+    Ritharngu-Latin        0.106   0.507     0.106     464
 
 --- Sanskrit-English/page_559 ---
 
@@ -1416,9 +1466,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.061   0.112     0.057    1036
-    Sanskrit-Devanagari    0.490   0.845     0.490     296
-    Sanskrit-Latin         0.000   0.500     0.000      37
+    English-Latin          0.061   0.003     0.057    1036
+    Sanskrit-Devanagari    0.490   0.737     0.490     296
+    Sanskrit-Latin         0.000   0.000     0.000      37
 
 --- Sanskrit-English/page_880 ---
 
@@ -1438,8 +1488,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.070   0.102     0.066     896
-    Sanskrit-Devanagari    0.601   0.932     0.601     378
+    English-Latin          0.070   0.008     0.066     896
+    Sanskrit-Devanagari    0.601   0.849     0.601     378
     Sanskrit-Latin         0.000   0.000     0.000      22
 
 --- Sanskrit-English/page_9 ---
@@ -1460,8 +1510,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.086   0.152     0.079     836
-    Sanskrit-Devanagari    0.553   0.982     0.553     360
+    English-Latin          0.086   0.034     0.079     836
+    Sanskrit-Devanagari    0.553   0.896     0.553     360
 
 --- Shilluk-English/page_28 ---
 
@@ -1481,8 +1531,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.008     0.000    2225
-    Shilluk-Latin          0.044   0.333     0.044     225
+    English-Latin          0.000   0.000     0.000    2225
+    Shilluk-Latin          0.044   0.190     0.044     225
 
 --- Shilluk-English/page_3 ---
 
@@ -1502,8 +1552,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.001   0.017     0.001    1707
-    Shilluk-Latin          0.043   0.164     0.043     282
+    English-Latin          0.001   0.003     0.001    1707
+    Shilluk-Latin          0.043   0.186     0.043     282
 
 --- Shilluk-English/page_7 ---
 
@@ -1523,8 +1573,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.006     0.000    2025
-    Shilluk-Latin          0.034   0.216     0.034     328
+    English-Latin          0.000   0.000     0.000    2025
+    Shilluk-Latin          0.034   0.196     0.034     328
 
 --- Syriac-English/page_33 ---
 
@@ -1544,7 +1594,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.161   0.257     0.161     797
+    English-Latin          0.161   0.131     0.161     797
     Persian-Arabic         0.524   0.714     0.524      63
     Syriac-Syriac          1.000   1.000     1.000     206
     Turkish-Arabic         0.143   0.500     0.125       7
@@ -1567,7 +1617,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.093   0.107     0.086     741
+    English-Latin          0.093   0.025     0.086     741
     Greek-Greek            0.786   1.000     0.786      14
     Persian-Arabic         0.516   0.667     0.516      31
     Syriac-Syriac          1.000   1.000     1.000     318
@@ -1590,7 +1640,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.135   0.155     0.135     806
+    English-Latin          0.135   0.107     0.135     806
     Greek-Greek            0.120   0.667     0.120      25
     Hebrew-Hebrew          1.000   1.000     1.000       8
     Persian-Arabic         0.276   0.333     0.276      29
@@ -1614,7 +1664,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.184   0.511     0.183    1237
+    English-Latin          0.184   0.131     0.183    1237
     Telugu-Telugu          0.941   1.000     0.941     202
 
 --- Telugu-English/page_646 ---
@@ -1635,8 +1685,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.230   0.193     0.189    1113
-    Telugu-Telugu          0.966   1.480     0.966     205
+    English-Latin          0.230   0.051     0.189    1113
+    Telugu-Telugu          0.966   1.000     0.966     205
 
 --- Telugu-English/page_80 ---
 
@@ -1656,7 +1706,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          1.696   6.195     0.660    1030
+    English-Latin          1.696   0.207     0.660    1030
     Telugu-Telugu          1.024   1.000     1.024     167
 
 --- Thai-Russian/page_591 ---
@@ -1677,10 +1727,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Latin-Latin           12.253  29.091     0.934      79
-    Russian-Cyrillic       3.465   1.000     0.949     898
+    Latin-Latin           12.253   0.636     0.934      79
+    Russian-Cyrillic       3.465   0.920     0.949     898
     Thai-Cyrillic          1.039   1.000     1.003     283
-    Thai-Thai              0.968   1.024     0.968     221
+    Thai-Thai              0.968   0.976     0.968     221
 
 --- Thai-Russian/page_67 ---
 
@@ -1700,10 +1750,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Latin-Latin            0.083   0.000     0.077      12
-    Russian-Cyrillic       0.286   5.607     0.275    1009
+    Latin-Latin            0.083   0.500     0.077      12
+    Russian-Cyrillic       0.286   0.344     0.275    1009
     Thai-Cyrillic          0.800   1.000     0.800     295
-    Thai-Thai              3.452   1.048     0.843     248
+    Thai-Thai              3.452   0.810     0.843     248
 
 --- Thai-Russian/page_756 ---
 
@@ -1723,10 +1773,11 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Latin-Latin            0.000   0.500     0.000      15
-    Russian-Cyrillic       0.090   0.578     0.090     949
+    Latin-Latin            0.000   0.000     0.000      15
+    Meta                   0.000   0.000     0.000       3
+    Russian-Cyrillic       0.090   0.341     0.090     949
     Thai-Cyrillic          0.775   1.000     0.775     374
-    Thai-Thai              0.268   0.733     0.251     265
+    Thai-Thai              0.268   0.622     0.251     265
 
 --- Tiri-English/page_15 ---
 
@@ -1746,9 +1797,9 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.002   0.173     0.002     853
-    French-Latin           0.000   4.000     0.000      10
-    Tiri-Latin             0.336   0.780     0.336     298
+    English-Latin          0.002   0.010     0.002     853
+    French-Latin           0.000   0.000     0.000      10
+    Tiri-Latin             0.336   0.746     0.336     298
 
 --- Tiri-English/page_56 ---
 
@@ -1768,8 +1819,8 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.002   0.043     0.002     985
-    Tiri-Latin             0.204   0.516     0.203     357
+    English-Latin          0.002   0.008     0.002     985
+    Tiri-Latin             0.204   0.505     0.203     357
 
 --- Tiri-English/page_66 ---
 
@@ -1789,7 +1840,7 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.000   0.027     0.000    1026
+    English-Latin          0.000   0.000     0.000    1026
     French-Latin           0.000   0.000     0.000      14
     Tiri-Latin             0.155   0.375     0.155     330
 
@@ -1811,10 +1862,10 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.048   0.104     0.048    1527
+    English-Latin          0.048   0.058     0.048    1527
     Kurdish-Arabic         0.500   1.000     0.500       4
     Turkish-Arabic         0.125   0.500     0.125       8
-    Vernacular Syriac-Latin   0.181   0.705     0.181     287
+    Vernacular Syriac-Latin   0.181   0.667     0.181     287
     Vernacular Syriac-Syriac   1.000   1.000     1.000     429
 
 --- Vernacular Syriac-Kurdish_Turkish-English/page_26 ---
@@ -1835,12 +1886,12 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    Arabic-Arabic          0.474   0.625     0.474      38
-    English-Latin          0.392   0.343     0.307    1204
+    Arabic-Arabic          0.474   0.750     0.474      38
+    English-Latin          0.392   0.176     0.307    1204
     Kurdish-Latin          0.000   0.000     0.000       9
     Persian-Arabic         0.591   0.800     0.591      22
-    Turkish-Arabic         0.680   0.727     0.680      50
-    Vernacular Syriac-Latin   0.347   0.603     0.328     317
+    Turkish-Arabic         0.680   0.818     0.680      50
+    Vernacular Syriac-Latin   0.347   0.593     0.328     317
     Vernacular Syriac-Syriac   1.000   1.000     1.000     421
 
 --- Vernacular Syriac-Kurdish_Turkish-English/page_41 ---
@@ -1862,7 +1913,7 @@ STAGE 1 OCR EVALUATION REPORT
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
     Arabic-Arabic          0.367   0.571     0.367      30
-    English-Latin         14.715   0.563     0.945    1213
+    English-Latin         14.715   0.190     0.945    1213
     Greek-Greek            0.840   1.000     0.840      25
     Kurdish-Arabic         0.429   1.000     0.429      14
     Persian-Arabic         0.242   0.500     0.242      33
@@ -1873,8 +1924,8 @@ STAGE 1 OCR EVALUATION REPORT
 --- Yiddish-English/page_1 ---
 
   Character Recognition Quality:
-    TextEdit: 0.5533
-    GCER: 0.6354  (63.54%)
+    TextEdit: 0.5525
+    GCER: 0.6345  (63.45%)
     WER:  0.7232  (72.32%)
     Spans: 44 matched, 18 missing, 0 extra
 
@@ -1888,85 +1939,134 @@ STAGE 1 OCR EVALUATION REPORT
 
   Per-Language-Script Quality:
     language-script         GCER     WER  TextEdit  gold_g
-    English-Latin          0.381   0.483     0.381    1152
-    Yiddish-Hebrew         0.989   1.000     0.989     461
+    English-Latin          0.381   0.309     0.381    1152
+    Yiddish-Hebrew         0.987   1.000     0.987     460
+
+--- Yiddish-English/page_2 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.6082
+    GCER: 0.7565  (75.65%)
+    WER:  0.5421  (54.21%)
+    Spans: 49 matched, 24 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=0 FN=176)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=111)
+    Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=65)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.3768
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    English-Latin          0.520   0.468     0.501    1419
+    Yiddish-Hebrew         0.994   1.000     0.994     671
+
+--- Yiddish-English/page_41 ---
+
+  Character Recognition Quality:
+    TextEdit: 0.5994
+    GCER: 0.8805  (88.05%)
+    WER:  0.6776  (67.76%)
+    Spans: 69 matched, 25 missing, 0 extra
+
+  Markup / Typography Preservation:
+    Typography (bold+italic pooled) — F1: 0.0000  (TP=0 FP=0 FN=141)
+    Bold   — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=73)
+    Italic — P: 0.0000  R: 0.0000  F1: 0.0000  (TP=0 FP=0 FN=68)
+
+  Read Order (Structure Preservation):
+    ReadOrderEdit: 0.4430
+
+  Per-Language-Script Quality:
+    language-script         GCER     WER  TextEdit  gold_g
+    English-Latin          0.641   0.591     0.561    1223
+    Yiddish-Hebrew         0.993   1.000     0.993     891
 
 ========================================================================
-AGGREGATE (86 pages)
+AGGREGATE (90 pages)
 ========================================================================
 
   Character Recognition Quality:
-    TextEdit: 0.2667
-    GCER: 0.5216
-    WER:  0.6677
+    TextEdit: 0.2856
+    GCER: 0.5613
+    WER:  0.6673
 
   Markup / Typography Preservation:
-    Typography (bold+italic pooled) — F1: 0.0010
-    Bold   — P: 0.0725  R: 0.0009  F1: 0.0018
+    Typography (bold+italic pooled) — F1: 0.0009
+    Bold   — P: 0.0725  R: 0.0009  F1: 0.0017
     Italic — P: 0.0000  R: 0.0000  F1: 0.0000
 
   Read Order (Structure Preservation):
-    ReadOrderEdit: 0.3378
+    ReadOrderEdit: 0.3452
 
   Per-Language-Script Quality (aggregate):
     language-script         GCER     WER  TextEdit  gold_g
-    Arabic-Arabic          0.451   0.625     0.451      71
+    Arabic-Arabic          0.451   0.688     0.451      71
     Arabic-Latin           0.000   0.000     0.000       5
-    Assyrian-Cuneiform     1.007   1.000     1.007     421
-    Assyrian-Latin         2.003   3.431     0.875    1396
-    Bengalese-Bengali      0.443   0.823     0.443    1281
-    Canala-Latin           0.261   0.667     0.261    1043
-    Chepang-Latin          0.181   0.693     0.181    1914
-    Chinese-Han            0.000   0.615     0.000     414
-    Chukchi-Cyrillic Extended   0.090   0.532     0.090     556
-    Circassian-Arabic      0.814   0.980     0.814     442
-    Circassian-Latin       0.160   0.466     0.160     594
-    Dayi-Latin             0.000   1.000     0.000       5
-    Efik-Latin             0.070   0.284     0.069    1723
-    English-Latin          0.349   0.332     0.267   85336
-    Evenki-Cyrillic        0.113   0.550     0.112    1911
-    French-Latin           0.003   0.090     0.003    8246
-    Georgian-Georgian      1.002  26.508     1.002     477
-    Gojri-Devanagari       0.033   0.077     0.033     273
+    Assyrian-Cuneiform     1.000   1.000     1.000     352
+    Assyrian-Latin         1.508   0.350     0.653     663
+    Bengalese              0.443   0.805     0.443    1281
+    Canala                 0.266   0.642     0.266     695
+    Canala-Latin           0.250   0.620     0.250     348
+    Chepang                0.158   0.560     0.158    1248
+    Chepang-Latin          0.224   0.786     0.224     666
+    Chinese-Han            0.000   0.000     0.000     414
+    Chukchi                0.103   0.574     0.103     750
+    Circassian-Arabic      0.814   0.960     0.814     442
+    Circassian-Latin       0.160   0.398     0.160     594
+    Dayi-Latin             0.000   0.000     0.000       5
+    Efik                   0.070   0.251     0.069    1723
+    English                0.030   0.017     0.029   23203
+    English-Latin          0.485   0.091     0.343   64775
+    Evenki                 0.113   0.492     0.112    1911
+    French-Latin           0.003   0.010     0.003    8246
+    Georgian-Georgian      1.013   1.000     1.013    1383
+    Gojri-Devanagari       0.033   0.107     0.033     273
     Gojri-Latin            0.000   0.000     0.000     465
-    Greek-Greek            0.106   0.407     0.106    2586
-    Gujarati-Gujarati      0.992   0.993     0.992     498
+    Greek                  0.091   0.378     0.091    2513
+    Greek-Greek            0.603   0.889     0.603      73
+    Gujarati               0.992   0.993     0.992     498
     Hebrew-Hebrew          1.000   1.000     1.000      26
-    Hindi-Devanagari       0.045   0.182     0.045     838
+    Hindi-Devanagari       0.045   0.135     0.045     838
     Iñupiatun Eskimo-Latin   0.052   0.348     0.052    2961
-    Japanese-Kanji         0.355   0.678     0.355     200
-    Japanese-Katakana      0.066   0.252     0.066     575
-    Japanese-Latin         0.037   0.128     0.036    2742
+    Japanese-Kanji         0.355   0.614     0.355     200
+    Japanese-Katakana      0.066   0.223     0.066     575
+    Japanese-Latin         0.037   0.081     0.036    2742
     Kashmiri-Arabic        1.000   1.000     1.000     551
-    Kashmiri-Latin         0.699   0.821     0.699     989
-    Khmer-Khmer            1.006   1.018     1.006     710
+    Kashmiri-Latin         0.699   0.916     0.699     989
+    Khmer-Khmer            1.006   1.000     1.006     710
     Kurdish-Arabic         0.444   1.000     0.444      18
     Kurdish-Latin          0.000   0.000     0.000       9
-    Latin-Latin            2.580   6.708     0.728     376
+    Latin-Latin            2.580   0.180     0.728     376
     Malay-Arabic           0.505   0.789     0.505     887
-    Malay-Latin            0.052   0.202     0.051     977
-    Na-IPA                 0.733   1.011     0.733     991
+    Malay-Latin            0.052   0.189     0.051     977
+    Meta                   0.000   0.000     0.000       3
+    Na                     0.725   1.000     0.725     755
+    Na-IPA                 0.758   0.627     0.758     236
     Na-Latin               0.185   0.032     0.156     124
-    Nahuatl-Latin          0.031   0.252     0.031    4215
+    Nahuatl-Latin          0.031   0.186     0.031    4215
     Nepali-Latin           0.000   0.000     0.000       2
-    Old Persian-Latin      0.017   0.400     0.017      60
+    Old Persian-Latin      0.017   0.100     0.017      60
     Persian-Arabic         0.438   0.622     0.438     178
-    Punjabi-Gurmukhi       1.000   1.003     1.000     806
-    Punjabi-Latin          0.394   0.860     0.394    1210
-    Reel-IPA               0.470   0.963     0.470     236
-    Reel-Latin             0.239   0.647     0.239     969
-    Ritharngu-Latin        0.121   0.592     0.121    1427
-    Russian-Cyrillic       1.291   2.266     0.630    6850
-    Sanskrit-Devanagari    0.552   0.920     0.552    1034
-    Sanskrit-Latin         0.000   0.333     0.000      59
-    Shilluk-Latin          0.040   0.228     0.040     835
+    Punjabi-Gurmukhi       1.000   1.000     1.000     814
+    Punjabi-Latin          0.394   0.843     0.394    1210
+    Reel-IPA               0.470   0.931     0.470     236
+    Reel-Latin             0.239   0.580     0.239     969
+    Ritharngu-Latin        0.121   0.570     0.121    1427
+    Russian                0.117   0.618     0.116    3757
+    Russian-Cyrillic       2.980   0.520     0.816    5219
+    Sanskrit-Devanagari    0.552   0.831     0.552    1034
+    Sanskrit-Latin         0.000   0.000     0.000      59
+    Shilluk-Latin          0.040   0.191     0.040     835
     Spanish-Latin          0.000   0.000     0.000      15
     Syriac-Syriac          1.000   1.000     1.000     868
-    Telugu-Telugu          0.974   1.173     0.974     574
+    Telugu-Telugu          0.974   1.000     0.974     574
     Thai-Cyrillic          0.861   1.000     0.861     952
-    Thai-Thai              1.554   0.930     0.751     734
-    Tiri-Latin             0.227   0.529     0.227     985
+    Thai-Thai              1.554   0.798     0.751     734
+    Tiri-Latin             0.227   0.517     0.227     985
     Turkish-Arabic         0.318   0.670     0.318     466
-    Vernacular Syriac-Latin   5.088   0.631     0.882     913
+    Vernacular Syriac-Latin   5.088   0.616     0.882     913
     Vernacular Syriac-Syriac   1.000   1.000     1.000    1310
-    Yiddish-Hebrew         0.989   1.000     0.989     461
+    Yiddish-Hebrew         0.992   1.000     0.992    2022
