@@ -737,6 +737,12 @@ def create_app(
     ) -> str:
         del provider
         category = subscription_error_category(exc)
+        metadata = exc.metadata
+        if metadata.get("reason") == "callback_listener_unavailable":
+            return (
+                f"Login needs local port {metadata.get('callback_port')}, which "
+                "another app is using. Close that app and try again."
+            )
         return {
             "authentication": "Subscription authentication failed",
             "expired_session": "Subscription session expired; log in again",
@@ -1017,6 +1023,10 @@ def create_app(
                 "OAuth callback listener is unavailable",
                 provider=provider,
                 category="transport",
+                metadata={
+                    "reason": "callback_listener_unavailable",
+                    "callback_port": parsed.port,
+                },
             ) from None
 
         def wait_for_callback() -> None:
