@@ -82,11 +82,15 @@ for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ![MUDIDI New Run dashboard showing the Input step](../assets/dashboard-home.png)
 
-The dashboard uses a six-step responsive wizard with persistent navigation,
-high-contrast controls, and a live run summary. The header holds the saved
-preset picker and a status chip that follows the selected billing mode
-(subscription accounts signed in, or provider keys available). The same form
-fields and validation rules are used in desktop and mobile layouts.
+The dashboard has a dark navigation sidebar (**New run**, **Active run**,
+**Run history**, **Saved presets**), a numbered six-step tab bar across the top
+of **New run**, and a live **Run summary** rail on the right. The header shows a
+status chip that follows the selected billing mode (subscription accounts
+signed in, or provider keys available) and, once at least one preset is saved,
+the preset picker. **Dark mode** at the bottom of the sidebar switches between
+the light and dark themes. On narrow screens the sidebar moves to the top and
+the step tabs shrink to their numbers; the same form fields and validation
+rules apply in every layout.
 
 
 ## Create a run
@@ -102,8 +106,8 @@ The **New Run** screen is a six-step wizard:
    add Stage 1 and Stage 2 instructions.
 4. **Model** — manage the local provider credential, select the provider,
    model, and reasoning settings, and configure batch size.
-5. **Agentic** — leave verification off or enable its evaluator and correction
-   settings.
+5. **Agentic** — leave the agentic loop off, or turn it on and adjust its
+   evaluator and correction settings.
 6. **Review** — submit the complete form for authoritative server validation,
    then inspect the server-rendered, non-secret review before starting the run.
 
@@ -133,9 +137,14 @@ The **Input** step asks for:
 Page numbers are 1-based: zero, negative numbers, descending ranges, and pages
 beyond the uploaded PDF's page count are rejected. Browser-selected files are
 copied into an input bundle owned by the run so review, restart, and resume do
-not depend on the original browser selection. The output directory remains a
-text field because a standard browser cannot disclose an arbitrary absolute
-folder path to a localhost server.
+not depend on the original browser selection.
+
+A standard browser cannot disclose an arbitrary absolute folder path to a
+localhost server, so the output directory is a text field. When MUDIDI runs
+natively with `uv`, **Choose folder…** beside the field opens the operating
+system's folder dialog on the same computer and fills in the selected path. The
+button is absent in Docker and on machines without a supported dialog; type the
+path instead.
 
 The **Pipeline** step presents these mutually exclusive choices:
 
@@ -396,7 +405,10 @@ safely before MDF parsing.
 
 ## Monitor, inspect, and correct pages
 
-Run views include:
+Every run page shows the same workspace tab bar, with the current view
+highlighted. A view that is not available yet, such as **MDF parsing guide**
+before a guide exists, appears greyed out instead of disappearing. Run views
+include:
 
 - **Overview** — durable status, progress, resume, and cancellation.
 - **MDF parsing guide** — structured review before approval and the read-only

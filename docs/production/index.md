@@ -9,7 +9,7 @@ agentic, cache, MDF parsing guide, and runtime controls. The YAML compatibility
 keys retain the internal `parse_rules` name.
 
 If you prefer a graphical workflow, use the
-[local web application](local-web-app.md). Its responsive five-step wizard
+[local web application](local-web-app.md). Its responsive six-step wizard
 supports dictionary PDFs, typed or uploaded stage instructions, model and
 agentic settings, saved presets, and explicit MDF parsing-guide review before
 Stage 2 extraction.
