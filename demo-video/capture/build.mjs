@@ -222,33 +222,31 @@ ${captionHtml}
       const tl = gsap.timeline({ paused: true });
       const W = 1920;
       let cam = { x: 0, y: 0, w: 1280 };
-      let parked = null;
       let OFF = ${SHIFT};
+      // Camera and cursor moves are recorded here, then the cursor path is baked
+      // into one tween at the end, so nothing else ever animates the cursor.
+      const camEvents = [];
+      const cursorEvents = [];
 
       // A camera view is {x, y, w} in dashboard CSS pixels; its height is w * 9 / 16.
       const camProps = (view) => ({ x: (-view.x * W) / view.w, y: (-view.y * W) / view.w, scale: W / view.w });
-      const onScreen = (view, point) => ({ x: ((point[0] - view.x) * W) / view.w, y: ((point[1] - view.y) * W) / view.w });
       const centre = (target) => (typeof target === "string" ? [R[target].x + R[target].w / 2, R[target].y + R[target].h / 2] : target);
       function camera(scene, t, view, duration) {
         t += OFF;
         const stage = "#stage-" + scene;
-        if (duration) {
-          tl.to(stage, { ...camProps(view), duration, ease: "power2.inOut" }, t);
-          if (parked) tl.to("#cursor-arrow", { ...onScreen(view, parked), duration, ease: "power2.inOut" }, t);
-        } else {
-          tl.set(stage, camProps(view), t);
-        }
+        if (duration) tl.to(stage, { ...camProps(view), duration, ease: "power2.inOut" }, t);
+        else tl.set(stage, camProps(view), t);
+        camEvents.push({ t, props: camProps(view), duration: duration || 0 });
         cam = view;
       }
+      // Move the cursor to a dashboard element (or [x, y] in dashboard pixels). It
+      // stays on that spot while the camera pans.
       function move(t, target, duration) {
-        t += OFF;
-        parked = centre(target);
-        tl.to("#cursor-arrow", { ...onScreen(cam, parked), duration: duration || 0.6, ease: "power2.inOut" }, t);
+        cursorEvents.push({ t: t + OFF, to: centre(target), duration: duration || 0.6 });
       }
+      // Move the cursor to a point on the 1920x1080 frame, for overlays.
       function moveScreen(t, x, y, duration) {
-        t += OFF;
-        parked = null;
-        tl.to("#cursor-arrow", { x, y, duration: duration || 0.6, ease: "power2.inOut" }, t);
+        move(t, [cam.x + (x * cam.w) / W, cam.y + (y * cam.w) / W], duration);
       }
       function click(t) {
         t += OFF;
@@ -280,14 +278,12 @@ ${captionHtml}
       // ---- 4.8 Upload the PDF and choose pages --------------------------------------
       camera("input", 4.8, { x: 200, y: 240, w: 1080 });
       fadeIn("input", 4.8);
-      tl.set("#cursor-arrow", { x: 1500, y: 1000 }, 0);
       tl.fromTo("#chip-body", { x: 70, y: 730, opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" }, 5.0 + OFF);
       moveScreen(5.2, 250, 800, 0.6);
       click(5.9);
-      const drop = onScreen(cam, centre("in.drop"));
+      const drop = { x: ((centre("in.drop")[0] - cam.x) * W) / cam.w, y: ((centre("in.drop")[1] - cam.y) * W) / cam.w };
       tl.to("#chip-body", { x: drop.x - 180, y: drop.y - 70, duration: 1.0, ease: "power2.inOut" }, 6.0 + OFF);
       moveScreen(6.0, drop.x, drop.y, 1.0);
-      parked = centre("in.drop");
       frame(6.7, "in-drag");
       tl.to("#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" }, 7.2 + OFF);
       frame(7.3, "in-file");
@@ -423,6 +419,69 @@ ${captionHtml}
         tl.fromTo("#caption-text-" + i, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, start);
         tl.to("#caption-text-" + i, { opacity: 0, duration: 0.2, ease: "power1.in" }, end - 0.2);
       });
+
+      // ---- Bake the cursor path -----------------------------------------------------------------
+      // The cursor's place on screen is its dashboard position seen through the camera.
+      // Sampling that once per frame gives a single smooth track with no competing tweens.
+      (function bakeCursor() {
+        const FPS = 30;
+        const start = ${at(4.8)};
+        const end = ${at(4.8)} + 45.6;
+        const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
+        const mix = (a, b, e) => a + (b - a) * e;
+        const project = (props, point) => ({ x: point[0] * props.scale + props.x, y: point[1] * props.scale + props.y });
+        const unproject = (props, screen) => [(screen.x - props.x) / props.scale, (screen.y - props.y) / props.scale];
+        let props = { x: 0, y: 0, scale: 1.5 };
+        let camTween = null;
+        let page = null;
+        let cursorTween = null;
+        let screen = { x: 1500, y: 1000 };
+        let ci = 0;
+        let ui = 0;
+        const propsAt = (t) => {
+          if (!camTween) return props;
+          const e = ease(Math.min(1, Math.max(0, (t - camTween.t) / camTween.duration)));
+          return { x: mix(camTween.from.x, camTween.to.x, e), y: mix(camTween.from.y, camTween.to.y, e), scale: mix(camTween.from.scale, camTween.to.scale, e) };
+        };
+        const pageAt = (t) => {
+          if (!cursorTween) return page;
+          const e = ease(Math.min(1, Math.max(0, (t - cursorTween.t) / cursorTween.duration)));
+          return [mix(cursorTween.from[0], cursorTween.to[0], e), mix(cursorTween.from[1], cursorTween.to[1], e)];
+        };
+        const points = [];
+        for (let f = 0; f / FPS <= end; f += 1) {
+          const t = f / FPS;
+          while (ci < camEvents.length && camEvents[ci].t <= t) {
+            const event = camEvents[ci++];
+            const before = propsAt(event.t);
+            if (event.duration) {
+              props = before;
+              camTween = { t: event.t, duration: event.duration, from: before, to: event.props };
+            } else {
+              // A cut to another scene: keep the cursor where it is on screen.
+              const at = pageAt(event.t);
+              const held = at ? project(before, at) : screen;
+              props = event.props;
+              camTween = null;
+              page = unproject(props, held);
+              cursorTween = null;
+            }
+          }
+          while (ui < cursorEvents.length && cursorEvents[ui].t <= t) {
+            const event = cursorEvents[ui++];
+            const from = pageAt(event.t) || unproject(propsAt(event.t), screen);
+            page = from;
+            cursorTween = { t: event.t, duration: event.duration, from, to: event.to };
+          }
+          if (camTween && t >= camTween.t + camTween.duration) { props = camTween.to; camTween = null; }
+          if (cursorTween && t >= cursorTween.t + cursorTween.duration) { page = cursorTween.to; cursorTween = null; }
+          const at = pageAt(t);
+          if (at) screen = project(propsAt(t), at);
+          if (t >= start - 1e-6) points.push({ x: Math.round(screen.x * 10) / 10, y: Math.round(screen.y * 10) / 10 });
+        }
+        tl.set("#cursor-arrow", points[0], 0);
+        tl.to("#cursor-arrow", { keyframes: points.slice(1).map((point) => ({ ...point, duration: 1 / FPS, ease: "none" })), ease: "none" }, start);
+      })();
 
       window.__timelines["main"] = tl;
       tl.seek(0);
