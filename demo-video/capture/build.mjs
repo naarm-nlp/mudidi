@@ -201,7 +201,10 @@ for (const [control, result] of [["md.model1", "md-model1"], ["md.reason1", "md-
   wait(0.75);
 }
 wait(0.3);
-caption("One model, tuned per stage: low reasoning to transcribe, high to parse.", mark + 0.1, t);
+caption("A suggested starting point: low reasoning to transcribe, high to parse.", mark + 0.1, t);
+mark = t;
+wait(3.0);
+caption("Experiment to find the model and reasoning that work best for each stage.", mark + 0.15, t);
 pan({ x: 240, y: 1200, w: 960 }, 0.6);
 go("md.next", 0.7);
 click();
