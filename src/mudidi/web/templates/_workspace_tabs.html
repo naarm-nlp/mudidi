@@ -1,0 +1,13 @@
+{% macro workspace_tabs(request, run_id, current) -%}
+{% set tabs = run_workspace_tabs(request, run_id) %}
+<div class="panel run-workspace-nav run-workspace-tabs">
+  <nav class="detail-tabs" aria-label="Run workspace">
+    {% for tab in tabs %}
+    {% if tab.key == current %}<a class="active" href="{{ tab.href }}" aria-current="page">{{ tab.label }}</a>
+    {% elif tab.available %}<a href="{{ tab.href }}">{{ tab.label }}</a>
+    {% else %}<span aria-disabled="true">{{ tab.label }}</span>
+    {% endif %}
+    {% endfor %}
+  </nav>
+</div>
+{%- endmacro %}

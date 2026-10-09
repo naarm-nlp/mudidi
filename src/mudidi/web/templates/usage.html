@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from "_workspace_tabs.html" import workspace_tabs %}
 {% block title %}Usage · MUDIDI{% endblock %}
 {% block main %}
 <div class="page-shell">
@@ -8,15 +9,7 @@
       <span class="eyebrow">LLM accounting</span>
       <h1 id="usage-title">Usage</h1>
     </header>
-    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
-      <div class="detail-tabs">
-        <a href="/runs/{{ run_id }}">Overview</a>
-        <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
-        <a href="/runs/{{ run_id }}/logs">Live Logs</a>
-        <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
-        <a href="/runs/{{ run_id }}/usage" aria-current="page">Usage</a>
-      </div>
-    </nav>
+    {{ workspace_tabs(request, run_id, 'usage') }}
     <section class="usage-summary" aria-labelledby="usage-title">
       <div class="metric-grid">
         <article><span>Total Tokens</span><strong>{{ usage.total_tokens }}</strong></article>

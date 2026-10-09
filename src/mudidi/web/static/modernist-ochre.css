@@ -283,12 +283,12 @@ button:disabled{cursor:not-allowed}
 .progress-track{margin:12px 0 8px}
 .progress-current{margin:0;color:var(--color-muted);font-size:13px;font-weight:400}
 .pipeline-steps{margin:24px 0 0;border:0;border-top:1.5px solid var(--color-ink);background:transparent;counter-reset:pipeline-step}
-.pipeline-step{grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:baseline;padding:12px 0;border-bottom:1px solid var(--color-hair);counter-increment:pipeline-step}
+.pipeline-step{grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:baseline;padding:12px 16px;border-bottom:1px solid var(--color-hair);counter-increment:pipeline-step}
 .pipeline-step+.pipeline-step{border-top:0}
 .pipeline-marker,.pipeline-step.completed .pipeline-marker,.pipeline-step.running .pipeline-marker{display:block;width:auto;height:auto;border:0;background:transparent;font-size:0}
 .pipeline-marker::before{content:counter(pipeline-step,lower-roman);color:var(--color-muted);font-family:var(--font-mono);font-size:13px;font-weight:500}
 .pipeline-step.completed .pipeline-marker::before{content:"✓";color:var(--color-accent)}
-.pipeline-step.running{padding-left:8px;background:transparent}
+.pipeline-step.running{background:transparent}
 .pipeline-step.running .pipeline-marker::before,.pipeline-step.running .pipeline-step-heading strong{color:var(--color-accent-strong)}
 .pipeline-step-heading{align-items:baseline}
 .pipeline-step-heading strong{font-size:16px;font-weight:700;letter-spacing:-.01em}
@@ -307,6 +307,7 @@ button:disabled{cursor:not-allowed}
 .activity-heading>span{font-family:var(--font-sans);font-size:13px;text-transform:none}
 .activity-list{border-top:1.5px solid var(--color-ink)}
 .activity-list li span{font-size:14px;font-weight:400}
+.activity-list li{padding-left:16px;padding-right:16px}
 .activity-list li small{font-size:12px}
 
 /* tables */

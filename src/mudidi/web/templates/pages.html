@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from "_workspace_tabs.html" import workspace_tabs %}
 {% block title %}Page Viewer &amp; Editor · MUDIDI{% endblock %}
 {% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>{% endblock %}
@@ -10,15 +11,7 @@
         <span class="eyebrow">Generated page inspection and correction</span>
         <h1>Page Viewer &amp; Editor</h1>
       </header>
-      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
-        <div class="detail-tabs">
-          <a href="/runs/{{ run_id }}">Overview</a>
-          <a href="/runs/{{ run_id }}/pages" aria-current="page">Page Viewer &amp; Editor</a>
-          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
-          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
-          <a href="/runs/{{ run_id }}/usage">Usage</a>
-        </div>
-      </nav>
+      {{ workspace_tabs(request, run_id, 'pages') }}
       <section class="panel empty-state page-viewer-empty">
         <div>
           <h2>No page outputs yet</h2>

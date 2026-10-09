@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from "_workspace_tabs.html" import workspace_tabs %}
 {% block title %}File Artifacts · MUDIDI{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>{% endblock %}
 {% block main %}
@@ -10,15 +11,7 @@
       <h1>File Artifacts</h1>
       <p>Downloads are constrained to this run's validated output directory.</p>
     </header>
-    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
-      <div class="detail-tabs">
-        <a href="/runs/{{ run_id }}">Overview</a>
-        <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
-        <a href="/runs/{{ run_id }}/logs">Live Logs</a>
-        <a href="/runs/{{ run_id }}/outputs" aria-current="page">File Artifacts</a>
-        <a href="/runs/{{ run_id }}/usage">Usage</a>
-      </div>
-    </nav>
+    {{ workspace_tabs(request, run_id, 'outputs') }}
     <section class="panel artifact-filter-panel" data-artifact-filters aria-labelledby="artifact-filter-title">
       <h2 id="artifact-filter-title" class="sr-only">Filter artifacts</h2>
       <label for="artifact-path-filter">Filter path<input id="artifact-path-filter" type="search" data-artifact-path-filter placeholder="Search relative paths" autocomplete="off"></label>

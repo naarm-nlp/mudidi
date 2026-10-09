@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from "_workspace_tabs.html" import workspace_tabs %}
 {% block title %}{{ run.run_id }} · MUDIDI{% endblock %}
 {% block head_meta %}{% if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endif %}{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>{% endblock %}
@@ -14,16 +15,7 @@
         <h1 class="run-id">{{ run.run_id }}</h1>
         <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}{% endif %}</p>
       </header>
-      <div class="panel run-workspace-nav run-workspace-tabs">
-        <nav class="detail-tabs" aria-label="Run workspace">
-          <a class="active" href="/runs/{{ run.run_id }}" aria-current="page">Overview</a>
-          {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
-          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>{% else %}<span aria-disabled="true">Page Viewer &amp; Editor</span>{% endif %}
-          <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
-          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>{% else %}<span aria-disabled="true">File Artifacts</span>{% endif %}
-          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/usage">Usage</a>{% else %}<span aria-disabled="true">Usage</span>{% endif %}
-        </nav>
-      </div>
+      {{ workspace_tabs(request, run.run_id, 'overview') }}
       <div class="content-grid run-overview-grid">
         <section class="panel review-card run-progress-card">
           <div class="progress-heading">

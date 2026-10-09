@@ -120,6 +120,49 @@ def _short_datetime(value: object) -> str:
 
 
 _TEMPLATES.env.filters["short_datetime"] = _short_datetime
+
+
+def _run_workspace_tabs(request: Request, run_id: str) -> list[dict[str, object]]:
+    """Return the same workspace tabs, with availability, for every run page."""
+
+    state = request.app.state
+    try:
+        review_available = state.run_store.get_parse_rule_review(run_id) is not None
+    except (KeyError, sqlite3.Error):
+        review_available = False
+    workspace_available = _managed_config_available(state.job_controller, run_id)
+    base = f"/runs/{run_id}"
+    return [
+        {"key": "overview", "label": "Overview", "href": base, "available": True},
+        {
+            "key": "parse-rules",
+            "label": "MDF parsing guide",
+            "href": f"{base}/parse-rules",
+            "available": review_available,
+        },
+        {
+            "key": "pages",
+            "label": "Page Viewer & Editor",
+            "href": f"{base}/pages",
+            "available": workspace_available,
+        },
+        {"key": "logs", "label": "Live Logs", "href": f"{base}/logs", "available": True},
+        {
+            "key": "outputs",
+            "label": "File Artifacts",
+            "href": f"{base}/outputs",
+            "available": workspace_available,
+        },
+        {
+            "key": "usage",
+            "label": "Usage",
+            "href": f"{base}/usage",
+            "available": workspace_available,
+        },
+    ]
+
+
+_TEMPLATES.env.globals["run_workspace_tabs"] = _run_workspace_tabs
 _MAX_LOG_BYTES = 512_000
 
 _SUBSCRIPTION_TRANSACTION_TTL = timedelta(minutes=10)

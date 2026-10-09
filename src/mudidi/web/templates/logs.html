@@ -1,4 +1,5 @@
 {% extends "_layout.html" %}
+{% from "_workspace_tabs.html" import workspace_tabs %}
 {% block title %}Live Logs · MUDIDI{% endblock %}
 {% block head_meta %}{% if is_active %}<meta name="mudidi-events" content="/runs/{{ run_id }}/events?after={{ last_event_sequence }}">{% endif %}{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>{% endblock %}
@@ -11,12 +12,7 @@
       <h1>Live Logs</h1>
       <p>Only the latest bounded portion of the local worker log is shown. Known provider keys are redacted.</p>
     </header>
-    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
-      <div class="detail-tabs">
-        <a href="/runs/{{ run_id }}">Overview</a>
-        <a href="/runs/{{ run_id }}/logs" aria-current="page">Live Logs</a>
-      </div>
-    </nav>
+    {{ workspace_tabs(request, run_id, 'logs') }}
     {% if failure_message %}
     <section class="failure-details" role="alert" aria-labelledby="run-failure-title">
       <strong id="run-failure-title">Run failure</strong>
