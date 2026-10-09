@@ -359,6 +359,24 @@ bindSingleFileStatus(
   document.querySelector("[data-mdf-guide-file-status]"),
 );
 
+const mdfGuideSourceChoices = [...document.querySelectorAll("[data-mdf-guide-source]")];
+const mdfGuidePanels = [...document.querySelectorAll("[data-mdf-guide-panel]")];
+const synchronizeMdfGuideSource = () => {
+  const selected = mdfGuideSourceChoices.find((choice) => choice.checked);
+  if (!selected) return;
+  const sectionActive = !selected.closest("[data-stage-control]")?.hidden;
+  mdfGuidePanels.forEach((panel) => {
+    const visible = panel.dataset.mdfGuidePanel === selected.value;
+    panel.hidden = !visible;
+    panel.querySelectorAll("input").forEach((input) => {
+      input.disabled = !visible || !sectionActive;
+    });
+  });
+};
+mdfGuideSourceChoices.forEach((choice) => {
+  choice.addEventListener("change", synchronizeMdfGuideSource);
+});
+
 const instructionPanels = [...document.querySelectorAll("[data-instruction-source-panel]")];
 
 const instructionPanelHasKeptPreset = (panel) => panel.dataset.instructionHasPreset === "true";
@@ -1334,6 +1352,7 @@ const synchronizePipeline = () => {
       input.disabled = !visible;
     });
   });
+  synchronizeMdfGuideSource();
   synchronizeInstructionPanels();
   if (stage2Container) {
     stage2Container.hidden = !(active.has("pass1") || active.has("pass2"));

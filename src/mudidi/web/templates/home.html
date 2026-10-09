@@ -232,11 +232,17 @@
 
               <section class="form-section mdf-guide-section" aria-labelledby="mdf-guide-title" data-stage-control data-pipeline-stages="pass1 pass2">
                 <h3 id="mdf-guide-title">MDF parsing guide</h3>
-                <p class="section-lede">Pass 1 infers a guide from representative pages, or you can supply a guide you already have.</p>
-                <div class="form-grid">
-                  <label{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% else %}<small>Must be within the dictionary pages.</small>{% endif %}</label>
-                  <div class="form-field mdf-guide-field">
-                    <span class="field-heading">Existing MDF parsing guide <button class="info-button" type="button" aria-label="About the existing MDF parsing guide" data-help="Optional. Upload a pre-generated MDF parsing guide to use it directly. Skip this if you have not generated one during Stage 2.">i</button></span>
+                <p class="section-lede">Before any page is converted, MUDIDI needs an MDF parsing guide: a description of how this dictionary's entries are laid out and which MDF markers they map to. You can leave this section as it is.</p>
+                <div class="choice-card-grid mdf-guide-choices">
+                  <label class="choice-card"><input type="radio" name="mdf_guide_source" value="infer"{% if not preset_assets.mdf_guide %} checked{% endif %} data-mdf-guide-source><span><strong>Create a guide for me</strong><small>MUDIDI studies sample pages and proposes a guide. The run pauses so you can review and edit it.</small></span></label>
+                  <label class="choice-card"><input type="radio" name="mdf_guide_source" value="existing"{% if preset_assets.mdf_guide %} checked{% endif %} data-mdf-guide-source><span><strong>Use a guide I already have</strong><small>Upload a guide JSON saved from an earlier run of this dictionary. The run uses it as is, with no review step.</small></span></label>
+                </div>
+                <div class="form-grid" data-mdf-guide-panel="infer"{% if preset_assets.mdf_guide %} hidden{% endif %}>
+                  <label{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Pages to learn from <span class="field-optional">(optional)</span> <button class="info-button" type="button" aria-label="About the pages the MDF parsing guide is learned from" data-help="MUDIDI reads these pages to work out the MDF markers and entry structure used by this dictionary. Pick two or three typical pages that show the kinds of entries the dictionary has. Use one page number, a page range, comma-separated page numbers, or a combination. Every page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% else %}<small>Two or three typical pages work best. Leave blank to use only the first dictionary page.</small>{% endif %}</label>
+                </div>
+                <div class="form-grid" data-mdf-guide-panel="existing"{% if not preset_assets.mdf_guide %} hidden{% endif %}>
+                  <div class="form-field mdf-guide-field{% if errors_by_field.existing_mdf_guide_file %} field-invalid{% endif %}"{% if errors_by_field.existing_mdf_guide_file %} data-field-error="existing_mdf_guide_file"{% endif %}>
+                    <span class="field-heading">MDF parsing guide file <button class="info-button" type="button" aria-label="About the MDF parsing guide file" data-help="The guide JSON from an earlier run of this dictionary. It is saved in that run's output folder as mdf_parsing_guide.json, and you can download it from the run's File Artifacts tab.">i</button></span>
                     {% if preset_assets.mdf_guide %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_guide.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_guide.name }}</a></span>{% endif %}
                     <div class="mdf-guide-file-row">
                       <label class="primary mdf-guide-upload-trigger">
@@ -248,6 +254,7 @@
                       </label>
                       <span id="mdf-guide-file-status" class="mdf-guide-file-status" data-mdf-guide-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}">{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}</span>
                     </div>
+                    {% if errors_by_field.existing_mdf_guide_file %}<small class="field-error-message">{{ errors_by_field.existing_mdf_guide_file }}</small>{% endif %}
                   </div>
                 </div>
               </section>
@@ -499,5 +506,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-20" defer></script>
 {% endblock %}

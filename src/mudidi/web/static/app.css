@@ -388,6 +388,8 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .instruction-source-panel > legend + * { clear: both; }
 .instruction-source-panel > .choice-card-grid { margin: 0 0 14px; }
 .instruction-source-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mdf-guide-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 14px; }
+.field-optional { color: var(--color-muted); font-weight: 500; }
 .instruction-scope-group > .choice-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .instruction-source-body > label { display: grid; gap: 8px; margin: 0; }
 .instruction-pdf-pages { margin-top: 14px; }
@@ -742,6 +744,7 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
   nav a { padding: 8px 10px; font-size: 12px; }
   .task-card-grid { grid-template-columns: 1fr; }
   .agentic-choice .task-card-grid { grid-template-columns: 1fr; }
+  .mdf-guide-choices { grid-template-columns: 1fr; }
   .summary, .review-actions { position: static; }
   .stage2-pass-card { grid-template-columns: 1fr; }
   .form-grid, .preset-grid { grid-template-columns: 1fr; }

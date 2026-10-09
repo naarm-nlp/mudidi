@@ -247,10 +247,10 @@ def test_home_uses_uploads_and_instruction_textareas(tmp_path: Path) -> None:
     assert "constrain Stage 1 transcription to valid characters" in response.text
     assert "Paste a character inventory" in response.text
     assert "Chukchi-Cyrillic: а б в г ӄ" in response.text
-    assert 'aria-label="About the existing MDF parsing guide"' in response.text
+    assert 'aria-label="About the MDF parsing guide file"' in response.text
     assert "Dictionary page numbers are required" in response.text
     assert "front matter from the same uploaded PDF" in response.text
-    assert "Optional. Upload a pre-generated MDF parsing guide" in response.text
+    assert "The guide JSON from an earlier run of this dictionary." in response.text
     assert (
         "<small>Optional. Upload a pre-generated MDF parsing guide" not in response.text
     )
@@ -517,3 +517,75 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
     assert config.pipeline.stage2_guides.read_text(encoding="utf-8") == (
         "Use the custom nt marker."
     )
+
+
+def _guide_source_preview(tmp_path: Path, source: str, *, with_guide: bool):
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    files = [
+        ("dictionary_pdf", ("dictionary.pdf", _pdf_with_pages(4), "application/pdf")),
+    ]
+    if with_guide:
+        guide = b'{"markers":[],"rules":[],"abbreviations":{}}'
+        files.append(
+            ("existing_mdf_guide_file", ("guide.json", guide, "application/json"))
+        )
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "dictionary_pages": "1-4",
+            "parse_rules_pages": "1,3-4",
+            "mdf_guide_source": source,
+        },
+        files=files,
+    )
+    return app, response
+
+
+def test_new_run_form_offers_mdf_guide_source_choice(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert 'name="mdf_guide_source" value="infer" checked' in response.text
+    assert 'name="mdf_guide_source" value="existing" data-mdf-guide-source' in (
+        response.text
+    )
+    assert 'data-mdf-guide-panel="existing" hidden' in response.text
+    assert "Leave blank to use only the first dictionary page." in response.text
+
+
+def test_infer_guide_source_ignores_an_uploaded_guide(tmp_path: Path) -> None:
+    app, response = _guide_source_preview(tmp_path, "infer", with_guide=True)
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.pipeline.parse_rules_file is None
+    assert config.pipeline.parse_rules_pages == ["1", "3-4"]
+
+
+def test_existing_guide_source_uses_the_guide_and_drops_sample_pages(
+    tmp_path: Path,
+) -> None:
+    app, response = _guide_source_preview(tmp_path, "existing", with_guide=True)
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.pipeline.parse_rules_file is not None
+    assert config.pipeline.parse_rules_pages == []
+
+
+def test_existing_guide_source_requires_a_guide_file(tmp_path: Path) -> None:
+    app, response = _guide_source_preview(tmp_path, "existing", with_guide=False)
+
+    assert response.status_code == 422
+    assert "Choose the guide JSON to use" in response.text
+    assert app.state.run_store.list_runs() == []

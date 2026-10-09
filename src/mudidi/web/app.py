@@ -1790,14 +1790,24 @@ def create_app(
             elif preset_config is not None and runs_stage1:
                 payload["alphabet"] = preset_config.input.alphabet
 
-            guide_files = uploaded("existing_mdf_guide_file")
+            # "infer" discards any uploaded or preset guide so discovery runs;
+            # an absent choice keeps the upload-if-present behavior.
+            guide_source = str(payload.pop("mdf_guide_source", "")).strip()
+            guide_files = (
+                [] if guide_source == "infer" else uploaded("existing_mdf_guide_file")
+            )
             if len(guide_files) > 1:
                 raise ValueError("select exactly one existing MDF parsing guide")
             if guide_files and not runs_stage2:
                 raise ValueError(
                     "an MDF parsing guide requires an MDF parsing pipeline"
                 )
-            if guide_files:
+            if guide_source == "existing" and runs_stage2:
+                # The guide replaces discovery, so sample pages do not apply.
+                payload.pop("parse_rules_pages", None)
+            if guide_source == "infer":
+                pass
+            elif guide_files:
                 payload[
                     "parse_rules_file"
                 ] = await app.state.inputs.materialize_mdf_guide(
@@ -1807,6 +1817,16 @@ def create_app(
                 )
             elif preset_config is not None and runs_stage2:
                 payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
+            if (
+                guide_source == "existing"
+                and runs_stage2
+                and not payload.get("parse_rules_file")
+            ):
+                raise FormFieldError(
+                    "existing_mdf_guide_file",
+                    "Choose the guide JSON to use, or select "
+                    "\"Create a guide for me\".",
+                )
 
             await process_instruction_stage("stage1", active=runs_stage1)
             await process_instruction_stage("stage2", active=runs_stage2)
@@ -3106,7 +3126,7 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
         parse_rule_pages = (
             ", ".join(config.pipeline.parse_rules_pages)
             if config.pipeline.parse_rules_pages
-            else "Automatic selection"
+            else "First dictionary page"
         )
     stage1_summary = (
         (config.models.stage1 or config.models.default) if runs_stage1 else "Not used"

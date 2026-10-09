@@ -63,8 +63,10 @@ use. Everything on this step is optional. Sections appear in this order:
    scripts, the Stage 1 **character inventory** (hidden without Stage 1), a
    free-form page-layout description, and entry information types. The whole
    profile may be left blank.
-2. **MDF parsing guide** — representative pages and an existing guide JSON file
-   (Stage 2 pipelines only).
+2. **MDF parsing guide** — a choice between **Create a guide for me**
+   (optional pages to learn from; blank uses the first dictionary page) and
+   **Use a guide I already have** (a guide JSON upload). Only the selected
+   choice's field is shown (Stage 2 pipelines only).
 3. **Advanced: stage instructions** — a toggle at the bottom of the step that
    starts off and reveals the Stage 1 and Stage 2 instruction controls.
 
