@@ -174,9 +174,8 @@ pause later for explicit MDF parsing-guide approval; that human checkpoint is
 distinct from this pre-run configuration review.
 
 The grey values beginning with `ex:` are examples only; they are not submitted
-as values. The current examples are `ex: 30-35` for dictionary pages,
-`ex: 1-5` for introduction pages, and `ex: 30-32` for representative MDF
-parsing-guide pages.
+as values. Each one shows every accepted form: a range, a list, a single
+page, or a mix, for example `ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35`.
 
 The web dashboard does not accept page images, multiple files, or a folder of
 images. Those input modes remain available through YAML and the CLI.
@@ -210,7 +209,8 @@ section for pipelines that run Stage 2. It offers two choices:
 - **Create a guide for me** (the default) — MUDIDI studies sample pages,
   proposes a guide, and pauses the run so you can review and edit it. The
   optional **Pages to learn from** field names the sample pages. Left blank,
-  every dictionary page is used; for a long dictionary, enter two or three
+  every page entered under **Dictionary pages** in step 1 is used (not the
+  whole uploaded PDF). If that is hundreds of pages, enter two or three
   typical pages, because every sample page is sent in one request.
 - **Use a guide I already have** — upload the guide JSON from an earlier run
   of the same dictionary (`mdf_parsing_guide.json` in that run's output
@@ -379,7 +379,7 @@ For a complete run, the dashboard displays these steps in execution order:
 1. **Stage 1 — Transcription** processes all selected dictionary pages.
 2. **MDF parsing guide discovery** samples the configured representative pages
    from the Stage 1 transcriptions. If no pages were specified, MUDIDI uses
-   every dictionary page.
+   every selected dictionary page.
 3. **Review parsing guide** pauses the run for human review and approval.
 4. **Stage 2 — MDF conversion** converts each Stage 1 transcription into MDF
    using the approved guide snapshot.

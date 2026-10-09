@@ -300,9 +300,9 @@ def test_page_fields_show_faded_explicit_examples_and_complete_syntax_help(
     css = client.get("/static/app.css")
 
     assert response.status_code == 200
-    assert 'name="dictionary_pages" required placeholder="ex: 30-35"' in response.text
-    assert 'name="introduction_pages" placeholder="ex: 1-5"' in response.text
-    assert 'name="parse_rules_pages" placeholder="ex: 30-32"' in response.text
+    assert 'name="dictionary_pages" required placeholder="ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35"' in response.text
+    assert 'name="introduction_pages" placeholder="ex: 1-5 or 1, 3, 5 or 3 or 1, 3-5"' in response.text
+    assert 'name="parse_rules_pages" placeholder="ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35"' in response.text
     assert "one page number" in response.text
     assert "a page range" in response.text
     assert "comma-separated page numbers" in response.text
@@ -558,7 +558,7 @@ def test_new_run_form_offers_mdf_guide_source_choice(tmp_path: Path) -> None:
         response.text
     )
     assert 'data-mdf-guide-panel="existing" hidden' in response.text
-    assert "Leave blank to learn from every dictionary page." in response.text
+    assert "Leave blank to learn from all the dictionary pages you chose in step 1" in response.text
 
 
 def test_infer_guide_source_ignores_an_uploaded_guide(tmp_path: Path) -> None:

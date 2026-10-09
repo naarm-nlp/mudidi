@@ -46,8 +46,8 @@ ranges, and pages beyond the uploaded PDF's page count are rejected.
 Introduction pages and representative MDF parsing-guide pages are optional and
 use the same grammar and PDF bounds. Representative pages must also be included
 in the dictionary-page selection. Placeholder examples use faded text with an
-`ex:` prefix (`ex: 30-35`, `ex: 1-5`, and `ex: 30-32`) so they cannot be
-mistaken for submitted values.
+`ex:` prefix and show every accepted form (`ex: 30-35 or 30, 32, 35 or 32 or
+30, 33-35`) so they cannot be mistaken for submitted values.
 
 The browser marks required controls, but the server remains authoritative. A
 missing required value or invalid page specification blocks review, returns the
@@ -64,7 +64,7 @@ use. Everything on this step is optional. Sections appear in this order:
    free-form page-layout description, and entry information types. The whole
    profile may be left blank.
 2. **MDF parsing guide** — a choice between **Create a guide for me**
-   (optional pages to learn from; blank uses every dictionary page) and
+   (optional pages to learn from; blank uses every page in the dictionary-page selection, not the whole PDF) and
    **Use a guide I already have** (a guide JSON upload). Only the selected
    choice's field is shown (Stage 2 pipelines only).
 3. **Advanced: stage instructions** — a toggle at the bottom of the step that

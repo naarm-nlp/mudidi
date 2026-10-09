@@ -3126,7 +3126,7 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
         parse_rule_pages = (
             ", ".join(config.pipeline.parse_rules_pages)
             if config.pipeline.parse_rules_pages
-            else "All dictionary pages"
+            else "All selected dictionary pages"
         )
     stage1_summary = (
         (config.models.stage1 or config.models.default) if runs_stage1 else "Not used"
