@@ -66,7 +66,14 @@ _CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
 _AUTHORIZATION_ENDPOINT = "https://auth.openai.com/oauth/authorize"
 _TOKEN_ENDPOINT = "https://auth.openai.com/oauth/token"
 _RESPONSES_ENDPOINT = "https://chatgpt.com/backend-api/codex/responses"
-_MODELS_ENDPOINT = "https://chatgpt.com/backend-api/codex/models?client_version=0.0.0"
+# The catalog endpoint withholds every model whose minimal_client_version is
+# above the version sent. MUDIDI is not a Codex release, so it sends a version
+# above any real one and lets the provider's visibility metadata decide.
+_MODELS_CLIENT_VERSION = "99.0.0"
+_MODELS_ENDPOINT = (
+    "https://chatgpt.com/backend-api/codex/models"
+    f"?client_version={_MODELS_CLIENT_VERSION}"
+)
 _SCOPE = "openid profile email offline_access api.connectors.read api.connectors.invoke"
 _REDIRECT_PATH = "/auth/callback"
 _REDIRECT_URI = "http://localhost:1455/auth/callback"

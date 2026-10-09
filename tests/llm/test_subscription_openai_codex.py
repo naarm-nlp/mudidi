@@ -573,7 +573,7 @@ def test_list_models_uses_authenticated_codex_catalog_without_curating() -> None
     assert models[0].reasoning.default == "xhigh"
     assert models[0].provider_order == 7
     assert captured["url"] == (
-        "https://chatgpt.com/backend-api/codex/models?client_version=0.0.0"
+        "https://chatgpt.com/backend-api/codex/models?client_version=99.0.0"
     )
     assert captured["method"] == "GET"
     assert captured["headers"]["Authorization"] == f"Bearer {_ACCESS_TOKEN}"
