@@ -59,7 +59,7 @@ MUDIDI
 ## New-run workflow
 
 ```text
-Input → Pipeline → Model → Agentic → Review → Start
+Input → Pipeline → Context → Model → Agentic → Review → Start
 ```
 
 After start, the run follows:
@@ -89,7 +89,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Output directory
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
-- Agentic loop Yes/No, default No
+- Agentic loop On/Off, default Off
 - Optional Dictionary Profile with paired language/script questions, a
   free-form layout description, and
   entry-information context

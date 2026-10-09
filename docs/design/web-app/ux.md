@@ -7,16 +7,18 @@ Internal database/config keys such as `parse_rules` and routes such as
 
 ## Application shell
 
-The desktop layout uses a fixed left navigation, compact header, central work
-area, and right summary rail. The header holds the saved-preset picker and a
-billing status chip that follows the selected billing mode. The wizard has six
-steps: Input, Pipeline, Context, Model, Agentic, and the server-rendered
-Review. This is the shipped New Run interface:
+The desktop layout uses a fixed dark left navigation, page header, central
+work area, and right summary rail. The header holds a billing status chip that
+follows the selected billing mode and, when at least one preset exists, the
+saved-preset picker. The sidebar footer holds the light/dark theme toggle. The
+wizard has six steps, shown as a numbered tab bar: Input, Pipeline, Context,
+Model, Agentic, and the server-rendered Review. This is the shipped New Run
+interface:
 
 ![MUDIDI New Run desktop dashboard](../../assets/dashboard-home.png)
 
-At narrow widths the navigation and wizard controls stack without horizontal
-page overflow:
+At narrow widths the navigation moves above the content and the step tabs
+show only their numbers, without horizontal page overflow:
 
 ![MUDIDI New Run mobile dashboard](../../assets/dashboard-mobile.png)
 
@@ -29,9 +31,11 @@ The browser selects exactly one dictionary PDF. The dashboard rejects page
 images, multiple source files, and page-image folders; those input modes remain
 available through YAML and the CLI. The Input step holds only the PDF, the
 dictionary and introduction pages, and the output directory. Uploaded
-files are copied into run-owned local storage. The output directory remains
-typed because browser file APIs do not provide an arbitrary absolute path to a
-localhost server.
+files are copied into run-owned local storage. The output directory is a text
+field because browser file APIs do not provide an arbitrary absolute path to a
+localhost server. Native (non-container) runs on a machine with a supported
+dialog add **Choose folder…**, which asks the server to open the operating
+system's folder dialog and writes the selected path into the field.
 
 The dictionary PDF and **PDF dictionary pages** are required. Page fields accept
 positive, 1-based Arabic page numbers in any of these forms: one number (`5`),
@@ -103,14 +107,14 @@ offers an optional **OpenRouter Provider** routing slug.
 ## Agentic loop
 
 Agentic loop is an On/Off choice and defaults to Off. Selecting On
-opens **Custom verification** directly below it. Applicable Stage 1 and Stage 2
-boxes
+opens **Custom loop settings** directly below it. Applicable Stage 1 and
+Stage 2 boxes
 are initially checked and may be unchecked. The backend intersects these values
 with active stages and ignores forged inactive values.
 
 Custom controls cover iterations, minimum confidence, evaluator/rewriter models
 and reasoning, deterministic patches, and concrete retry evidence. The UI states
-that verification adds model calls and cost.
+what the loop does and that it adds model calls, time, and cost.
 
 ## Additional instructions
 
@@ -159,9 +163,11 @@ durable run is created.
 ## Active Run
 
 ```text
-Overview | MDF parsing guide | Pages | Live Logs | Outputs | Usage
+Overview | MDF parsing guide | Page Viewer & Editor | Live Logs | File Artifacts | Usage
 ```
 
+The same tab bar appears on every run page with the current view marked.
+Unavailable views stay in place as disabled labels rather than being removed.
 Overview shows progress, current state, recent events, and relevant actions.
 Pages and page evidence show source, transcription, verification, and MDF output.
 
