@@ -176,7 +176,7 @@ dd{font-weight:600}
    Screen layouts. Everything above is the theme as handed off; the rules below
    reshape the existing markup into the layouts of the MUDIDI mocks.
    ========================================================================== */
-:root,:root[data-theme]{--color-surface:#ebe3d6;--color-live:#3ec46d;--page-gutter:40px}
+:root,:root[data-theme]{--color-surface:#ebe3d6;--color-live:#3ec46d;--page-gutter:40px;--page-width:1400px}
 :root[data-theme="dark"]{--color-surface:#2b221b}
 
 /* shell */
@@ -195,10 +195,11 @@ p{line-height:1.45}
 
 /* page frame and headers */
 .page-shell{padding:var(--page-gutter) var(--page-gutter) 64px}
-.providers-page,.review-page,.page-viewer-page{width:100%;max-width:none;margin:0}
-.page-editor-page{width:100%;margin:0;padding:0}
-.topbar{min-height:0;max-width:none;margin:var(--page-gutter) var(--page-gutter) 0;padding:0 0 20px}
-.workspace{max-width:none;margin:0;padding:24px var(--page-gutter) 64px}
+.providers-page,.review-page,.page-viewer-page,.page-editor-page{width:100%;max-width:var(--page-width);margin:0 auto}
+.page-editor-page{padding:0}
+.page-editor-page{max-width:1680px}
+.topbar{min-height:0;width:calc(100% - 2 * var(--page-gutter));max-width:var(--page-width);margin:var(--page-gutter) auto 0;padding:0 0 20px}
+.workspace{max-width:calc(var(--page-width) + 2 * var(--page-gutter));margin:0 auto;padding:24px var(--page-gutter) 64px}
 .page-heading,.page-editor-heading{margin:0 0 24px;padding-bottom:20px;border-bottom:4px solid var(--color-ink)}
 .topbar h1,.page-heading h1,.page-editor-heading h1{margin:6px 0 0;font-size:72px;line-height:.92;letter-spacing:-.035em}
 .page-heading h1.run-id{font-size:48px;line-height:1;letter-spacing:-.04em}
