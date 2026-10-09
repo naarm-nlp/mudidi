@@ -31,7 +31,7 @@ const captions = [
   [11.0, 17.8, "Describe the dictionary: languages, layout, what an entry holds."],
   [18.2, 22.8, "Sign in with a subscription you already have."],
   [23.0, 27.4, "One model, tuned per stage: low reasoning to transcribe, high to parse."],
-  [27.8, 29.8, "Agentic verification stays off for this run."],
+  [27.7, 29.9, "Optional agentic loop: a second model checks and corrects each page."],
   [30.2, 34.6, "Stage 1 transcribes each page, then infers an MDF parsing guide."],
   [35.0, 37.9, "You review the guide before anything is parsed."],
   [39.8, 41.8, "Stage 2 converts every page to MDF."],
@@ -319,7 +319,7 @@ ${captionHtml}
       click(27.3);
 
       // ---- 27.6 Agentic verification stays off ------------------------------------------
-      camera("agentic", 27.6, { x: 200, y: 209, w: 1080 });
+      camera("agentic", 27.6, { x: 200, y: 330, w: 1080 });
       move(27.75, "ag.off", 0.5);
       click(28.3);
       move(28.6, "ag.submit", 0.6);
