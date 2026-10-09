@@ -107,3 +107,30 @@ def test_run_rejects_removed_rewrite_delta_flags(args: list[str]) -> None:
 
     with pytest.raises(SystemExit):
         parser.parse_args(args)
+
+
+@pytest.mark.parametrize(
+    ("extra", "expected"),
+    [([], "8"), (["--batch-size", "1"], "1"), (["--batch-size", "4"], "4")],
+)
+def test_run_always_forwards_batch_size(
+    monkeypatch, tmp_path: Path, extra: list[str], expected: str
+) -> None:
+    parser = argparse.ArgumentParser()
+    run_cli.register_run_arguments(parser)
+    args = parser.parse_args(
+        ["--pages", str(tmp_path / "pages"), "--output-dir", str(tmp_path / "out"), *extra]
+    )
+    captured: dict[str, list[str]] = {}
+
+    def fake_extract_main() -> int:
+        captured["argv"] = list(sys.argv)
+        return 0
+
+    monkeypatch.setattr(run_cli, "configure_prompts", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("mudidi.cli.extract.main", fake_extract_main)
+
+    assert run_cli.run_from_args(args, []) == 0
+
+    forwarded = captured["argv"]
+    assert forwarded[forwarded.index("--batch-size") + 1] == expected

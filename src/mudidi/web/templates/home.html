@@ -420,7 +420,7 @@
                     </div>
                   {% endfor %}
                 </section>
-                <label{% if errors_by_field.batch_size %} class="field-invalid" data-field-error="batch_size"{% endif %}><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="1" required>{% if errors_by_field.batch_size %}<small class="field-error-message">{{ errors_by_field.batch_size }}</small>{% endif %}</label>
+                <label{% if errors_by_field.batch_size %} class="field-invalid" data-field-error="batch_size"{% endif %}><span class="field-heading">Batch size <button class="info-button" type="button" aria-label="About batch size" data-help="The number of requests sent in parallel to your model provider. A higher batch size can significantly speed up inference for dictionaries with many pages. Check the rate limits for your provider and selected model before increasing it.">i</button></span><input name="batch_size" type="number" min="1" max="32" value="8" required>{% if errors_by_field.batch_size %}<small class="field-error-message">{{ errors_by_field.batch_size }}</small>{% endif %}</label>
               </div>
               <div class="wizard-actions"><button type="button" data-wizard-back="context">← Back</button><button class="primary" type="button" data-wizard-next="agentic">Continue to Agentic →</button></div>
             </section>

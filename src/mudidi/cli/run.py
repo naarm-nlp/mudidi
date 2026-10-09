@@ -221,9 +221,9 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=1,
+        default=8,
         dest="batch_size",
-        help="Concurrent page workers for two_stage LLM steps (default: 1). "
+        help="Concurrent page workers for two_stage LLM steps (default: 8). "
         "Thread pool over litellm.completion calls (no litellm batch API flag).",
     )
     parser.add_argument(
@@ -438,7 +438,8 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
         argv.extend(["--prompt-cache-key", run_args.prompt_cache_key])
     if run_args.stage1_typography:
         argv.append("--stage1-typography")
-    if getattr(run_args, "batch_size", 1) != 1:
+    # Always forwarded: the extract default is not 1, so an explicit 1 must survive.
+    if getattr(run_args, "batch_size", None) is not None:
         argv.extend(["--batch-size", str(run_args.batch_size)])
     if run_args.stage1_agentic:
         argv.append("--stage1-agentic")

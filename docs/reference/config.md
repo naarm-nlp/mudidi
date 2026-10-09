@@ -99,7 +99,7 @@ agentic:  # AgenticConfig; optional
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
 runtime:  # RuntimeConfig; optional
-  batch_size: 1  # integer; default: 1; >= 1
+  batch_size: 8  # integer; default: 8; >= 1
   limit: null  # integer | null; default: null
   overwrite: false  # boolean; default: false
   prompt_cache: "auto"  # one of "auto", "off"; default: "auto"
@@ -214,7 +214,7 @@ agentic:  # AgenticConfig; optional
   verifier_patches: true  # boolean; default: true
   require_concrete_retry: true  # boolean; default: true
 runtime:  # RuntimeConfig; optional
-  batch_size: 1  # integer; default: 1; >= 1
+  batch_size: 8  # integer; default: 8; >= 1
   limit: null  # integer | null; default: null
   overwrite: false  # boolean; default: false
   prompt_cache: "auto"  # one of "auto", "off"; default: "auto"
@@ -333,7 +333,7 @@ base:  # BenchmarkRunConfig; required
     verifier_patches: true  # boolean; default: true
     require_concrete_retry: true  # boolean; default: true
   runtime:  # RuntimeConfig; optional
-    batch_size: 1  # integer; default: 1; >= 1
+    batch_size: 8  # integer; default: 8; >= 1
     limit: null  # integer | null; default: null
     overwrite: false  # boolean; default: false
     prompt_cache: "auto"  # one of "auto", "off"; default: "auto"

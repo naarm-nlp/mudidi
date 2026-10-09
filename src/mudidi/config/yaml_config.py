@@ -304,7 +304,7 @@ class AgenticConfig(_StrictModel):
 class RuntimeConfig(_StrictModel):
     """Execution, caching, resume, and experiment settings."""
 
-    batch_size: int = Field(default=1, ge=1)
+    batch_size: int = Field(default=8, ge=1)
     limit: int | None = Field(default=None, ge=1)
     overwrite: bool = False
     prompt_cache: Literal["auto", "off"] = "auto"

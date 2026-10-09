@@ -1288,9 +1288,9 @@ Examples:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=1,
+        default=8,
         dest="batch_size",
-        help="Concurrent page workers for two_stage LLM steps (default: 1). "
+        help="Concurrent page workers for two_stage LLM steps (default: 8). "
         "Uses a local thread pool — litellm.completion is one request per call; "
         "there is no litellm batch-size flag on completion(). Values >1 during "
         "Stage 1 may leave neighbor transcripts empty until those pages finish.",

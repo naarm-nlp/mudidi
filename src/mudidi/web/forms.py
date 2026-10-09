@@ -253,7 +253,7 @@ class NewRunForm(BaseModel):
     evaluator_reasoning: ReasoningChoice | None = "high"
     rewriter_reasoning: ReasoningChoice | None = "low"
 
-    batch_size: int = Field(default=1, ge=1, le=32)
+    batch_size: int = Field(default=8, ge=1, le=32)
 
     @field_validator(
         "dictionary_pages",

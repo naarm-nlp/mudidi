@@ -413,6 +413,8 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
                 "verifier_patches": False,
             },
             "runtime": {
+                # The stub alternates verifier verdicts by call order.
+                "batch_size": 1,
                 "overwrite": True,
                 "prompt_cache": "off",
                 "use_alphabet": False,
@@ -605,6 +607,8 @@ def test_actual_worker_stage2_scope_and_split_model_media(
                 "verifier_patches": False,
             },
             "runtime": {
+                # The stub alternates verifier verdicts by call order.
+                "batch_size": 1,
                 "overwrite": True,
                 "prompt_cache": "off",
                 "use_alphabet": False,
