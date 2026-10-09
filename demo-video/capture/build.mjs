@@ -10,7 +10,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const meta = JSON.parse(readFileSync(join(root, "assets/cap/meta.json"), "utf8"));
 
 // The music is 100 BPM: one beat is 0.6s, one bar 2.4s. Scene cuts sit on beats.
-const DURATION = 55.2;
+// The opening grew by one bar after the scenes below were timed; SHIFT moves them all.
+const SHIFT = 2.4;
+const DURATION = 57.6;
 const scenes = [
   { id: "input", start: 4.8, end: 10.8, frames: ["in-0", "in-drag", "in-file", "in-pages-1", "in-pages-2", "in-pages-3"] },
   {
@@ -39,6 +41,9 @@ const captions = [
 ];
 
 const dur = (a, b) => +(b - a).toFixed(3);
+const at = (t) => +(t + SHIFT).toFixed(3);
+for (const scene of scenes) Object.assign(scene, { start: at(scene.start), end: at(scene.end) });
+for (const caption of captions) Object.assign(caption, [at(caption[0]), at(caption[1])]);
 const sceneHtml = scenes
   .map((scene) => {
     const height = meta.frames[scene.frames[0]].height;
@@ -80,18 +85,24 @@ const html = `<!doctype html>
       .frame { position: absolute; top: 0; left: 0; width: 1280px; display: block; }
       .eyebrow { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 26px; letter-spacing: 0.12em; text-transform: uppercase; color: #a35c1a; }
 
-      /* Intro */
-      #intro-copy { position: absolute; left: 110px; top: 250px; width: 800px; }
-      #intro-title { margin-top: 28px; font-size: 118px; line-height: 0.98; font-weight: 800; letter-spacing: -0.035em; }
-      #intro-rule { margin-top: 44px; width: 100%; height: 4px; background: #231d18; transform-origin: 0 50%; }
-      #intro-sub { margin-top: 36px; font-size: 44px; line-height: 1.25; color: #5b5048; max-width: 760px; }
-      #intro-pages { position: absolute; left: 990px; top: 150px; width: 820px; height: 780px; }
-      .sheet { position: absolute; top: 40px; width: 500px; height: 667px; background: #fffaf2; border: 1.5px solid #231d18; box-shadow: 0 30px 60px rgba(35, 29, 24, 0.28); overflow: hidden; }
-      .sheet img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.28); transform-origin: 62% 42%; }
-      .sheet span { position: absolute; left: 0; bottom: 0; padding: 8px 14px; background: #231d18; color: #f5f1ea; font-family: "IBM Plex Mono", monospace; font-size: 22px; letter-spacing: 0.08em; }
-      #sheet-6 { left: 0; }
-      #sheet-7 { left: 170px; }
-      #sheet-8 { left: 340px; }
+      /* Intro: one notebook page becomes MDF records. The sheet shows a crop of the page photo. */
+      #scan-sheet { position: absolute; left: 110px; top: 92px; width: 700px; height: 896px; overflow: hidden; background: #fffaf2; border: 1.5px solid #231d18; box-shadow: 0 30px 70px rgba(35, 29, 24, 0.3); }
+      #scan-page { position: absolute; left: -187px; top: -37px; width: 933px; height: 1244px; display: block; }
+      .scan-box { position: absolute; height: 40px; border: 3px solid #a35c1a; background: rgba(163, 92, 26, 0.16); transform-origin: 0 50%; }
+      #scan-box-1 { left: 76px; top: 218px; width: 426px; }
+      #scan-box-2 { left: 82px; top: 404px; width: 355px; }
+      #scan-box-3 { left: 82px; top: 770px; width: 364px; }
+      #scan-line { position: absolute; left: 0; top: 0; width: 100%; height: 6px; background: #a35c1a; box-shadow: 0 0 40px 18px rgba(163, 92, 26, 0.35); }
+      #scan-links { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      .scan-link { fill: none; stroke: #a35c1a; stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 1; }
+      #scan-copy { position: absolute; left: 1000px; top: 92px; width: 810px; }
+      .scan-record { position: absolute; left: 0; width: 100%; padding: 18px 26px; background: #fffaf2; border: 1.5px solid #231d18; border-left: 10px solid #a35c1a; }
+      #scan-record-1 { top: 88px; }
+      #scan-record-2 { top: 328px; }
+      #scan-record-3 { top: 526px; }
+      .scan-row { font-family: "IBM Plex Mono", monospace; font-size: 38px; line-height: 1.35; color: #231d18; white-space: nowrap; }
+      .scan-row b { font-weight: 500; color: #a35c1a; }
+      #scan-title { position: absolute; left: 0; top: 742px; width: 100%; font-size: 76px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; }
 
       /* Overlays drawn above the dashboard */
       #chip-body { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 18px; width: 330px; padding: 18px 22px; background: #fffaf2; border: 1.5px solid #231d18; box-shadow: 0 18px 36px rgba(35, 29, 24, 0.3); }
@@ -129,36 +140,55 @@ const html = `<!doctype html>
   </head>
   <body>
     <div id="root" data-composition-id="main" data-start="0" data-duration="${DURATION}" data-width="1920" data-height="1080">
-      <section id="scene-intro" class="clip scene" data-start="0" data-duration="4.8" data-track-index="1">
-        <div id="intro-copy">
-          <p id="intro-eyebrow" class="eyebrow">Raga · North Pentecost, Vanuatu</p>
-          <h1 id="intro-title">One handwritten dictionary.</h1>
-          <div id="intro-rule"></div>
-          <p id="intro-sub">101 notebook pages of entries, corrections and margin notes.</p>
+      <section id="scene-intro" class="clip scene" data-start="0" data-duration="7.2" data-track-index="1">
+        <div id="scan-sheet">
+          <img id="scan-page" src="assets/pages/p7.jpg" alt="" />
+          <div id="scan-box-1" class="scan-box"></div>
+          <div id="scan-box-2" class="scan-box"></div>
+          <div id="scan-box-3" class="scan-box"></div>
+          <div id="scan-line"></div>
         </div>
-        <div id="intro-pages">
-          <div id="sheet-6" class="sheet"><img src="assets/pages/p6.jpg" alt="" /><span>PAGE 6</span></div>
-          <div id="sheet-7" class="sheet"><img src="assets/pages/p7.jpg" alt="" /><span>PAGE 7</span></div>
-          <div id="sheet-8" class="sheet"><img src="assets/pages/p8.jpg" alt="" /><span>PAGE 8</span></div>
+        <svg id="scan-links" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path id="scan-link-1" class="scan-link" pathLength="1" d="M 612 330 C 800 330, 820 262, 1000 262" />
+          <path id="scan-link-2" class="scan-link" pathLength="1" d="M 547 516 C 780 516, 800 480, 1000 480" />
+          <path id="scan-link-3" class="scan-link" pathLength="1" d="M 556 882 C 800 882, 820 700, 1000 700" />
+        </svg>
+        <div id="scan-copy">
+          <p id="scan-eyebrow" class="eyebrow">Raga notebook · page 7</p>
+          <div id="scan-record-1" class="scan-record">
+            <p id="scan-r1a" class="scan-row"><b>\\lx</b> bea</p>
+            <p id="scan-r1b" class="scan-row"><b>\\ge</b> water, liquid, juice</p>
+            <p id="scan-r1c" class="scan-row"><b>\\cf</b> Fl. bea</p>
+          </div>
+          <div id="scan-record-2" class="scan-record">
+            <p id="scan-r2a" class="scan-row"><b>\\lx</b> beku</p>
+            <p id="scan-r2b" class="scan-row"><b>\\ge</b> hole, grave</p>
+          </div>
+          <div id="scan-record-3" class="scan-record">
+            <p id="scan-r3a" class="scan-row"><b>\\lx</b> bilau</p>
+            <p id="scan-r3b" class="scan-row"><b>\\ge</b> to steal</p>
+            <p id="scan-r3c" class="scan-row"><b>\\cf</b> pilau</p>
+          </div>
+          <h1 id="scan-title">Handwriting in. Structured MDF out.</h1>
         </div>
       </section>
 ${sceneHtml}
-      <section id="scene-outro" class="clip scene" data-start="50.4" data-duration="4.8" data-track-index="1">
+      <section id="scene-outro" class="clip scene" data-start="${at(50.4)}" data-duration="4.8" data-track-index="1">
         <div id="outro-copy">
           <p id="outro-word">MUDIDI</p>
           <div id="outro-rule"></div>
-          <p id="outro-line">Scanned pages in. Structured MDF out.</p>
+          <p id="outro-line">Dictionary digitization, with you in the loop.</p>
           <p id="outro-local"><span id="outro-dot"></span><span>Runs on your own machine</span></p>
         </div>
       </section>
 
-      <div id="chip" class="clip" data-start="5" data-duration="2.6" data-track-index="2">
+      <div id="chip" class="clip" data-start="${at(5)}" data-duration="2.6" data-track-index="2">
         <div id="chip-body">
           <div id="chip-icon">PDF</div>
           <div><p id="chip-name">Raga1.pdf</p><p id="chip-size">101 pages</p></div>
         </div>
       </div>
-      <div id="popup" class="clip" data-start="19.1" data-duration="2.5" data-track-index="2">
+      <div id="popup" class="clip" data-start="${at(19.1)}" data-duration="2.5" data-track-index="2">
         <div id="popup-shade"></div>
         <div id="popup-window">
           <div id="popup-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>Sign in · OpenAI account</span></div>
@@ -178,7 +208,7 @@ ${sceneHtml}
         </div>
       </div>
 ${captionHtml}
-      <div id="cursor" class="clip" data-start="4.8" data-duration="45.6" data-track-index="4">
+      <div id="cursor" class="clip" data-start="${at(4.8)}" data-duration="45.6" data-track-index="4">
         <div id="cursor-arrow">
           <div id="ripple"></div>
           <svg id="cursor-svg" viewBox="0 0 46 58" aria-hidden="true"><path d="M4 3 L4 45 L15 35 L23 54 L31 50.5 L23 32 L38 32 Z" fill="#231d18" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" /></svg>
@@ -193,7 +223,7 @@ ${captionHtml}
       const W = 1920;
       let cam = { x: 0, y: 0, w: 1280 };
       let parked = null;
-      let OFF = 0;
+      let OFF = ${SHIFT};
 
       // A camera view is {x, y, w} in dashboard CSS pixels; its height is w * 9 / 16.
       const camProps = (view) => ({ x: (-view.x * W) / view.w, y: (-view.y * W) / view.w, scale: W / view.w });
@@ -229,46 +259,52 @@ ${captionHtml}
       const frame = (t, name) => tl.set("#f-" + name, { opacity: 1 }, t + OFF);
       const fadeIn = (scene, t) => tl.fromTo("#stage-" + scene, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, t + OFF);
 
-      // ---- 0.0 Intro: the notebook ------------------------------------------------
-      tl.from("#intro-eyebrow", { opacity: 0, y: 20, duration: 0.5, ease: "power2.out" }, 0.15);
-      tl.from("#intro-title", { opacity: 0, y: 40, duration: 0.7, ease: "power3.out" }, 0.3);
-      tl.from("#intro-rule", { scaleX: 0, duration: 0.7, ease: "power2.inOut" }, 0.7);
-      tl.from("#intro-sub", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" }, 1.1);
-      tl.fromTo("#sheet-6", { opacity: 0, y: 160, rotation: 0 }, { opacity: 1, y: 30, rotation: -7, duration: 0.8, ease: "power3.out" }, 0.5);
-      tl.fromTo("#sheet-7", { opacity: 0, y: 160, rotation: 0 }, { opacity: 1, y: 0, rotation: 0, duration: 0.8, ease: "power3.out" }, 0.75);
-      tl.fromTo("#sheet-8", { opacity: 0, y: 160, rotation: 0 }, { opacity: 1, y: 30, rotation: 7, duration: 0.8, ease: "power3.out" }, 1.0);
-      tl.fromTo("#intro-pages", { scale: 1 }, { scale: 1.07, duration: 4.3, ease: "none" }, 0.5);
-      tl.to("#intro-copy", { opacity: 0, duration: 0.3, ease: "power1.in" }, 4.45);
-      tl.to("#intro-pages", { opacity: 0, duration: 0.3, ease: "power1.in" }, 4.45);
+      // ---- 0.0 Intro: scan the notebook page into MDF records ---------------------
+      tl.from("#scan-sheet", { opacity: 0, y: 70, duration: 0.7, ease: "power3.out" }, 0.1);
+      tl.from("#scan-eyebrow", { opacity: 0, duration: 0.5, ease: "power2.out" }, 0.5);
+      tl.fromTo("#scan-line", { y: -10, opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.9);
+      tl.to("#scan-line", { y: 900, duration: 3.6, ease: "none" }, 1.0);
+      tl.to("#scan-line", { opacity: 0, duration: 0.3 }, 4.5);
+      // The line reaches each entry at 1.0 + 3.6 * (entry top / 900).
+      [[1, 1.95, ["a", "b", "c"]], [2, 2.7, ["a", "b"]], [3, 4.15, ["a", "b", "c"]]].forEach(([n, t, rows]) => {
+        tl.fromTo("#scan-box-" + n, { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: 0.3, ease: "power3.out" }, t);
+        tl.to("#scan-link-" + n, { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, t + 0.1);
+        tl.from("#scan-record-" + n, { opacity: 0, x: 40, duration: 0.35, ease: "power3.out" }, t + 0.3);
+        rows.forEach((row, i) => {
+          tl.fromTo("#scan-r" + n + row, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.3, ease: "steps(10)" }, t + 0.45 + i * 0.22);
+        });
+      });
+      tl.from("#scan-title", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, 5.3);
+      tl.to(["#scan-sheet", "#scan-links", "#scan-copy"], { opacity: 0, duration: 0.3, ease: "power1.in" }, 6.85);
 
       // ---- 4.8 Upload the PDF and choose pages --------------------------------------
       camera("input", 4.8, { x: 200, y: 240, w: 1080 });
       fadeIn("input", 4.8);
       tl.set("#cursor-arrow", { x: 1500, y: 1000 }, 0);
-      tl.fromTo("#chip-body", { x: 70, y: 730, opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" }, 5.0);
+      tl.fromTo("#chip-body", { x: 70, y: 730, opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" }, 5.0 + OFF);
       moveScreen(5.2, 250, 800, 0.6);
       click(5.9);
       const drop = onScreen(cam, centre("in.drop"));
-      tl.to("#chip-body", { x: drop.x - 180, y: drop.y - 70, duration: 1.0, ease: "power2.inOut" }, 6.0);
+      tl.to("#chip-body", { x: drop.x - 180, y: drop.y - 70, duration: 1.0, ease: "power2.inOut" }, 6.0 + OFF);
       moveScreen(6.0, drop.x, drop.y, 1.0);
       parked = centre("in.drop");
       frame(6.7, "in-drag");
-      tl.to("#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" }, 7.2);
+      tl.to("#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" }, 7.2 + OFF);
       frame(7.3, "in-file");
       click(7.25);
-      camera("input", 7.6, { x: 250, y: 330, w: 940 }, 0.7);
+      camera("input", 7.6, { x: 250, y: 330, w: 940 }, 0.7 + OFF);
       move(7.7, "in.pages", 0.6);
       click(8.4);
       frame(8.7, "in-pages-1");
       frame(8.95, "in-pages-2");
       frame(9.2, "in-pages-3");
-      camera("input", 9.5, { x: 200, y: 130, w: 1080 }, 0.6);
+      camera("input", 9.5, { x: 200, y: 130, w: 1080 }, 0.6 + OFF);
       move(9.9, "tab.context", 0.6);
       click(10.6);
 
       // ---- 10.8 Dictionary profile ----------------------------------------------------
       camera("context", 10.8, { x: 200, y: 130, w: 1080 });
-      camera("context", 11.0, { x: 240, y: 440, w: 960 }, 0.8);
+      camera("context", 11.0, { x: 240, y: 440, w: 960 }, 0.8 + OFF);
       move(11.3, "cx.head", 0.6);
       click(11.9);
       [["cx-head-1", 12.1], ["cx-head-2", 12.3], ["cx-hs-1", 12.75], ["cx-tl-1", 13.15], ["cx-tl-2", 13.35], ["cx-ts-1", 13.75],
@@ -276,7 +312,7 @@ ${captionHtml}
       move(12.4, "cx.headScript", 0.3);
       move(12.85, "cx.target", 0.3);
       move(13.8, "cx.inventory", 0.35);
-      camera("context", 14.9, { x: 240, y: 760, w: 960 }, 0.6);
+      camera("context", 14.9, { x: 240, y: 760, w: 960 }, 0.6 + OFF);
       move(15.0, "cx.layout", 0.5);
       for (let i = 1; i <= 8; i += 1) frame(15.45 + i * 0.14, "cx-lay-" + i);
       move(16.6, "cx.type1", 0.25);
@@ -289,24 +325,24 @@ ${captionHtml}
       move(18.2, "md.login", 0.6);
       click(18.9);
       frame(19.0, "md-waiting");
-      tl.fromTo("#popup-shade", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 19.1);
-      tl.fromTo("#popup-window", { opacity: 0, scale: 0.92, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" }, 19.15);
+      tl.fromTo("#popup-shade", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 19.1 + OFF);
+      tl.fromTo("#popup-window", { opacity: 0, scale: 0.92, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" }, 19.15 + OFF);
       tl.set("#popup-done", { opacity: 0 }, 0);
       moveScreen(19.5, 960, 580, 0.6);
       click(20.2);
-      tl.to("#popup-choose", { opacity: 0, duration: 0.15 }, 20.3);
-      tl.to("#popup-done", { opacity: 1, duration: 0.2 }, 20.45);
-      tl.fromTo("#done-mark", { scale: 0.4 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 20.45);
+      tl.to("#popup-choose", { opacity: 0, duration: 0.15 }, 20.3 + OFF);
+      tl.to("#popup-done", { opacity: 1, duration: 0.2 }, 20.45 + OFF);
+      tl.fromTo("#done-mark", { scale: 0.4 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 20.45 + OFF);
       frame(21.2, "md-signed");
-      tl.to("#popup-window", { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.in" }, 21.3);
-      tl.to("#popup-shade", { opacity: 0, duration: 0.25 }, 21.3);
+      tl.to("#popup-window", { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.in" }, 21.3 + OFF);
+      tl.to("#popup-shade", { opacity: 0, duration: 0.25 }, 21.3 + OFF);
       move(21.6, "md.prov1", 0.5);
       click(22.15);
       frame(22.25, "md-prov1");
       move(22.3, "md.prov2", 0.4);
       click(22.75);
       frame(22.85, "md-prov2");
-      camera("model", 23.0, { x: 240, y: 1060, w: 960 }, 0.6);
+      camera("model", 23.0, { x: 240, y: 1060, w: 960 }, 0.6 + OFF);
       move(23.5, "md.model1", 0.45);
       click(24.0);
       frame(24.1, "md-model1");
@@ -319,7 +355,7 @@ ${captionHtml}
       move(25.45, "md.reason2", 0.4);
       click(25.9);
       frame(26.0, "md-reason2");
-      camera("model", 26.2, { x: 240, y: 1200, w: 960 }, 0.5);
+      camera("model", 26.2, { x: 240, y: 1200, w: 960 }, 0.5 + OFF);
       move(26.6, "md.next", 0.55);
       click(27.3);
 
@@ -333,7 +369,7 @@ ${captionHtml}
       click(32.1);
 
       // Everything below was timed before the agentic scene grew by one bar.
-      OFF = 2.4;
+      OFF = ${SHIFT} + 2.4;
 
       // ---- 30.0 Run: stage 1 and guide discovery -------------------------------------------
       camera("run1", 30.0, { x: 180, y: 230, w: 1100 });
