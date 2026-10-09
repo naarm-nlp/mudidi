@@ -358,10 +358,6 @@ bindSingleFileStatus(
   document.querySelector("[data-mdf-guide-file-input]"),
   document.querySelector("[data-mdf-guide-file-status]"),
 );
-bindSingleFileStatus(
-  document.querySelector("[data-mdf-manual-file-input]"),
-  document.querySelector("[data-mdf-manual-file-status]"),
-);
 
 const instructionPanels = [...document.querySelectorAll("[data-instruction-source-panel]")];
 
@@ -1336,7 +1332,6 @@ const synchronizePipeline = () => {
     else if (input.dataset.userTouched !== "true") input.checked = true;
   });
   synchronizeModels();
-  if (typeof synchronizeManual === "function") synchronizeManual();
   updateStage2Summary();
   if (typeof synchronizeAgenticAvailability === "function") {
     synchronizeAgenticAvailability(agenticEnabled);
@@ -1454,19 +1449,6 @@ document.querySelectorAll("[data-confirm-preset-delete]").forEach((form) => {
   });
 });
 
-const manualChoices = [...document.querySelectorAll('input[name="mdf_manual_source"]')];
-const customManual = document.querySelector("[data-custom-mdf-manual]");
-const synchronizeManual = () => {
-  if (!customManual) return;
-  const selected = manualChoices.find((choice) => choice.checked);
-  const visible = selected && selected.value === "upload" && !selected.disabled;
-  customManual.hidden = !visible;
-  customManual.querySelectorAll("input").forEach((input) => {
-    input.disabled = !visible;
-    input.required = visible;
-  });
-};
-manualChoices.forEach((choice) => choice.addEventListener("change", synchronizeManual));
 restoreRunForm();
 instructionPanels.forEach(wireInstructionPanel);
 const restoredPass1 = readStage2Pass("pass1");
@@ -1490,7 +1472,6 @@ renderStage2Mode();
 synchronizeAuth();
 synchronizePipeline();
 synchronizeAgentic();
-synchronizeManual();
 loadModelCatalog();
 
 const beginWizardInvalidAttempt = () => {

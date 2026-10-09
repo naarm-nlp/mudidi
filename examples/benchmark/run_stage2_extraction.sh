@@ -17,6 +17,8 @@ set -euo pipefail
 #
 # Experiment naming:
 #   <model>_<reasoning>_mdf_<intro|nointro>_<toolbox|notoolbox>
+#   ("toolbox" runs pass --mdf-manual: bundled SIL MDF manual text in the Pass 1
+#   system prompt.)
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${PROJECT_ROOT}"
@@ -40,7 +42,6 @@ LANGUAGES=(
     "Iñupiatun Eskimo-English"
 )
 
-TOOLBOX_PDF="${TOOLBOX_PDF:-assets/Pages from ToolboxReferenceManual.pdf}"
 STAGE2_REASONING="${STAGE2_REASONING:-high}"
 STAGE1_EXPERIMENT="${STAGE1_EXPERIMENT:-}"
 STAGE2_EXPERIMENT_SUFFIX="${STAGE2_EXPERIMENT_SUFFIX:-}"
@@ -94,12 +95,12 @@ run_stage2_matrix() {
 
     run_stage2 "${model}" "${slug}_${STAGE2_REASONING}_mdf_intro_notoolbox"
     run_stage2 "${model}" "${slug}_${STAGE2_REASONING}_mdf_intro_toolbox" \
-        --toolbox-pdf "${TOOLBOX_PDF}"
+        --mdf-manual
     run_stage2 "${model}" "${slug}_${STAGE2_REASONING}_mdf_nointro_notoolbox" \
         --no-intro
     run_stage2 "${model}" "${slug}_${STAGE2_REASONING}_mdf_nointro_toolbox" \
         --no-intro \
-        --toolbox-pdf "${TOOLBOX_PDF}"
+        --mdf-manual
 }
 
 run_stage2_matrix "${GEMINI_PRO_MODEL}" "gemini31pro"

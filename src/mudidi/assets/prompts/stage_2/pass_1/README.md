@@ -5,8 +5,11 @@ message: `user_single.j2` for one sample page or `user_multi.j2` for multiple
 sample pages. The introduction and sample-page image/PDF attachments are added
 after the text content in the same request.
 
-`mdf_marker_reference.txt` is injected into `system.j2`. It is owned here
-because Pass 1 is its primary use; Pass 2 reuses it only as a PDF fallback.
+`mdf_marker_reference.txt` is always injected into `system.j2`. When the MDF
+manual flag is on (`input.mdf_manual: true`, `--mdf-manual`, or the dashboard's
+"Include the SIL MDF manual" choice), `mdf_reference_manual.txt` — text
+extracted from the MDF section of the SIL Toolbox Reference Manual, ending
+before "Other General Information" — is appended to the same system message.
 
 The `config_hint` section in both user templates is conditional: it appears
 only when benchmark `dictionary_languages.yaml` metadata or an inference

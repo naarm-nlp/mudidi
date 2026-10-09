@@ -6,7 +6,6 @@ from pathlib import Path
 
 from mudidi.extraction.llm_two_stage import _sanitize_messages
 from mudidi.llm.client import _extract_usage, _merge_usage_totals, supports_prompt_cache_key
-from mudidi.llm import pass_2
 from mudidi.llm.pass_2 import build_direct_mdf_messages
 from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet, MarkerLine
 from mudidi.utils.page_context import NeighborPage, PageContext
@@ -33,7 +32,6 @@ def test_pass2_places_parse_rules_in_cacheable_static_message(tmp_path: Path) ->
         field_map=_field_map(),
         model="gemini/gemini-3.1-pro-preview",
         prompt_cache="auto",
-        media_reference="inline",
         mode="benchmark",
     )
 
@@ -60,7 +58,6 @@ def test_pass2_prompt_cache_off_uses_single_user_turn(tmp_path: Path) -> None:
         field_map=_field_map(),
         model="gemini/gemini-3.1-pro-preview",
         prompt_cache="off",
-        media_reference="inline",
         mode="benchmark",
     )
 
@@ -87,7 +84,6 @@ def test_pass2_benchmark_prompt_does_not_claim_transcript_is_gold(
         field_map=_field_map(),
         model="gemini/gemini-3.1-pro-preview",
         prompt_cache="off",
-        media_reference="inline",
         mode="benchmark",
     )
 
@@ -124,7 +120,6 @@ def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
         field_map=_field_map(),
         model="gemini/gemini-3.1-pro-preview",
         prompt_cache="auto",
-        media_reference="inline",
         mode="inference",
         page_context=page_context,
     )
@@ -138,34 +133,6 @@ def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     assert "<current_page>" in dynamic_text
     assert "previous transcript" in dynamic_text
     assert "next transcript" in dynamic_text
-
-
-def test_pass2_uses_visible_text_fallback_when_toolbox_pdf_needs_rasterization(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    page = tmp_path / "page_1.png"
-    toolbox = tmp_path / "toolbox.pdf"
-    page.write_bytes(b"fake-image")
-    toolbox.write_bytes(b"%PDF-1.7 fake")
-    monkeypatch.setattr(pass_2, "needs_pdf_rasterization", lambda model: True)
-
-    messages = build_direct_mdf_messages(
-        transcription="page text",
-        image_path=str(page),
-        field_map=_field_map(),
-        model="test-model",
-        toolbox_pdf=toolbox,
-        prompt_cache="off",
-        media_reference="auto",
-        mode="benchmark",
-    )
-
-    content = messages[1]["content"]
-    text = content[0]["text"]
-    assert "SIL Toolbox MDF Reference Manual (text excerpt)" in text
-    assert "MDF marker vocabulary" in text
-    assert not any(part["type"] == "file" for part in content)
 
 
 def test_file_content_part_uses_uri_for_remote_pdf() -> None:

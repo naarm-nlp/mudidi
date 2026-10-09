@@ -28,7 +28,7 @@ usage: mudidi run [-h] [--config CONFIG] [--auth-mode {api_key,subscription}]
                   [--auth-provider {openai,google,claude}] [--pages PAGES]
                   [--dict-pages DICT_PAGES] [--intro INTRO]
                   [--intro-pages INTRO_PAGES] [--alphabet ALPHABET]
-                  [--ocr-text OCR_TEXT] [--toolbox-pdf TOOLBOX_PDF]
+                  [--ocr-text OCR_TEXT] [--mdf-manual | --no-mdf-manual]
                   [--stage-1-guides STAGE1_GUIDES_PATH]
                   [--stage-1-guides-pages STAGE1_GUIDES_PAGES]
                   [--stage-2-guides STAGE2_GUIDES_PATH]
@@ -64,7 +64,9 @@ options:
   --intro-pages INTRO_PAGES
   --alphabet ALPHABET
   --ocr-text OCR_TEXT
-  --toolbox-pdf TOOLBOX_PDF
+  --mdf-manual, --no-mdf-manual
+                        Inject the bundled SIL MDF manual text into the Stage
+                        2 Pass 1 system prompt.
   --stage-1-guides STAGE1_GUIDES_PATH
                         Stage 1 instruction guide path.
   --stage-1-guides-pages STAGE1_GUIDES_PAGES
@@ -209,7 +211,7 @@ usage: mudidi benchmark run [-h] [--config CONFIG]
                             [--intro INTRO] [--intro-pages INTRO_PAGES]
                             [--alphabet ALPHABET] [--ocr-text OCR_TEXT]
                             [--dictionary-languages DICTIONARY_LANGUAGES]
-                            [--toolbox-pdf TOOLBOX_PDF]
+                            [--mdf-manual | --no-mdf-manual]
                             [--stage-1-guides STAGE1_GUIDES_PATH]
                             [--stage-1-guides-pages STAGE1_GUIDES_PAGES]
                             [--stage-2-guides STAGE2_GUIDES_PATH]
@@ -252,7 +254,9 @@ options:
   --ocr-text OCR_TEXT
   --dictionary-languages DICTIONARY_LANGUAGES
                         Legacy benchmark language metadata file.
-  --toolbox-pdf TOOLBOX_PDF
+  --mdf-manual, --no-mdf-manual
+                        Inject the bundled SIL MDF manual text into the Stage
+                        2 Pass 1 system prompt.
   --stage-1-guides STAGE1_GUIDES_PATH
                         Stage 1 instruction guide path.
   --stage-1-guides-pages STAGE1_GUIDES_PAGES

@@ -27,6 +27,7 @@ EXPECTED_PROMPT_FILES = {
     "stage_2_pass_1_user_single": "stage_2/pass_1/user_single.j2",
     "stage_2_pass_1_user_multi": "stage_2/pass_1/user_multi.j2",
     "mdf_marker_reference": "stage_2/pass_1/mdf_marker_reference.txt",
+    "mdf_reference_manual": "stage_2/pass_1/mdf_reference_manual.txt",
     "stage_2_pass_2_system_benchmark": "stage_2/pass_2/system_benchmark.txt",
     "stage_2_pass_2_system_inference": "stage_2/pass_2/system_inference.j2",
     "stage_2_pass_2_user_benchmark": "stage_2/pass_2/user_benchmark.j2",
@@ -91,12 +92,6 @@ def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
 
     pass2_benchmark = store.get("stage_2_pass_2_user_benchmark")
     pass2_inference = store.get("stage_2_pass_2_user_inference")
-    assert "{% if toolbox_reference_mode == 'pdf' %}" in store.get(
-        "stage_2_pass_2_user_benchmark"
-    )
-    assert "{% elif toolbox_reference_mode == 'text_fallback' %}" in store.get(
-        "stage_2_pass_2_user_benchmark"
-    )
     assert "{% if guides %}" in pass2_benchmark
     for variable in (
         "guides",

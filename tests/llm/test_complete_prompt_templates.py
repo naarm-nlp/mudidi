@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mudidi.llm.prompt_store import configure_prompts, default_prompts_path, get_prompt_store
+from mudidi.llm.prompt_store import configure_prompts, default_prompts_path
 from mudidi.llm.prompts import stage_1_user
 
 
@@ -52,11 +52,3 @@ def test_stage1_benchmark_user_prompt_excludes_dictionary_profile_context() -> N
 
     assert "<dictionary_profile>" not in prompt
     assert "Evenki" not in prompt
-
-
-def test_pass2_user_template_declares_toolbox_reference_variants() -> None:
-    prompt = get_prompt_store().get("stage_2_pass_2_user_benchmark")
-
-    assert "toolbox_reference_mode == 'pdf'" in prompt
-    assert "toolbox_reference_mode == 'text_fallback'" in prompt
-    assert "mdf_marker_reference" in prompt

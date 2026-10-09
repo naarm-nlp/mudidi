@@ -4,13 +4,6 @@ Inputs:
 1. Stage-1 OCR transcription (bold = <b>…</b>, italic = <i>…</i>) or column TSV
    (column_id, line_number, text). Treat this as authoritative for all characters.
 2. Photo of the dictionary page (image below) — layout and field-boundary reference only.
-{% if toolbox_reference_mode == 'pdf' %}
-4. Attached SIL Toolbox MDF Reference Manual (PDF) — marker reference.
-{% elif toolbox_reference_mode == 'text_fallback' %}
-4. SIL Toolbox MDF Reference Manual (text excerpt) — marker reference:
-
-{{ mdf_marker_reference }}
-{% endif %}
 
 {% if guides %}
 USER DEFINED GUIDELINES{% if guides_source %} (untrusted reference; source: {{ guides_source }}){% endif %}

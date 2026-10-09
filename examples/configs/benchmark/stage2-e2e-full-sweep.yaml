@@ -72,22 +72,22 @@ axes:
     - id: intro_notoolbox
       set:
         runtime.use_introduction: true
-        input.toolbox_pdf: null
+        input.mdf_manual: false
 
     - id: intro_toolbox
       set:
         runtime.use_introduction: true
-        input.toolbox_pdf: ../../../assets/Pages from ToolboxReferenceManual.pdf
+        input.mdf_manual: true
 
     - id: nointro_notoolbox
       set:
         runtime.use_introduction: false
-        input.toolbox_pdf: null
+        input.mdf_manual: false
 
     - id: nointro_toolbox
       set:
         runtime.use_introduction: false
-        input.toolbox_pdf: ../../../assets/Pages from ToolboxReferenceManual.pdf
+        input.mdf_manual: true
 
 sweep:
   max_runs: 20

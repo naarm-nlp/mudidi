@@ -113,7 +113,13 @@ def _add_sparse_run_arguments(
             default=argparse.SUPPRESS,
             help="Legacy benchmark language metadata file.",
         )
-    parser.add_argument("--toolbox-pdf", dest="toolbox_pdf", default=argparse.SUPPRESS)
+    parser.add_argument(
+        "--mdf-manual",
+        action=argparse.BooleanOptionalAction,
+        dest="mdf_manual",
+        default=argparse.SUPPRESS,
+        help="Inject the bundled SIL MDF manual text into the Stage 2 Pass 1 system prompt.",
+    )
     parser.add_argument(
         "--stage-1-guides",
         dest="stage1_guides_path",

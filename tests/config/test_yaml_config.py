@@ -278,6 +278,25 @@ evaluation:
     assert config.evaluation.overwrite is True
 
 
+@pytest.mark.parametrize(
+    ("legacy_value", "expected"),
+    [(None, False), ("/old/run/mdf_manual/manual.pdf", True)],
+)
+def test_persisted_toolbox_pdf_migrates_to_mdf_manual_flag(
+    tmp_path: Path, legacy_value: str | None, expected: bool
+) -> None:
+    config = InferenceConfig.model_validate(
+        {
+            "kind": "inference",
+            "input": {"pages": tmp_path / "pages", "toolbox_pdf": legacy_value},
+            "output": {"directory": tmp_path / "out"},
+        }
+    )
+
+    assert config.input.mdf_manual is expected
+    assert "toolbox_pdf" not in redacted_config_dict(config)["input"]
+
+
 def test_path_validation_rejects_missing_input_but_not_output(tmp_path: Path) -> None:
     config = InferenceConfig.model_validate(
         {

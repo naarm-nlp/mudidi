@@ -59,7 +59,6 @@ _PATH_KEYS = {
     "parse_rules_file",
     "stage1_guides",
     "stage2_guides",
-    "toolbox_pdf",
     "directory",
     "predicted",
     "gold",
@@ -174,8 +173,21 @@ class InputConfig(_StrictModel):
     ocr_text: Path | None = None
     dictionary_languages: Path | None = None
     dictionary_profile: DictionaryProfile | None = None
-    toolbox_pdf: Path | None = None
+    mdf_manual: bool = False
     languages: list[str] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_toolbox_pdf(cls, data: Any) -> Any:
+        """Map configs persisted before the bundled MDF manual replaced PDF paths."""
+
+        if not isinstance(data, dict) or "toolbox_pdf" not in data:
+            return data
+        migrated = dict(data)
+        legacy_pdf = migrated.pop("toolbox_pdf")
+        if legacy_pdf is not None:
+            migrated.setdefault("mdf_manual", True)
+        return migrated
 
 
 class OutputConfig(_StrictModel):
@@ -777,7 +789,6 @@ def validate_config_paths(config: MudidiConfig) -> None:
             ("input.alphabet", config.input.alphabet),
             ("input.ocr_text", config.input.ocr_text),
             ("input.dictionary_languages", config.input.dictionary_languages),
-            ("input.toolbox_pdf", config.input.toolbox_pdf),
             ("pipeline.parse_rules_file", config.pipeline.parse_rules_file),
             ("pipeline.stage1_guides", config.pipeline.stage1_guides),
             ("pipeline.stage2_guides", config.pipeline.stage2_guides),

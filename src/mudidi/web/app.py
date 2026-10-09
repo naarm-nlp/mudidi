@@ -48,6 +48,7 @@ from mudidi.llm.subscriptions.oauth import (
 )
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from mudidi.config.run_config import runs_stage2_pass1
 from mudidi.config.yaml_config import AuthConfig, InferenceConfig, validate_config_paths
 from mudidi.instructions import read_instruction_text
 from mudidi.web.credentials import (
@@ -1344,7 +1345,6 @@ def create_app(
             "introduction_directory",
             "alphabet_file",
             "existing_mdf_guide_file",
-            "custom_mdf_manual",
             "stage1_instruction_file",
             "stage2_instruction_file",
         }
@@ -1657,7 +1657,6 @@ def create_app(
             forbidden_paths = {
                 "introduction",
                 "alphabet",
-                "toolbox_pdf",
                 "parse_rules_file",
                 "stage1_guides",
                 "stage2_guides",
@@ -1721,29 +1720,6 @@ def create_app(
 
             await process_instruction_stage("stage1", active=runs_stage1)
             await process_instruction_stage("stage2", active=runs_stage2)
-
-            manual_source = str(payload.get("mdf_manual_source", "none"))
-            manual_files = uploaded("custom_mdf_manual")
-            if not runs_stage2:
-                if manual_files:
-                    raise ValueError("an MDF manual requires an MDF parsing pipeline")
-                manual_source = "none"
-                payload["mdf_manual_source"] = "none"
-            if manual_source == "upload":
-                if len(manual_files) == 1:
-                    payload[
-                        "toolbox_pdf"
-                    ] = await app.state.inputs.materialize_mdf_manual(
-                        run_id,
-                        manual_files[0],
-                        replace=preset_config is not None,
-                    )
-                elif preset_config is not None and preset_config.input.toolbox_pdf:
-                    payload["toolbox_pdf"] = preset_config.input.toolbox_pdf
-                else:
-                    raise ValueError("upload exactly one custom MDF manual PDF")
-            elif manual_files:
-                raise ValueError("select the custom MDF manual option before uploading")
 
             if container_mode and "output_directory" in payload:
                 payload["output_directory"] = _container_output_directory(
@@ -2768,9 +2744,7 @@ def _preset_form_state(
         "min_retry_confidence": [str(config.agentic.min_retry_confidence)],
         "verifier_patches": [str(config.agentic.verifier_patches).lower()],
         "require_concrete_retry": [str(config.agentic.require_concrete_retry).lower()],
-        "mdf_manual_source": [
-            "upload" if config.input.toolbox_pdf is not None else "none"
-        ],
+        "mdf_manual": [str(config.input.mdf_manual).lower()],
     }
 
     assets = (
@@ -3003,7 +2977,7 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
         )
         if enabled
     ]
-    manual = config.input.toolbox_pdf
+    manual = config.input.mdf_manual and runs_stage2_pass1(config.pipeline.stage)
     runs_stage1 = config.pipeline.stage in {"1", "all"}
     runs_stage2 = config.pipeline.stage in {
         "2",
@@ -3073,7 +3047,7 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
                 else "Not used"
             )
         ),
-        "mdf_manual": ("Not used" if manual is None else "Custom upload"),
+        "mdf_manual": ("Bundled SIL MDF manual (Pass 1)" if manual else "Not used"),
     }
 
 
@@ -3144,9 +3118,6 @@ def _preset_asset_paths(
     guide = owned_file(preset.config.pipeline.parse_rules_file)
     if guide is not None:
         assets["mdf-guide"] = guide
-    manual = owned_file(preset.config.input.toolbox_pdf)
-    if manual is not None:
-        assets["mdf-manual"] = manual
     alphabet = owned_file(preset.config.input.alphabet)
     if alphabet is not None:
         assets["character-inventory"] = alphabet
@@ -3210,14 +3181,6 @@ def _preset_asset_links(
                 "url": f"/presets/{preset.preset_id}/files/mdf-guide",
             }
             if "mdf-guide" in paths
-            else None
-        ),
-        "mdf_manual": (
-            {
-                "name": paths["mdf-manual"].name,
-                "url": f"/presets/{preset.preset_id}/files/mdf-manual",
-            }
-            if "mdf-manual" in paths
             else None
         ),
         "stage1_instruction": stage1_instruction,

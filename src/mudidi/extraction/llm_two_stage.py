@@ -468,7 +468,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         entry_dir: Optional[str] = None,
         stage2_experiment_dir: Optional[str] = None,
         overwrite: bool = False,
-        stage2_toolbox_pdf: Optional[str] = None,
+        mdf_manual: bool = False,
         parse_rules_gold: bool = False,
         parse_rules_file: Optional[str] = None,
         approved_parse_rules: DictionaryMarkerCheatsheet | None = None,
@@ -527,9 +527,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             Path(stage2_experiment_dir) if stage2_experiment_dir else None
         )
         self.overwrite = overwrite
-        self.stage2_toolbox_pdf = (
-            Path(stage2_toolbox_pdf) if stage2_toolbox_pdf else None
-        )
+        self.mdf_manual = mdf_manual
         self.parse_rules_gold = parse_rules_gold
         self.parse_rules_file = Path(parse_rules_file) if parse_rules_file else None
         self.approved_parse_rules = approved_parse_rules
@@ -964,6 +962,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 instruction_context=pass1_context,
                 instruction_scope=self.stage2_guides_scope,
                 force_refresh=self.overwrite,
+                mdf_manual=self.mdf_manual,
             )
             pass1_guides, _pass1_guide_source = self._stage2_guide_values(
                 pass1_context, pass_name="pass1"
@@ -992,6 +991,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         cache_path,
                         instruction_context=pass1_context,
                         instruction_scope=self.stage2_guides_scope,
+                        mdf_manual=self.mdf_manual,
                     )
             elif self.parse_rules_file:
                 print(f"Pass 1: loading MDF parsing guide → {self.parse_rules_file}")
@@ -1005,6 +1005,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     cache_path,
                     instruction_context=pass1_context,
                     instruction_scope=self.stage2_guides_scope,
+                    mdf_manual=self.mdf_manual,
                 )
             elif run_stage == "2-pass-2":
                 read_path = find_parse_rules_path(cache_path.parent)
@@ -1036,6 +1037,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         dictionary_profile=self.dictionary_profile,
                         media_reference=self.media_reference,
                         guides=pass1_guides,
+                        mdf_manual=self.mdf_manual,
                     )
                     multi_samples = None
                     print(
@@ -1050,6 +1052,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                         dictionary_profile=self.dictionary_profile,
                         media_reference=self.media_reference,
                         guides=pass1_guides,
+                        mdf_manual=self.mdf_manual,
                     )
                     multi_samples = [
                         (stem, sample_text, Path(sample_image))
@@ -1099,11 +1102,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             model=self.stage2_pass2_model,
             reasoning_effort=self.stage2_pass2_reasoning_effort,
             guides=guide_text,
-            toolbox_pdf=self.stage2_toolbox_pdf,
             mode=self.prompt_mode,
             page_context=page_context,
             prompt_cache=self.prompt_cache,
-            media_reference=self.media_reference,
             prompt_cache_key=self.prompt_cache_key,
             instruction_context=pass2_context,
             instruction_scope=self.stage2_guides_scope,

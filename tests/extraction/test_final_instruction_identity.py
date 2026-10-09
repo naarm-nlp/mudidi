@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import fitz
+import pytest
 
 from mudidi.cli.extract import _instruction_manifest_identity
 from mudidi.instructions import prepare_instruction_context
@@ -68,40 +69,50 @@ def test_same_instruction_bytes_under_rebased_roots_share_resume_and_cache_ident
     assert _stage2_prompt_cache_key(
         model="openai/gpt-5.5",
         static_text="stable static prompt",
-        toolbox_pdf=None,
         prompt_cache_key=None,
         instruction_context=first,
         instruction_scope="both",
     ) == _stage2_prompt_cache_key(
         model="openai/gpt-5.5",
         static_text="stable static prompt",
-        toolbox_pdf=None,
         prompt_cache_key=None,
         instruction_context=second,
         instruction_scope="both",
     )
 
-    assert first.metadata.source_path is not None
-    assert second.metadata.source_path is not None
-    first_toolbox = first.metadata.source_path.parent / "toolbox.pdf"
-    second_toolbox = second.metadata.source_path.parent / "toolbox.pdf"
-    first_toolbox.write_bytes(b"stable toolbox bytes")
-    second_toolbox.write_bytes(b"stable toolbox bytes")
-    assert _stage2_prompt_cache_key(
-        model="openai/gpt-5.5",
-        static_text="stable static prompt",
-        toolbox_pdf=first_toolbox,
-        prompt_cache_key=None,
-        instruction_context=first,
-        instruction_scope="both",
-    ) == _stage2_prompt_cache_key(
-        model="openai/gpt-5.5",
-        static_text="stable static prompt",
-        toolbox_pdf=second_toolbox,
-        prompt_cache_key=None,
-        instruction_context=second,
-        instruction_scope="both",
+
+def test_parse_rules_cache_rejects_reuse_after_mdf_manual_toggle(tmp_path: Path) -> None:
+    cache_path = tmp_path / "mdf_parsing_guide.json"
+    cache_path.write_text(json.dumps({"markers": [], "rules": []}), encoding="utf-8")
+    metadata_path = cache_path.with_name(cache_path.name + ".meta.json")
+    _write_parse_rules_cache_metadata(
+        cache_path, instruction_context=None, instruction_scope="both"
     )
+    legacy = json.loads(metadata_path.read_text(encoding="utf-8"))
+    legacy.pop("mdf_manual")
+    metadata_path.write_text(json.dumps(legacy), encoding="utf-8")
+
+    _ensure_parse_rules_cache_compatible(
+        cache_path, instruction_context=None, instruction_scope="both", force_refresh=False
+    )
+    with pytest.raises(ValueError, match="MDF manual"):
+        _ensure_parse_rules_cache_compatible(
+            cache_path,
+            instruction_context=None,
+            instruction_scope="both",
+            force_refresh=False,
+            mdf_manual=True,
+        )
+
+    metadata_path.unlink()
+    with pytest.raises(ValueError, match="metadata"):
+        _ensure_parse_rules_cache_compatible(
+            cache_path,
+            instruction_context=None,
+            instruction_scope="both",
+            force_refresh=False,
+            mdf_manual=True,
+        )
 
 
 def test_rebased_parse_rules_cache_metadata_is_reusable(tmp_path: Path) -> None:
@@ -164,14 +175,12 @@ def test_instruction_identity_changes_for_bytes_pages_or_scope(tmp_path: Path) -
     assert _stage2_prompt_cache_key(
         model="openai/gpt-5.5",
         static_text="stable static prompt",
-        toolbox_pdf=None,
         prompt_cache_key=None,
         instruction_context=baseline,
         instruction_scope="both",
     ) != _stage2_prompt_cache_key(
         model="openai/gpt-5.5",
         static_text="stable static prompt",
-        toolbox_pdf=None,
         prompt_cache_key=None,
         instruction_context=baseline,
         instruction_scope="pass1",

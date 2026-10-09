@@ -193,31 +193,15 @@
                   </div>
                   <label data-stage-control data-pipeline-stages="pass1 pass2"{% if errors_by_field.parse_rules_pages %} class="field-invalid" data-field-error="parse_rules_pages"{% endif %}><span class="field-heading">Representative MDF parsing guide pages <button class="info-button" type="button" aria-label="About representative MDF parsing guide pages" data-help="Optional. Stage 2 samples these pages to infer the MDF markers and entry structure used by this dictionary. Use one page number, a page range, comma-separated page numbers, or a combination. Every representative page must also be included in Dictionary pages.">i</button></span><input class="page-spec-input" name="parse_rules_pages" placeholder="ex: 30-32"{% if errors_by_field.parse_rules_pages %} aria-invalid="true" aria-describedby="parse-rules-pages-error"{% endif %}>{% if errors_by_field.parse_rules_pages %}<small id="parse-rules-pages-error" class="field-error-message">{{ errors_by_field.parse_rules_pages }}</small>{% endif %}</label>
                   </section>
-                  <fieldset class="choice-group mdf-manual additional-context-group" data-stage-control data-pipeline-stages="pass1 pass2" data-mdf-manual>
+                  <fieldset class="choice-group mdf-manual additional-context-group" data-stage-control data-pipeline-stages="pass1" data-mdf-manual>
                   <legend>MDF manual (optional)</legend>
                   <div class="mdf-manual-heading">
-                    <p>Optional reference material for Stage 2 parsing-guide inference.</p>
-                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="For lower token cost, upload only the pages that describe the MDF markers or tags relevant to your dictionary from the MDF section, which covers 65 pages (pages 31–95). If you are unsure which markers are relevant, run Complete digitization first without an MDF manual. At the human checkpoint, review the MDF parsing guide inferred by the LLM from your dictionary pages. Then start a new run and upload only the official-manual pages for those markers.">i</button>
+                    <p>Optional bundled reference text for Stage 2 Pass 1 parsing-guide discovery.</p>
+                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="When selected, the bundled SIL Toolbox MDF Reference Manual text is added to the Pass 1 parsing-guide system prompt, using approximately 30K extra input tokens. Pass 2 does not receive the manual. You can leave it off to infer the parsing guide from the dictionary pages alone.">i</button>
                   </div>
                   <div class="choice-card-grid mdf-manual-options">
-                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="upload" required><span><strong>Upload my own MDF manual</strong><small>Use selected reference pages for Stage 2 marker interpretation.</small></span></label>
-                    <label class="choice-card"><input type="radio" name="mdf_manual_source" value="none" checked><span><strong>Continue without an MDF manual</strong><small>Let Stage 2 infer the parsing guide from the dictionary pages.</small></span></label>
-                  </div>
-                  <div class="mdf-manual-upload" data-custom-mdf-manual hidden>
-                    <div class="mdf-manual-file">
-                      <span class="mdf-manual-file-title">MDF manual PDF</span>
-                      {% if preset_assets.mdf_manual %}<span class="saved-inputs"><strong>Saved file</strong><a href="{{ preset_assets.mdf_manual.url }}" target="_blank" rel="noopener">{{ preset_assets.mdf_manual.name }}</a></span>{% endif %}
-                      <div class="mdf-guide-file-row">
-                        <label class="primary mdf-guide-upload-trigger">
-                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
-                            <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
-                          </svg>
-                          <span>Choose PDF</span>
-                          <input class="mdf-guide-file-input" data-mdf-manual-file-input name="custom_mdf_manual" type="file" accept=".pdf" disabled aria-describedby="mdf-manual-file-status">
-                        </label>
-                        <span id="mdf-manual-file-status" class="mdf-guide-file-status" data-mdf-manual-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}">{% if preset_assets.mdf_manual %}Using saved manual unless replaced{% else %}No PDF selected{% endif %}</span>
-                      </div>
-                    </div>
+                    <label class="choice-card"><input type="radio" name="mdf_manual" value="true" required><span><strong>Include the SIL MDF manual</strong><small>Add bundled reference text to the Pass 1 parsing-guide system prompt (~30K extra input tokens).</small></span></label>
+                    <label class="choice-card"><input type="radio" name="mdf_manual" value="false" checked><span><strong>Continue without an MDF manual</strong><small>Let Pass 1 infer the parsing guide from the dictionary pages.</small></span></label>
                   </div>
                   <div class="mdf-manual-official">
                     <span><strong>Official SIL MDF manual</strong><small>fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small></span>

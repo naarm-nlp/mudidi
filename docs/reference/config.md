@@ -53,7 +53,7 @@ input:  # InputConfig; required
     page_layout: "value"  # string; required
     information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
     other_information_types: null  # string | null; default: null
-  toolbox_pdf: null  # path | null; default: null
+  mdf_manual: false  # boolean; default: false
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
   directory: "path/to/output"  # path; required
@@ -168,7 +168,7 @@ input:  # InputConfig; required
     page_layout: "value"  # string; required
     information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
     other_information_types: null  # string | null; default: null
-  toolbox_pdf: null  # path | null; default: null
+  mdf_manual: false  # boolean; default: false
   languages: null  # list[string] | null; default: null
 output:  # OutputConfig; required
   directory: "path/to/output"  # path; required
@@ -287,7 +287,7 @@ base:  # BenchmarkRunConfig; required
       page_layout: "value"  # string; required
       information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
       other_information_types: null  # string | null; default: null
-    toolbox_pdf: null  # path | null; default: null
+    mdf_manual: false  # boolean; default: false
     languages: null  # list[string] | null; default: null
   output:  # OutputConfig; required
     directory: "path/to/output"  # path; required

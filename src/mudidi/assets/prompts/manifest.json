@@ -43,7 +43,8 @@
     "description": "Stage 2 Pass 1 system message for MDF marker and entry-structure discovery.",
     "file": "stage_2/pass_1/system.j2",
     "variables": [
-      {"name": "mdf_marker_reference", "description": "SIL Toolbox MDF marker reference text."}
+      {"name": "mdf_marker_reference", "description": "SIL Toolbox MDF marker reference text."},
+      {"name": "mdf_reference_manual", "description": "Bundled SIL Toolbox MDF Reference Manual text when input.mdf_manual is true; empty otherwise."}
     ]
   },
   "stage_2_pass_1_user_single": {
@@ -67,8 +68,13 @@
     ]
   },
   "mdf_marker_reference": {
-    "description": "SIL Toolbox MDF marker reference, primarily used by Pass 1 and by Pass 2's text fallback.",
+    "description": "SIL Toolbox MDF marker reference used by the Pass 1 system message.",
     "file": "stage_2/pass_1/mdf_marker_reference.txt",
+    "variables": []
+  },
+  "mdf_reference_manual": {
+    "description": "Text extracted from the MDF section of the SIL Toolbox Reference Manual (ending before 'Other General Information'), injected into the Pass 1 system message when input.mdf_manual is true.",
+    "file": "stage_2/pass_1/mdf_reference_manual.txt",
     "variables": []
   },
   "stage_2_pass_2_system_benchmark": {
@@ -89,8 +95,6 @@
     "variables": [
       {"name": "transcription", "tag": "<transcription>", "description": "Authoritative Stage 1 text."},
       {"name": "field_block", "description": "Formatted field map from Pass 1."},
-      {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
-      {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
       {"name": "guides", "description": "Optional user-defined guidelines."},
       {"name": "guides_source", "description": "Source filename for the optional guidelines."}
     ]
@@ -101,8 +105,6 @@
     "variables": [
       {"name": "transcription", "tag": "<transcription>", "description": "Authoritative Stage 1 text."},
       {"name": "field_block", "description": "Formatted field map from Pass 1."},
-      {"name": "toolbox_reference_mode", "description": "none, pdf, or text_fallback."},
-      {"name": "mdf_marker_reference", "description": "Reference text used by text_fallback."},
       {"name": "guides", "description": "Optional user-defined guidelines."},
       {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "current_page_context", "tag": "<current_page>", "description": "Current page identity."},

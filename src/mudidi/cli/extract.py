@@ -779,9 +779,7 @@ def _build_stage2_manifest(
             or getattr(args, "field_cheatsheet_gold", False)
             else "discover"
         ),
-        "toolbox_pdf": str(args.toolbox_pdf)
-        if getattr(args, "toolbox_pdf", None)
-        else None,
+        "mdf_manual": bool(getattr(args, "mdf_manual", False)),
         "prompt_cache": getattr(args, "prompt_cache", "auto"),
         "media_reference": getattr(args, "media_reference", "auto"),
         "prompt_cache_key": getattr(args, "prompt_cache_key", None),
@@ -925,9 +923,7 @@ def _build_strategy(
                 str(stage2_experiment_dir) if stage2_experiment_dir else None
             ),
             overwrite=bool(getattr(args, "overwrite", False)),
-            stage2_toolbox_pdf=(
-                str(args.toolbox_pdf) if getattr(args, "toolbox_pdf", None) else None
-            ),
+            mdf_manual=bool(getattr(args, "mdf_manual", False)),
             parse_rules_gold=bool(
                 getattr(args, "parse_rules_gold", False)
                 or getattr(args, "field_cheatsheet_gold", False)
@@ -1489,13 +1485,12 @@ Examples:
         "Defaults to outputs/stage-2-gold/<page>/<page>_mdf when present.",
     )
     parser.add_argument(
-        "--toolbox-pdf",
-        type=Path,
-        default=None,
-        dest="toolbox_pdf",
-        help="Optional SIL Toolbox MDF Reference Manual PDF attached during "
-        "Pass 2 page extraction only (direct_mdf mode). Pass 1 field discovery "
-        "uses the built-in marker text reference instead.",
+        "--mdf-manual",
+        action="store_true",
+        default=False,
+        dest="mdf_manual",
+        help="Inject the bundled SIL Toolbox MDF Reference Manual text into the "
+        "Stage 2 Pass 1 (parsing-guide discovery) system prompt.",
     )
     parser.add_argument(
         "--prompt-cache",
@@ -1510,7 +1505,7 @@ Examples:
         choices=["auto", "inline", "file-uri"],
         default="auto",
         dest="media_reference",
-        help="How to attach reusable media such as toolbox PDFs. auto uses file "
+        help="How to attach reusable media such as introduction and sample-page PDFs. auto uses file "
         "parts/URIs when supported and falls back to inline data; inline always "
         "uses base64 data; file-uri prefers URI/file parts with inline fallback.",
     )
@@ -1680,12 +1675,6 @@ Examples:
 
     if getattr(args, "batch_size", 1) < 1:
         parser.error("--batch-size must be >= 1")
-
-    if getattr(args, "toolbox_pdf", None):
-        if args.strategy != "two_stage":
-            parser.error("--toolbox-pdf requires --strategy two_stage")
-        if not args.toolbox_pdf.is_file():
-            parser.error(f"--toolbox-pdf path not found: {args.toolbox_pdf}")
 
     _validate_pdf_page_args(args, parser)
 
@@ -2348,11 +2337,7 @@ def _run_single_entry(args, parser) -> int:
                 f"Stage-2 slot: {args.stage2_experiment_name} | "
                 f"Stage-2 mode: {pass_label} | "
                 f"Reasoning: {args.stage2_reasoning_effort}"
-                + (
-                    f" | Toolbox PDF: {args.toolbox_pdf.name}"
-                    if getattr(args, "toolbox_pdf", None)
-                    else ""
-                )
+                + (" | MDF manual: Pass 1" if getattr(args, "mdf_manual", False) else "")
             )
     print("=" * 60)
 

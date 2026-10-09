@@ -15,6 +15,7 @@ from pydantic import (
     field_validator,
 )
 
+from mudidi.config.run_config import runs_stage2_pass1
 from mudidi.config.yaml_config import (
     AgenticConfig,
     AuthConfig,
@@ -57,7 +58,6 @@ class PipelineChoice(StrEnum):
 
 ProviderName = Literal["anthropic", "openai", "gemini", "openrouter", "custom"]
 SubscriptionProviderName = Literal["openai", "google", "claude"]
-MdfManualSource = Literal["none", "upload"]
 InstructionSource = Literal["typed", "file"]
 InstructionScope = Literal["pass1", "pass2", "both"]
 _PAGE_SPEC_PART = re.compile(r"^[1-9][0-9]*(?:-[1-9][0-9]*)?$")
@@ -204,8 +204,7 @@ class NewRunForm(BaseModel):
     profile_page_layout: str | None = Field(default=None, max_length=2000)
     profile_information_types: list[InformationType] = Field(default_factory=list)
     profile_other_information_types: str | None = Field(default=None, max_length=1000)
-    toolbox_pdf: Path | None = None
-    mdf_manual_source: MdfManualSource = "none"
+    mdf_manual: bool = False
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None
@@ -304,8 +303,6 @@ class NewRunForm(BaseModel):
         output = self.output_directory.expanduser().resolve()
         if output.exists() and not output.is_dir():
             raise ValueError("output path exists and is not a directory")
-        if self.mdf_manual_source == "upload" and self.toolbox_pdf is None:
-            raise ValueError("selected MDF manual is unavailable")
 
         stage = _PIPELINE_STAGE[self.pipeline]
         runs_stage1 = self.pipeline in {
@@ -401,11 +398,7 @@ class NewRunForm(BaseModel):
                 else None,
                 ocr_text=None,
                 dictionary_profile=self._dictionary_profile(),
-                toolbox_pdf=(
-                    self.toolbox_pdf.expanduser().resolve()
-                    if self.toolbox_pdf and runs_stage2
-                    else None
-                ),
+                mdf_manual=self.mdf_manual and runs_stage2_pass1(stage),
             ),
             output=OutputConfig(directory=output),
             auth=AuthConfig(mode=self.auth_mode, providers=auth_providers),
@@ -620,10 +613,11 @@ class NewRunForm(BaseModel):
                 page_spec=(self.stage2_instruction_pdf_pages if runs_stage2 else None),
                 stage2_scope=(self.stage2_instruction_scope if runs_stage2 else None),
             ),
-            "mdf_manual": {
-                "none": "Not used",
-                "upload": "Custom upload",
-            }[self.mdf_manual_source],
+            "mdf_manual": (
+                "Bundled SIL MDF manual (Pass 1)"
+                if self.mdf_manual and runs_stage2_pass1(_PIPELINE_STAGE[self.pipeline])
+                else "Not used"
+            ),
             "mdf_parsing_guide": (
                 "Human approval required"
                 if self.requires_parse_rule_review

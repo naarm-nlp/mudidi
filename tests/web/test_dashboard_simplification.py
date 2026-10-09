@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -188,16 +187,6 @@ def test_home_uses_accessible_pipeline_radios_and_agentic_controls(
     assert "Expert OCR backends" not in response.text
 
 
-def test_dashboard_does_not_redistribute_an_mdf_manual(tmp_path: Path) -> None:
-    response = TestClient(create_app(data_dir=tmp_path)).get("/assets/mdf-manual")
-
-    assert response.status_code == 404
-    assert not files("mudidi.assets").joinpath("MDFReferenceManual.pdf").is_file()
-    assert not (
-        Path(__file__).parents[2] / "assets" / "Pages from ToolboxReferenceManual.pdf"
-    ).is_file()
-
-
 @pytest.mark.parametrize(
     ("field", "value"),
     [
@@ -236,7 +225,7 @@ def test_dashboard_page_specs_accept_single_range_list_and_combination(
     assert form.parse_rules_pages == ["1", "5", "10-20"]
 
 
-def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> None:
+def test_home_uses_uploads_and_instruction_textareas(tmp_path: Path) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/")
 
     assert response.status_code == 200
@@ -294,45 +283,6 @@ def test_home_uses_uploads_textareas_and_mdf_manual_choices(tmp_path: Path) -> N
         '<span class="field-heading">Representative MDF parsing guide pages '
         in response.text
     )
-    assert 'name="mdf_manual_source" value="none"' in response.text
-    assert 'name="mdf_manual_source" value="upload"' in response.text
-    assert 'name="mdf_manual_source" value="bundled"' not in response.text
-    assert 'name="custom_mdf_manual" type="file"' in response.text
-    assert 'class="mdf-guide-file-input" data-mdf-manual-file-input' in response.text
-    assert "<span>Choose PDF</span>" in response.text
-    assert (
-        'id="mdf-manual-file-status" class="mdf-guide-file-status" '
-        "data-mdf-manual-file-status" in response.text
-    )
-    assert (
-        '<fieldset class="choice-group mdf-manual additional-context-group"'
-        in response.text
-    )
-    assert 'class="choice-card-grid mdf-manual-options"' in response.text
-    assert 'class="mdf-manual-upload" data-custom-mdf-manual hidden' in response.text
-    assert "<legend>MDF manual (optional)</legend>" in response.text
-    assert "Upload my own MDF manual" in response.text
-    assert "Continue without an MDF manual" in response.text
-    assert "Open official SIL MDF manual" in response.text
-    assert (
-        'aria-label="Open or download the official SIL MDF manual"' not in response.text
-    )
-    assert (
-        'href="http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf"'
-        in response.text
-    )
-    assert 'target="_blank"' in response.text
-    assert 'rel="noopener noreferrer"' in response.text
-    assert 'class="primary link-button mdf-manual-link"' in response.text
-    assert "fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf" in response.text
-    assert "pages 31–95" in response.text
-    assert "65 pages" in response.text
-    assert (
-        "only the pages that describe the MDF markers or tags relevant" in response.text
-    )
-    assert "run Complete digitization first without an MDF manual" in response.text
-    assert "human checkpoint" in response.text
-    assert "MDF parsing guide inferred by the LLM" in response.text
 
 
 def test_dashboard_accepts_exactly_one_required_dictionary_pdf(tmp_path: Path) -> None:
@@ -494,9 +444,32 @@ def test_dashboard_accepts_the_uploaded_pdf_last_page(tmp_path: Path) -> None:
     assert "Review your run" in response.text
 
 
-def test_removed_bundled_manual_source_is_rejected(tmp_path: Path) -> None:
-    with pytest.raises(ValidationError, match="mdf_manual_source"):
-        _form(tmp_path, mdf_manual_source="bundled")
+@pytest.mark.parametrize(
+    ("pipeline", "expected"),
+    [("complete", True), ("structure", True), ("transcription", False)],
+)
+def test_manual_flag_only_applies_to_pass1_pipelines(
+    tmp_path: Path, pipeline: str, expected: bool
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    response = TestClient(app).post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "dictionary_pages": "1",
+            "pipeline": pipeline,
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "mdf_manual": "true",
+        },
+        files={"dictionary_pdf": ("dictionary.pdf", _one_page_pdf(), "application/pdf")},
+    )
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.input.mdf_manual is expected
 
 
 def test_preview_materializes_all_context_inputs_into_run_bundle(
@@ -519,7 +492,7 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             "stage1_additional_instructions": "Keep uncertain letters marked.",
             "stage2_additional_instructions": "Use the custom nt marker.",
             "character_inventory": "Chukchi-Cyrillic: а б в г ӄ",
-            "mdf_manual_source": "upload",
+            "mdf_manual": "true",
             "parse_rules_pages": "1,3-4",
         },
         files=[
@@ -528,7 +501,6 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
                 ("dictionary.pdf", _pdf_with_pages(4), "application/pdf"),
             ),
             ("existing_mdf_guide_file", ("guide.json", guide, "application/json")),
-            ("custom_mdf_manual", ("manual.pdf", _one_page_pdf(), "application/pdf")),
         ],
     )
 
@@ -539,7 +511,6 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
     for path in (
         config.input.pages,
         config.input.alphabet,
-        config.input.toolbox_pdf,
         config.pipeline.parse_rules_file,
         config.pipeline.stage1_guides,
         config.pipeline.stage2_guides,

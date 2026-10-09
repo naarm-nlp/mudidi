@@ -228,35 +228,23 @@ These names refer to different things:
 
 - **MDF parsing guide** is inferred by the LLM for this particular dictionary.
   It describes the MDF markers and structural rules that Stage 2 should use.
-- **MDF manual** is an optional general reference PDF describing MDF markers.
+- **MDF manual** is optional bundled reference text from the SIL Toolbox MDF
+  Reference Manual.
 
-For the MDF manual, choose one of:
+Choose **Include the SIL MDF manual** to add the bundled extracted text to the
+Stage 2 **Pass 1** parsing-guide discovery system prompt. This adds approximately
+30K input tokens. **Continue without an MDF manual** is selected by default;
+Pass 1 then infers the guide from the dictionary pages alone. The manual option
+is available only for pipelines that run Pass 1, and Pass 2 never receives it.
 
-- upload your own MDF manual PDF;
-- open the
-  [official SIL Toolbox Reference Manual](http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf)
-  in a new browser tab; or
-- continue without an MDF manual.
+The repository owner has confirmed redistribution permission for the bundled
+text. No manual PDF upload is needed. The manual remains optional and does not
+replace the dictionary-specific MDF parsing guide. The dashboard also links to
+the [official SIL Toolbox Reference Manual](http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf)
+for reading in a new browser tab.
 
-The relevant MDF information in SIL's manual starts on page 31 and spans pages
-31–95 (65 pages). For better relevance and lower token cost, extract and upload
-only the pages describing MDF markers or tags relevant to your dictionary.
-
-If you do not know which markers are relevant, first run **Complete
-digitization** without an MDF manual. At the human checkpoint, inspect the MDF
-parsing guide inferred by the LLM from your dictionary pages. You can then start
-a new run and upload only the corresponding marker pages from the official
-manual. The same workflow appears in the dashboard's MDF-manual information
-tooltip.
-
-MUDIDI does not bundle or redistribute SIL's manual. A PDF is copied into the
-run-owned input bundle only when you upload it yourself. The manual is optional
-and does not replace the dictionary-specific MDF parsing guide.
-
-The existing parsing-guide and MDF-manual file pickers use the same themed
-upload control as instruction attachments. The selected filename is displayed
-beside the control, and choosing **Continue without an MDF manual** disables
-and excludes the manual upload.
+The existing parsing-guide file picker uses the same themed upload control as
+instruction attachments, with the selected filename displayed beside it.
 
 ## Agentic verification
 

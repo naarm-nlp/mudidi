@@ -774,13 +774,10 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
         json.dumps({"markers": [{"marker": "lx", "description": "Headword"}]}),
         encoding="utf-8",
     )
-    manual = run_bundle / "mdf_manual" / "saved-manual.pdf"
-    manual.parent.mkdir()
-    manual.write_bytes(_pdf_bytes())
     run_config = app.state.job_controller.load_inference_config(run_id)
     run_config = run_config.model_copy(
         update={
-            "input": run_config.input.model_copy(update={"toolbox_pdf": manual}),
+            "input": run_config.input.model_copy(update={"mdf_manual": True}),
             "pipeline": run_config.pipeline.model_copy(
                 update={"parse_rules_file": guide}
             ),
@@ -843,17 +840,13 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     )
     assert "dictionary.pdf" in loaded.text
     assert "saved-guide.json" in loaded.text
-    assert "saved-manual.pdf" in loaded.text
     assert f"/presets/{preset.preset_id}/files/pages/0" in loaded.text
     assert f"/presets/{preset.preset_id}/files/mdf-guide" in loaded.text
-    assert f"/presets/{preset.preset_id}/files/mdf-manual" in loaded.text
 
     saved_page = client.get(f"/presets/{preset.preset_id}/files/pages/0")
     saved_guide = client.get(f"/presets/{preset.preset_id}/files/mdf-guide")
-    saved_manual = client.get(f"/presets/{preset.preset_id}/files/mdf-manual")
     assert saved_page.content.startswith(b"%PDF-")
     assert saved_guide.json()["markers"][0]["marker"] == "lx"
-    assert saved_manual.content.startswith(b"%PDF-")
 
     # Presets own their input assets and remain valid after the source run is removed.
     shutil.rmtree(tmp_path / "app-data" / "runs" / run_id / "inputs")
@@ -872,6 +865,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "reasoning": "low",
             "agentic": "false",
             "parse_rules_pages": "1",
+            "mdf_manual": "true",
             "dictionary_pages": "1",
         },
     )
@@ -885,6 +879,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     )
     cloned_config = app.state.job_controller.load_inference_config(cloned.run_id)
     assert cloned_config.input.pages is not None
+    assert cloned_config.input.mdf_manual is True
     assert cloned_config.input.pages.resolve().is_relative_to(
         (tmp_path / "app-data" / "runs" / cloned.run_id / "inputs").resolve()
     )
@@ -901,7 +896,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
-            "mdf_manual_source": "upload",
+            "mdf_manual": "false",
             "dictionary_pages": "1",
         },
         files=[
@@ -917,7 +912,6 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
                     "application/json",
                 ),
             ),
-            ("custom_mdf_manual", ("replacement.pdf", _pdf_bytes(), "application/pdf")),
         ],
     )
 
@@ -929,7 +923,7 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert replacement_config.input.pages.name == "replacement.pdf"
     assert replacement_config.input.pages.is_file()
     assert replacement_config.pipeline.parse_rules_file.name == "replacement-guide.json"
-    assert replacement_config.input.toolbox_pdf.name == "replacement.pdf"
+    assert replacement_config.input.mdf_manual is False
 
     overwritten = client.post(
         f"/runs/{replacement_run.run_id}/presets",

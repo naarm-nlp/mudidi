@@ -123,19 +123,17 @@ the selected stage and agentic evaluator/rewriter paths.
 Pass 1 or imported from user JSON. **MDF manual** is optional general reference
 material.
 
-The MDF manual choices are:
+For pipelines that run Stage 2 Pass 1, the MDF manual choice cards offer:
 
-1. Upload my own MDF manual.
-2. Open the official SIL MDF documentation in a new browser tab.
-3. Continue without an MDF manual.
+1. Include the SIL MDF manual.
+2. Continue without an MDF manual (default).
 
-The help text explains that the relevant MDF section of the official manual is
-pages 31–95 (65 pages), and recommends uploading only the marker/tag pages
-needed for the dictionary to improve relevance and reduce token cost. When the
-user does not know which markers are relevant, it directs them to run Complete
-digitization without a manual, inspect the LLM-inferred MDF parsing guide at the
-human checkpoint, and then start a new run with only the corresponding manual
-pages. MUDIDI does not package or redistribute the SIL manual.
+Selecting the manual adds the bundled extracted SIL Toolbox MDF Reference Manual
+text to the Pass 1 parsing-guide discovery system prompt, using approximately
+30K extra input tokens. Pass 2 never receives the manual. The help text explains
+the reference's scope and token cost; an official SIL manual link remains
+available for reading in a new browser tab. The repository owner has confirmed
+redistribution permission for the bundled text. No manual upload is required.
 
 Representative MDF parsing guide pages include help explaining that Stage 2
 samples them to infer dictionary-specific MDF markers and entry structure.

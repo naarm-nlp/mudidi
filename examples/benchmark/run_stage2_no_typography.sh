@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # Uses gold Stage 1 OCR with <b>/<i> tags stripped, then runs Stage 2 with:
 #   - dictionary intro when an intro folder/file exists for the entry
-#   - Toolbox MDF guide PDF
+#   - bundled SIL MDF manual text in the Pass 1 system prompt (--mdf-manual)
 #
 # Outputs land under:
 #   outputs/benchmark/stage-2-no-typography/<language>/stage-2/<experiment>/<page>/<page>.mdf.txt
@@ -20,7 +20,6 @@ export PYTHONPATH="${PROJECT_ROOT}/src:${PYTHONPATH:-}"
 
 DATASET_DIR="${DATASET_DIR:-dataset/MUDIDI/dictionaries}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-outputs/benchmark/stage-2-no-typography}"
-TOOLBOX_PDF="${TOOLBOX_PDF:-assets/Pages from ToolboxReferenceManual.pdf}"
 STAGE2_REASONING="${STAGE2_REASONING:-high}"
 BATCH_SIZE="${BATCH_SIZE:-5}"
 GOLD_NO_TYPOGRAPHY_SLOT="gold_stage1_notypography"
@@ -151,7 +150,7 @@ run_stage2() {
             --output-dir "${output_dir}" \
             --dictionary-languages "${config_file}" \
             "${intro_args[@]}" \
-            --toolbox-pdf "${TOOLBOX_PDF}" \
+            --mdf-manual \
             --one-page-per-entry \
             --stage1-source predictions \
             --stage1-input flat \

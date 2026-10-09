@@ -73,6 +73,29 @@ def test_discover_field_cheatsheet_multi_uses_multi_prompt(mock_complete) -> Non
     assert len(user_content) == 3  # text + two sample images
 
 
+@pytest.mark.parametrize("mdf_manual", [False, True])
+@patch("mudidi.llm.pass_1.complete_with_usage")
+def test_mdf_manual_flag_controls_bundled_manual_in_pass1_system_prompt(
+    mock_complete, tmp_path: Path, mdf_manual: bool
+) -> None:
+    mock_complete.return_value = ('{"markers": [], "rules": []}', {})
+    page = tmp_path / "page_1.png"
+    page.write_bytes(b"fake-image")
+
+    discover_field_cheatsheet_multi(
+        samples=[("page_1", "one", page), ("page_2", "two", page)],
+        intro_images=[],
+        model="gemini/gemini-3-flash-preview",
+        mdf_manual=mdf_manual,
+    )
+
+    system_message = mock_complete.call_args.kwargs["messages"][0]
+    assert system_message["role"] == "system"
+    assert ("<mdf_reference_manual>" in system_message["content"]) is mdf_manual
+    assert ("Old verb paradigm markers" in system_message["content"]) is mdf_manual
+    assert "Other General Information" not in system_message["content"]
+
+
 @patch("mudidi.llm.pass_1.complete_with_usage")
 def test_discover_field_cheatsheet_multi_includes_config_hint_when_set(mock_complete) -> None:
     mock_complete.return_value = (

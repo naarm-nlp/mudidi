@@ -6,27 +6,20 @@ Used by ``TwoStageLLMExtraction`` for Stage 2 MDF output.
 
 from __future__ import annotations
 
-import logging
 import re
 import json
 import hashlib
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
-from mudidi.config.prompt_cache import MediaReferenceMode, PromptCacheMode
+from mudidi.config.prompt_cache import PromptCacheMode
 from mudidi.config.run_config import PromptMode
 from mudidi.llm import client as llm
 from mudidi.llm.prompt_mode import prompt_id_for_mode
 from mudidi.llm.subscriptions import SubscriptionBackend, SubscriptionRuntime
 from mudidi.llm.prompt_store import get_prompt_store
 from mudidi.schemas.field_map import FieldMapPrompt
-from mudidi.utils.image import (
-    file_content_part,
-    image_data_url,
-    mime_type_for_path,
-    model_supports_pdf_input,
-)
+from mudidi.utils.image import image_data_url, mime_type_for_path
 from mudidi.utils.mdf_export import normalize_mdf_text
 from mudidi.instructions import (
     PreparedInstructionContext,
@@ -39,9 +32,7 @@ from mudidi.utils.page_context import (
     format_neighbor_text_block,
     format_page_image_order_note,
 )
-from mudidi.utils.pdf_render import needs_pdf_rasterization
 
-logger = logging.getLogger(__name__)
 _TRANSCRIPTION_SPLIT_MARKER = "__MUDIDI_TRANSCRIPTION_PLACEHOLDER__"
 _TRANSCRIPTION_OPEN_TAG = "<transcription>\n"
 
@@ -78,39 +69,6 @@ def strip_markdown_fences(text: str) -> str:
     return text
 
 
-def _toolbox_content_parts(
-    toolbox_pdf: Path,
-    *,
-    model: str,
-    media_reference: MediaReferenceMode = "auto",
-) -> tuple[Literal["pdf", "text_fallback"], list[dict]]:
-    """Build Toolbox manual attachments and select its visible prompt section."""
-    if media_reference != "inline" and model_supports_pdf_input(model):
-        return "pdf", [
-            file_content_part(
-                str(toolbox_pdf),
-                mime_type="application/pdf",
-                media_reference=media_reference,
-            )
-        ]
-
-    if needs_pdf_rasterization(model):
-        logger.info(
-            "Using the bundled Toolbox text fallback for model %s (PDF %s needs rasterization)",
-            model,
-            toolbox_pdf.name,
-        )
-        return "text_fallback", []
-
-    return "pdf", [
-        file_content_part(
-            str(toolbox_pdf),
-            mime_type="application/pdf",
-            media_reference=media_reference,
-        )
-    ]
-
-
 def _neighbor_format_kwargs(
     mode: PromptMode,
     page_context: PageContext | None,
@@ -136,7 +94,6 @@ def _render_direct_mdf_user_parts(
     *,
     transcription: str,
     field_map: FieldMapPrompt,
-    toolbox_reference_mode: Literal["none", "pdf", "text_fallback"],
     guides: str,
     guides_source: str,
     mode: PromptMode,
@@ -149,8 +106,6 @@ def _render_direct_mdf_user_parts(
         user_prompt_id,
         transcription=_TRANSCRIPTION_SPLIT_MARKER,
         field_block=field_map.format_prompt_block(),
-        toolbox_reference_mode=toolbox_reference_mode,
-        mdf_marker_reference=get_prompt_store().get("mdf_marker_reference"),
         guides=guides,
         guides_source=guides_source,
         **neighbor_kwargs,
@@ -184,23 +139,10 @@ def _mark_static_cache_boundary(
     return [*content[:-1], {**content[-1], "cache_control": {"type": "ephemeral"}}]
 
 
-
-
-def _toolbox_identity(toolbox_pdf: Optional[Path]) -> dict[str, object] | None:
-    """Return path-free content identity for the optional Toolbox PDF."""
-    if toolbox_pdf is None or not toolbox_pdf.is_file():
-        return None
-    raw = toolbox_pdf.read_bytes()
-    return {
-        "kind": "pdf",
-        "byte_count": len(raw),
-        "sha256": hashlib.sha256(raw).hexdigest(),
-    }
 def _stage2_prompt_cache_key(
     *,
     model: str,
     static_text: str,
-    toolbox_pdf: Optional[Path],
     prompt_cache_key: Optional[str],
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
@@ -220,11 +162,6 @@ def _stage2_prompt_cache_key(
             model,
             static_text,
             json.dumps(instruction_identity, sort_keys=True, ensure_ascii=False),
-            json.dumps(
-                _toolbox_identity(toolbox_pdf),
-                sort_keys=True,
-                ensure_ascii=False,
-            ),
         ]
     )
     digest = hashlib.sha256(digest_input.encode("utf-8")).hexdigest()[:16]
@@ -239,23 +176,13 @@ def _build_direct_mdf_prompt(
     field_map: FieldMapPrompt,
     model: str,
     guides: str = "",
-    toolbox_pdf: Optional[Path] = None,
     mode: PromptMode = "benchmark",
     page_context: PageContext | None = None,
     prompt_cache: PromptCacheMode = "auto",
-    media_reference: MediaReferenceMode = "auto",
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
 ) -> DirectMdfPrompt:
     """Build LLM messages and cache-key source text for Pass 2 extraction."""
-    toolbox_reference_mode: Literal["none", "pdf", "text_fallback"] = "none"
-    toolbox_parts: list[dict] = []
-    if toolbox_pdf and toolbox_pdf.is_file():
-        toolbox_reference_mode, toolbox_parts = _toolbox_content_parts(
-            toolbox_pdf,
-            model=model,
-            media_reference=media_reference,
-        )
     guide_text = instruction_context.text if instruction_context is not None else guides
     guide_source = (
         instruction_context.metadata.original_filename
@@ -265,7 +192,6 @@ def _build_direct_mdf_prompt(
     static_text, dynamic_text = _render_direct_mdf_user_parts(
         transcription=transcription,
         field_map=field_map,
-        toolbox_reference_mode=toolbox_reference_mode,
         guides=guide_text,
         guides_source=guide_source,
         mode=mode,
@@ -306,13 +232,12 @@ def _build_direct_mdf_prompt(
         user_content = [
             {"type": "text", "text": merged_text},
             *instruction_parts,
-            *toolbox_parts,
             *dynamic_content[1:],
         ]
         messages = [system_message, {"role": "user", "content": user_content}]
     else:
         static_content = _mark_static_cache_boundary(
-            [{"type": "text", "text": static_text}, *instruction_parts, *toolbox_parts],
+            [{"type": "text", "text": static_text}, *instruction_parts],
             prompt_cache,
         )
         messages = [
@@ -330,11 +255,9 @@ def build_direct_mdf_messages(
     field_map: FieldMapPrompt,
     model: str,
     guides: str = "",
-    toolbox_pdf: Optional[Path] = None,
     mode: PromptMode = "benchmark",
     page_context: PageContext | None = None,
     prompt_cache: PromptCacheMode = "auto",
-    media_reference: MediaReferenceMode = "auto",
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
 ) -> list[dict]:
@@ -345,11 +268,9 @@ def build_direct_mdf_messages(
         field_map=field_map,
         model=model,
         guides=guides,
-        toolbox_pdf=toolbox_pdf,
         mode=mode,
         page_context=page_context,
         prompt_cache=prompt_cache,
-        media_reference=media_reference,
         instruction_context=instruction_context,
         instruction_scope=instruction_scope,
     ).messages
@@ -361,11 +282,9 @@ def extract_direct_mdf(
     model: str,
     reasoning_effort: str,
     guides: str = "",
-    toolbox_pdf: Optional[Path] = None,
     mode: PromptMode = "benchmark",
     page_context: PageContext | None = None,
     prompt_cache: PromptCacheMode = "auto",
-    media_reference: MediaReferenceMode = "auto",
     prompt_cache_key: Optional[str] = None,
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
@@ -383,11 +302,9 @@ def extract_direct_mdf(
         field_map=field_map,
         model=model,
         guides=guides,
-        toolbox_pdf=toolbox_pdf,
         mode=mode,
         page_context=page_context,
         prompt_cache=prompt_cache,
-        media_reference=media_reference,
         instruction_context=instruction_context,
         instruction_scope=instruction_scope,
     )
@@ -397,7 +314,6 @@ def extract_direct_mdf(
         effective_cache_key = _stage2_prompt_cache_key(
             model=model,
             static_text=prompt.static_text,
-            toolbox_pdf=toolbox_pdf,
             prompt_cache_key=prompt_cache_key,
             instruction_context=instruction_context,
             instruction_scope=instruction_scope,

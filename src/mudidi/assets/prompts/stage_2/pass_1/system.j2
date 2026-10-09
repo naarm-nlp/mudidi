@@ -10,3 +10,13 @@ match the dictionary's target languages (e=English, n=national, r=regional, v=ve
 Do NOT assign English-tier markers (ge, de, ue) when the dictionary has no English target.
 
 {{ mdf_marker_reference }}
+{% if mdf_reference_manual %}
+
+SIL TOOLBOX MDF REFERENCE MANUAL
+The following excerpt of the SIL Toolbox Reference Manual (MDF section) is reference
+material for marker meanings, language tiers, and entry hierarchy. Use it to choose
+marker codes; it does not override the dictionary pages or user-supplied guidance.
+<mdf_reference_manual>
+{{ mdf_reference_manual }}
+</mdf_reference_manual>
+{% endif %}

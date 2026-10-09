@@ -31,7 +31,10 @@ populated from benchmark `dictionary_languages.yaml` metadata or an inference
 Dictionary Profile. Introduction pages and sample dictionary pages follow the
 text as image or PDF content parts, in that order.
 
-`mdf_marker_reference.txt` is injected into the Pass 1 system message.
+`mdf_marker_reference.txt` is injected into the Pass 1 system message. When the
+MDF manual flag is on (`input.mdf_manual: true` or `--mdf-manual`), the bundled
+`mdf_reference_manual.txt` excerpt of the SIL Toolbox Reference Manual is
+appended to that system message as well.
 
 ## Stage 2 Pass 2
 
@@ -40,10 +43,9 @@ text as image or PDF content parts, in that order.
 | Benchmark | `stage_2/pass_2/system_benchmark.txt` | `stage_2/pass_2/user_benchmark.j2` |
 | Inference | `stage_2/pass_2/system_inference.j2` | `stage_2/pass_2/user_inference.j2` |
 
-Optional values are visible as Jinja conditionals in the user templates. The
-Toolbox reference can be an attached PDF (`pdf`), an inline MDF text fallback
-(`text_fallback`), or omitted (`none`). Neighbor-page context and user guides
-are included only when supplied.
+Optional values are visible as Jinja conditionals in the user templates.
+Neighbor-page context and user guides are included only when supplied. Pass 2
+never receives the SIL MDF manual.
 
 The per-folder README files under `src/mudidi/assets/prompts/stage_1/` and
 `stage_2/pass_1/` and `stage_2/pass_2/` document the exact message pairings and

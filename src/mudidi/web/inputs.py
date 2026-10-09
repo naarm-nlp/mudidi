@@ -108,21 +108,6 @@ class InputMaterializer:
             replace=replace,
         )
 
-    async def materialize_mdf_manual(
-        self, run_id: str, upload: UploadFile, *, replace: bool = False
-    ) -> Path:
-        """Store one custom MDF manual PDF."""
-
-        return await self._materialize_files(
-            run_id,
-            "mdf_manual",
-            [upload],
-            allowed={".pdf"},
-            multiple=False,
-            allow_relative=False,
-            replace=replace,
-        )
-
     def materialize_instruction(
         self,
         run_id: str,
@@ -657,8 +642,6 @@ class InputMaterializer:
             shutil.rmtree(destination, ignore_errors=True)
             self._remove_empty_bundle(run_id)
             raise
-        if role == "mdf_manual":
-            _write_pdf_metadata(destination / names[0], source="upload")
         if multiple:
             return destination
         return destination / names[0]
@@ -929,22 +912,6 @@ def _validate_content(path: Path, suffix: str, *, role: str) -> None:
             raise ValueError("MDF parsing guide JSON is unreadable") from exc
         return
     raise ValueError(f"unsupported uploaded content: {suffix}")
-
-
-def _write_pdf_metadata(path: Path, *, source: str) -> None:
-    import fitz
-
-    with fitz.open(path) as document:
-        pages = document.page_count
-    payload = {
-        "filename": path.name,
-        "pages": pages,
-        "sha256": _stream_sha256(path),
-    }
-    temporary = path.parent / "metadata.json.part"
-    target = path.parent / "metadata.json"
-    temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(target)
 
 
 def rebase_managed_config(

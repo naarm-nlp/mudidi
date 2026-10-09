@@ -200,7 +200,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         choices=["auto", "inline", "file-uri"],
         default="auto",
         dest="media_reference",
-        help="How to attach reusable media such as toolbox PDFs. auto uses file "
+        help="How to attach reusable media such as introduction and sample-page PDFs. auto uses file "
         "parts/URIs when supported and falls back to inline data; inline always "
         "uses base64 data; file-uri prefers URI/file parts with inline fallback.",
     )
@@ -500,7 +500,7 @@ _RUN_OVERRIDE_PATHS = {
     "alphabet": "input.alphabet",
     "ocr_text": "input.ocr_text",
     "dictionary_languages": "input.dictionary_languages",
-    "toolbox_pdf": "input.toolbox_pdf",
+    "mdf_manual": "input.mdf_manual",
     "stage1_guides_path": "pipeline.stage1_guides",
     "stage1_guides_pages": "pipeline.stage1_guides_pages",
     "stage2_guides_path": "pipeline.stage2_guides",
@@ -606,7 +606,6 @@ def resolve_extraction_config(
             "alphabet",
             "ocr_text",
             "dictionary_languages",
-            "toolbox_pdf",
         ):
             if input_name in values:
                 field_name = "introduction" if input_name == "intro" else input_name
@@ -645,7 +644,6 @@ def resolve_extraction_config(
             "alphabet",
             "ocr_text",
             "dictionary_languages",
-            "toolbox_pdf",
             "stage1_guides_path",
             "stage2_guides_path",
             "dataset_dir",
@@ -731,7 +729,7 @@ def execution_namespace_from_config(
             if input_config.dictionary_languages
             else None
         ),
-        toolbox_pdf=input_config.toolbox_pdf,
+        mdf_manual=input_config.mdf_manual,
         stage=pipeline.stage,
         strategy=pipeline.strategy,
         stage1_mode=pipeline.stage1_mode,

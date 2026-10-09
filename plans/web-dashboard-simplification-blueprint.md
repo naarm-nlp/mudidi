@@ -709,6 +709,14 @@ Reference Manual, or no manual. Its help text recommends extracting the relevant
 pages from pages 31–95 before uploading them. This resolution supersedes the
 earlier bundled-asset steps and acceptance criteria in this blueprint.
 
+Superseded (2026-10-09): the repository owner confirmed redistribution
+permission. The MDF section text (ending before "Other General Information") is
+bundled as `src/mudidi/assets/prompts/stage_2/pass_1/mdf_reference_manual.txt`
+and injected into the Stage 2 Pass 1 system prompt when `input.mdf_manual` is
+true (`--mdf-manual`, or the dashboard's "Include the SIL MDF manual" choice).
+Manual PDF upload, `input.toolbox_pdf`, and the Pass 2 manual attachment were
+removed.
+
 ### Plan mutation — user-supplied MDF parsing guides (2026-07-13)
 
 The original blueprint sent user-uploaded guides through the same human review

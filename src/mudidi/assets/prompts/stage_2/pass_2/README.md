@@ -10,7 +10,5 @@ attached after the user text.
 | Inference | `system_inference.j2` | `user_inference.j2` |
 
 `page_boundary_rules.txt` is injected into the inference system message.
-The user templates visibly select `toolbox_reference_mode`: `pdf` labels an
-attached Toolbox manual PDF, `text_fallback` embeds the Pass 1 MDF reference,
-and `none` omits the manual. This keeps the fallback behavior clear without a
-disconnected `toolbox_text_section` prompt.
+Pass 2 does not receive the SIL MDF manual; the optional bundled manual text
+informs only Pass 1 parsing-guide discovery.

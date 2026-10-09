@@ -37,12 +37,13 @@ def find_parse_rules_path(directory: Path) -> Path:
     return directory / MDF_PARSING_GUIDE_FILENAME
 
 
-def pass_1_system_prompt() -> str:
-    """Pass 1 field-discovery system prompt."""
+def pass_1_system_prompt(*, mdf_manual: bool = False) -> str:
+    """Pass 1 field-discovery system prompt, optionally with the bundled MDF manual."""
     store = get_prompt_store()
     return store.format(
         "stage_2_pass_1_system",
         mdf_marker_reference=store.get("mdf_marker_reference"),
+        mdf_reference_manual=store.get("mdf_reference_manual") if mdf_manual else "",
     )
 
 
@@ -111,6 +112,7 @@ def discover_field_cheatsheet(
     media_reference: MediaReferenceMode = "auto",
     guides: str = "",
     instruction_context: PreparedInstructionContext | None = None,
+    mdf_manual: bool = False,
     backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     """Pass 1: discover markers + rules for this dictionary."""
@@ -131,7 +133,7 @@ def discover_field_cheatsheet(
         content.append(_page_content_part(intro_img, media_reference=media_reference))
     content.append(_page_content_part(sample_image, media_reference=media_reference))
     messages = [
-        {"role": "system", "content": pass_1_system_prompt()},
+        {"role": "system", "content": pass_1_system_prompt(mdf_manual=mdf_manual)},
         {"role": "user", "content": content},
     ]
     completion_kwargs: dict[str, Any] = {
@@ -157,6 +159,7 @@ def discover_field_cheatsheet_multi(
     media_reference: MediaReferenceMode = "auto",
     guides: str = "",
     instruction_context: PreparedInstructionContext | None = None,
+    mdf_manual: bool = False,
     backend: SubscriptionBackend | SubscriptionRuntime | None = None,
 ) -> Tuple[DictionaryMarkerCheatsheet, Dict[str, Any]]:
     if len(samples) < 2:
@@ -183,7 +186,7 @@ def discover_field_cheatsheet_multi(
     for stem, _transcription, sample_image in samples:
         content.append(_page_content_part(sample_image, media_reference=media_reference))
     messages = [
-        {"role": "system", "content": pass_1_system_prompt()},
+        {"role": "system", "content": pass_1_system_prompt(mdf_manual=mdf_manual)},
         {"role": "user", "content": content},
     ]
     sample_names = ", ".join(stem for stem, _, _ in samples)
@@ -226,6 +229,7 @@ def _empty_instruction_manifest() -> dict[str, object]:
 def _parse_rules_cache_identity(
     instruction_context: PreparedInstructionContext | None,
     instruction_scope: str,
+    mdf_manual: bool = False,
 ) -> dict[str, object]:
     entry = (
         instruction_context.manifest_entry(scope=instruction_scope)
@@ -238,6 +242,7 @@ def _parse_rules_cache_identity(
             entry,
             default_scope=instruction_scope,
         ),
+        "mdf_manual": mdf_manual,
     }
 
 
@@ -258,17 +263,19 @@ def _normalized_parse_rules_cache_identity(
             instruction,
             default_scope=instruction_scope,
         ),
+        "mdf_manual": value.get("mdf_manual", False) is True,
     }
 def _write_parse_rules_cache_metadata(
     cache_path: Path,
     *,
     instruction_context: PreparedInstructionContext | None,
     instruction_scope: str,
+    mdf_manual: bool = False,
 ) -> None:
     metadata_path = _parse_rules_cache_metadata_path(cache_path)
     metadata_path.write_text(
         json.dumps(
-            _parse_rules_cache_identity(instruction_context, instruction_scope),
+            _parse_rules_cache_identity(instruction_context, instruction_scope, mdf_manual),
             ensure_ascii=False,
             indent=2,
         ),
@@ -282,13 +289,20 @@ def _ensure_parse_rules_cache_compatible(
     instruction_context: PreparedInstructionContext | None,
     instruction_scope: str,
     force_refresh: bool,
+    mdf_manual: bool = False,
 ) -> None:
     metadata_path = _parse_rules_cache_metadata_path(cache_path)
     if force_refresh or not cache_path.is_file():
         return
-    expected = _parse_rules_cache_identity(instruction_context, instruction_scope)
+    expected = _parse_rules_cache_identity(
+        instruction_context, instruction_scope, mdf_manual
+    )
     if not metadata_path.is_file():
-        if expected["instruction"]["kind"] == "none" and instruction_scope == "both":
+        if (
+            expected["instruction"]["kind"] == "none"
+            and instruction_scope == "both"
+            and not mdf_manual
+        ):
             return
         raise ValueError(
             f"Instruction metadata for cached parse rules is unavailable at {cache_path}; "
@@ -307,8 +321,8 @@ def _ensure_parse_rules_cache_compatible(
     )
     if actual_identity != expected:
         raise ValueError(
-            "Instruction attachment metadata changed for cached parse rules; "
-            "pass --overwrite before reuse."
+            "Instruction attachment or MDF manual settings changed for cached parse "
+            "rules; pass --overwrite before reuse."
         )
 
 
@@ -346,6 +360,7 @@ def load_or_discover_parse_rules(
     multi_samples: Sequence[tuple[str, str, Path]] | None = None,
     instruction_context: PreparedInstructionContext | None = None,
     instruction_scope: str = "both",
+    mdf_manual: bool = False,
     transcription: str | None = None,
     sample_image: Path | None = None,
     intro_images: List[Path] | None = None,
@@ -363,6 +378,7 @@ def load_or_discover_parse_rules(
         read_path,
         instruction_context=instruction_context,
         instruction_scope=instruction_scope,
+        mdf_manual=mdf_manual,
         force_refresh=force_refresh,
     )
     if read_path.is_file() and not force_refresh and parse_rules_file is None:
@@ -390,6 +406,7 @@ def load_or_discover_parse_rules(
             media_reference=media_reference,
             guides=guides,
             instruction_context=instruction_context,
+            mdf_manual=mdf_manual,
             backend=backend,
         )
     else:
@@ -425,6 +442,7 @@ def load_or_discover_parse_rules(
             media_reference=media_reference,
             guides=guides,
             instruction_context=instruction_context,
+            mdf_manual=mdf_manual,
             backend=backend,
         )
 
@@ -437,6 +455,7 @@ def load_or_discover_parse_rules(
         cache_path,
         instruction_context=instruction_context,
         instruction_scope=instruction_scope,
+        mdf_manual=mdf_manual,
     )
     logger.info("Saved parse rules → %s", cache_path)
     return sheet, usage

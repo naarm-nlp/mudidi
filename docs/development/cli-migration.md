@@ -12,7 +12,7 @@
 | Advanced pipeline/cache/VLM settings | Typed YAML sections |
 | `--stage1-mode column` | `pipeline.stage1_mode: column` |
 | `--parse-rules-file PATH` | `pipeline.parse_rules_file: PATH` |
-| `--toolbox-pdf PATH` | `input.toolbox_pdf: PATH` |
+| `--toolbox-pdf PATH` | `input.mdf_manual: true` (bundled manual text; no PDF path) |
 | `--stage1-source predictions` | `pipeline.stage1_source: predictions` |
 
 The command syntax changes deliberately; experiment names, models, stage choices, input sources, and output layouts remain reproducible through canonical YAML.
