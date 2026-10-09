@@ -448,7 +448,7 @@ def test_dashboard_accepts_the_uploaded_pdf_last_page(tmp_path: Path) -> None:
     ("pipeline", "expected"),
     [("complete", True), ("structure", True), ("transcription", False)],
 )
-def test_manual_flag_only_applies_to_pass1_pipelines(
+def test_mdf_manual_always_applies_to_pass1_pipelines(
     tmp_path: Path, pipeline: str, expected: bool
 ) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
@@ -462,7 +462,6 @@ def test_manual_flag_only_applies_to_pass1_pipelines(
             "stage2_provider": "anthropic",
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
-            "mdf_manual": "true",
         },
         files={"dictionary_pdf": ("dictionary.pdf", _one_page_pdf(), "application/pdf")},
     )
@@ -470,15 +469,6 @@ def test_manual_flag_only_applies_to_pass1_pipelines(
     run = app.state.run_store.list_runs()[0]
     config = app.state.job_controller.load_inference_config(run.run_id)
     assert config.input.mdf_manual is expected
-
-
-def test_new_run_includes_mdf_manual_by_default(tmp_path: Path) -> None:
-    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
-
-    home = client.get("/").text
-    assert 'name="mdf_manual" value="true" checked' in home
-    assert 'name="mdf_manual" value="false" checked' not in home
-    assert _form(tmp_path).to_inference_config().input.mdf_manual is True
 
 
 def test_preview_materializes_all_context_inputs_into_run_bundle(
@@ -501,7 +491,6 @@ def test_preview_materializes_all_context_inputs_into_run_bundle(
             "stage1_additional_instructions": "Keep uncertain letters marked.",
             "stage2_additional_instructions": "Use the custom nt marker.",
             "character_inventory": "Chukchi-Cyrillic: а б в г ӄ",
-            "mdf_manual": "true",
             "parse_rules_pages": "1,3-4",
         },
         files=[

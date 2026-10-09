@@ -865,7 +865,6 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "reasoning": "low",
             "agentic": "false",
             "parse_rules_pages": "1",
-            "mdf_manual": "true",
             "dictionary_pages": "1",
         },
     )
@@ -896,7 +895,6 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
             "model": "anthropic/claude-sonnet-5",
             "reasoning": "low",
             "agentic": "false",
-            "mdf_manual": "false",
             "dictionary_pages": "1",
         },
         files=[
@@ -923,7 +921,6 @@ def test_saved_preset_loads_into_editable_new_run_and_reuses_inputs(
     assert replacement_config.input.pages.name == "replacement.pdf"
     assert replacement_config.input.pages.is_file()
     assert replacement_config.pipeline.parse_rules_file.name == "replacement-guide.json"
-    assert replacement_config.input.mdf_manual is False
 
     overwritten = client.post(
         f"/runs/{replacement_run.run_id}/presets",

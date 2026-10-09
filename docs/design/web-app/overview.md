@@ -100,7 +100,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Flat Stage 1 output with typography preservation off
 - Character inventory and direct stage-specific additional instructions
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
-- Optional user-uploaded MDF manual with a link to SIL's official documentation
+- Bundled SIL MDF manual text, always added to the Pass 1 system prompt
 - Stage-specific agentic verification, iteration budget, evaluator/rewriter
   models, minimum confidence, deterministic patches, and concrete-retry gate
 - Batch size, page limit, and prompt caching

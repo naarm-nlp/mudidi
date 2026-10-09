@@ -2744,7 +2744,6 @@ def _preset_form_state(
         "min_retry_confidence": [str(config.agentic.min_retry_confidence)],
         "verifier_patches": [str(config.agentic.verifier_patches).lower()],
         "require_concrete_retry": [str(config.agentic.require_concrete_retry).lower()],
-        "mdf_manual": [str(config.input.mdf_manual).lower()],
     }
 
     assets = (

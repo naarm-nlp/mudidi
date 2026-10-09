@@ -690,8 +690,7 @@ def test_additional_context_uses_semantic_single_column_spacing(
     stage1 = home.index('id="stage1-context-title"')
     stage2 = home.index('id="stage2-context-title"')
     mdf_guide = home.index('id="mdf-guide-title"')
-    mdf_manual = home.index('class="choice-group mdf-manual additional-context-group"')
-    assert stage1 < stage2 < mdf_guide < mdf_manual
+    assert stage1 < stage2 < mdf_guide
     assert "additional-context-column" not in home
     assert "additional-context-column" not in css
 
@@ -805,46 +804,6 @@ def test_existing_mdf_guide_uses_a_compact_themed_file_control(
     assert "opacity: 0" in hidden_input.group("body")
     assert status is not None
     assert "font-family: var(--font-mono)" in status.group("body")
-
-
-def test_mdf_manual_uses_compact_choice_and_resource_layout(tmp_path: Path) -> None:
-    css = TestClient(create_app(data_dir=tmp_path)).get("/static/app.css").text
-
-    heading = re.search(r"\.mdf-manual-heading\s*\{(?P<body>[^}]*)\}", css)
-    choice_legend = re.search(
-        r"\.choice-group\s+legend\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-    option_grid = re.search(
-        r"(?:^|\n)\.mdf-manual-options\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-    resource = re.search(
-        r"(?:^|\n)\.mdf-manual-official\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-    resource_link = re.search(
-        r"(?:^|\n)\.mdf-manual-link\s*\{(?P<body>[^}]*)\}",
-        css,
-    )
-
-    assert heading is not None
-    assert "display: grid" in heading.group("body")
-    assert "grid-template-columns: minmax(0, 1fr) auto" in heading.group("body")
-    assert choice_legend is not None
-    assert "color: var(--color-ink)" in choice_legend.group("body")
-    assert "font-size: 13px" in choice_legend.group("body")
-    assert "font-weight: 900" in choice_legend.group("body")
-    assert "text-transform: uppercase" in choice_legend.group("body")
-    assert option_grid is not None
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in option_grid.group(
-        "body",
-    )
-    assert resource is not None
-    assert "display: flex" in resource.group("body")
-    assert "justify-content: space-between" in resource.group("body")
-    assert resource_link is not None
-    assert "white-space: nowrap" in resource_link.group("body")
 
 
 def test_instruction_source_panels_fit_semantic_context_groups(

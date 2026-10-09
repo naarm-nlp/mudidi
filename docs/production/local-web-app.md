@@ -124,8 +124,7 @@ The **Input** step asks for:
    combination (`1,5,10-20`);
 3. an output directory on the same computer running MUDIDI;
 4. optional introduction pages and additional context;
-5. optional MDF parsing-guide pages, an existing guide JSON file, or a custom
-   MDF manual PDF.
+5. optional MDF parsing-guide pages or an existing guide JSON file.
 
 Page numbers are 1-based: zero, negative numbers, descending ranges, and pages
 beyond the uploaded PDF's page count are rejected. Browser-selected files are
@@ -197,8 +196,7 @@ The **Input** step groups optional context by the stage that consumes it:
 - Stage 2 instructions entered as text or uploaded as one `.txt`, `.md`, or
   `.pdf` file;
 - an existing MDF parsing guide JSON file;
-- optional representative MDF parsing-guide pages;
-- an optional MDF manual PDF.
+- optional representative MDF parsing-guide pages.
 
 Dictionary, introduction, and representative MDF parsing-guide page numbers
 must be positive Arabic numbers within the uploaded dictionary PDF.
@@ -228,22 +226,20 @@ These names refer to different things:
 
 - **MDF parsing guide** is inferred by the LLM for this particular dictionary.
   It describes the MDF markers and structural rules that Stage 2 should use.
-- **MDF manual** is optional bundled reference text from the SIL Toolbox MDF
-  Reference Manual.
+- **MDF manual** is bundled reference text from the SIL Toolbox MDF Reference
+  Manual.
 
-**Include the SIL MDF manual** is selected by default for a new run: the bundled
-extracted text is added to the Stage 2 **Pass 1** parsing-guide discovery system
-prompt. Pass 1 is a single request per run, so this adds approximately 30K input
-tokens once, not once per page. Choose **Continue without an MDF manual** to let
-Pass 1 infer the guide from the dictionary pages alone. Saved presets keep the
-choice they were saved with. The manual option is available only for pipelines
-that run Pass 1, and Pass 2 never receives it.
+The dashboard has no MDF manual setting. Every dashboard run whose pipeline
+includes Stage 2 **Pass 1** adds the bundled manual text to the Pass 1
+parsing-guide discovery system prompt. Pass 1 is a single request per run, so
+this adds approximately 30K input tokens once, not once per page. Pass 2 never
+receives the manual. The review page shows the manual as used or not used. To
+run Pass 1 without the manual, use YAML (`input.mdf_manual: false`, the default)
+or the CLI (`--no-mdf-manual`).
 
 The repository owner has confirmed redistribution permission for the bundled
-text. No manual PDF upload is needed. The manual remains optional and does not
-replace the dictionary-specific MDF parsing guide. The dashboard also links to
-the [official SIL Toolbox Reference Manual](http://www.fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf)
-for reading in a new browser tab.
+text. No manual PDF upload is needed. The manual does not replace the
+dictionary-specific MDF parsing guide.
 
 The existing parsing-guide file picker uses the same themed upload control as
 instruction attachments, with the selected filename displayed beside it.

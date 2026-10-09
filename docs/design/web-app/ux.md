@@ -24,8 +24,8 @@ The original planning wireframe remains available at
 
 The browser selects exactly one dictionary PDF. The dashboard rejects page
 images, multiple source files, and page-image folders; those input modes remain
-available through YAML and the CLI. The existing MDF parsing guide and custom
-MDF manual remain optional file uploads. Stage 1 and Stage 2 instructions may
+available through YAML and the CLI. The existing MDF parsing guide remains an
+optional file upload. Stage 1 and Stage 2 instructions may
 be typed directly or uploaded as TXT, Markdown, or PDF attachments. Uploaded
 files are copied into run-owned local storage. The output directory remains
 typed because browser file APIs do not provide an arbitrary absolute path to a
@@ -120,20 +120,15 @@ the selected stage and agentic evaluator/rewriter paths.
 ## MDF parsing guide and MDF manual
 
 **MDF parsing guide** is the dictionary-specific artifact inferred by Stage 2
-Pass 1 or imported from user JSON. **MDF manual** is optional general reference
+Pass 1 or imported from user JSON. **MDF manual** is bundled general reference
 material.
 
-For pipelines that run Stage 2 Pass 1, the MDF manual choice cards offer:
-
-1. Include the SIL MDF manual (default).
-2. Continue without an MDF manual.
-
-Selecting the manual adds the bundled extracted SIL Toolbox MDF Reference Manual
-text to the Pass 1 parsing-guide discovery system prompt, using approximately
-30K input tokens once per run (Pass 1 is a single request). Pass 2 never receives the manual. The help text explains
-the reference's scope and token cost; an official SIL manual link remains
-available for reading in a new browser tab. The repository owner has confirmed
-redistribution permission for the bundled text. No manual upload is required.
+The dashboard exposes no MDF manual control. Every run whose pipeline includes
+Stage 2 Pass 1 adds the bundled extracted SIL Toolbox MDF Reference Manual text
+to the Pass 1 parsing-guide discovery system prompt, using approximately 30K
+input tokens once per run (Pass 1 is a single request). Pass 2 never receives
+the manual. The repository owner has confirmed redistribution permission for
+the bundled text.
 
 Representative MDF parsing guide pages include help explaining that Stage 2
 samples them to infer dictionary-specific MDF markers and entry structure.

@@ -204,7 +204,6 @@ class NewRunForm(BaseModel):
     profile_page_layout: str | None = Field(default=None, max_length=2000)
     profile_information_types: list[InformationType] = Field(default_factory=list)
     profile_other_information_types: str | None = Field(default=None, max_length=1000)
-    mdf_manual: bool = True
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None
@@ -398,7 +397,7 @@ class NewRunForm(BaseModel):
                 else None,
                 ocr_text=None,
                 dictionary_profile=self._dictionary_profile(),
-                mdf_manual=self.mdf_manual and runs_stage2_pass1(stage),
+                mdf_manual=runs_stage2_pass1(stage),
             ),
             output=OutputConfig(directory=output),
             auth=AuthConfig(mode=self.auth_mode, providers=auth_providers),
@@ -615,7 +614,7 @@ class NewRunForm(BaseModel):
             ),
             "mdf_manual": (
                 "Bundled SIL MDF manual (Pass 1)"
-                if self.mdf_manual and runs_stage2_pass1(_PIPELINE_STAGE[self.pipeline])
+                if runs_stage2_pass1(_PIPELINE_STAGE[self.pipeline])
                 else "Not used"
             ),
             "mdf_parsing_guide": (
