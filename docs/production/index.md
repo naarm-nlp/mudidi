@@ -66,7 +66,7 @@ compatibility.
 
 ## Agentic retries
 
-Agentic verification is opt-in and can be enabled directly from the CLI:
+Agentic loop is opt-in and can be enabled directly from the CLI:
 
 ```bash
 uv run mudidi run \

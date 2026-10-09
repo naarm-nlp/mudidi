@@ -100,9 +100,9 @@ Provider-specific choices combine the bundled catalog, optional live discovery,
 and custom LiteLLM identifiers. OpenRouter requires manual model entry and
 offers an optional **OpenRouter Provider** routing slug.
 
-## Agentic verification
+## Agentic loop
 
-Agentic verification is an On/Off choice and defaults to Off. Selecting On
+Agentic loop is an On/Off choice and defaults to Off. Selecting On
 opens **Custom verification** directly below it. Applicable Stage 1 and Stage 2
 boxes
 are initially checked and may be unchecked. The backend intersects these values

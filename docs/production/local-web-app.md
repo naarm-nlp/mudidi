@@ -259,11 +259,14 @@ dictionary-specific MDF parsing guide.
 The existing parsing-guide file picker uses the same themed upload control as
 instruction attachments, with the selected filename displayed beside it.
 
-## Agentic verification
+## Agentic loop
 
-Agentic verification is the fourth wizard step and defaults to **Off** because
-it adds evaluator and correction-model calls and cost. Select **On** to reveal
-the **Custom verification** panel. The applicable Stage 1 and Stage 2 checks
+The agentic loop is the fifth wizard step. After each page is produced, an
+evaluator model checks the output against its source; if it finds problems, a
+correction model rewrites the page and the evaluator checks again, until the
+output is accepted or the iteration limit is reached. It defaults to **Off**
+because it adds model calls and cost. Select **On** to reveal the **Custom
+loop settings** panel. The applicable Stage 1 and Stage 2 checks
 start enabled; you can disable either one, then configure maximum correction
 iterations, minimum retry confidence, evaluator and rewriter models, reasoning,
 deterministic patches, and concrete retry evidence.

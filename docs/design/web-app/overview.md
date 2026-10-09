@@ -39,7 +39,7 @@ Redis, PostgreSQL, or Node.js at runtime.
 ## Primary users
 
 1. A researcher digitizing one scanned dictionary without learning the CLI.
-2. A maintainer who needs stage-specific models, agentic verification, context
+2. A maintainer who needs stage-specific models, agentic loop, context
    files, and MDF parsing guide control.
 3. An expert using a custom LiteLLM model identifier while keeping advanced
    OCR/VLM workflows in YAML or the CLI.
@@ -89,7 +89,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Output directory
 - Complete, transcription-only, or Stage 2-only pipeline
 - Provider, API key status, model, and reasoning
-- Agentic verification Yes/No, default No
+- Agentic loop Yes/No, default No
 - Optional Dictionary Profile with paired language/script questions, a
   free-form layout description, and
   entry-information context
@@ -101,7 +101,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Character inventory and direct stage-specific additional instructions
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
 - Bundled SIL MDF manual text, always added to the Pass 1 system prompt
-- Stage-specific agentic verification, iteration budget, evaluator/rewriter
+- Stage-specific agentic loop, iteration budget, evaluator/rewriter
   models, minimum confidence, deterministic patches, and concrete-retry gate
 - Batch size, page limit, and prompt caching
 

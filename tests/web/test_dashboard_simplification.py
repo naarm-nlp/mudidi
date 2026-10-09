@@ -175,7 +175,7 @@ def test_home_uses_accessible_pipeline_radios_and_agentic_controls(
     assert "Discover and review parse rules" not in response.text
     assert 'name="quality"' not in response.text
     assert 'name="agentic"' in response.text
-    assert "Custom verification" in response.text
+    assert "Custom loop settings" in response.text
     assert 'name="verify_stage1"' in response.text
     assert 'name="verify_stage2"' in response.text
     assert 'name="verify_stage1" type="checkbox" value="true" checked' in response.text

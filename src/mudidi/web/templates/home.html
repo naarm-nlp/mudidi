@@ -90,7 +90,7 @@
             ('pipeline', 'Pipeline', 'Workflow'),
             ('context', 'Context', 'Profile and MDF'),
             ('model', 'Model', 'Providers'),
-            ('agentic', 'Agentic', 'Verification')
+            ('agentic', 'Agentic', 'Loop')
           ] %}
           <li data-wizard-marker="{{ step }}"{% if loop.first %} aria-current="step"{% endif %} aria-label="{{ label }}">
             <button class="wizard-step-button" type="button" data-wizard-go="{{ step }}" aria-controls="wizard-{{ step }}">
@@ -276,7 +276,7 @@
               <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
               <fieldset class="choice-group auth-entry" data-auth-entry>
                 <legend>Authentication and billing</legend>
-                <p>Select one billing mode for the run. Each stage and verification role can use its own authenticated provider.</p>
+                <p>Select one billing mode for the run. Each stage and agentic loop role can use its own authenticated provider.</p>
                 <div class="choice-card-grid" data-auth-mode-choices>
                   <label class="choice-card"><input type="radio" name="auth_mode" value="subscription" checked data-auth-mode-choice><span><strong>Subscription billing</strong><small>Use a locally authenticated OpenAI, Google, or Claude subscription.</small></span></label>
                   <label class="choice-card"><input type="radio" name="auth_mode" value="api_key" data-auth-mode-choice><span><strong>API key billing</strong><small>Use the existing provider key controls below.</small></span></label>
@@ -420,20 +420,21 @@
 
             <section id="wizard-agentic" data-wizard-panel="agentic" aria-labelledby="wizard-agentic-title" hidden>
               <div class="wizard-panel-heading">
-                <div><span class="eyebrow">Step 5 of 6</span><h2 id="wizard-agentic-title" tabindex="-1">Configure agentic verification</h2></div>
+                <div><span class="eyebrow">Step 5 of 6</span><h2 id="wizard-agentic-title" tabindex="-1">Configure the agentic loop</h2></div>
               </div>
               <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
               <fieldset class="choice-group agentic-choice">
-                <legend>Agentic verification</legend>
-                <p>Agentic verification adds evaluator and correction model calls.</p>
+                <legend>Agentic loop</legend>
+                <p>After each page is produced, a second model (the evaluator) checks the output against its source and lists specific problems. If it finds any, a correction model rewrites the page and the evaluator checks it again. This repeats until the output is accepted or the iteration limit is reached.</p>
+                <p>The loop catches more mistakes, but it adds model calls, so a run takes longer and costs more.</p>
                 <div class="task-card-grid">
-                  <label class="task-card"><input type="radio" name="agentic" value="false" checked><span class="task-card-copy"><strong>Off</strong><small>Use the selected pipeline models without evaluator or correction calls.</small></span></label>
-                  <label class="task-card"><input type="radio" name="agentic" value="true"><span class="task-card-copy"><strong>On</strong><small>Add evaluator and correction calls to the active pipeline stages.</small></span></label>
+                  <label class="task-card"><input type="radio" name="agentic" value="false" checked><span class="task-card-copy"><strong>Off</strong><small>Each page is produced once, with no second check. Fastest and cheapest.</small></span></label>
+                  <label class="task-card"><input type="radio" name="agentic" value="true"><span class="task-card-copy"><strong>On</strong><small>An evaluator reviews every page and sends problems back for correction, up to the iteration limit.</small></span></label>
                 </div>
               </fieldset>
               <fieldset class="agentic-settings" data-agentic-settings hidden>
-                <legend>Custom verification</legend>
-                <p>Choose which active stages are verified and optionally adjust evaluator and correction behavior.</p>
+                <legend>Custom loop settings</legend>
+                <p>Choose which active stages run the loop and optionally adjust evaluator and correction behavior.</p>
                 <div class="form-grid">
                   <label class="agentic-stage-toggle{% if errors_by_field.verify_stage1 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage1 %} data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
                   <label class="agentic-stage-toggle{% if errors_by_field.verify_stage2 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage2 %} data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
