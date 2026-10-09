@@ -172,7 +172,6 @@ def test_home_uses_accessible_pipeline_radios_and_agentic_controls(
 
     assert response.status_code == 200
     assert response.text.count('type="radio" name="pipeline"') == 3
-    assert "Parse transcription into MDF (Multi-Dictionary Formatter)" in response.text
     assert "Discover and review parse rules" not in response.text
     assert 'name="quality"' not in response.text
     assert 'name="agentic"' in response.text
@@ -243,7 +242,6 @@ def test_home_uses_uploads_and_instruction_textareas(tmp_path: Path) -> None:
     assert 'aria-label="About PDF dictionary pages"' in response.text
     assert 'aria-label="About PDF introduction pages"' in response.text
     assert "Alphabet or orthography guide" not in response.text
-    assert '<span class="field-heading">Character Inventory ' in response.text
     assert 'aria-label="About the Character Inventory"' in response.text
     assert "character inventory for each language or script" in response.text
     assert "constrain Stage 1 transcription to valid characters" in response.text
@@ -261,7 +259,6 @@ def test_home_uses_uploads_and_instruction_textareas(tmp_path: Path) -> None:
     assert 'name="stage2_additional_instructions"' in response.text
     assert 'name="stage1_guides"' not in response.text
     assert 'name="stage2_guides"' not in response.text
-    assert "Representative MDF parsing guide pages" in response.text
     assert response.text.count('class="field-heading"') >= 5
     assert (
         '<fieldset class="form-field instruction-source-panel" '
@@ -279,10 +276,6 @@ def test_home_uses_uploads_and_instruction_textareas(tmp_path: Path) -> None:
     )
     assert '<textarea name="stage1_additional_instructions"' in response.text
     assert '<textarea name="stage2_additional_instructions"' in response.text
-    assert (
-        '<span class="field-heading">Representative MDF parsing guide pages '
-        in response.text
-    )
 
 
 def test_dashboard_accepts_exactly_one_required_dictionary_pdf(tmp_path: Path) -> None:

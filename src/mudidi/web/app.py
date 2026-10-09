@@ -94,6 +94,26 @@ from mudidi.web.runs import (
 _SUBSCRIPTION_LOGGER = logging.getLogger("mudidi.web.subscription")
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _TEMPLATES = Jinja2Templates(directory=_PACKAGE_DIR / "templates")
+
+
+def _short_datetime(value: object) -> str:
+    """Format a datetime or ISO timestamp as a short local time, e.g. ``Sep 24, 09:14``."""
+
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        moment = value
+    else:
+        try:
+            moment = datetime.fromisoformat(str(value))
+        except ValueError:
+            return str(value)
+    if moment.tzinfo is not None:
+        moment = moment.astimezone()
+    return f"{moment:%b} {moment.day}, {moment:%H:%M}"
+
+
+_TEMPLATES.env.filters["short_datetime"] = _short_datetime
 _MAX_REQUEST_BYTES = 110 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
 

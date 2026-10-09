@@ -40,19 +40,19 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "MDF parsing guide" in response.text
     assert '<section class="workspace" data-new-run-wizard>' in response.text
     assert '<form class="panel run-form" data-new-run-wizard' not in response.text
-    for step in ("input", "pipeline", "model", "agentic"):
+    for step in ("input", "pipeline", "context", "model", "agentic"):
         assert f'id="wizard-{step}"' in response.text
         assert f'data-wizard-panel="{step}"' in response.text
         assert f'data-wizard-go="{step}"' in response.text
     assert response.text.count('aria-current="step"') == 1
     assert 'data-wizard-marker="input" aria-current="step"' in response.text
-    assert response.text.count("data-wizard-go=") == 4
+    assert response.text.count("data-wizard-go=") == 5
     assert 'data-wizard-marker="review" aria-disabled="true"' in response.text
     assert 'action="/runs/preview"' in response.text
     assert "data-wizard-submit" in response.text
     panel_order = [
         response.text.index(f'data-wizard-panel="{step}"')
-        for step in ("input", "pipeline", "model", "agentic")
+        for step in ("input", "pipeline", "context", "model", "agentic")
     ]
     assert panel_order == sorted(panel_order)
     assert 'aria-labelledby="wizard-input-title"' in response.text
@@ -122,7 +122,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         'value="api_key" data-auth-mode-choice'
     )
     assert subscription_option < api_key_option
-    assert "Google subscription" in response.text
+    assert 'data-subscription-provider="google"' in response.text
     assert "Run agy" not in response.text
     assert 'data-pipeline-stages="stage1"' in response.text
     for server_catalog_model in (
@@ -201,7 +201,6 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         '<input type="radio" name="output_policy" value="resume" checked required>'
         in response.text
     )
-    assert "Resume compatible existing artifacts" in response.text
     assert (
         '<input type="radio" name="output_policy" value="overwrite">' in response.text
     )
@@ -211,35 +210,16 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert "after an interrupted run" in response.text
     assert "inputs, models, instructions, or settings changed" in response.text
     assert '<select name="output_policy">' not in response.text
-    assert "Dictionary Profile (optional)" in response.text
-    assert "can improve extraction accuracy" in response.text
     assert 'name="profile_headword_language"' in response.text
     assert 'name="profile_target_languages"' in response.text
     assert 'aria-label="Remove language"' in response.text
-    assert response.text.count('class="primary profile-remove"') == 2
     assert 'name="profile_headword_script"' in response.text
     assert 'name="profile_page_layout"' in response.text
     assert 'name="profile_information_types"' in response.text
     assert 'name="profile_other_information_types"' in response.text
     assert 'class="profile-other-information"' in response.text
-    assert (
-        "1–2. What language are the dictionary headwords written in, and what script do they use?"
-        in response.text
-    )
-    assert (
-        "3–4. Which languages are used for translations, glosses, or definitions, and which script does each use?"
-        in response.text
-    )
-    assert "5. How is information arranged on the page?" in response.text
-    assert 'class="profile-layout-question"' in response.text
-    assert (
-        "There are two columns; each column contains independent dictionary entries."
-        in response.text
-    )
-    assert "6. Which information types appear in an entry?" in response.text
     assert 'name="dictionary_languages"' not in response.text
     assert 'name="stage1_typography"' not in response.text
-    assert "/static/app.js?v=dashboard-ui-17" in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
@@ -1174,7 +1154,7 @@ const assert = (condition, message) => {
 };
 
 sync.synchronizePipeline();
-assert(summary.textContent === "Shared model · shared-model", "complete should show shared Stage 2");
+assert(summary.textContent === "shared-model", "complete should show shared Stage 2");
 assert(explanation.hidden, "shared mode should hide the pass explanation");
 
 complete.checked = false;
@@ -1185,11 +1165,11 @@ assert(summary.textContent === "Not used", "transcription-only should hide Stage
 transcription.checked = false;
 structure.checked = true;
 sync.synchronizePipeline();
-assert(summary.textContent === "Shared model · shared-model", "structure should restore Stage 2 summary");
+assert(summary.textContent === "shared-model", "structure should restore Stage 2 summary");
 
 sync.enterSplitStage2();
 assert(
-  summary.textContent === "Separate pass models · Pass 1: shared-model · Pass 2: shared-model",
+  summary.textContent === "Pass 1: shared-model · Pass 2: shared-model",
   "split mode should show both pass models",
 );
 assert(!explanation.hidden, "split mode should show the pass explanation");
@@ -1198,11 +1178,11 @@ pass2Model.value = "pass-two-model";
 sync.synchronizeStage2Pass("pass1");
 sync.synchronizeStage2Pass("pass2");
 assert(
-  summary.textContent === "Separate pass models · Pass 1: pass-one-model · Pass 2: pass-two-model",
+  summary.textContent === "Pass 1: pass-one-model · Pass 2: pass-two-model",
   "split mode should update independent pass models",
 );
 sync.enterSharedStage2();
-assert(summary.textContent === "Shared model · shared-model", "shared mode should restore shared model");
+assert(summary.textContent === "shared-model", "shared mode should restore shared model");
 assert(explanation.hidden, "returning to shared mode should hide the pass explanation");
 """
     result = subprocess.run(
@@ -1864,9 +1844,7 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
     assert "--color-accent" in response.text
     assert "[hidden]" in response.text
     assert "display: none !important" in response.text
-    assert ".profile-layout-question" in response.text
     assert "grid-template-columns: minmax(0, 1fr)" in response.text
-    assert ".profile-layout-question textarea" in response.text
     assert ".profile-other-information" in response.text
     assert ".profile-other-information textarea" in response.text
     css_rules = [line.strip() for line in response.text.splitlines()]
@@ -1874,11 +1852,6 @@ def test_static_assets_are_served_locally(tmp_path: Path) -> None:
         line.startswith(".rules-editor .editor-row button {") for line in css_rules
     )
     assert not any(line.startswith(".editor-row button {") for line in css_rules)
-    assert ".preset-loader {" in response.text
-    assert "margin-bottom: 24px" in response.text
-    assert "padding: 20px 24px" in response.text
-    assert ".preset-loader > label" in response.text
-    assert ".preset-loader .primary" in response.text
     assert ".review-layout" in response.text
     assert ".review-groups" in response.text
     assert ".review-actions" in response.text
@@ -2186,7 +2159,6 @@ def test_provider_key_is_encrypted_revealable_and_persistent(tmp_path: Path) -> 
     revealed = restarted.post("/credentials/anthropic/reveal")
 
     assert home_page.status_code == 200
-    assert "1 provider key saved" in home_page.text
     assert "Saved key — leave blank to keep it" in home_page.text
     assert "sk-ant-browser-secret" not in home_page.text
     assert 'data-delete-key data-provider="anthropic"' in home_page.text

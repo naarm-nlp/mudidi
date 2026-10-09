@@ -8,7 +8,10 @@ Internal database/config keys such as `parse_rules` and routes such as
 ## Application shell
 
 The desktop layout uses a fixed left navigation, compact header, central work
-area, and optional right summary rail. This is the shipped New Run interface:
+area, and right summary rail. The header holds the saved-preset picker and a
+billing status chip that follows the selected billing mode. The wizard has six
+steps: Input, Pipeline, Context, Model, Agentic, and the server-rendered
+Review. This is the shipped New Run interface:
 
 ![MUDIDI New Run desktop dashboard](../../assets/dashboard-home.png)
 
@@ -24,9 +27,8 @@ The original planning wireframe remains available at
 
 The browser selects exactly one dictionary PDF. The dashboard rejects page
 images, multiple source files, and page-image folders; those input modes remain
-available through YAML and the CLI. The existing MDF parsing guide remains an
-optional file upload. Stage 1 and Stage 2 instructions may
-be typed directly or uploaded as TXT, Markdown, or PDF attachments. Uploaded
+available through YAML and the CLI. The Input step holds only the PDF, the
+dictionary and introduction pages, and the output directory. Uploaded
 files are copied into run-owned local storage. The output directory remains
 typed because browser file APIs do not provide an arbitrary absolute path to a
 localhost server.
@@ -48,14 +50,27 @@ missing required value or invalid page specification blocks review, returns the
 user to the New Run form, opens the affected section, and marks the field in red
 with an associated text explanation.
 
-The optional **Dictionary Profile** collects:
+## Context
 
-- headword language and script;
-- target languages and scripts;
-- a free-form page-layout description;
-- common and custom entry information types.
+Context follows Pipeline so it can hide inputs the chosen pipeline does not
+use. Everything on this step is optional. Sections appear in this order:
 
-The whole profile may be left blank.
+1. **Dictionary profile** — headword language and script, target languages and
+   scripts, the Stage 1 **character inventory** (hidden without Stage 1), a
+   free-form page-layout description, and entry information types. The whole
+   profile may be left blank.
+2. **MDF parsing guide** — representative pages and an existing guide JSON file
+   (Stage 2 pipelines only).
+3. **Advanced: stage instructions** — a toggle at the bottom of the step that
+   starts off and reveals the Stage 1 and Stage 2 instruction controls.
+
+Collapsing the advanced toggle hides the instruction controls without
+disabling or clearing them, so any entered instructions are still submitted.
+While collapsed, a badge shows how many are set and the run summary lists the
+stages that have instructions. The toggle opens automatically on load when
+instructions are present (preset or restored session) or a server error
+targets an instruction field, and when browser validation flags a hidden
+instruction field.
 
 ## Pipeline
 
@@ -66,7 +81,7 @@ help:
 |---|---|---|
 | Complete digitization | `all` | Transcribe, infer/review MDF parsing guide, parse into MDF |
 | Transcription only | `1` | Flat faithful transcription only |
-| Parse transcription into MDF (Multi-Dictionary Formatter) | `2` | Existing Stage 1 text to reviewed MDF |
+| Parse into MDF | `2` | Existing Stage 1 text to reviewed MDF |
 
 Discovery-only and direct Pass 2 are not dashboard choices. Stage 2 always
 includes inference or import of an MDF parsing guide and mandatory review.
@@ -99,7 +114,8 @@ that verification adds model calls and cost.
 
 ## Additional instructions
 
-Each active stage presents one instruction source at a time:
+Each active stage presents one instruction source at a time, inside the
+Context step's advanced toggle:
 
 1. **Type instructions** uses a bounded multiline UTF-8 text value.
 2. **Upload instruction file** accepts exactly one `.txt`, `.md`, or `.pdf`

@@ -327,12 +327,17 @@ class Element {
     this.dataset = {};
     this.hidden = false;
     this.textContent = "";
+    this.title = "";
     this.disabled = false;
+  }
+  replaceChildren(...children) {
+    this.textContent = children.map((child) => (
+      typeof child === "string" ? child : child.textContent
+    )).join("");
   }
 }
 
 const state = new Element();
-const category = new Element();
 const account = new Element();
 const expiry = new Element();
 const login = new Element();
@@ -340,7 +345,6 @@ const logout = new Element();
 const card = new Element();
 card.querySelector = (selector) => ({
   "[data-subscription-state]": state,
-  "[data-subscription-category]": category,
   "[data-subscription-account]": account,
   "[data-subscription-expiry]": expiry,
   "[data-subscription-login]": login,
@@ -348,12 +352,19 @@ card.querySelector = (selector) => ({
 }[selector] || null);
 
 const source = fs.readFileSync(process.argv[1], "utf8");
-const start = source.indexOf("const applySubscriptionStatus");
-const end = source.indexOf("\n};", start) + 3;
+const start = source.indexOf("const subscriptionStateLabels");
+const functionStart = source.indexOf("const applySubscriptionStatus", start);
+const end = source.indexOf("\n};", functionStart) + 3;
 const functionSource = source
   .slice(start, end)
   .replace("const applySubscriptionStatus", "globalThis.applySubscriptionStatus");
-const context = vm.createContext({console});
+const context = vm.createContext({
+  console,
+  Date,
+  Intl,
+  document: { createElement: () => new Element() },
+  updateBillingStatus: () => {},
+});
 vm.runInContext(functionSource, context);
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -375,6 +386,11 @@ assert(card.dataset.subscriptionAuthenticated === "false", "auth state leaked ex
 assert(card.dataset.subscriptionCredentialPresent === "true", "presence state was not recorded");
 assert(card.dataset.subscriptionRemovable === "true", "removable state was not recorded");
 assert(state.textContent === "Session expired", "expired status should be visible");
+assert(state.dataset.state === "expired", "expired state key should be recorded");
+assert(account.textContent === "account@example.test", "account label should be visible");
+assert(account.title === "account@example.test", "full account label should be on hover");
+assert(!expiry.hidden && expiry.textContent.startsWith("Expired "), "expiry should be labelled");
+assert(!expiry.textContent.includes("T00:00"), "expiry should not show a raw ISO timestamp");
 assert(!logout.disabled, "expired credentials must remain removable");
 
 context.applySubscriptionStatus(card, {
@@ -384,7 +400,8 @@ context.applySubscriptionStatus(card, {
   available: true,
   category: "policy",
 });
-assert(state.textContent === "Log in required", "unauthenticated state should be visible");
+assert(state.textContent === "Sign-in required", "unauthenticated state should be visible");
+assert(expiry.hidden, "missing expiry should be hidden");
 assert(!logout.disabled, "removable credentials must keep logout enabled");
 
 context.applySubscriptionStatus(card, {

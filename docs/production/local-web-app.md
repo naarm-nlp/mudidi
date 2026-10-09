@@ -83,30 +83,36 @@ for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ![MUDIDI New Run dashboard showing the Input step](../assets/dashboard-home.png)
 
-The dashboard uses a five-step responsive wizard with persistent navigation,
-high-contrast controls, and a live run summary. The same form fields and
-validation rules are used in desktop and mobile layouts.
+The dashboard uses a six-step responsive wizard with persistent navigation,
+high-contrast controls, and a live run summary. The header holds the saved
+preset picker and a status chip that follows the selected billing mode
+(subscription accounts signed in, or provider keys available). The same form
+fields and validation rules are used in desktop and mobile layouts.
 
 
 ## Create a run
 
-The **New Run** screen is a five-step wizard:
+The **New Run** screen is a six-step wizard:
 
-1. **Input** — upload exactly one dictionary PDF, enter the output directory and
-   dictionary pages, and optionally add introduction pages, additional context,
-   MDF inputs, and a **Dictionary Profile**.
+1. **Input** — upload exactly one dictionary PDF, enter the dictionary pages,
+   optional introduction pages, and the output directory.
 2. **Pipeline** — choose one of the three supported workflows and an existing
    output policy.
-3. **Model** — manage the local provider credential, select the provider,
+3. **Context** — optionally describe the dictionary in the **Dictionary
+   Profile**, supply MDF parsing-guide inputs, and, under the advanced toggle,
+   add Stage 1 and Stage 2 instructions.
+4. **Model** — manage the local provider credential, select the provider,
    model, and reasoning settings, and configure batch size.
-4. **Agentic** — leave verification off or enable its evaluator and correction
+5. **Agentic** — leave verification off or enable its evaluator and correction
    settings.
-5. **Review** — submit the complete form for authoritative server validation,
+6. **Review** — submit the complete form for authoritative server validation,
    then inspect the server-rendered, non-secret review before starting the run.
 
-The Input, Pipeline, Model, and Agentic step buttons, **Continue**, and **Back**
-move between configuration panels without validating or clearing values. This
-allows the four configuration steps to be completed in any order. At final
+The Pipeline step comes before Context so Context shows only the inputs the
+chosen pipeline uses; for example, the character inventory is hidden for
+**Parse into MDF**. The step buttons, **Continue**, and **Back** move between
+configuration panels without validating or clearing values. This allows the
+five configuration steps to be completed in any order. At final
 **Review run**, the browser performs whole-form constraint validation across
 all enabled fields before sending the complete multipart form to
 `/runs/preview`. If a field is invalid, the wizard opens its panel, displays
@@ -123,8 +129,7 @@ The **Input** step asks for:
    (`5`), one range (`10-20`), comma-separated pages (`1,5,9`), or a
    combination (`1,5,10-20`);
 3. an output directory on the same computer running MUDIDI;
-4. optional introduction pages and additional context;
-5. optional MDF parsing-guide pages or an existing guide JSON file.
+4. optional introduction pages.
 
 Page numbers are 1-based: zero, negative numbers, descending ranges, and pages
 beyond the uploaded PDF's page count are rejected. Browser-selected files are
@@ -139,12 +144,12 @@ The **Pipeline** step presents these mutually exclusive choices:
   MDF parsing guide, then parses the transcription into MDF;
 - **Transcription only** — produces faithful flat Stage 1 text without MDF
   parsing;
-- **Parse transcription into MDF (Multi-Dictionary Formatter)** — uses an
-  existing transcription, infers and reviews a dictionary-specific guide, and
-  emits MDF records.
+- **Parse into MDF** — uses an existing transcription, infers and reviews a
+  dictionary-specific MDF (Multi-Dictionary Formatter) guide, and emits MDF
+  records.
 
-The existing output policy is separate: **Resume compatible existing
-artifacts** reuses compatible work, while **Overwrite existing artifacts**
+The existing output policy is separate: **Resume compatible artifacts** reuses
+compatible work, while **Overwrite existing artifacts**
 replaces it. The selected pipeline determines which later inputs and model
 controls are active. The dashboard always uses flat Stage 1 output and does not
 preserve typography. OCR hints, column mode, and expert OCR/VLM backends remain
@@ -170,17 +175,20 @@ images. Those input modes remain available through YAML and the CLI.
 
 ## Dictionary Profile
 
-The optional **Dictionary Profile** can improve extraction accuracy. It asks
-for:
+The optional **Dictionary Profile** is the first section of the **Context**
+step and can improve extraction accuracy. It asks for:
 
 - headword language and script;
 - one or more paired translation, gloss, or definition languages and scripts;
+- a character inventory for each language-script pair, used by Stage 1 to
+  constrain transcription to valid characters (hidden when the pipeline has no
+  Stage 1);
 - a free-form description of the page arrangement;
 - the information types found in entries.
 
 Leave the whole section blank when you are unsure. If you answer any profile
-question, complete the profile, including a matching script for every target
-language; the server rejects partial profiles. The profile is guidance, not
+question other than the character inventory, complete the profile, including a
+matching script for every target language; the server rejects partial profiles. The profile is guidance, not
 source text, and MUDIDI still checks the scanned page. It does not strictly
 limit discovery to the information types you enter: the model may identify
 additional entry structures and rules visible in the dictionary.
@@ -188,15 +196,23 @@ additional entry structures and rules visible in the dictionary.
 
 ## Additional context
 
-The **Input** step groups optional context by the stage that consumes it:
+After the profile, the **Context** step shows the MDF parsing-guide inputs
+(representative pages and an existing guide JSON file) for pipelines that run
+Stage 2.
 
-- a character inventory entered directly as text for Stage 1;
+Stage instructions sit behind the **Advanced: stage instructions** toggle at
+the bottom of the step. It starts off. Turning it on reveals:
+
 - Stage 1 instructions entered as text or uploaded as one `.txt`, `.md`, or
   `.pdf` file;
 - Stage 2 instructions entered as text or uploaded as one `.txt`, `.md`, or
-  `.pdf` file;
-- an existing MDF parsing guide JSON file;
-- optional representative MDF parsing-guide pages.
+  `.pdf` file.
+
+Turning the toggle off only hides the section: entered instructions are kept
+and still submitted. While hidden, the toggle shows how many are set, and the
+run summary's **Instructions** row names the stages that have them. The toggle
+opens automatically when a loaded preset or restored session contains
+instructions, or when an instruction field fails validation.
 
 Dictionary, introduction, and representative MDF parsing-guide page numbers
 must be positive Arabic numbers within the uploaded dictionary PDF.

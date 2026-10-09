@@ -5,7 +5,7 @@ const runFormStorageKey = "mudidi:new-run-form:v1";
 const presetStateElement = document.querySelector("#preset-form-state");
 const wizard = document.querySelector("[data-new-run-wizard]");
 const wizardPanels = wizard ? [...wizard.querySelectorAll("[data-wizard-panel]")] : [];
-const wizardOrder = ["input", "pipeline", "model", "agentic"];
+const wizardOrder = ["input", "pipeline", "context", "model", "agentic"];
 const wizardStorageKey = "mudidi:new-run-wizard:v1";
 const readWizardSessionState = () => {
   try {
@@ -519,7 +519,6 @@ const providerLabels = {
 
 const authModeChoices = [...document.querySelectorAll("[data-auth-mode-choice]")];
 const authModeValue = () => authModeChoices.find((choice) => choice.checked)?.value || "api_key";
-const authSummary = document.querySelector("[data-auth-summary]");
 const billingSummary = document.querySelector("[data-billing-summary]");
 const subscriptionProviders = {
   openai: "openai",
@@ -652,6 +651,7 @@ const applyCredentialStatus = (card, provider, payload) => {
   if (input) input.placeholder = credentialPlaceholders[source];
   if (status) status.textContent = credentialStatusLabels[source];
   ensureDeleteButton(card, provider, source === "persistent");
+  updateBillingStatus();
   return true;
 };
 
@@ -1103,10 +1103,8 @@ const synchronizeProviderChoices = () => {
 const synchronizeAuth = (providerChanged = false) => {
   const subscription = authModeValue() === "subscription";
   synchronizeProviderChoices();
-  if (authSummary) authSummary.textContent = subscription ? "Subscriptions" : "API keys";
-  if (billingSummary) {
-    billingSummary.textContent = subscription ? "Subscription billing" : "API-key billing";
-  }
+  if (billingSummary) billingSummary.textContent = subscription ? "Subscription" : "API key";
+  updateBillingStatus();
   synchronizeModels(providerChanged);
   agenticModelGroups.forEach((group) => synchronizeAgenticModelGroup(group, providerChanged));
 };
@@ -1199,30 +1197,51 @@ const migrateStage2CachesForProvider = () => {
   }
 };
 
-const modelDisplayName = (pass) => {
-  const state = readStage2Pass(pass);
-  if (state.model === "__other__") return state.customModel || "Custom model";
-  const selected = stage2Field(pass, "model")?.selectedOptions[0];
-  return selected?.textContent.trim() || state.model || "Not selected";
-};
-
 const stage2IsEnabled = () => {
   const selected = pipelineChoices.find((choice) => choice.checked);
   const active = selected ? pipelineStages[selected.value] : null;
   return Boolean(active?.has("pass1") || active?.has("pass2"));
 };
 
+function summarizeModel(element, value, name) {
+  if (!element) return;
+  element.classList.toggle("is-pending", !value);
+  element.textContent = value ? name : "Choose a model";
+}
+
+// Custom providers hide the model select and take a typed model name instead.
+function modelChoice(select, custom) {
+  const typed = custom?.value.trim() || "";
+  if ((custom && custom.hidden === false && typed) || select?.value === "__other__") {
+    return { value: typed, name: typed || "Custom model" };
+  }
+  const value = select?.value || "";
+  return { value, name: select?.selectedOptions?.[0]?.textContent.trim() || value };
+}
+
+function updateStage1Summary() {
+  const choice = modelChoice(
+    document.querySelector('select[name="stage1_model"]'),
+    document.querySelector('input[name="stage1_custom_model"]'),
+  );
+  summarizeModel(document.querySelector("[data-stage1-summary-model]"), choice.value, choice.name);
+}
+
 const updateStage2Summary = () => {
+  updateStage1Summary();
   const summary = document.querySelector("[data-stage2-summary-model]");
   if (!summary || !stage2State) return;
   if (!stage2IsEnabled()) {
+    summary.classList?.remove("is-pending");
     summary.textContent = "Not used";
     return;
   }
+  const pass1 = modelChoice(stage2Field("pass1", "model"), stage2Field("pass1", "customModel"));
   if (stage2State.mode === "shared") {
-    summary.textContent = `Shared model · ${modelDisplayName("pass1")}`;
+    summarizeModel(summary, pass1.value, pass1.name);
   } else {
-    summary.textContent = `Separate pass models · Pass 1: ${modelDisplayName("pass1")} · Pass 2: ${modelDisplayName("pass2")}`;
+    const pass2 = modelChoice(stage2Field("pass2", "model"), stage2Field("pass2", "customModel"));
+    summarizeModel(summary, pass1.value && pass2.value, `Pass 1: ${pass1.name} · Pass 2: ${pass2.name}`);
   }
 };
 
@@ -1449,6 +1468,91 @@ document.querySelectorAll("[data-confirm-preset-delete]").forEach((form) => {
   });
 });
 
+const advancedToggle = document.querySelector("[data-advanced-toggle]");
+const advancedBody = document.querySelector("[data-advanced-body]");
+
+function instructionPanelIsSet(panel) {
+  const refs = instructionPanelRefs(panel);
+  const source = refs.sourceRadios.find((radio) => radio.checked)?.value || "typed";
+  if (source === "file") {
+    const keeping = instructionPanelHasKeptPreset(panel)
+      && refs.keptRadios.find((radio) => radio.checked)?.value === "keep";
+    return keeping || Boolean(refs.fileInput?.files?.length);
+  }
+  return Boolean(refs.textarea?.value.trim());
+}
+
+// Collapsing the advanced section only hides it: values stay enabled and are submitted,
+// so the toggle badge and run summary always say which stage instructions are in use.
+function activeInstructionStages() {
+  return instructionPanels
+    .filter((panel) => !panel.hidden && instructionPanelIsSet(panel))
+    .map((panel) => (panel.dataset.instructionStage === "stage1" ? "Stage 1" : "Stage 2"));
+}
+
+function updateAdvancedState() {
+  const stages = activeInstructionStages();
+  const summary = document.querySelector("[data-summary-advanced]");
+  if (summary) summary.textContent = stages.length ? stages.join(" + ") : "None";
+  if (!advancedToggle) return;
+  const open = advancedToggle.getAttribute("aria-expanded") === "true";
+  const state = advancedToggle.querySelector("[data-advanced-state]");
+  if (state) state.textContent = open ? "On" : "Off";
+  const badge = advancedToggle.querySelector("[data-advanced-count]");
+  if (badge) {
+    badge.hidden = open || stages.length === 0;
+    badge.textContent = `${stages.length} set`;
+  }
+}
+
+function setAdvancedOpen(open) {
+  if (!advancedToggle || !advancedBody) return;
+  advancedToggle.setAttribute("aria-expanded", String(open));
+  advancedBody.hidden = !open;
+  updateAdvancedState();
+}
+
+advancedToggle?.addEventListener("click", () => {
+  setAdvancedOpen(advancedToggle.getAttribute("aria-expanded") !== "true");
+});
+
+function updateRunSummary() {
+  const pipeline = pipelineChoices.find((choice) => choice.checked);
+  const title = document.querySelector("[data-summary-pipeline]");
+  const pipelineName = pipeline?.closest("label")?.querySelector("strong")?.textContent.trim();
+  if (title && pipelineName) title.textContent = pipelineName;
+  const pagesInput = document.querySelector('input[name="dictionary_pages"]');
+  const pages = document.querySelector("[data-summary-pages]");
+  if (pages && pagesInput) {
+    const value = pagesInput.value.trim();
+    pages.textContent = value || "Not set";
+    pages.classList.toggle("is-pending", !value);
+  }
+  const agentic = document.querySelector("[data-summary-agentic]");
+  if (agentic) {
+    agentic.textContent = agenticChoices.some((choice) => choice.checked && choice.value === "true")
+      ? "On"
+      : "Off";
+  }
+  updateStage2Summary();
+  updateAdvancedState();
+}
+
+function updateBillingStatus() {
+  const chip = document.querySelector("[data-billing-status]");
+  const text = chip?.querySelector("[data-billing-status-text]");
+  if (!chip || !text) return;
+  let ready;
+  if (authModeValue() === "subscription") {
+    ready = subscriptionCards.filter((card) => card.dataset.subscriptionAuthenticated === "true").length;
+    text.textContent = `Subscription · ${ready} of ${subscriptionCards.length} signed in`;
+  } else {
+    ready = credentialCards.filter((card) => card.dataset.keyAvailable === "true").length;
+    text.textContent = `API key · ${ready} provider key${ready === 1 ? "" : "s"} available`;
+  }
+  chip.classList.toggle("needs-attention", ready === 0);
+}
+
 restoreRunForm();
 instructionPanels.forEach(wireInstructionPanel);
 const restoredPass1 = readStage2Pass("pass1");
@@ -1473,6 +1577,10 @@ synchronizeAuth();
 synchronizePipeline();
 synchronizeAgentic();
 loadModelCatalog();
+updateRunSummary();
+if (advancedBody && (activeInstructionStages().length || advancedBody.querySelector("[data-field-error]"))) {
+  setAdvancedOpen(true);
+}
 
 const beginWizardInvalidAttempt = () => {
   firstInvalidWizardField = null;
@@ -1556,16 +1664,19 @@ if (runForm) {
     if (pass) synchronizeStage2Pass(pass);
     persistRunForm();
     if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
+    updateRunSummary();
   });
   runForm.addEventListener("change", (event) => {
     const pass = event.target.closest("[data-stage2-pass]")?.dataset.stage2Pass;
     if (pass) synchronizeStage2Pass(pass);
     persistRunForm();
     if (event.target.validity?.valid) clearWizardFieldInvalid(event.target);
+    updateRunSummary();
   });
   runForm.addEventListener("invalid", (event) => {
     runForm.classList.add("was-validated");
     const field = event.target;
+    if (advancedBody?.hidden && advancedBody.contains(field)) setAdvancedOpen(true);
     invalidWizardFields.push(field);
     markWizardFieldInvalid(field);
     scheduleWizardInvalidAttemptReset();
@@ -1871,6 +1982,24 @@ if (pageTextEditor) {
   });
 }
 
+const subscriptionStateLabels = {
+  "signed-in": "Signed in",
+  unavailable: "Unavailable",
+  expired: "Session expired",
+  "signed-out": "Sign-in required",
+};
+const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+const formatShortDate = (value) => {
+  const moment = new Date(value);
+  return Number.isNaN(moment.getTime()) ? value : shortDateFormatter.format(moment);
+};
+
 const applySubscriptionStatus = (card, payload) => {
   if (!card || !payload || typeof payload !== "object") return false;
   const authenticated = payload.authenticated === true;
@@ -1879,27 +2008,42 @@ const applySubscriptionStatus = (card, payload) => {
     || authenticated
     || (typeof payload.expires_at === "string" && payload.expires_at.trim() !== "");
   const removable = payload.removable === true;
-  const category = String(payload.category || "missing");
   card.dataset.subscriptionAuthenticated = String(authenticated);
   card.dataset.subscriptionCredentialPresent = String(credentialPresent);
   card.dataset.subscriptionRemovable = String(removable);
   card.dataset.subscriptionAvailable = String(available);
+  const stateKey = !available
+    ? "unavailable"
+    : (authenticated ? "signed-in" : (credentialPresent ? "expired" : "signed-out"));
   const state = card.querySelector("[data-subscription-state]");
   if (state) {
-    state.textContent = !available
-      ? "Unavailable"
-      : (authenticated ? "Authenticated" : (credentialPresent ? "Session expired" : "Log in required"));
+    state.dataset.state = stateKey;
+    state.textContent = subscriptionStateLabels[stateKey];
   }
-  const categoryElement = card.querySelector("[data-subscription-category]");
-  if (categoryElement) categoryElement.textContent = category;
+  const accountLabel = String(payload.account_label || "");
   const account = card.querySelector("[data-subscription-account]");
-  if (account) account.textContent = String(payload.account_label || "None");
+  if (account) {
+    account.textContent = accountLabel || "No account";
+    account.title = accountLabel;
+  }
   const expiry = card.querySelector("[data-subscription-expiry]");
-  if (expiry) expiry.textContent = String(payload.expires_at || "None");
+  const expiresAt = typeof payload.expires_at === "string" ? payload.expires_at.trim() : "";
+  if (expiry) {
+    expiry.hidden = !expiresAt;
+    if (expiresAt) {
+      const time = document.createElement("time");
+      time.dateTime = expiresAt;
+      time.textContent = formatShortDate(expiresAt);
+      expiry.replaceChildren(`${authenticated ? "Valid until" : "Expired"} `, time);
+    } else {
+      expiry.replaceChildren();
+    }
+  }
   const login = card.querySelector("[data-subscription-login]");
   const logout = card.querySelector("[data-subscription-logout]");
   if (login) login.disabled = !available;
   if (logout) logout.disabled = !removable;
+  updateBillingStatus();
   return true;
 };
 
