@@ -468,10 +468,11 @@ options:
   --port PORT
   --data-dir DATA_DIR
   --max-request-bytes MAX_REQUEST_BYTES
-                        Maximum raw HTTP request body size, including
-                        multipart framing.
+                        Optional cap on the raw HTTP request body size,
+                        including multipart framing. Unlimited by default.
   --max-upload-bytes MAX_UPLOAD_BYTES
-                        Maximum cumulative managed upload size per run.
+                        Optional cap on the cumulative managed upload size per
+                        run. Unlimited by default.
   --container           Bind to the container network interface. Use only
                         inside a container whose published port is restricted
                         to host loopback.

@@ -80,13 +80,31 @@ def test_false_small_content_length_cannot_bypass_request_limit(tmp_path: Path) 
     assert response.status_code == 413
 
 
-def test_default_byte_limits_allow_large_local_upload_ceiling(
+def test_request_and_upload_sizes_are_unlimited_by_default(
     tmp_path: Path,
 ) -> None:
     app = create_app(data_dir=tmp_path)
 
-    assert app.state.max_request_bytes == 110 * 1024 * 1024
-    assert app.state.inputs.max_total_bytes == 100 * 1024 * 1024
+    assert app.state.max_request_bytes is None
+    assert app.state.inputs.max_total_bytes is None
+
+    response = TestClient(app).post(
+        "/runs/demo",
+        content=b"x" * (2 * 1024 * 1024),
+        headers={"Content-Type": "application/octet-stream"},
+    )
+
+    assert response.status_code != 413
+
+
+def test_a_single_configured_byte_limit_is_accepted(tmp_path: Path) -> None:
+    upload_only = create_app(data_dir=tmp_path / "a", max_upload_bytes=64)
+    request_only = create_app(data_dir=tmp_path / "b", max_request_bytes=128)
+
+    assert upload_only.state.inputs.max_total_bytes == 64
+    assert upload_only.state.max_request_bytes is None
+    assert request_only.state.max_request_bytes == 128
+    assert request_only.state.inputs.max_total_bytes is None
 
 
 def test_configured_request_and_upload_limits_are_applied(tmp_path: Path) -> None:

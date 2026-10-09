@@ -315,12 +315,18 @@ def build_parser() -> argparse.ArgumentParser:
     web.add_argument(
         "--max-request-bytes",
         type=int,
-        help="Maximum raw HTTP request body size, including multipart framing.",
+        help=(
+            "Optional cap on the raw HTTP request body size, including multipart "
+            "framing. Unlimited by default."
+        ),
     )
     web.add_argument(
         "--max-upload-bytes",
         type=int,
-        help="Maximum cumulative managed upload size per run.",
+        help=(
+            "Optional cap on the cumulative managed upload size per run. "
+            "Unlimited by default."
+        ),
     )
     web.add_argument(
         "--container",

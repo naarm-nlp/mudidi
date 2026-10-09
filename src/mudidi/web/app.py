@@ -74,7 +74,6 @@ from mudidi.web.jobs import JobController
 from mudidi.web.inputs import (
     InputMaterializer,
     InstructionMaterializationError,
-    _MAX_UPLOAD_BYTES,
     read_managed_instruction_metadata,
     rebase_managed_config,
 )
@@ -121,7 +120,6 @@ def _short_datetime(value: object) -> str:
 
 
 _TEMPLATES.env.filters["short_datetime"] = _short_datetime
-_MAX_REQUEST_BYTES = 110 * 1024 * 1024
 _MAX_LOG_BYTES = 512_000
 
 _SUBSCRIPTION_TRANSACTION_TTL = timedelta(minutes=10)
@@ -153,14 +151,20 @@ class _RequestBodyTooLarge(Exception):
     """Internal control flow for streamed request-size enforcement."""
 
 
-def _validate_byte_limits(max_request_bytes: int, max_upload_bytes: int) -> None:
-    """Validate HTTP and managed-upload byte limits."""
+def _validate_byte_limits(
+    max_request_bytes: int | None, max_upload_bytes: int | None
+) -> None:
+    """Validate optional HTTP and managed-upload byte limits."""
 
-    if max_request_bytes < 1:
+    if max_request_bytes is not None and max_request_bytes < 1:
         raise ValueError("request byte limit must be positive")
-    if max_upload_bytes < 1:
+    if max_upload_bytes is not None and max_upload_bytes < 1:
         raise ValueError("upload byte limit must be positive")
-    if max_request_bytes <= max_upload_bytes:
+    if (
+        max_request_bytes is not None
+        and max_upload_bytes is not None
+        and max_request_bytes <= max_upload_bytes
+    ):
         raise ValueError("request byte limit must exceed upload byte limit")
 
 
@@ -216,8 +220,8 @@ def create_app(
     offline_inference: bool = False,
     model_discovery: ModelDiscovery | None = None,
     container_mode: bool = False,
-    max_request_bytes: int = _MAX_REQUEST_BYTES,
-    max_upload_bytes: int = _MAX_UPLOAD_BYTES,
+    max_request_bytes: int | None = None,
+    max_upload_bytes: int | None = None,
 ) -> FastAPI:
     """Create a loopback-oriented application without starting a server.
 
@@ -406,7 +410,7 @@ def create_app(
             except ValueError:
                 response = PlainTextResponse("Invalid Content-Length", status_code=400)
                 return _add_security_headers(response)
-            if declared_length > max_request_bytes:
+            if max_request_bytes is not None and declared_length > max_request_bytes:
                 response = PlainTextResponse("Request body too large", status_code=413)
                 return _add_security_headers(response)
         received_bytes = 0
@@ -417,7 +421,7 @@ def create_app(
             message = await original_receive()
             if message.get("type") == "http.request":
                 received_bytes += len(message.get("body", b""))
-                if received_bytes > max_request_bytes:
+                if max_request_bytes is not None and received_bytes > max_request_bytes:
                     raise _RequestBodyTooLarge
             return message
 

@@ -19,7 +19,6 @@ from mudidi.schemas.field_cheatsheet import validate_marker_cheatsheet
 
 _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 _MAX_FILES = 5_000
-_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 _INSTRUCTION_SUFFIXES = {".txt", ".md", ".pdf"}
 _TEXT_CHARS = 20_000
 
@@ -39,9 +38,9 @@ class InputMaterializer:
         self,
         *,
         data_dir: Path,
-        max_total_bytes: int = _MAX_UPLOAD_BYTES,
+        max_total_bytes: int | None = None,
     ) -> None:
-        if max_total_bytes < 1:
+        if max_total_bytes is not None and max_total_bytes < 1:
             raise ValueError("upload byte limit must be positive")
         self.data_dir = data_dir.expanduser().resolve()
         self.runs_root = self.data_dir / "runs"
@@ -662,6 +661,8 @@ class InputMaterializer:
         *,
         exclude: Path | tuple[Path, ...] | None = None,
     ) -> None:
+        if self.max_total_bytes is None:
+            return
         excludes = (
             tuple(item.expanduser().resolve() for item in exclude)
             if isinstance(exclude, tuple)

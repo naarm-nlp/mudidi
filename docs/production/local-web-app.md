@@ -63,9 +63,8 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
-The default request limit is 110 MiB and the default cumulative managed-upload
-limit is 100 MiB. To override these defaults, configure both limits and leave
-request headroom for multipart framing:
+Request and upload sizes are unlimited by default. To cap them, set one or both
+limits and leave request headroom for multipart framing:
 
 ```bash
 uv run mudidi web \
@@ -73,8 +72,8 @@ uv run mudidi web \
   --max-upload-bytes 104857600
 ```
 
-`--max-request-bytes` applies to the complete raw HTTP request. The request
-limit must be greater than `--max-upload-bytes`.
+`--max-request-bytes` applies to the complete raw HTTP request. When both are
+set, the request limit must be greater than `--max-upload-bytes`.
 
 Save the API key for your model provider under **API credentials** on the
 **New Run** screen by clicking **Save key** beside that provider.
@@ -522,9 +521,9 @@ filesystem. The first release permits one inference worker at a time.
 - **Awaiting MDF Parsing Guide Review** — review and explicitly approve the
   guide; this pause is intentional.
 - **Interrupted** — inspect the run and explicitly resume it.
-- **Request body too large** — start the dashboard with larger
-  `--max-request-bytes` and `--max-upload-bytes` values, leaving request
-  headroom for multipart framing.
+- **Request body too large** or **uploaded input is too large** — the dashboard
+  was started with `--max-request-bytes` or `--max-upload-bytes`. Restart it
+  with larger values or without those flags; sizes are unlimited by default.
 - **Address already in use on `127.0.0.1:8000`** — another dashboard process is
   already listening. On macOS or Linux, inspect it with
   `lsof -nP -iTCP:8000 -sTCP:LISTEN`, stop the listed process with `kill PID`,

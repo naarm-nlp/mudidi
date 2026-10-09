@@ -162,13 +162,12 @@ uv sync --frozen --extra web
 uv run mudidi web
 ```
 
-The default raw request limit is 110 MiB and the default cumulative managed
-upload limit is 100 MiB. Configure both byte limits when overriding these
-defaults.
-`--max-request-bytes` covers the complete HTTP request, including multipart
-framing, and must be greater than `--max-upload-bytes`.
+Request and upload sizes are unlimited by default. To cap them, pass
+`--max-upload-bytes` for the cumulative managed uploads of one run and/or
+`--max-request-bytes` for the complete HTTP request, including multipart
+framing. When both are set, the request limit must be the greater of the two.
 
-For example, allow uploads up to 100 MiB with a 110 MiB request limit:
+For example, cap uploads at 100 MiB with a 110 MiB request limit:
 
 ```bash
 uv run mudidi web \
