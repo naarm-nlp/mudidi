@@ -146,7 +146,16 @@ for (let i = 1; i <= 7; i += 1) { wait(0.17); frame(`cx-type-${i}`); }
 wait(0.2);
 wait(0.5);
 caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t);
-pan({ x: 240, y: R["cx.next"].y - 380, w: 960 }, 1.0);
+// The guide's sample pages stay empty: three pages are few enough to use them all.
+pan({ x: 240, y: R["cx.guide"].y - 90, w: 960 }, 0.9);
+mark = t;
+go("cx.guidePages", 0.7);
+wait(2.3);
+caption("Pages to learn from stays empty: all three pages are used.", mark + 0.1, t);
+mark = t;
+wait(3.2);
+caption("With hundreds of pages, pick a few that represent the whole dictionary.", mark + 0.15, t);
+pan({ x: 240, y: R["cx.next"].y - 380, w: 960 }, 0.9);
 go("cx.next", 0.7);
 click();
 wait(0.6);
