@@ -54,10 +54,10 @@ function go(target, seconds = 0.7) {
 const goScreen = (x, y, seconds) => go([view.x + (x * view.w) / W, view.y + (y * view.w) / W], seconds);
 const onScreen = (target) => { const [x, y] = centre(target); return { x: ((x - view.x) * W) / view.w, y: ((y - view.y) * W) / view.w }; };
 // Settle on the control, press, and show what the press changed.
-function click(result) {
-  t += 0.18;
+function click(result, settle = 0.18, after = 0.14) {
+  t += settle;
   ops.push({ k: "click", t: round(t) });
-  t += 0.14;
+  t += after;
   if (result) frame(result);
 }
 function caption(text, start, end) {
@@ -103,12 +103,12 @@ wait(0.25);
 tween("to", "#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" });
 click("in-file");
 const chipEnd = t + 0.3;
-wait(0.7);
+wait(0.5);
 pan({ x: 250, y: 330, w: 940 }, 0.7, false);
 go("in.pages", 0.8);
 click();
-for (const name of ["in-pages-1", "in-pages-2", "in-pages-3"]) { wait(0.22); frame(name); }
-wait(0.8);
+for (const name of ["in-pages-1", "in-pages-2", "in-pages-3"]) { wait(0.2); frame(name); }
+wait(0.5);
 pan({ x: 200, y: 130, w: 1080 }, 0.7);
 go("tab.context", 0.8);
 click();
@@ -123,38 +123,38 @@ wait(0.3);
 pan({ x: 240, y: 440, w: 960 }, 0.8);
 go("cx.head", 0.6);
 click();
-for (const name of ["cx-head-1", "cx-head-2"]) { wait(0.18); frame(name); }
+for (const name of ["cx-head-1", "cx-head-2"]) { wait(0.1); frame(name); }
 go("cx.headScript", 0.4);
 click("cx-hs-1");
 go("cx.target", 0.45);
 click();
-for (const name of ["cx-tl-1", "cx-tl-2"]) { wait(0.18); frame(name); }
+for (const name of ["cx-tl-1", "cx-tl-2"]) { wait(0.1); frame(name); }
 go("cx.targetScript", 0.4);
 click("cx-ts-1");
 go("cx.inventory", 0.5);
 click();
-for (const name of [1, 2, 3, 4].map((i) => `cx-inv-${i}`)) { wait(0.2); frame(name); }
-wait(0.4);
+for (const name of [1, 2, 3, 4].map((i) => `cx-inv-${i}`)) { wait(0.11); frame(name); }
+wait(0.25);
 pan({ x: 240, y: 760, w: 960 }, 0.7);
 go("cx.layout", 0.5);
 click();
-for (const name of [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `cx-lay-${i}`)) { wait(0.17); frame(name); }
-wait(0.3);
+for (const name of [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `cx-lay-${i}`)) { wait(0.1); frame(name); }
+wait(0.2);
 // Down the first column, then down the third: every tick has its own click.
 for (let i = 1; i <= 7; i += 1) {
-  go(`cx.type${i}`, i === 1 ? 0.45 : i === 5 ? 0.5 : 0.28);
-  click(`cx-type-${i}`);
+  go(`cx.type${i}`, i === 1 ? 0.45 : i === 5 ? 0.42 : 0.2);
+  click(`cx-type-${i}`, 0.1, 0.1);
 }
-wait(0.5);
+wait(0.3);
 caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t);
 // The guide's sample pages stay empty: three pages are few enough to use them all.
 pan({ x: 240, y: R["cx.guide"].y - 90, w: 960 }, 0.9);
 mark = t;
 go("cx.guidePages", 0.7);
-wait(2.8);
+wait(2.2);
 caption("Pages to learn from left empty: it uses the dictionary pages chosen in step 1.", mark + 0.1, t);
 mark = t;
-wait(3.2);
+wait(2.6);
 caption("If you input hundreds of dictionary pages, pick a few that represent them all.", mark + 0.15, t);
 pan({ x: 240, y: R["cx.next"].y - 380, w: 960 }, 0.9);
 go("cx.next", 0.7);
@@ -172,38 +172,38 @@ wait(0.3);
 const popupStart = t;
 tween("fromTo", "#popup-shade", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" });
 tween("fromTo", "#popup-window", { opacity: 0, scale: 0.92, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" });
-wait(0.6);
+wait(0.45);
 goScreen(960, 580, 0.7);
 click();
 tween("to", "#popup-choose", { opacity: 0, duration: 0.15 });
 wait(0.15);
 tween("to", "#popup-done", { opacity: 1, duration: 0.2 });
 tween("fromTo", "#done-mark", { scale: 0.4 }, { scale: 1, duration: 0.4, ease: "back.out(2)" });
-wait(1.2);
+wait(0.9);
 frame("md-signed");
 tween("to", "#popup-window", { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.in" });
 tween("to", "#popup-shade", { opacity: 0, duration: 0.25 });
 const popupEnd = t + 0.35;
-wait(1.0);
+wait(0.6);
 caption("Sign in with a subscription you already have.", mark + 0.2, t);
 go("md.prov1", 0.8);
 click("md-prov1");
-wait(0.5);
+wait(0.3);
 go("md.prov2", 0.6);
 click("md-prov2");
-wait(0.6);
+wait(0.35);
 mark = t;
 pan({ x: 240, y: 1060, w: 960 }, 0.8);
 wait(0.3);
 for (const [control, result] of [["md.model1", "md-model1"], ["md.reason1", "md-reason1"], ["md.model2", "md-model2"], ["md.reason2", "md-reason2"]]) {
   go(control, 0.75);
   click(result);
-  wait(0.75);
+  wait(0.4);
 }
 wait(0.3);
 caption("A suggested starting point: low reasoning to transcribe, high to parse.", mark + 0.1, t);
 mark = t;
-wait(3.0);
+wait(2.6);
 caption("Experiment to find the model and reasoning that work best for each stage.", mark + 0.15, t);
 pan({ x: 240, y: 1200, w: 960 }, 0.6);
 go("md.next", 0.7);
@@ -230,7 +230,7 @@ endScene();
 cut("run1", "ov-s1-0", { x: 180, y: 230, w: 1100 });
 mark = t;
 go([760, 520], 0.6);
-for (const name of ["ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"]) { wait(0.9); frame(name); }
+for (const name of ["ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"]) { wait(0.7); frame(name); }
 wait(0.4);
 go("ov.action", 0.7);
 click();
@@ -243,7 +243,7 @@ cut("guide", "gd-0", { x: 200, y: 0, w: 1080 });
 mark = t;
 go([900, 400], 0.5);
 wait(0.3);
-pan({ x: 200, y: 892, w: 1080 }, 2.8);
+pan({ x: 200, y: 892, w: 1080 }, 2.3);
 caption("You review the guide before anything is parsed.", mark + 0.2, t);
 wait(0.2);
 go("gd.approve", 0.7);
@@ -255,11 +255,11 @@ endScene();
 cut("run2", "ov-s2-1", { x: 180, y: 215, w: 1100 });
 mark = t;
 go([760, 560], 0.5);
-wait(0.5);
+wait(0.4);
 frame("ov-s2-2");
-wait(0.8);
-frame("ov-done");
 wait(0.6);
+frame("ov-done");
+wait(0.4);
 caption("Stage 2 converts every page to MDF.", mark + 0.2, t);
 go("ov.pagesTab", 0.7);
 click();
@@ -270,21 +270,21 @@ endScene();
 cut("pages", "pg-0", { x: 240, y: 330, w: 1040 });
 mark = t;
 go([520, 640], 0.6);
-wait(0.5);
+wait(0.3);
 pan({ x: 240, y: 560, w: 1040 }, 1.0);
-wait(0.7);
+wait(0.5);
 go([876, 960], 0.7);
 click();
 wait(0.2);
 frame("pg-edit-1");
 wait(0.3);
 frame("pg-edit-2");
-wait(0.9);
+wait(0.7);
 caption("Check each page against the scan, and fix what you see.", mark + 0.2, t);
 pan({ x: 240, y: 700, w: 1040 }, 0.6);
 go("pg.save", 0.7);
 click();
-wait(1.0);
+wait(0.7);
 endScene();
 const cursorEnd = t;
 
