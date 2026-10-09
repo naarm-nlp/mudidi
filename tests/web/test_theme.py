@@ -848,3 +848,18 @@ def test_light_theme_semantic_text_tokens_meet_wcag_aa() -> None:
     assert dark_block is not None
     assert "--color-accent-text:" in dark_block.group(1)
     assert "--color-danger-text:" in dark_block.group(1)
+
+
+def test_modernist_ochre_theme_loads_after_the_base_stylesheet(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path))
+
+    page = client.get("/").text
+    theme = client.get("/static/modernist-ochre.css")
+
+    assert page.index("/static/app.css") < page.index("/static/modernist-ochre.css")
+    assert theme.status_code == 200
+    assert '[data-theme="dark"]' in theme.text
+    font_paths = set(re.findall(r'url\("(fonts/[^"]+\.woff2)"\)', theme.text))
+    assert len(font_paths) == 6
+    for font_path in font_paths:
+        assert client.get(f"/static/{font_path}").status_code == 200

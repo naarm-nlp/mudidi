@@ -4,18 +4,20 @@
 <div class="page-shell">
   <div class="review-page">
     <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
-    <section class="panel review-card" aria-labelledby="usage-title">
+    <header class="page-heading">
       <span class="eyebrow">LLM accounting</span>
       <h1 id="usage-title">Usage</h1>
-      <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
-        <div class="detail-tabs">
-          <a href="/runs/{{ run_id }}">Overview</a>
-          <a href="/runs/{{ run_id }}/usage" aria-current="page">Usage</a>
-          <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
-          <a href="/runs/{{ run_id }}/logs">Live Logs</a>
-          <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
-        </div>
-      </nav>
+    </header>
+    <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
+      <div class="detail-tabs">
+        <a href="/runs/{{ run_id }}">Overview</a>
+        <a href="/runs/{{ run_id }}/pages">Page Viewer &amp; Editor</a>
+        <a href="/runs/{{ run_id }}/logs">Live Logs</a>
+        <a href="/runs/{{ run_id }}/outputs">File Artifacts</a>
+        <a href="/runs/{{ run_id }}/usage" aria-current="page">Usage</a>
+      </div>
+    </nav>
+    <section class="usage-summary" aria-labelledby="usage-title">
       <div class="metric-grid">
         <article><span>Total Tokens</span><strong>{{ usage.total_tokens }}</strong></article>
         <article><span>Estimated Cost</span><strong>{% if usage.total_cost_usd is not none %}${{ "%.6f"|format(usage.total_cost_usd) }}{% else %}Unavailable{% endif %}</strong></article>

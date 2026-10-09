@@ -5,7 +5,10 @@
 {% block main %}
     <div class="page-shell">
       <div class="page-editor-page" data-page-editor>
-      <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+      <div class="detail-nav">
+        <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
+        {% if saved %}<span class="save-confirmation" role="status">Changes saved</span>{% endif %}
+      </div>
 
       <header class="page-editor-heading">
         <div>
@@ -13,7 +16,6 @@
           <h1>Page {{ page_id.removeprefix('page_') }}</h1>
           <p>Compare the source with each generated stage, correct the text, then save.</p>
         </div>
-        {% if saved %}<div class="save-confirmation" role="status">Changes saved</div>{% endif %}
       </header>
 
       <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">

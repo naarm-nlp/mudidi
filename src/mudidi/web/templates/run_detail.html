@@ -7,19 +7,23 @@
       <div class="providers-page run-overview">
       <div class="detail-nav">
         <a class="back-link" href="/history">← Run history</a>
-        <span class="status-pill {{ 'ready' if run.status == 'completed' else '' }}">{{ run.status_label }}</span>
+        <span class="status-pill {{ 'ready' if run.status == 'completed' else 'failed' if run.status == 'failed' else 'running' if run.is_active else '' }}">{{ run.status_label }}</span>
       </div>
       <header class="page-heading run-heading">
         <span class="eyebrow">{{ run.provider }} · local worker</span>
         <h1 class="run-id">{{ run.run_id }}</h1>
         <p>{{ run.current_stage_label }}{% if run.total_pages %} · {{ run.completed_pages }} of {{ run.total_pages }} {{ 'page' if run.total_pages == 1 else 'pages' }}{% endif %}</p>
       </header>
-      {% if run.billing_mode %}
-      <div class="checkpoint run-billing-metadata">
-        <strong>{{ run.billing_label }}</strong>
-        <span>Authentication: {{ run.auth_mode }}{% if run.auth_providers and run.auth_providers != 'None' %} · Providers: {{ run.auth_providers }}{% endif %}</span>
+      <div class="panel run-workspace-nav run-workspace-tabs">
+        <nav class="detail-tabs" aria-label="Run workspace">
+          <a class="active" href="/runs/{{ run.run_id }}" aria-current="page">Overview</a>
+          {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
+          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>{% else %}<span aria-disabled="true">Page Viewer &amp; Editor</span>{% endif %}
+          <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
+          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>{% else %}<span aria-disabled="true">File Artifacts</span>{% endif %}
+          {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/usage">Usage</a>{% else %}<span aria-disabled="true">Usage</span>{% endif %}
+        </nav>
       </div>
-      {% endif %}
       <div class="content-grid run-overview-grid">
         <section class="panel review-card run-progress-card">
           <div class="progress-heading">
@@ -73,17 +77,18 @@
           {% endif %}
           </div>
         </section>
-        <aside class="panel run-workspace-nav summary">
-          <span class="eyebrow">Run workspace</span>
-          <h2>Navigate this run</h2>
-          <nav class="detail-tabs" aria-label="Run workspace">
-            <a class="active" href="/runs/{{ run.run_id }}" aria-current="page">Overview</a>
-            {% if run.review_available %}<a href="/runs/{{ run.run_id }}/parse-rules">MDF parsing guide</a>{% else %}<span aria-disabled="true">MDF parsing guide</span>{% endif %}
-            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/pages">Page Viewer &amp; Editor</a>{% else %}<span aria-disabled="true">Page Viewer &amp; Editor</span>{% endif %}
-            <a href="/runs/{{ run.run_id }}/logs">Live Logs</a>
-            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/outputs">File Artifacts</a>{% else %}<span aria-disabled="true">File Artifacts</span>{% endif %}
-            {% if run.workspace_available %}<a href="/runs/{{ run.run_id }}/usage">Usage</a>{% else %}<span aria-disabled="true">Usage</span>{% endif %}
-          </nav>
+        <aside class="panel summary run-summary" aria-labelledby="run-summary-title">
+          <span class="eyebrow">{{ 'Billing' if run.billing_mode else 'Run details' }}</span>
+          <h2 id="run-summary-title">{{ run.billing_label if run.billing_mode else run.status_label }}</h2>
+          <dl>
+            {% if run.billing_mode %}
+            <div><dt>Authentication</dt><dd>{{ run.auth_mode }}</dd></div>
+            {% if run.auth_providers and run.auth_providers != 'None' %}<div><dt>Providers</dt><dd>{{ run.auth_providers }}</dd></div>{% endif %}
+            {% endif %}
+            <div><dt>Provider</dt><dd>{{ run.provider }}</dd></div>
+            <div><dt>Started</dt><dd><time datetime="{{ run.created_at.isoformat() }}" title="{{ run.created_at.strftime('%Y-%m-%d %H:%M UTC') }}">{{ run.created_at|short_datetime }}</time></dd></div>
+            {% if run.output_directory %}<div><dt>Output</dt><dd><code title="{{ run.output_directory }}">{{ run.output_directory }}</code></dd></div>{% endif %}
+          </dl>
         </aside>
       </div>
       </div>

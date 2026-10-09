@@ -10,6 +10,11 @@
     {% endif %}
       <div class="review-page">
       <a class="back-link" href="/">← Edit configuration</a>
+      <header class="page-heading">
+        <span class="eyebrow">Step 6 of 6</span>
+        <h1 id="review-title">Review your run</h1>
+        <p>These values were validated through MUDIDI's production configuration schema.</p>
+      </header>
       <nav class="panel run-workspace-tabs run-workspace-nav" aria-label="Run workspace">
         <div class="detail-tabs">
           <a href="/runs/{{ run_id }}">Overview</a>
@@ -17,10 +22,7 @@
         </div>
       </nav>
       <div class="review-layout">
-        <section class="panel review-card" aria-labelledby="review-title">
-          <span class="eyebrow">Step 6 of 6</span>
-          <h1 id="review-title">Review your run</h1>
-          <p>These values were validated through MUDIDI's production configuration schema.</p>
+        <section class="review-main" aria-labelledby="review-title">
           {% set review_groups = [
             ('Input', ['input', 'output', 'dictionary_pages', 'parse_rule_pages', 'mdf_manual']),
             ('Pipeline', ['pipeline', 'mdf_parsing_guide', 'stage_1_instructions', 'stage_2_instructions']),
@@ -70,11 +72,11 @@
             <button class="primary" type="submit">{{ continuation_label | default('Start run', true) }}</button>
           </form>
         </aside>
+        <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets">
+          <label for="preset-name">Save these non-secret settings as a preset</label>
+          <div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div>
+        </form>
       </div>
-      <form class="preset-form" method="post" action="/runs/{{ run_id }}/presets">
-        <label for="preset-name">Save these non-secret settings as a preset</label>
-        <div class="input-row"><input id="preset-name" name="name" maxlength="80" required placeholder="My dictionary setup"><button type="submit">Save preset</button></div>
-      </form>
       </div>
     </div>
 {% endblock %}

@@ -6,7 +6,7 @@
       <div class="providers-page">
       <div class="detail-nav">
         <a class="back-link" href="/runs/{{ run_id }}">← Run overview</a>
-        <span class="status-pill {{ 'ready' if review.status.value == 'approved' else '' }}">{{ review.status.value.replace('_', ' ') | title }}</span>
+        <span class="status-pill {{ 'ready' if review.status.value == 'approved' else 'running' }}">{{ review.status.value.replace('_', ' ') | title }}</span>
       </div>
       <header class="page-heading">
         <span class="eyebrow">Human checkpoint · version {{ review.version }}</span>
