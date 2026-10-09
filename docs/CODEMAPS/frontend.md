@@ -1,4 +1,4 @@
-<!-- Updated: 2026-07-30 -->
+<!-- Updated: 2026-10-10 -->
 
 # Frontend and UI Architecture
 
@@ -26,7 +26,9 @@ shown in red with associated error text.
 
 | Path | Role |
 |------|------|
-| `src/mudidi/web/templates/home.html` | New Run form, help text, and inline validation |
+| `src/mudidi/web/templates/_layout.html` | Shared shell: sidebar navigation, theme toggle, and stylesheets |
+| `src/mudidi/web/templates/_workspace_tabs.html` | Run workspace tab bar shared by every run page |
+| `src/mudidi/web/templates/home.html` | Six-step New Run wizard, help text, and inline validation |
 | `src/mudidi/web/templates/review.html` | Validated pre-run summary |
 | `src/mudidi/web/templates/run_detail.html` | Run overview and actions |
 | `src/mudidi/web/templates/parse_rules.html` | MDF parsing-guide checkpoint |
@@ -37,6 +39,10 @@ shown in red with associated error text.
 | `src/mudidi/web/templates/usage.html` | Token and cost reporting |
 | `src/mudidi/web/static/app.js` | Form behavior, help, model controls, and live updates |
 | `src/mudidi/web/static/app.css` | Responsive layout and validation states |
+| `src/mudidi/web/static/modernist-ochre.css` | Modernist Ochre theme layer, loaded after `app.css` |
+| `src/mudidi/web/static/theme.js` | Light/dark theme toggle |
+| `src/mudidi/web/static/fonts/` | Self-hosted Archivo, IBM Plex Mono, and Inter |
+| `src/mudidi/web/folder_picker.py` | Native output-folder dialog for non-container runs |
 
 Page-image and directory source inputs are intentionally absent from the
 dashboard. They remain CLI/YAML features.
