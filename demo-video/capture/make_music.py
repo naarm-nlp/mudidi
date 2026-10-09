@@ -1,11 +1,16 @@
-"""Synthesise the demo's music bed: 150 BPM, 36 bars, C major, no samples.
+"""Synthesise the demo's music bed: 150 BPM, C major, no samples.
 
-    python capture/make_music.py assets/music.wav
+    python capture/make_music.py out.wav assets/timing.json
 
-One beat is 0.4s. The video's scene cuts sit on a 2.4s grid, which is every
-six beats, so each cut still lands on a beat. The drums enter at 7.2s, where
-the opening hands over to the dashboard, and drop out at 52.8s for the outro.
+The length and the point where the drums drop out come from the timing file
+that capture/build.mjs writes.
+
+One beat is 0.4s and every scene cut in the video is snapped to
+a beat. The drums enter at 7.2s, where the opening hands over to the dashboard,
+and drop out where the outro starts.
 """
+import json
+import math
 import sys
 import wave
 
@@ -14,10 +19,12 @@ import numpy as np
 SR = 44100
 BPM = 150
 BEAT = 60 / BPM
-BARS = 36
-DROP_BEAT = 18  # 7.2s
-OUTRO_BEAT = 132  # 52.8s
-total = int(SR * BEAT * 4 * BARS)
+with open(sys.argv[2]) as handle:
+    timing = json.load(handle)
+DROP_BEAT = round(timing["drop"] / BEAT)
+OUTRO_BEAT = round(timing["outroStart"] / BEAT)
+total = int(SR * timing["duration"])
+BARS = math.ceil(timing["duration"] / (4 * BEAT))
 tail = SR * 3
 drums = np.zeros(total + tail)
 ducked = np.zeros(total + tail)  # pad and bass, pumped by the kick
@@ -147,4 +154,4 @@ with wave.open(sys.argv[1], "wb") as out:
     out.setsampwidth(2)
     out.setframerate(SR)
     out.writeframes((stereo * 32767).astype("<i2").tobytes())
-print(f"{BARS} bars at {BPM} BPM = {total / SR:.1f}s")
+print(f"{BPM} BPM, {total / SR:.1f}s, drums {DROP_BEAT * BEAT:.1f}s to {OUTRO_BEAT * BEAT:.1f}s")

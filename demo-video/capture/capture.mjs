@@ -168,7 +168,23 @@ const patch = (step) =>
     if (step === "model2") { pick(models[1], "gpt-6.1-sol", "gpt-6.1-sol"); summary("Stage 2", "gpt-6.1-sol"); }
     if (step === "reason2") pick(reasons[1], "High", "high");
   }, step);
+// Each patch can shift the layout below it (hints disappear), so measure the
+// control the cursor is about to click in the layout it will be clicked in.
+const panelSel = '[data-wizard-panel="model"] ';
+const clickTargets = {
+  prov1: [panelSel + 'select[name="stage1_provider"]', 0],
+  prov2: [panelSel + 'select[name="stage2_provider"]', 0],
+  model1: [panelSel + "select[data-model-select]:visible", 0],
+  reason1: [panelSel + "select[data-reasoning-select]:visible", 0],
+  model2: [panelSel + "select[data-model-select]:visible", 1],
+  reason2: [panelSel + "select[data-reasoning-select]:visible", 1],
+};
 for (const step of ["waiting", "signed", "prov1", "prov2", "model1", "reason1", "model2", "reason2"]) {
+  if (clickTargets[step]) {
+    const [selector, index] = clickTargets[step];
+    const box = await page.locator(selector).nth(index).boundingBox();
+    meta.rects[`md.${step}`] = { x: box.x, y: box.y, w: box.width, h: box.height };
+  }
   await patch(step);
   await shot(`md-${step}`);
 }

@@ -9,41 +9,284 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const meta = JSON.parse(readFileSync(join(root, "assets/cap/meta.json"), "utf8"));
 
-// The music is 150 BPM: one beat is 0.4s. Scene cuts sit on a 2.4s grid (every six beats).
-// The opening grew by one bar after the scenes below were timed; SHIFT moves them all.
-const SHIFT = 2.4;
-const DURATION = 57.6;
-const scenes = [
-  { id: "input", start: 4.8, end: 10.8, frames: ["in-0", "in-drag", "in-file", "in-pages-1", "in-pages-2", "in-pages-3"] },
-  {
-    id: "context", start: 10.8, end: 18.0,
-    frames: ["cx-0", "cx-head-1", "cx-head-2", "cx-hs-1", "cx-tl-1", "cx-tl-2", "cx-ts-1",
-      ...[1, 2, 3, 4].map((i) => `cx-inv-${i}`), ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => `cx-lay-${i}`),
-      ...[1, 2, 3, 4, 5, 6, 7].map((i) => `cx-type-${i}`)],
-  },
-  { id: "model", start: 18.0, end: 27.6, frames: ["md-0", "md-waiting", "md-signed", "md-prov1", "md-prov2", "md-model1", "md-reason1", "md-model2", "md-reason2"] },
-  { id: "agentic", start: 27.6, end: 32.4, frames: ["ag-0", "ag-on"] },
-  { id: "run1", start: 32.4, end: 37.2, frames: ["ov-s1-0", "ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"] },
-  { id: "guide", start: 37.2, end: 42.0, frames: ["gd-0"] },
-  { id: "run2", start: 42.0, end: 44.4, frames: ["ov-s2-1", "ov-s2-2", "ov-done"] },
-  { id: "pages", start: 44.4, end: 50.4, frames: ["pg-0", "pg-edit-1", "pg-edit-2"] },
-];
-const captions = [
-  [5.0, 10.6, "Drop in the scanned PDF and pick the pages."],
-  [11.0, 17.8, "Describe the dictionary: languages, layout, what an entry holds."],
-  [18.2, 22.8, "Sign in with a subscription you already have."],
-  [23.0, 27.4, "One model, tuned per stage: low reasoning to transcribe, high to parse."],
-  [28.0, 31.4, "Agentic loop on: a second model evaluates each page and re-iterates."],
-  [32.6, 37.0, "Stage 1 transcribes each page, then infers an MDF parsing guide."],
-  [37.4, 40.3, "You review the guide before anything is parsed."],
-  [42.2, 44.2, "Stage 2 converts every page to MDF."],
-  [44.6, 47.9, "Check each page against the scan, and fix what you see."],
-];
+// ---------------------------------------------------------------------------
+// The schedule. Each scene is a short script of steps; every step advances the
+// clock `t`, so pacing is changed by editing a duration and nothing overlaps.
+// The music is 150 BPM (one beat = 0.4s) and every scene cut is snapped to a beat.
+// ---------------------------------------------------------------------------
+const BEAT = 0.4;
+const W = 1920;
+const R = meta.rects;
+const round = (n) => +n.toFixed(3);
+const ops = []; // timeline operations replayed by the page script
+const scenes = [];
+const captions = [];
+let t = 0;
+let view = null; // current camera view: {x, y, w} in dashboard CSS pixels
+let scene = null;
+
+const centre = (target) => (typeof target === "string" ? [R[target].x + R[target].w / 2, R[target].y + R[target].h / 2] : target);
+const tween = (kind, sel, a, b) => ops.push({ k: kind, sel, a, b, t: round(t) });
+const wait = (seconds) => { t += seconds; };
+const frame = (name) => { scene.frames.push(name); ops.push({ k: "frame", name, t: round(t) }); };
+function cut(id, first, startView, fade = true) {
+  scene = { id, start: round(t), frames: [first] };
+  scenes.push(scene);
+  view = startView;
+  ops.push({ k: "cam", scene: id, view, d: 0, t: round(t) });
+  if (fade) tween("fromTo", `#stage-${id}`, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" });
+}
+function endScene() {
+  t = Math.ceil(round(t) / BEAT - 1e-6) * BEAT;
+  scene.end = round(t);
+}
+function pan(next, seconds, hold = true) {
+  ops.push({ k: "cam", scene: scene.id, view: next, d: seconds, t: round(t) });
+  view = next;
+  if (hold) t += seconds;
+}
+// Move the cursor to a named control (it then stays on that control while the
+// camera pans) or to [x, y] in dashboard pixels (it then rests in place).
+function go(target, seconds = 0.7) {
+  ops.push({ k: "cursor", to: centre(target), d: seconds, rest: typeof target !== "string", t: round(t) });
+  t += seconds;
+}
+const goScreen = (x, y, seconds) => go([view.x + (x * view.w) / W, view.y + (y * view.w) / W], seconds);
+const onScreen = (target) => { const [x, y] = centre(target); return { x: ((x - view.x) * W) / view.w, y: ((y - view.y) * W) / view.w }; };
+// Settle on the control, press, and show what the press changed.
+function click(result) {
+  t += 0.18;
+  ops.push({ k: "click", t: round(t) });
+  t += 0.14;
+  if (result) frame(result);
+}
+function caption(text, start, end) {
+  captions.push([round(start), round(end), text]);
+}
+const inOut = "power2.inOut";
+
+// ---- 0.0 Intro: a notebook page is scanned into MDF records (fixed 7.2s) --------
+const intro = (time, kind, sel, a, b) => ops.push({ k: kind, sel, a, b, t: time });
+intro(0.1, "from", "#scan-sheet", { opacity: 0, y: 70, duration: 0.7, ease: "power3.out" });
+intro(0.5, "from", "#scan-eyebrow", { opacity: 0, duration: 0.5, ease: "power2.out" });
+intro(0.9, "fromTo", "#scan-line", { y: -10, opacity: 0 }, { opacity: 1, duration: 0.2 });
+intro(1.0, "to", "#scan-line", { y: 900, duration: 3.6, ease: "none" });
+intro(4.5, "to", "#scan-line", { opacity: 0, duration: 0.3 });
+// The line reaches each entry at 1.0 + 3.6 * (entry top / 900).
+for (const [n, time, rows] of [[1, 1.95, ["a", "b", "c"]], [2, 2.7, ["a", "b"]], [3, 4.15, ["a", "b", "c"]]]) {
+  intro(time, "fromTo", `#scan-box-${n}`, { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: 0.3, ease: "power3.out" });
+  intro(time + 0.1, "to", `#scan-link-${n}`, { strokeDashoffset: 0, duration: 0.4, ease: inOut });
+  intro(time + 0.3, "from", `#scan-record-${n}`, { opacity: 0, x: 40, duration: 0.35, ease: "power3.out" });
+  rows.forEach((row, i) =>
+    intro(round(time + 0.45 + i * 0.22), "fromTo", `#scan-r${n}${row}`, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.3, ease: "steps(10)" }));
+}
+intro(5.3, "from", "#scan-title", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" });
+intro(6.85, "to", ["#scan-sheet", "#scan-links", "#scan-copy"], { opacity: 0, duration: 0.3, ease: "power1.in" });
+t = 7.2;
+const cursorStart = t;
+
+// ---- Upload the PDF and choose pages -----------------------------------------------
+cut("input", "in-0", { x: 200, y: 240, w: 1080 });
+let mark = t;
+wait(0.3);
+const chipStart = t;
+tween("fromTo", "#chip-body", { x: 70, y: 730, opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" });
+goScreen(250, 800, 0.7);
+click();
+wait(0.15);
+const drop = onScreen("in.drop");
+tween("to", "#chip-body", { x: drop.x - 180, y: drop.y - 70, duration: 1.1, ease: inOut });
+go("in.drop", 1.1);
+ops.push({ k: "frame", name: "in-drag", t: round(t - 0.35) });
+scene.frames.push("in-drag");
+wait(0.25);
+tween("to", "#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" });
+click("in-file");
+const chipEnd = t + 0.3;
+wait(0.7);
+pan({ x: 250, y: 330, w: 940 }, 0.7, false);
+go("in.pages", 0.8);
+click();
+for (const name of ["in-pages-1", "in-pages-2", "in-pages-3"]) { wait(0.22); frame(name); }
+wait(0.8);
+pan({ x: 200, y: 130, w: 1080 }, 0.7);
+go("tab.context", 0.8);
+click();
+caption("Drop in the scanned PDF and pick the pages.", mark + 0.2, t - 0.1);
+wait(0.6);
+endScene();
+
+// ---- Dictionary profile -------------------------------------------------------------
+cut("context", "cx-0", { x: 200, y: 130, w: 1080 }, false);
+mark = t;
+wait(0.3);
+pan({ x: 240, y: 440, w: 960 }, 0.8);
+go("cx.head", 0.6);
+click();
+for (const name of ["cx-head-1", "cx-head-2"]) { wait(0.18); frame(name); }
+go("cx.headScript", 0.4);
+click("cx-hs-1");
+go("cx.target", 0.45);
+click();
+for (const name of ["cx-tl-1", "cx-tl-2"]) { wait(0.18); frame(name); }
+wait(0.3);
+frame("cx-ts-1");
+go("cx.inventory", 0.5);
+click();
+for (const name of [1, 2, 3, 4].map((i) => `cx-inv-${i}`)) { wait(0.2); frame(name); }
+wait(0.4);
+pan({ x: 240, y: 760, w: 960 }, 0.7);
+go("cx.layout", 0.5);
+click();
+for (const name of [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `cx-lay-${i}`)) { wait(0.17); frame(name); }
+wait(0.3);
+go("cx.type1", 0.45);
+ops.push({ k: "cursor", to: centre("cx.type7"), d: 1.2, rest: false, t: round(t + 0.1) });
+for (let i = 1; i <= 7; i += 1) { wait(0.17); frame(`cx-type-${i}`); }
+wait(0.2);
+caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t + 0.3);
+wait(0.7);
+endScene();
+
+// ---- Sign in, then choose a model and reasoning for each stage -----------------------
+cut("model", "md-0", { x: 240, y: 640, w: 960 });
+mark = t;
+wait(0.4);
+go("md.login", 0.8);
+click("md-waiting");
+wait(0.3);
+const popupStart = t;
+tween("fromTo", "#popup-shade", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" });
+tween("fromTo", "#popup-window", { opacity: 0, scale: 0.92, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" });
+wait(0.6);
+goScreen(960, 580, 0.7);
+click();
+tween("to", "#popup-choose", { opacity: 0, duration: 0.15 });
+wait(0.15);
+tween("to", "#popup-done", { opacity: 1, duration: 0.2 });
+tween("fromTo", "#done-mark", { scale: 0.4 }, { scale: 1, duration: 0.4, ease: "back.out(2)" });
+wait(1.2);
+frame("md-signed");
+tween("to", "#popup-window", { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.in" });
+tween("to", "#popup-shade", { opacity: 0, duration: 0.25 });
+const popupEnd = t + 0.35;
+wait(1.0);
+caption("Sign in with a subscription you already have.", mark + 0.2, t);
+go("md.prov1", 0.8);
+click("md-prov1");
+wait(0.5);
+go("md.prov2", 0.6);
+click("md-prov2");
+wait(0.6);
+mark = t;
+pan({ x: 240, y: 1060, w: 960 }, 0.8);
+wait(0.3);
+for (const [control, result] of [["md.model1", "md-model1"], ["md.reason1", "md-reason1"], ["md.model2", "md-model2"], ["md.reason2", "md-reason2"]]) {
+  go(control, 0.75);
+  click(result);
+  wait(0.75);
+}
+wait(0.3);
+caption("One model, tuned per stage: low reasoning to transcribe, high to parse.", mark + 0.1, t);
+pan({ x: 240, y: 1200, w: 960 }, 0.6);
+go("md.next", 0.7);
+click();
+wait(0.5);
+endScene();
+
+// ---- Agentic loop on -------------------------------------------------------------------
+cut("agentic", "ag-0", { x: 200, y: 330, w: 1080 }, false);
+mark = t;
+wait(0.4);
+go("ag.on", 0.8);
+click("ag-on");
+wait(1.4);
+pan({ x: 200, y: R["ag.submit"].y - 470, w: 1080 }, 1.4);
+caption("Agentic loop on: a second model evaluates each page and re-iterates.", mark + 0.3, t);
+wait(0.3);
+go("ag.submit", 0.7);
+click();
+wait(0.5);
+endScene();
+
+// ---- Run: Stage 1 and guide discovery -----------------------------------------------------
+cut("run1", "ov-s1-0", { x: 180, y: 230, w: 1100 });
+mark = t;
+go([760, 520], 0.6);
+for (const name of ["ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"]) { wait(0.9); frame(name); }
+wait(0.4);
+go("ov.action", 0.7);
+click();
+caption("Stage 1 transcribes each page, then infers an MDF parsing guide.", mark + 0.2, t);
+wait(0.5);
+endScene();
+
+// ---- Review the MDF parsing guide ------------------------------------------------------------
+cut("guide", "gd-0", { x: 200, y: 0, w: 1080 });
+mark = t;
+go([900, 400], 0.5);
+wait(0.3);
+pan({ x: 200, y: 892, w: 1080 }, 2.8);
+caption("You review the guide before anything is parsed.", mark + 0.2, t);
+wait(0.2);
+go("gd.approve", 0.7);
+click();
+wait(0.5);
+endScene();
+
+// ---- Run: Stage 2 --------------------------------------------------------------------------------
+cut("run2", "ov-s2-1", { x: 180, y: 215, w: 1100 });
+mark = t;
+go([760, 560], 0.5);
+wait(0.5);
+frame("ov-s2-2");
+wait(0.8);
+frame("ov-done");
+wait(0.6);
+caption("Stage 2 converts every page to MDF.", mark + 0.2, t);
+go("ov.pagesTab", 0.7);
+click();
+wait(0.5);
+endScene();
+
+// ---- Page viewer and editor ------------------------------------------------------------------------
+cut("pages", "pg-0", { x: 240, y: 330, w: 1040 });
+mark = t;
+go([520, 640], 0.6);
+wait(0.5);
+pan({ x: 240, y: 560, w: 1040 }, 1.0);
+wait(0.7);
+go([876, 960], 0.7);
+click();
+wait(0.2);
+frame("pg-edit-1");
+wait(0.3);
+frame("pg-edit-2");
+wait(0.9);
+caption("Check each page against the scan, and fix what you see.", mark + 0.2, t);
+pan({ x: 240, y: 700, w: 1040 }, 0.6);
+go("pg.save", 0.7);
+click();
+wait(1.0);
+endScene();
+const cursorEnd = t;
+
+// ---- Outro (4.8s) -------------------------------------------------------------------------------------
+const outroStart = t;
+t += 0.15; tween("from", "#outro-word", { opacity: 0, y: 60, duration: 0.7, ease: "power3.out" });
+t += 0.35; tween("from", "#outro-rule", { scaleX: 0, duration: 0.8, ease: inOut });
+t += 0.4; tween("from", "#outro-line", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" });
+t += 0.5; tween("from", "#outro-local", { opacity: 0, duration: 0.6, ease: "power2.out" });
+t = outroStart + 3.9; tween("to", "#outro-copy", { opacity: 0, duration: 0.8, ease: "power1.in" });
+const DURATION = round(outroStart + 4.8);
+captions.forEach(([start, end], i) => {
+  ops.push({ k: "fromTo", sel: `#caption-text-${i}`, a: { opacity: 0, y: 24 }, b: { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, t: start });
+  ops.push({ k: "to", sel: `#caption-text-${i}`, a: { opacity: 0, duration: 0.2, ease: "power1.in" }, t: round(end - 0.2) });
+});
+writeFileSync(join(root, "assets/timing.json"), JSON.stringify({ duration: DURATION, outroStart: round(outroStart), drop: 7.2 }));
+console.log(scenes.map((s) => `${s.id} ${s.start}-${s.end}`).join(" | "), "| total", DURATION);
 
 const dur = (a, b) => +(b - a).toFixed(3);
-const at = (t) => +(t + SHIFT).toFixed(3);
-for (const scene of scenes) Object.assign(scene, { start: at(scene.start), end: at(scene.end) });
-for (const caption of captions) Object.assign(caption, [at(caption[0]), at(caption[1])]);
 const sceneHtml = scenes
   .map((scene) => {
     const height = meta.frames[scene.frames[0]].height;
@@ -173,7 +416,7 @@ const html = `<!doctype html>
         </div>
       </section>
 ${sceneHtml}
-      <section id="scene-outro" class="clip scene" data-start="${at(50.4)}" data-duration="4.8" data-track-index="1">
+      <section id="scene-outro" class="clip scene" data-start="${round(outroStart)}" data-duration="4.8" data-track-index="1">
         <div id="outro-copy">
           <p id="outro-word">MUDIDI</p>
           <div id="outro-rule"></div>
@@ -182,13 +425,13 @@ ${sceneHtml}
         </div>
       </section>
 
-      <div id="chip" class="clip" data-start="${at(5)}" data-duration="2.6" data-track-index="2">
+      <div id="chip" class="clip" data-start="${round(chipStart)}" data-duration="${dur(chipStart, chipEnd)}" data-track-index="2">
         <div id="chip-body">
           <div id="chip-icon">PDF</div>
           <div><p id="chip-name">Raga1.pdf</p><p id="chip-size">101 pages</p></div>
         </div>
       </div>
-      <div id="popup" class="clip" data-start="${at(19.1)}" data-duration="2.5" data-track-index="2">
+      <div id="popup" class="clip" data-start="${round(popupStart)}" data-duration="${dur(popupStart, popupEnd)}" data-track-index="2">
         <div id="popup-shade"></div>
         <div id="popup-window">
           <div id="popup-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>Sign in · OpenAI account</span></div>
@@ -208,7 +451,7 @@ ${sceneHtml}
         </div>
       </div>
 ${captionHtml}
-      <div id="cursor" class="clip" data-start="${at(4.8)}" data-duration="45.6" data-track-index="4">
+      <div id="cursor" class="clip" data-start="${cursorStart}" data-duration="${dur(cursorStart, cursorEnd)}" data-track-index="4">
         <div id="cursor-arrow">
           <div id="ripple"></div>
           <svg id="cursor-svg" viewBox="0 0 46 58" aria-hidden="true"><path d="M4 3 L4 45 L15 35 L23 54 L31 50.5 L23 32 L38 32 Z" fill="#231d18" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" /></svg>
@@ -217,216 +460,42 @@ ${captionHtml}
       <audio id="music" src="assets/music.m4a" data-start="0" data-duration="${DURATION}" data-track-index="5" data-volume="0.85"></audio>
     </div>
     <script>
-      const R = ${JSON.stringify(meta.rects)};
-      const CAPTIONS = ${JSON.stringify(captions.map(([start, end]) => [start, end]))};
+      // Everything here replays the schedule computed in capture/build.mjs.
+      const OPS = ${JSON.stringify(ops)};
       const tl = gsap.timeline({ paused: true });
       const W = 1920;
-      let cam = { x: 0, y: 0, w: 1280 };
-      let OFF = ${SHIFT};
-      // Camera and cursor moves are recorded here, then the cursor path is baked
-      // into one tween at the end, so nothing else ever animates the cursor.
       const camEvents = [];
       const cursorEvents = [];
-
       // A camera view is {x, y, w} in dashboard CSS pixels; its height is w * 9 / 16.
       const camProps = (view) => ({ x: (-view.x * W) / view.w, y: (-view.y * W) / view.w, scale: W / view.w });
-      const centre = (target) => (typeof target === "string" ? [R[target].x + R[target].w / 2, R[target].y + R[target].h / 2] : target);
-      function camera(scene, t, view, duration) {
-        t += OFF;
-        const stage = "#stage-" + scene;
-        if (duration) tl.to(stage, { ...camProps(view), duration, ease: "power2.inOut" }, t);
-        else tl.set(stage, camProps(view), t);
-        camEvents.push({ t, props: camProps(view), duration: duration || 0 });
-        cam = view;
+      gsap.set("#popup-done", { opacity: 0 });
+      for (const op of OPS) {
+        if (op.k === "cam") {
+          const stage = "#stage-" + op.scene;
+          if (op.d) tl.to(stage, { ...camProps(op.view), duration: op.d, ease: "power2.inOut" }, op.t);
+          else tl.set(stage, camProps(op.view), op.t);
+          camEvents.push({ t: op.t, props: camProps(op.view), duration: op.d });
+        } else if (op.k === "cursor") {
+          cursorEvents.push({ t: op.t, to: op.to, duration: op.d, rest: op.rest });
+        } else if (op.k === "click") {
+          tl.to("#cursor-svg", { scale: 0.8, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, op.t);
+          tl.set("#ripple", { scale: 0.2, opacity: 0.9 }, op.t);
+          tl.to("#ripple", { scale: 1.5, opacity: 0, duration: 0.5, ease: "power2.out" }, op.t + 0.01);
+        } else if (op.k === "frame") {
+          tl.set("#f-" + op.name, { opacity: 1 }, op.t);
+        } else if (op.k === "fromTo") {
+          tl.fromTo(op.sel, op.a, op.b, op.t);
+        } else {
+          tl[op.k](op.sel, op.a, op.t);
+        }
       }
-      // Move the cursor to a dashboard element, where it stays while the camera pans,
-      // or to [x, y] in dashboard pixels, where it then rests in place on screen.
-      function move(t, target, duration) {
-        cursorEvents.push({ t: t + OFF, to: centre(target), duration: duration || 0.6, rest: typeof target !== "string" });
-      }
-      // Move the cursor to a point on the 1920x1080 frame, for overlays.
-      function moveScreen(t, x, y, duration) {
-        move(t, [cam.x + (x * cam.w) / W, cam.y + (y * cam.w) / W], duration);
-      }
-      function click(t) {
-        t += OFF;
-        tl.to("#cursor-svg", { scale: 0.8, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, t);
-        tl.set("#ripple", { scale: 0.2, opacity: 0.9 }, t);
-        tl.to("#ripple", { scale: 1.5, opacity: 0, duration: 0.5, ease: "power2.out" }, t + 0.01);
-      }
-      const frame = (t, name) => tl.set("#f-" + name, { opacity: 1 }, t + OFF);
-      const fadeIn = (scene, t) => tl.fromTo("#stage-" + scene, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, t + OFF);
 
-      // ---- 0.0 Intro: scan the notebook page into MDF records ---------------------
-      tl.from("#scan-sheet", { opacity: 0, y: 70, duration: 0.7, ease: "power3.out" }, 0.1);
-      tl.from("#scan-eyebrow", { opacity: 0, duration: 0.5, ease: "power2.out" }, 0.5);
-      tl.fromTo("#scan-line", { y: -10, opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.9);
-      tl.to("#scan-line", { y: 900, duration: 3.6, ease: "none" }, 1.0);
-      tl.to("#scan-line", { opacity: 0, duration: 0.3 }, 4.5);
-      // The line reaches each entry at 1.0 + 3.6 * (entry top / 900).
-      [[1, 1.95, ["a", "b", "c"]], [2, 2.7, ["a", "b"]], [3, 4.15, ["a", "b", "c"]]].forEach(([n, t, rows]) => {
-        tl.fromTo("#scan-box-" + n, { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: 0.3, ease: "power3.out" }, t);
-        tl.to("#scan-link-" + n, { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, t + 0.1);
-        tl.from("#scan-record-" + n, { opacity: 0, x: 40, duration: 0.35, ease: "power3.out" }, t + 0.3);
-        rows.forEach((row, i) => {
-          tl.fromTo("#scan-r" + n + row, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.3, ease: "steps(10)" }, t + 0.45 + i * 0.22);
-        });
-      });
-      tl.from("#scan-title", { opacity: 0, y: 40, duration: 0.6, ease: "power3.out" }, 5.3);
-      tl.to(["#scan-sheet", "#scan-links", "#scan-copy"], { opacity: 0, duration: 0.3, ease: "power1.in" }, 6.85);
-
-      // ---- 4.8 Upload the PDF and choose pages --------------------------------------
-      camera("input", 4.8, { x: 200, y: 240, w: 1080 });
-      fadeIn("input", 4.8);
-      tl.fromTo("#chip-body", { x: 70, y: 730, opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power2.out" }, 5.0 + OFF);
-      moveScreen(5.2, 250, 800, 0.6);
-      click(5.9);
-      const drop = { x: ((centre("in.drop")[0] - cam.x) * W) / cam.w, y: ((centre("in.drop")[1] - cam.y) * W) / cam.w };
-      tl.to("#chip-body", { x: drop.x - 180, y: drop.y - 70, duration: 1.0, ease: "power2.inOut" }, 6.0 + OFF);
-      moveScreen(6.0, drop.x, drop.y, 1.0);
-      frame(6.7, "in-drag");
-      tl.to("#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" }, 7.2 + OFF);
-      frame(7.3, "in-file");
-      click(7.25);
-      camera("input", 7.6, { x: 250, y: 330, w: 940 }, 0.7);
-      move(7.7, "in.pages", 0.6);
-      click(8.4);
-      frame(8.7, "in-pages-1");
-      frame(8.95, "in-pages-2");
-      frame(9.2, "in-pages-3");
-      camera("input", 9.5, { x: 200, y: 130, w: 1080 }, 0.6);
-      move(9.9, "tab.context", 0.6);
-      click(10.6);
-
-      // ---- 10.8 Dictionary profile ----------------------------------------------------
-      camera("context", 10.8, { x: 200, y: 130, w: 1080 });
-      camera("context", 11.0, { x: 240, y: 440, w: 960 }, 0.8);
-      move(11.3, "cx.head", 0.6);
-      click(11.9);
-      [["cx-head-1", 12.1], ["cx-head-2", 12.3], ["cx-hs-1", 12.75], ["cx-tl-1", 13.15], ["cx-tl-2", 13.35], ["cx-ts-1", 13.75],
-       ["cx-inv-1", 14.15], ["cx-inv-2", 14.35], ["cx-inv-3", 14.55], ["cx-inv-4", 14.75]].forEach(([name, t]) => frame(t, name));
-      move(12.4, "cx.headScript", 0.3);
-      move(12.85, "cx.target", 0.3);
-      move(13.8, "cx.inventory", 0.35);
-      camera("context", 14.9, { x: 240, y: 760, w: 960 }, 0.6);
-      move(15.0, "cx.layout", 0.5);
-      for (let i = 1; i <= 8; i += 1) frame(15.45 + i * 0.14, "cx-lay-" + i);
-      move(16.6, "cx.type1", 0.25);
-      for (let i = 1; i <= 7; i += 1) frame(16.75 + i * 0.12, "cx-type-" + i);
-      move(16.9, "cx.type7", 0.75);
-
-      // ---- 18.0 Sign in and choose models ------------------------------------------------
-      camera("model", 18.0, { x: 240, y: 640, w: 960 });
-      fadeIn("model", 18.0);
-      move(18.2, "md.login", 0.6);
-      click(18.9);
-      frame(19.0, "md-waiting");
-      tl.fromTo("#popup-shade", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 19.1 + OFF);
-      tl.fromTo("#popup-window", { opacity: 0, scale: 0.92, y: 30 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" }, 19.15 + OFF);
-      tl.set("#popup-done", { opacity: 0 }, 0);
-      moveScreen(19.5, 960, 580, 0.6);
-      click(20.2);
-      tl.to("#popup-choose", { opacity: 0, duration: 0.15 }, 20.3 + OFF);
-      tl.to("#popup-done", { opacity: 1, duration: 0.2 }, 20.45 + OFF);
-      tl.fromTo("#done-mark", { scale: 0.4 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, 20.45 + OFF);
-      frame(21.2, "md-signed");
-      tl.to("#popup-window", { opacity: 0, scale: 0.95, duration: 0.25, ease: "power2.in" }, 21.3 + OFF);
-      tl.to("#popup-shade", { opacity: 0, duration: 0.25 }, 21.3 + OFF);
-      move(21.6, "md.prov1", 0.5);
-      click(22.15);
-      frame(22.25, "md-prov1");
-      move(22.3, "md.prov2", 0.4);
-      click(22.75);
-      frame(22.85, "md-prov2");
-      camera("model", 23.0, { x: 240, y: 1060, w: 960 }, 0.6);
-      move(23.5, "md.model1", 0.45);
-      click(24.0);
-      frame(24.1, "md-model1");
-      move(24.15, "md.reason1", 0.4);
-      click(24.6);
-      frame(24.7, "md-reason1");
-      move(24.8, "md.model2", 0.45);
-      click(25.3);
-      frame(25.4, "md-model2");
-      move(25.45, "md.reason2", 0.4);
-      click(25.9);
-      frame(26.0, "md-reason2");
-      camera("model", 26.2, { x: 240, y: 1200, w: 960 }, 0.5);
-      move(26.6, "md.next", 0.55);
-      click(27.3);
-
-      // ---- 27.6 Agentic loop on -------------------------------------------------------
-      camera("agentic", 27.6, { x: 200, y: 330, w: 1080 });
-      move(27.9, "ag.on", 0.6);
-      click(28.7);
-      frame(28.8, "ag-on");
-      camera("agentic", 29.5, { x: 200, y: R["ag.submit"].y - 470, w: 1080 }, 1.4);
-      move(31.0, "ag.submit", 0.6);
-      click(32.1);
-
-      // Everything below was timed before the agentic scene grew by one bar.
-      OFF = ${SHIFT} + 2.4;
-
-      // ---- 30.0 Run: stage 1 and guide discovery -------------------------------------------
-      camera("run1", 30.0, { x: 180, y: 230, w: 1100 });
-      fadeIn("run1", 30.0);
-      move(30.1, [760, 520], 0.6);
-      frame(30.9, "ov-s1-1");
-      frame(31.8, "ov-s1-2");
-      frame(32.7, "ov-disc");
-      frame(33.6, "ov-review");
-      move(33.7, "ov.action", 0.5);
-      click(34.5);
-
-      // ---- 34.8 Review the MDF parsing guide ---------------------------------------------------
-      camera("guide", 34.8, { x: 200, y: 0, w: 1080 });
-      fadeIn("guide", 34.8);
-      move(34.9, [900, 400], 0.5);
-      camera("guide", 35.4, { x: 200, y: 892, w: 1080 }, 2.6);
-      move(38.1, "gd.approve", 0.6);
-      click(39.1);
-
-      // ---- 39.6 Run: stage 2 --------------------------------------------------------------------
-      camera("run2", 39.6, { x: 180, y: 215, w: 1100 });
-      fadeIn("run2", 39.6);
-      move(39.7, [760, 560], 0.5);
-      frame(40.3, "ov-s2-2");
-      frame(41.0, "ov-done");
-      move(41.05, "ov.pagesTab", 0.5);
-      click(41.75);
-
-      // ---- 42.0 Page viewer and editor ----------------------------------------------------------
-      camera("pages", 42.0, { x: 240, y: 330, w: 1040 });
-      fadeIn("pages", 42.0);
-      move(42.2, [520, 640], 0.6);
-      camera("pages", 43.0, { x: 240, y: 560, w: 1040 }, 1.0);
-      move(44.2, [876, 960], 0.6);
-      click(44.85);
-      frame(45.1, "pg-edit-1");
-      frame(45.4, "pg-edit-2");
-      camera("pages", 45.6, { x: 240, y: 700, w: 1040 }, 0.5);
-      move(46.0, "pg.save", 0.6);
-      click(46.75);
-
-      // ---- 48.0 Outro ----------------------------------------------------------------------------
-      tl.from("#outro-word", { opacity: 0, y: 60, duration: 0.7, ease: "power3.out" }, 48.15 + OFF);
-      tl.from("#outro-rule", { scaleX: 0, duration: 0.8, ease: "power2.inOut" }, 48.5 + OFF);
-      tl.from("#outro-line", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" }, 48.9 + OFF);
-      tl.from("#outro-local", { opacity: 0, duration: 0.6, ease: "power2.out" }, 49.4 + OFF);
-      tl.to("#outro-copy", { opacity: 0, duration: 0.8, ease: "power1.in" }, 51.9 + OFF);
-
-      CAPTIONS.forEach(([start, end], i) => {
-        tl.fromTo("#caption-text-" + i, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, start);
-        tl.to("#caption-text-" + i, { opacity: 0, duration: 0.2, ease: "power1.in" }, end - 0.2);
-      });
-
-      // ---- Bake the cursor path -----------------------------------------------------------------
       // The cursor's place on screen is its dashboard position seen through the camera.
       // Sampling that once per frame gives a single smooth track with no competing tweens.
       (function bakeCursor() {
         const FPS = 30;
-        const start = ${at(4.8)};
-        const end = ${at(4.8)} + 45.6;
+        const start = ${cursorStart};
+        const end = ${round(cursorEnd)};
         const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
         const mix = (a, b, e) => a + (b - a) * e;
         const project = (props, point) => ({ x: point[0] * props.scale + props.x, y: point[1] * props.scale + props.y });

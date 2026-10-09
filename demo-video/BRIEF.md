@@ -4,7 +4,7 @@ flow: companion
 storyboard: yes
 message: "MUDIDI turns a scanned handwritten dictionary into structured MDF, on your own machine."
 aspect: "16:9"
-length: "57.6s"
+length: "84s"
 language: en
 ---
 
@@ -20,6 +20,6 @@ MDF parsing guide, then the page viewer and editor.
 - Screens are real screenshots of the dashboard, captured by `capture/capture.mjs` from a throwaway
   copy of the data directory. The sign-in window is a mock and shows only `you@example.com`.
 - Captions only, no voiceover. Music is synthesised by `capture/make_music.py` at 150 BPM
-  (one beat = 0.4s); scene cuts sit on a 2.4s grid, every six beats.
-- `index.html` is generated: edit timings and captions in `capture/build.mjs`, then run
+  (one beat = 0.4s); every scene cut is snapped to a beat.
+- `index.html` is generated: each scene is a step-by-step script in `capture/build.mjs`; edit a step's duration there, then run
   `node capture/build.mjs`.
