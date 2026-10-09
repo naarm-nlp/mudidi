@@ -109,7 +109,7 @@ await typeFrames(
   8,
 );
 let n = 0;
-for (const value of ["translation", "gloss", "part_of_speech", "example", "usage_note", "cross_reference", "variant"]) {
+for (const value of ["translation", "part_of_speech", "usage_note", "variant", "gloss", "example", "cross_reference"]) {
   const box = ctx + `input[name="profile_information_types"][value="${value}"]`;
   await rect(`cx.type${++n}`, box);
   await page.locator(box).check({ force: true });

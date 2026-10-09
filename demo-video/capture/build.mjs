@@ -140,21 +140,22 @@ go("cx.layout", 0.5);
 click();
 for (const name of [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `cx-lay-${i}`)) { wait(0.17); frame(name); }
 wait(0.3);
-go("cx.type1", 0.45);
-ops.push({ k: "cursor", to: centre("cx.type7"), d: 1.2, rest: false, t: round(t + 0.1) });
-for (let i = 1; i <= 7; i += 1) { wait(0.17); frame(`cx-type-${i}`); }
-wait(0.2);
+// Down the first column, then down the third: every tick has its own click.
+for (let i = 1; i <= 7; i += 1) {
+  go(`cx.type${i}`, i === 1 ? 0.45 : i === 5 ? 0.5 : 0.28);
+  click(`cx-type-${i}`);
+}
 wait(0.5);
 caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t);
 // The guide's sample pages stay empty: three pages are few enough to use them all.
 pan({ x: 240, y: R["cx.guide"].y - 90, w: 960 }, 0.9);
 mark = t;
 go("cx.guidePages", 0.7);
-wait(2.3);
-caption("Pages to learn from stays empty: all three pages are used.", mark + 0.1, t);
+wait(2.8);
+caption("Pages to learn from left empty: it uses the dictionary pages chosen in step 1.", mark + 0.1, t);
 mark = t;
 wait(3.2);
-caption("With hundreds of pages, pick a few that represent the whole dictionary.", mark + 0.15, t);
+caption("If you input hundreds of dictionary pages, pick a few that represent them all.", mark + 0.15, t);
 pan({ x: 240, y: R["cx.next"].y - 380, w: 960 }, 0.9);
 go("cx.next", 0.7);
 click();
