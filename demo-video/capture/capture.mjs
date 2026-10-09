@@ -177,9 +177,37 @@ await rect("md.next", '[data-wizard-next="agentic"]');
 // ---- New run · step 5: agentic verification -----------------------------------
 await go("agentic");
 await page.waitForTimeout(300);
+const agentic = '[data-wizard-panel="agentic"] input[name="agentic"]';
+await page.locator(agentic + '[value="true"]').check({ force: true });
+await page.waitForTimeout(300);
+// Toggling the loop makes the page recompute fields from the (unauthenticated)
+// catalog, so restore the signed-in OpenAI values written in the model step.
+const restore = () =>
+  page.evaluate(() => {
+    const one = (select, label) => {
+      select.innerHTML = "";
+      select.append(new Option(label, label, true, true));
+      select.closest("label")?.querySelectorAll("small").forEach((hint) => hint.remove());
+    };
+    const panel = document.querySelector('[data-wizard-panel="agentic"]');
+    panel.querySelectorAll("select[data-agentic-provider]").forEach((select) => one(select, "OpenAI"));
+    panel.querySelectorAll("select[data-agentic-model]").forEach((select) => one(select, "gpt-6.1-sol"));
+    for (const row of document.querySelectorAll(".summary dl > div")) {
+      const [dt, dd] = [row.querySelector("dt"), row.querySelector("dd")];
+      if (dt && dd && /^Stage [12]$/.test(dt.textContent.trim())) {
+        dd.textContent = "gpt-6.1-sol";
+        dd.className = "";
+      }
+    }
+  });
+await restore();
 await fit();
-await rect("ag.off", '[data-wizard-panel="agentic"] input[name="agentic"][value="false"]');
+await rect("ag.on", agentic + '[value="true"]');
 await rect("ag.submit", "[data-wizard-submit]");
+await shot("ag-on");
+await page.locator(agentic + '[value="false"]').check({ force: true });
+await page.waitForTimeout(200);
+await restore();
 await shot("ag-0");
 
 // ---- Run overview: pipeline progress -------------------------------------------

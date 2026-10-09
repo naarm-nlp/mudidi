@@ -10,7 +10,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const meta = JSON.parse(readFileSync(join(root, "assets/cap/meta.json"), "utf8"));
 
 // The music is 100 BPM: one beat is 0.6s, one bar 2.4s. Scene cuts sit on beats.
-const DURATION = 52.8;
+const DURATION = 55.2;
 const scenes = [
   { id: "input", start: 4.8, end: 10.8, frames: ["in-0", "in-drag", "in-file", "in-pages-1", "in-pages-2", "in-pages-3"] },
   {
@@ -20,22 +20,22 @@ const scenes = [
       ...[1, 2, 3, 4, 5, 6, 7].map((i) => `cx-type-${i}`)],
   },
   { id: "model", start: 18.0, end: 27.6, frames: ["md-0", "md-waiting", "md-signed", "md-prov1", "md-prov2", "md-model1", "md-reason1", "md-model2", "md-reason2"] },
-  { id: "agentic", start: 27.6, end: 30.0, frames: ["ag-0"] },
-  { id: "run1", start: 30.0, end: 34.8, frames: ["ov-s1-0", "ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"] },
-  { id: "guide", start: 34.8, end: 39.6, frames: ["gd-0"] },
-  { id: "run2", start: 39.6, end: 42.0, frames: ["ov-s2-1", "ov-s2-2", "ov-done"] },
-  { id: "pages", start: 42.0, end: 48.0, frames: ["pg-0", "pg-edit-1", "pg-edit-2"] },
+  { id: "agentic", start: 27.6, end: 32.4, frames: ["ag-0", "ag-on"] },
+  { id: "run1", start: 32.4, end: 37.2, frames: ["ov-s1-0", "ov-s1-1", "ov-s1-2", "ov-disc", "ov-review"] },
+  { id: "guide", start: 37.2, end: 42.0, frames: ["gd-0"] },
+  { id: "run2", start: 42.0, end: 44.4, frames: ["ov-s2-1", "ov-s2-2", "ov-done"] },
+  { id: "pages", start: 44.4, end: 50.4, frames: ["pg-0", "pg-edit-1", "pg-edit-2"] },
 ];
 const captions = [
   [5.0, 10.6, "Drop in the scanned PDF and pick the pages."],
   [11.0, 17.8, "Describe the dictionary: languages, layout, what an entry holds."],
   [18.2, 22.8, "Sign in with a subscription you already have."],
   [23.0, 27.4, "One model, tuned per stage: low reasoning to transcribe, high to parse."],
-  [27.7, 29.9, "Optional agentic loop: a second model checks and corrects each page."],
-  [30.2, 34.6, "Stage 1 transcribes each page, then infers an MDF parsing guide."],
-  [35.0, 37.9, "You review the guide before anything is parsed."],
-  [39.8, 41.8, "Stage 2 converts every page to MDF."],
-  [42.2, 45.5, "Check each page against the scan, and fix what you see."],
+  [28.0, 31.4, "Agentic loop on: a second model evaluates each page and re-iterates."],
+  [32.6, 37.0, "Stage 1 transcribes each page, then infers an MDF parsing guide."],
+  [37.4, 40.3, "You review the guide before anything is parsed."],
+  [42.2, 44.2, "Stage 2 converts every page to MDF."],
+  [44.6, 47.9, "Check each page against the scan, and fix what you see."],
 ];
 
 const dur = (a, b) => +(b - a).toFixed(3);
@@ -143,7 +143,7 @@ const html = `<!doctype html>
         </div>
       </section>
 ${sceneHtml}
-      <section id="scene-outro" class="clip scene" data-start="48" data-duration="4.8" data-track-index="1">
+      <section id="scene-outro" class="clip scene" data-start="50.4" data-duration="4.8" data-track-index="1">
         <div id="outro-copy">
           <p id="outro-word">MUDIDI</p>
           <div id="outro-rule"></div>
@@ -178,7 +178,7 @@ ${sceneHtml}
         </div>
       </div>
 ${captionHtml}
-      <div id="cursor" class="clip" data-start="4.8" data-duration="43.2" data-track-index="4">
+      <div id="cursor" class="clip" data-start="4.8" data-duration="45.6" data-track-index="4">
         <div id="cursor-arrow">
           <div id="ripple"></div>
           <svg id="cursor-svg" viewBox="0 0 46 58" aria-hidden="true"><path d="M4 3 L4 45 L15 35 L23 54 L31 50.5 L23 32 L38 32 Z" fill="#231d18" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" /></svg>
@@ -193,12 +193,14 @@ ${captionHtml}
       const W = 1920;
       let cam = { x: 0, y: 0, w: 1280 };
       let parked = null;
+      let OFF = 0;
 
       // A camera view is {x, y, w} in dashboard CSS pixels; its height is w * 9 / 16.
       const camProps = (view) => ({ x: (-view.x * W) / view.w, y: (-view.y * W) / view.w, scale: W / view.w });
       const onScreen = (view, point) => ({ x: ((point[0] - view.x) * W) / view.w, y: ((point[1] - view.y) * W) / view.w });
       const centre = (target) => (typeof target === "string" ? [R[target].x + R[target].w / 2, R[target].y + R[target].h / 2] : target);
       function camera(scene, t, view, duration) {
+        t += OFF;
         const stage = "#stage-" + scene;
         if (duration) {
           tl.to(stage, { ...camProps(view), duration, ease: "power2.inOut" }, t);
@@ -209,20 +211,23 @@ ${captionHtml}
         cam = view;
       }
       function move(t, target, duration) {
+        t += OFF;
         parked = centre(target);
         tl.to("#cursor-arrow", { ...onScreen(cam, parked), duration: duration || 0.6, ease: "power2.inOut" }, t);
       }
       function moveScreen(t, x, y, duration) {
+        t += OFF;
         parked = null;
         tl.to("#cursor-arrow", { x, y, duration: duration || 0.6, ease: "power2.inOut" }, t);
       }
       function click(t) {
+        t += OFF;
         tl.to("#cursor-svg", { scale: 0.8, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, t);
         tl.set("#ripple", { scale: 0.2, opacity: 0.9 }, t);
         tl.to("#ripple", { scale: 1.5, opacity: 0, duration: 0.5, ease: "power2.out" }, t + 0.01);
       }
-      const frame = (t, name) => tl.set("#f-" + name, { opacity: 1 }, t);
-      const fadeIn = (scene, t) => tl.fromTo("#stage-" + scene, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, t);
+      const frame = (t, name) => tl.set("#f-" + name, { opacity: 1 }, t + OFF);
+      const fadeIn = (scene, t) => tl.fromTo("#stage-" + scene, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, t + OFF);
 
       // ---- 0.0 Intro: the notebook ------------------------------------------------
       tl.from("#intro-eyebrow", { opacity: 0, y: 20, duration: 0.5, ease: "power2.out" }, 0.15);
@@ -318,12 +323,17 @@ ${captionHtml}
       move(26.6, "md.next", 0.55);
       click(27.3);
 
-      // ---- 27.6 Agentic verification stays off ------------------------------------------
+      // ---- 27.6 Agentic loop on -------------------------------------------------------
       camera("agentic", 27.6, { x: 200, y: 330, w: 1080 });
-      move(27.75, "ag.off", 0.5);
-      click(28.3);
-      move(28.6, "ag.submit", 0.6);
-      click(29.5);
+      move(27.9, "ag.on", 0.6);
+      click(28.7);
+      frame(28.8, "ag-on");
+      camera("agentic", 29.5, { x: 200, y: R["ag.submit"].y - 470, w: 1080 }, 1.4);
+      move(31.0, "ag.submit", 0.6);
+      click(32.1);
+
+      // Everything below was timed before the agentic scene grew by one bar.
+      OFF = 2.4;
 
       // ---- 30.0 Run: stage 1 and guide discovery -------------------------------------------
       camera("run1", 30.0, { x: 180, y: 230, w: 1100 });
@@ -367,11 +377,11 @@ ${captionHtml}
       click(46.75);
 
       // ---- 48.0 Outro ----------------------------------------------------------------------------
-      tl.from("#outro-word", { opacity: 0, y: 60, duration: 0.7, ease: "power3.out" }, 48.15);
-      tl.from("#outro-rule", { scaleX: 0, duration: 0.8, ease: "power2.inOut" }, 48.5);
-      tl.from("#outro-line", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" }, 48.9);
-      tl.from("#outro-local", { opacity: 0, duration: 0.6, ease: "power2.out" }, 49.4);
-      tl.to("#outro-copy", { opacity: 0, duration: 0.8, ease: "power1.in" }, 51.9);
+      tl.from("#outro-word", { opacity: 0, y: 60, duration: 0.7, ease: "power3.out" }, 48.15 + OFF);
+      tl.from("#outro-rule", { scaleX: 0, duration: 0.8, ease: "power2.inOut" }, 48.5 + OFF);
+      tl.from("#outro-line", { opacity: 0, y: 24, duration: 0.6, ease: "power2.out" }, 48.9 + OFF);
+      tl.from("#outro-local", { opacity: 0, duration: 0.6, ease: "power2.out" }, 49.4 + OFF);
+      tl.to("#outro-copy", { opacity: 0, duration: 0.8, ease: "power1.in" }, 51.9 + OFF);
 
       CAPTIONS.forEach(([start, end], i) => {
         tl.fromTo("#caption-text-" + i, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, start);

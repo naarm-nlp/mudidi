@@ -1,4 +1,4 @@
-"""Synthesise the demo's music bed: 100 BPM, 22 bars, A minor, no samples.
+"""Synthesise the demo's music bed: 100 BPM, 23 bars, A minor, no samples.
 
     python capture/make_music.py assets/music.wav
 """
@@ -10,7 +10,7 @@ import numpy as np
 SR = 44100
 BPM = 100
 BEAT = 60 / BPM
-BARS = 22
+BARS = 23
 total = int(SR * BEAT * 4 * BARS)
 mix = np.zeros(total + SR * 3)
 

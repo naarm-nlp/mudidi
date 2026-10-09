@@ -4,7 +4,7 @@ flow: companion
 storyboard: yes
 message: "MUDIDI turns a scanned handwritten dictionary into structured MDF, on your own machine."
 aspect: "16:9"
-length: "52.8s"
+length: "55.2s"
 language: en
 ---
 
@@ -12,7 +12,7 @@ language: en
 
 A product walkthrough of the MUDIDI dashboard using the Raga (Lamalanga) notebook, PDF pages 6-8:
 notebook pages, drag the PDF in, fill the dictionary profile, sign in with an OpenAI subscription,
-choose gpt-6.1-sol (Stage 1 reasoning low, Stage 2 high), agentic verification off, run, review the
+choose gpt-6.1-sol (Stage 1 reasoning low, Stage 2 high), agentic loop on (the run screens that follow come from a run without it), run, review the
 MDF parsing guide, then the page viewer and editor.
 
 ## Customizations
