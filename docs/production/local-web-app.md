@@ -209,8 +209,9 @@ section for pipelines that run Stage 2. It offers two choices:
 
 - **Create a guide for me** (the default) — MUDIDI studies sample pages,
   proposes a guide, and pauses the run so you can review and edit it. The
-  optional **Pages to learn from** field names the sample pages; two or three
-  typical pages work best. Left blank, only the first dictionary page is used.
+  optional **Pages to learn from** field names the sample pages. Left blank,
+  every dictionary page is used; for a long dictionary, enter two or three
+  typical pages, because every sample page is sent in one request.
 - **Use a guide I already have** — upload the guide JSON from an earlier run
   of the same dictionary (`mdf_parsing_guide.json` in that run's output
   folder). The run uses it as is and skips the review step.
@@ -378,7 +379,7 @@ For a complete run, the dashboard displays these steps in execution order:
 1. **Stage 1 — Transcription** processes all selected dictionary pages.
 2. **MDF parsing guide discovery** samples the configured representative pages
    from the Stage 1 transcriptions. If no pages were specified, MUDIDI uses
-   the first dictionary page.
+   every dictionary page.
 3. **Review parsing guide** pauses the run for human review and approval.
 4. **Stage 2 — MDF conversion** converts each Stage 1 transcription into MDF
    using the approved guide snapshot.

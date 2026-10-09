@@ -169,7 +169,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         dest="parse_rules_pages",
         help="1-based page number(s) for Stage 2 Pass 1 (same syntax as --dict-pages: "
         "e.g. '1', '1-4', '50,200'). Repeat the flag or comma-separate. "
-        "Default: first page. Two+ pages use multi-sample Pass 1.",
+        "Default: every dictionary page. Two+ pages use multi-sample Pass 1.",
     )
     parser.add_argument(
         "--parse-rules-file",

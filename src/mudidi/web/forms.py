@@ -537,7 +537,7 @@ class NewRunForm(BaseModel):
             parse_rule_pages = (
                 ", ".join(self.parse_rules_pages)
                 if self.parse_rules_pages
-                else "First dictionary page"
+                else "All dictionary pages"
             )
         stage1_summary = (stage1_model or default_model) if runs_stage1 else "Not used"
         pass1_summary = (pass1_model or default_model) if runs_stage2 else "Not used"

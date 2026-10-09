@@ -66,7 +66,7 @@ def select_parse_rules_sample_images(
 
     by_stem = {path.stem: path for path in images}
     if not stems:
-        return [images[0]]
+        return list(images)
 
     missing = [stem for stem in stems if stem not in by_stem]
     if missing:

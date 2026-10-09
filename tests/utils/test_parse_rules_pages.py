@@ -40,12 +40,12 @@ def test_normalize_parse_rules_page_stems_invalid_spec() -> None:
         normalize_parse_rules_page_stems(["not-a-page"])
 
 
-def test_select_parse_rules_sample_images_defaults_to_first(tmp_path: Path) -> None:
+def test_select_parse_rules_sample_images_defaults_to_all(tmp_path: Path) -> None:
     images = [tmp_path / "page_10.png", tmp_path / "page_2.png"]
     for path in images:
         path.write_bytes(b"x")
     selected = select_parse_rules_sample_images(images, [])
-    assert selected == [images[0]]
+    assert selected == images
 
 
 def test_select_parse_rules_sample_images_missing_stem(tmp_path: Path) -> None:

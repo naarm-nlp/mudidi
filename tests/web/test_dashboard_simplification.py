@@ -558,7 +558,7 @@ def test_new_run_form_offers_mdf_guide_source_choice(tmp_path: Path) -> None:
         response.text
     )
     assert 'data-mdf-guide-panel="existing" hidden' in response.text
-    assert "Leave blank to use only the first dictionary page." in response.text
+    assert "Leave blank to learn from every dictionary page." in response.text
 
 
 def test_infer_guide_source_ignores_an_uploaded_guide(tmp_path: Path) -> None:
