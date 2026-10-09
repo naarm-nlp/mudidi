@@ -472,6 +472,15 @@ def test_manual_flag_only_applies_to_pass1_pipelines(
     assert config.input.mdf_manual is expected
 
 
+def test_new_run_includes_mdf_manual_by_default(tmp_path: Path) -> None:
+    client = TestClient(create_app(data_dir=tmp_path / "app-data"))
+
+    home = client.get("/").text
+    assert 'name="mdf_manual" value="true" checked' in home
+    assert 'name="mdf_manual" value="false" checked' not in home
+    assert _form(tmp_path).to_inference_config().input.mdf_manual is True
+
+
 def test_preview_materializes_all_context_inputs_into_run_bundle(
     tmp_path: Path,
 ) -> None:

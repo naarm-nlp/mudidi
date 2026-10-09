@@ -125,12 +125,12 @@ material.
 
 For pipelines that run Stage 2 Pass 1, the MDF manual choice cards offer:
 
-1. Include the SIL MDF manual.
-2. Continue without an MDF manual (default).
+1. Include the SIL MDF manual (default).
+2. Continue without an MDF manual.
 
 Selecting the manual adds the bundled extracted SIL Toolbox MDF Reference Manual
 text to the Pass 1 parsing-guide discovery system prompt, using approximately
-30K extra input tokens. Pass 2 never receives the manual. The help text explains
+30K input tokens once per run (Pass 1 is a single request). Pass 2 never receives the manual. The help text explains
 the reference's scope and token cost; an official SIL manual link remains
 available for reading in a new browser tab. The repository owner has confirmed
 redistribution permission for the bundled text. No manual upload is required.

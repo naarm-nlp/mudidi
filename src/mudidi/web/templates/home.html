@@ -196,12 +196,12 @@
                   <fieldset class="choice-group mdf-manual additional-context-group" data-stage-control data-pipeline-stages="pass1" data-mdf-manual>
                   <legend>MDF manual (optional)</legend>
                   <div class="mdf-manual-heading">
-                    <p>Optional bundled reference text for Stage 2 Pass 1 parsing-guide discovery.</p>
-                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="When selected, the bundled SIL Toolbox MDF Reference Manual text is added to the Pass 1 parsing-guide system prompt, using approximately 30K extra input tokens. Pass 2 does not receive the manual. You can leave it off to infer the parsing guide from the dictionary pages alone.">i</button>
+                    <p>Bundled reference text for Stage 2 Pass 1 parsing-guide discovery. Included by default.</p>
+                    <button class="info-button mdf-manual-help" type="button" aria-label="About the optional MDF manual" data-help="By default, the bundled SIL Toolbox MDF Reference Manual text is added to the Pass 1 parsing-guide system prompt. Pass 1 is a single request per run, so this adds approximately 30K input tokens once, not once per page. Pass 2 does not receive the manual. Choose Continue without an MDF manual to infer the parsing guide from the dictionary pages alone.">i</button>
                   </div>
                   <div class="choice-card-grid mdf-manual-options">
-                    <label class="choice-card"><input type="radio" name="mdf_manual" value="true" required><span><strong>Include the SIL MDF manual</strong><small>Add bundled reference text to the Pass 1 parsing-guide system prompt (~30K extra input tokens).</small></span></label>
-                    <label class="choice-card"><input type="radio" name="mdf_manual" value="false" checked><span><strong>Continue without an MDF manual</strong><small>Let Pass 1 infer the parsing guide from the dictionary pages.</small></span></label>
+                    <label class="choice-card"><input type="radio" name="mdf_manual" value="true" checked required><span><strong>Include the SIL MDF manual</strong><small>Add bundled reference text to the Pass 1 parsing-guide system prompt (~30K input tokens, once per run).</small></span></label>
+                    <label class="choice-card"><input type="radio" name="mdf_manual" value="false"><span><strong>Continue without an MDF manual</strong><small>Let Pass 1 infer the parsing guide from the dictionary pages.</small></span></label>
                   </div>
                   <div class="mdf-manual-official">
                     <span><strong>Official SIL MDF manual</strong><small>fieldlinguiststoolbox.org/ToolboxReferenceManual.pdf</small></span>

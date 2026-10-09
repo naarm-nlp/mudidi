@@ -204,7 +204,7 @@ class NewRunForm(BaseModel):
     profile_page_layout: str | None = Field(default=None, max_length=2000)
     profile_information_types: list[InformationType] = Field(default_factory=list)
     profile_other_information_types: str | None = Field(default=None, max_length=1000)
-    mdf_manual: bool = False
+    mdf_manual: bool = True
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
     stage1_guides: Path | None = None

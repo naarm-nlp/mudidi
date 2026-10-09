@@ -231,11 +231,13 @@ These names refer to different things:
 - **MDF manual** is optional bundled reference text from the SIL Toolbox MDF
   Reference Manual.
 
-Choose **Include the SIL MDF manual** to add the bundled extracted text to the
-Stage 2 **Pass 1** parsing-guide discovery system prompt. This adds approximately
-30K input tokens. **Continue without an MDF manual** is selected by default;
-Pass 1 then infers the guide from the dictionary pages alone. The manual option
-is available only for pipelines that run Pass 1, and Pass 2 never receives it.
+**Include the SIL MDF manual** is selected by default for a new run: the bundled
+extracted text is added to the Stage 2 **Pass 1** parsing-guide discovery system
+prompt. Pass 1 is a single request per run, so this adds approximately 30K input
+tokens once, not once per page. Choose **Continue without an MDF manual** to let
+Pass 1 infer the guide from the dictionary pages alone. Saved presets keep the
+choice they were saved with. The manual option is available only for pipelines
+that run Pass 1, and Pass 2 never receives it.
 
 The repository owner has confirmed redistribution permission for the bundled
 text. No manual PDF upload is needed. The manual remains optional and does not
