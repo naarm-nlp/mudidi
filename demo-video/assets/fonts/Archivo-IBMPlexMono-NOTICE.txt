@@ -1,0 +1,11 @@
+Archivo (Archivo-400-800-*.woff2)
+Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo)
+
+IBM Plex Mono (IBMPlexMono-*.woff2)
+Copyright (c) 2017 IBM Corp. with Reserved Font Name "Plex"
+
+Both families are licensed under the SIL Open Font License, Version 1.1.
+The license text is the same as in Inter-OFL.txt in this directory and is
+also available at https://openfontlicense.org.
+
+The files are the Latin and Latin Extended subsets served by Google Fonts.
