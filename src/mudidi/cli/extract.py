@@ -1292,8 +1292,7 @@ Examples:
         dest="batch_size",
         help="Concurrent page workers for two_stage LLM steps (default: 8). "
         "Uses a local thread pool — litellm.completion is one request per call; "
-        "there is no litellm batch-size flag on completion(). Values >1 during "
-        "Stage 1 may leave neighbor transcripts empty until those pages finish.",
+        "there is no litellm batch-size flag on completion().",
     )
     parser.add_argument(
         "--stage-2-guides",
@@ -2360,11 +2359,6 @@ def _run_single_entry(args, parser) -> int:
 
         batch_size = max(1, int(getattr(args, "batch_size", 1) or 1))
         use_concurrent = batch_size > 1 and args.strategy == "two_stage"
-        if batch_size > 1 and page_run_stage == "1":
-            print(
-                "Note: --batch-size > 1 during Stage 1 may leave neighbor "
-                "transcripts empty until those pages finish."
-            )
         if use_concurrent:
             configure_page_concurrency(batch_size)
             print(f"Concurrent workers (--batch-size): {batch_size}")
