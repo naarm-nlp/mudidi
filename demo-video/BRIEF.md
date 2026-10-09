@@ -19,7 +19,7 @@ MDF parsing guide, then the page viewer and editor.
 
 - Screens are real screenshots of the dashboard, captured by `capture/capture.mjs` from a throwaway
   copy of the data directory. The sign-in window is a mock and shows only `you@example.com`.
-- Captions only, no voiceover. Music is synthesised by `capture/make_music.py` at 100 BPM
-  (one beat = 0.6s); scene cuts sit on beats.
+- Captions only, no voiceover. Music is synthesised by `capture/make_music.py` at 150 BPM
+  (one beat = 0.4s); scene cuts sit on a 2.4s grid, every six beats.
 - `index.html` is generated: edit timings and captions in `capture/build.mjs`, then run
   `node capture/build.mjs`.

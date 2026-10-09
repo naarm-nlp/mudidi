@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const meta = JSON.parse(readFileSync(join(root, "assets/cap/meta.json"), "utf8"));
 
-// The music is 100 BPM: one beat is 0.6s, one bar 2.4s. Scene cuts sit on beats.
+// The music is 150 BPM: one beat is 0.4s. Scene cuts sit on a 2.4s grid (every six beats).
 // The opening grew by one bar after the scenes below were timed; SHIFT moves them all.
 const SHIFT = 2.4;
 const DURATION = 57.6;
