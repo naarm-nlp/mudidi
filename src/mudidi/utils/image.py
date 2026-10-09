@@ -5,8 +5,12 @@ Image loading and encoding helpers shared across OCR and extraction modules.
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import logging
+import os
+import threading
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -16,6 +20,13 @@ logger = logging.getLogger(__name__)
 
 # Anthropic (via OpenRouter) rejects inline images above 5 MB.
 _MAX_LLM_IMAGE_BYTES = 4_500_000
+
+# Oversized page images are compressed once and reused by every later call
+# (Stage 1, Stage 2, verifier, rewriter, resumed runs).
+_LLM_IMAGE_CACHE_ENV = "MUDIDI_LLM_IMAGE_CACHE_DIR"
+_LLM_IMAGE_CACHE_MAX_AGE_SECONDS = 7 * 24 * 3600
+_llm_image_cache_pruned: set[Path] = set()
+_llm_image_cache_lock = threading.Lock()
 
 
 def image_data_url(image_path: str, mime_type: str = "image/png") -> str:
@@ -97,9 +108,16 @@ def _read_bytes_for_llm(
     mime_type: str = "image/png",
 ) -> tuple[bytes, str]:
     """Return payload bytes and MIME type, compressing rasters when needed."""
+    stat = path.stat()
+    if mime_type == "application/pdf" or stat.st_size <= _MAX_LLM_IMAGE_BYTES:
+        return path.read_bytes(), mime_type
+
+    cache_path = _llm_image_cache_path(path, stat)
+    cached = _read_cached_llm_image(cache_path)
+    if cached is not None:
+        return cached, "image/jpeg"
+
     raw = path.read_bytes()
-    if mime_type == "application/pdf" or len(raw) <= _MAX_LLM_IMAGE_BYTES:
-        return raw, mime_type
 
     from PIL import Image
 
@@ -126,11 +144,69 @@ def _read_bytes_for_llm(
                     quality,
                     scale,
                 )
+                _write_cached_llm_image(cache_path, data)
                 return data, "image/jpeg"
 
     raise ValueError(
         f"Could not compress {path} below {_MAX_LLM_IMAGE_BYTES} bytes for LLM API"
     )
+
+
+def _llm_image_cache_dir() -> Path:
+    """Return the per-user directory holding compressed copies of large images."""
+    override = os.environ.get(_LLM_IMAGE_CACHE_ENV)
+    if override:
+        return Path(override)
+    base = os.environ.get("XDG_CACHE_HOME") or str(Path.home() / ".cache")
+    return Path(base) / "mudidi" / "llm-images"
+
+
+def _llm_image_cache_path(path: Path, stat: os.stat_result) -> Path:
+    """Key the compressed copy on the source file's identity and the size limit."""
+    identity = (
+        f"{path.resolve()}|{stat.st_size}|{stat.st_mtime_ns}|{_MAX_LLM_IMAGE_BYTES}"
+    )
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:32]
+    return _llm_image_cache_dir() / f"{digest}.jpg"
+
+
+def _read_cached_llm_image(cache_path: Path) -> bytes | None:
+    try:
+        data = cache_path.read_bytes()
+        os.utime(cache_path)
+    except OSError:
+        return None
+    return data or None
+
+
+def _write_cached_llm_image(cache_path: Path, data: bytes) -> None:
+    """Store a compressed copy; a cache that cannot be written is not an error."""
+    cache_dir = cache_path.parent
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        _prune_llm_image_cache(cache_dir)
+        temporary = cache_path.with_name(
+            f"{cache_path.name}.{os.getpid()}.{threading.get_ident()}.tmp"
+        )
+        temporary.write_bytes(data)
+        os.replace(temporary, cache_path)
+    except OSError as exc:
+        logger.debug("Could not cache compressed image %s: %s", cache_path, exc)
+
+
+def _prune_llm_image_cache(cache_dir: Path) -> None:
+    """Delete compressed copies unused for a week, once per process."""
+    with _llm_image_cache_lock:
+        if cache_dir in _llm_image_cache_pruned:
+            return
+        _llm_image_cache_pruned.add(cache_dir)
+    cutoff = time.time() - _LLM_IMAGE_CACHE_MAX_AGE_SECONDS
+    for entry in cache_dir.iterdir():
+        try:
+            if entry.is_file() and entry.stat().st_mtime < cutoff:
+                entry.unlink()
+        except OSError:
+            continue
 
 
 def mime_type_for_path(image_path: str) -> str:
