@@ -2,6 +2,17 @@
 
 **[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
 
+## Unreleased: dashboard redesign
+
+- **New run** is a six-step wizard: Input, Pipeline, Context, Model, Agentic,
+  and Review. The new **Context** step holds the Dictionary Profile, MDF
+  parsing-guide inputs, and advanced stage instructions.
+- The dashboard uses the Modernist Ochre theme with light and dark modes.
+- Every run page shows the same workspace tab bar.
+- Native installs add **Choose folder…** for the output directory.
+- Agentic verification is renamed **Agentic loop** and explained in place.
+- Request and upload size limits are opt-in.
+
 ## What's new in 0.1.1
 
 MUDIDI 0.1.1 improves Google subscription authentication and live model
@@ -137,6 +148,12 @@ for startup, shutdown, logs, persistence, and troubleshooting.
 
 ### Create a dashboard run
 
+**New run** is a six-step wizard: **Input**, **Pipeline**, **Context**,
+**Model**, **Agentic**, and **Review**. The steps can be completed in any
+order, and the **Run summary** beside the form tracks the current choices. The
+final step validates the whole form on the server and shows a review page
+before anything runs.
+
 The web dashboard accepts exactly one dictionary PDF. Both the PDF and **PDF
 dictionary pages** are required before a run can be reviewed. Page selections
 are 1-based and may be a single page (`5`), a range (`10-20`), comma-separated
@@ -151,6 +168,10 @@ marks the affected field in red with an explanation.
 
 Page-image and directory inputs remain available through the CLI and YAML
 workflows; they are not accepted by the web dashboard.
+
+Once a run starts, every run page shares one tab bar: **Overview**, **MDF
+parsing guide**, **Page Viewer & Editor**, **Live Logs**, **File Artifacts**,
+and **Usage**.
 
 ### Web dashboard with uv
 
@@ -177,6 +198,8 @@ uv run mudidi web \
 
 MUDIDI opens <http://localhost:8000>. Use `--no-browser` to prevent it from
 opening a browser automatically, or `--port 8080` to choose another local port.
+A native install also adds **Choose folder…** beside the output directory,
+which opens the operating system's folder dialog; in Docker, type the path.
 
 ### CLI and YAML workflows with uv (recommended)
 

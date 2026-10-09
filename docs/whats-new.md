@@ -1,5 +1,26 @@
 # What's New
 
+## Unreleased — Dashboard redesign
+
+The local dashboard has a new look and a reorganized **New run** flow. Routes,
+form fields, saved presets, and run data are unchanged.
+
+- **New run** is now a six-step wizard: Input, Pipeline, Context, Model,
+  Agentic, and Review. The new **Context** step holds the Dictionary Profile,
+  MDF parsing-guide inputs, and an **Advanced: stage instructions** toggle.
+- The interface uses the Modernist Ochre theme with light and dark modes and
+  self-hosted fonts.
+- Every run page shows the same workspace tab bar; views that are not available
+  yet are greyed out instead of hidden.
+- Native installs add **Choose folder…** beside the output directory, which
+  opens the operating system's folder dialog.
+- Agentic verification is renamed **Agentic loop**, with an explanation of
+  what it does and what it costs.
+- Dashboard runs always add the bundled SIL MDF manual text to Stage 2 Pass 1;
+  the manual menu is removed.
+- Request and upload size limits are off by default and opt-in through
+  `--max-request-bytes` and `--max-upload-bytes`.
+
 ## 0.1.1 — Google subscription workflow
 
 MUDIDI 0.1.1 makes Google subscription login and model selection work entirely
