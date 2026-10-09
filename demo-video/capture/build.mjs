@@ -239,10 +239,10 @@ ${captionHtml}
         camEvents.push({ t, props: camProps(view), duration: duration || 0 });
         cam = view;
       }
-      // Move the cursor to a dashboard element (or [x, y] in dashboard pixels). It
-      // stays on that spot while the camera pans.
+      // Move the cursor to a dashboard element, where it stays while the camera pans,
+      // or to [x, y] in dashboard pixels, where it then rests in place on screen.
       function move(t, target, duration) {
-        cursorEvents.push({ t: t + OFF, to: centre(target), duration: duration || 0.6 });
+        cursorEvents.push({ t: t + OFF, to: centre(target), duration: duration || 0.6, rest: typeof target !== "string" });
       }
       // Move the cursor to a point on the 1920x1080 frame, for overlays.
       function moveScreen(t, x, y, duration) {
@@ -288,19 +288,19 @@ ${captionHtml}
       tl.to("#chip-body", { opacity: 0, scale: 0.7, duration: 0.25, ease: "power2.in" }, 7.2 + OFF);
       frame(7.3, "in-file");
       click(7.25);
-      camera("input", 7.6, { x: 250, y: 330, w: 940 }, 0.7 + OFF);
+      camera("input", 7.6, { x: 250, y: 330, w: 940 }, 0.7);
       move(7.7, "in.pages", 0.6);
       click(8.4);
       frame(8.7, "in-pages-1");
       frame(8.95, "in-pages-2");
       frame(9.2, "in-pages-3");
-      camera("input", 9.5, { x: 200, y: 130, w: 1080 }, 0.6 + OFF);
+      camera("input", 9.5, { x: 200, y: 130, w: 1080 }, 0.6);
       move(9.9, "tab.context", 0.6);
       click(10.6);
 
       // ---- 10.8 Dictionary profile ----------------------------------------------------
       camera("context", 10.8, { x: 200, y: 130, w: 1080 });
-      camera("context", 11.0, { x: 240, y: 440, w: 960 }, 0.8 + OFF);
+      camera("context", 11.0, { x: 240, y: 440, w: 960 }, 0.8);
       move(11.3, "cx.head", 0.6);
       click(11.9);
       [["cx-head-1", 12.1], ["cx-head-2", 12.3], ["cx-hs-1", 12.75], ["cx-tl-1", 13.15], ["cx-tl-2", 13.35], ["cx-ts-1", 13.75],
@@ -308,7 +308,7 @@ ${captionHtml}
       move(12.4, "cx.headScript", 0.3);
       move(12.85, "cx.target", 0.3);
       move(13.8, "cx.inventory", 0.35);
-      camera("context", 14.9, { x: 240, y: 760, w: 960 }, 0.6 + OFF);
+      camera("context", 14.9, { x: 240, y: 760, w: 960 }, 0.6);
       move(15.0, "cx.layout", 0.5);
       for (let i = 1; i <= 8; i += 1) frame(15.45 + i * 0.14, "cx-lay-" + i);
       move(16.6, "cx.type1", 0.25);
@@ -338,7 +338,7 @@ ${captionHtml}
       move(22.3, "md.prov2", 0.4);
       click(22.75);
       frame(22.85, "md-prov2");
-      camera("model", 23.0, { x: 240, y: 1060, w: 960 }, 0.6 + OFF);
+      camera("model", 23.0, { x: 240, y: 1060, w: 960 }, 0.6);
       move(23.5, "md.model1", 0.45);
       click(24.0);
       frame(24.1, "md-model1");
@@ -351,7 +351,7 @@ ${captionHtml}
       move(25.45, "md.reason2", 0.4);
       click(25.9);
       frame(26.0, "md-reason2");
-      camera("model", 26.2, { x: 240, y: 1200, w: 960 }, 0.5 + OFF);
+      camera("model", 26.2, { x: 240, y: 1200, w: 960 }, 0.5);
       move(26.6, "md.next", 0.55);
       click(27.3);
 
@@ -436,6 +436,7 @@ ${captionHtml}
         let page = null;
         let cursorTween = null;
         let screen = { x: 1500, y: 1000 };
+        let resting = true;
         let ci = 0;
         let ui = 0;
         const propsAt = (t) => {
@@ -465,18 +466,28 @@ ${captionHtml}
               camTween = null;
               page = unproject(props, held);
               cursorTween = null;
+              resting = true;
             }
           }
           while (ui < cursorEvents.length && cursorEvents[ui].t <= t) {
             const event = cursorEvents[ui++];
             const from = pageAt(event.t) || unproject(propsAt(event.t), screen);
             page = from;
-            cursorTween = { t: event.t, duration: event.duration, from, to: event.to };
+            cursorTween = { t: event.t, duration: event.duration, from, to: event.to, rest: event.rest };
+            resting = false;
           }
           if (camTween && t >= camTween.t + camTween.duration) { props = camTween.to; camTween = null; }
-          if (cursorTween && t >= cursorTween.t + cursorTween.duration) { page = cursorTween.to; cursorTween = null; }
+          if (cursorTween && t >= cursorTween.t + cursorTween.duration) { page = cursorTween.to; resting = cursorTween.rest; cursorTween = null; }
           const at = pageAt(t);
-          if (at) screen = project(propsAt(t), at);
+          if (cursorTween) {
+            screen = project(propsAt(t), at);
+          } else if (at) {
+            // Idle: a resting cursor keeps its place on screen; an attached one rides
+            // with the page but is never carried out of the frame.
+            const ride = resting ? screen : project(propsAt(t), at);
+            screen = { x: Math.min(1860, Math.max(40, ride.x)), y: Math.min(1010, Math.max(40, ride.y)) };
+            page = unproject(propsAt(t), screen);
+          }
           if (t >= start - 1e-6) points.push({ x: Math.round(screen.x * 10) / 10, y: Math.round(screen.y * 10) / 10 });
         }
         tl.set("#cursor-arrow", points[0], 0);
