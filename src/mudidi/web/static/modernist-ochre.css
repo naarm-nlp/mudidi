@@ -316,7 +316,8 @@ button:disabled{cursor:not-allowed}
 .history-table td,.artifact-table td,.usage-table td,.usage-table tbody th{font-size:14px;vertical-align:baseline}
 .history-table tbody tr:last-child td,.artifact-table tbody tr:last-child td,.usage-table tbody tr:last-child th,.usage-table tbody tr:last-child td{border-bottom:1px solid var(--color-hair)}
 .history-table th:nth-child(3),.history-table td:nth-child(3),.history-table th:last-child,.artifact-table th:nth-child(n+3),.artifact-table td:nth-child(n+3),.usage-table th:nth-child(n+2),.usage-table td:nth-child(n+2){text-align:right}
-.history-table th:last-child,.history-table td:last-child,.artifact-table th:last-child,.artifact-table td:last-child,.usage-table th:last-child,.usage-table td:last-child{padding-right:0}
+.history-table th:first-child,.history-table td:first-child,.artifact-table th:first-child,.artifact-table td:first-child,.usage-table th:first-child,.usage-table td:first-child{padding-left:12px}
+.history-table th:last-child,.history-table td:last-child,.artifact-table th:last-child,.artifact-table td:last-child,.usage-table th:last-child,.usage-table td:last-child{padding-right:12px}
 .history-table td,.artifact-table td,.usage-table td{font-variant-numeric:tabular-nums}
 
 /* run history */
