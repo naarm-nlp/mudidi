@@ -4,7 +4,7 @@ flow: companion
 storyboard: yes
 message: "MUDIDI turns a scanned handwritten dictionary into structured MDF, on your own machine."
 aspect: "16:9"
-length: "84s"
+length: "86.4s"
 language: en
 ---
 

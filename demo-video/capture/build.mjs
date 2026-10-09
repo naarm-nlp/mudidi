@@ -144,8 +144,12 @@ go("cx.type1", 0.45);
 ops.push({ k: "cursor", to: centre("cx.type7"), d: 1.2, rest: false, t: round(t + 0.1) });
 for (let i = 1; i <= 7; i += 1) { wait(0.17); frame(`cx-type-${i}`); }
 wait(0.2);
-caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t + 0.3);
-wait(0.7);
+wait(0.5);
+caption("Describe the dictionary: languages, layout, what an entry holds.", mark + 0.2, t);
+pan({ x: 240, y: R["cx.next"].y - 380, w: 960 }, 1.0);
+go("cx.next", 0.7);
+click();
+wait(0.6);
 endScene();
 
 // ---- Sign in, then choose a model and reasoning for each stage -----------------------

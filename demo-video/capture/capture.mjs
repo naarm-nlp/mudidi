@@ -86,6 +86,7 @@ await rect("cx.target", ctx + 'input[name="profile_target_languages"]');
 await rect("cx.inventory", ctx + 'textarea[name="character_inventory"]');
 await rect("cx.layout", ctx + 'textarea[name="profile_page_layout"]');
 await rect("cx.types", ctx + ".profile-information-grid");
+await rect("cx.next", '[data-wizard-next="model"]');
 await shot("cx-0");
 await typeFrames("cx-head", ctx + 'input[name="profile_headword_language"]', "Raga", 2);
 await typeFrames("cx-hs", ctx + 'input[name="profile_headword_script"]', "Latin", 1);
