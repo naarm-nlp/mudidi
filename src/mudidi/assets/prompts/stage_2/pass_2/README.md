@@ -2,7 +2,8 @@
 
 Every extraction request has a system message and a user message, plus the
 current dictionary-page image. In inference, neighboring pages are supplied as
-transcript text inside the user message, never as images.
+transcript excerpts inside the user message (the end of the previous page and
+the start of the next), never as images.
 
 | Mode | System message | User message |
 | --- | --- | --- |

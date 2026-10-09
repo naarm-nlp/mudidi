@@ -6,4 +6,4 @@ Page boundary rules (entry ownership):
 - EXCLUDE from the current page MDF:
   • Lines at the top that continue an entry whose \lx started on the previous page (check <previous_page> transcript). Do not emit them as standalone \se/\ge records or new \lx entries.
   • Em-dash sub-forms (e.g. —alas nuwebi) under a parent headword from the previous page belong in the previous page's entry block, not here.
-- Neighbor pages are provided as transcripts only. The only page image is the CURRENT page; use the neighbor transcripts for cross-page entry completion as described above.
+- Neighbor pages are provided as transcript excerpts only: <previous_page> holds the end of the previous page and <next_page> holds the start of the next page. The only page image is the CURRENT page; use the excerpts for cross-page entry completion as described above.

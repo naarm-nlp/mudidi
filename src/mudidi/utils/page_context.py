@@ -11,6 +11,10 @@ from mudidi.utils.stage2_page_selection import sort_snippet_pages
 
 logger = logging.getLogger(__name__)
 
+# Characters of each neighbor transcript kept for cross-page entry context:
+# the end of the previous page and the start of the next page.
+NEIGHBOR_EXCERPT_CHARS = 1500
+
 
 @dataclass(frozen=True)
 class NeighborPage:
@@ -128,25 +132,87 @@ def format_page_image_order_note(page_context: PageContext) -> str:
     return note
 
 
+def neighbor_transcript_excerpt(
+    transcript: str,
+    *,
+    from_end: bool,
+    limit: int = NEIGHBOR_EXCERPT_CHARS,
+) -> tuple[str, bool]:
+    """Keep whole lines from one end of ``transcript`` up to ``limit`` characters.
+
+    Returns the excerpt and whether any lines were left out. At least one line
+    is always kept, even when it is longer than ``limit``.
+    """
+    lines = transcript.strip().splitlines()
+    if from_end:
+        lines.reverse()
+    kept: list[str] = []
+    used = 0
+    for line in lines:
+        cost = len(line) + 1
+        if kept and used + cost > limit:
+            break
+        kept.append(line)
+        used += cost
+    truncated = len(kept) < len(lines)
+    if from_end:
+        kept.reverse()
+    return "\n".join(kept), truncated
+
+
 def format_neighbor_text_block(
     page: Optional[NeighborPage],
     *,
     label: str,
 ) -> str:
-    """Format a neighbor page as a text block for prompt injection."""
+    """Format a neighbor page as a text block for prompt injection.
+
+    ``label`` ``previous_page`` yields the end of that page; any other label
+    yields the start of the page.
+    """
     if page is None:
         return f"<{label}>\n(none)\n</{label}>"
-    transcript = page.transcript.strip()
+    is_previous = label == "previous_page"
+    excerpt, truncated = neighbor_transcript_excerpt(
+        page.transcript, from_end=is_previous
+    )
+    if is_previous:
+        scope = (
+            "This is only the END of the previous page: its last lines, ending "
+            "at the bottom of that page. Earlier lines are omitted."
+            if truncated
+            else "This is the whole previous page; its last lines sit directly "
+            "above the top of the CURRENT page."
+        )
+        usage = (
+            "Use it to detect lines at the top of the CURRENT page that continue "
+            "an entry whose \\lx started on the previous page — exclude those "
+            "from the current output."
+        )
+        omitted = f"[... earlier lines of {page.stem} omitted ...]\n"
+        transcript_body = f"{omitted}{excerpt}" if truncated else excerpt
+    else:
+        scope = (
+            "This is only the START of the next page: its first lines, beginning "
+            "at the top of that page. Later lines are omitted."
+            if truncated
+            else "This is the whole next page; its first lines follow directly "
+            "after the bottom of the CURRENT page."
+        )
+        usage = (
+            "Use it to complete sub-fields for entries owned by the CURRENT page "
+            "when they overflow onto the next page. Do not emit entries whose "
+            "\\lx starts on the next page."
+        )
+        omitted = f"\n[... later lines of {page.stem} omitted ...]"
+        transcript_body = f"{excerpt}{omitted}" if truncated else excerpt
     transcript_section = (
-        f"\n<transcript>\n{transcript}\n</transcript>" if transcript else ""
+        f"\n<transcript>\n{transcript_body}\n</transcript>" if excerpt else ""
     )
     return (
         f"<{label}>\n"
         f"page: {page.stem}\n"
-        f"Cross-page entry context. Use this transcript to (a) complete sub-fields "
-        f"for entries owned by the CURRENT page when they overflow here, and "
-        f"(b) detect lines at the top of the CURRENT page that belong to an entry "
-        f"whose \\lx started on this neighbor — exclude those from the current output."
+        f"Cross-page entry context. {scope} {usage}"
         f"{transcript_section}\n"
         f"</{label}>"
     )
