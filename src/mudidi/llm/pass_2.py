@@ -203,20 +203,9 @@ def _build_direct_mdf_prompt(
         else []
     )
     mime = mime_type_for_path(image_path)
+    # Neighbor pages reach the model as transcripts only; the current page is
+    # the single page image.
     dynamic_content: list[dict] = [{"type": "text", "text": dynamic_text}]
-    if mode == "inference" and page_context is not None:
-        for neighbor in (page_context.previous, page_context.next):
-            if neighbor is None:
-                continue
-            n_mime = mime_type_for_path(str(neighbor.image_path))
-            dynamic_content.append(
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_data_url(str(neighbor.image_path), n_mime),
-                    },
-                }
-            )
     dynamic_content.append(
         {
             "type": "image_url",

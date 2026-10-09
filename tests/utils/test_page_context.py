@@ -47,6 +47,7 @@ def test_current_page_block_names_stem() -> None:
     assert "<current_page>" in block
 
     order = format_page_image_order_note(ctx)
-    assert "previous page (page_53)" in order
-    assert "next page (page_55)" in order
     assert "CURRENT page (page_54)" in order
+    assert "transcripts only" in order
+    assert "page_53" not in order
+    assert "page_55" not in order

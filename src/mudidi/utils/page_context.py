@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class NeighborPage:
-    """One adjacent dictionary page used as layout context."""
+    """One adjacent dictionary page used as cross-page entry context."""
 
     stem: str
     image_path: Path
@@ -89,7 +89,7 @@ def build_page_context(
 
 
 def format_current_page_block(page_context: PageContext, *, ocr: bool = False) -> str:
-    """Identify the page being processed (matches the last page image sent)."""
+    """Identify the page being processed (matches the page image sent)."""
     if ocr:
         return (
             f"<current_page>\n"
@@ -110,7 +110,7 @@ def format_current_page_block(page_context: PageContext, *, ocr: bool = False) -
         f"If a \\se heading starts on this page but its parent \\lx started on a previous page, "
         f"emit the \\se block without inventing or repeating the parent \\lx.\n"
         f"Do not re-emit the parent \\lx record or any \\se subentries already captured on a previous page.\n"
-        f"IMPORTANT: Only emit content that is visibly present in the page images or transcripts "
+        f"IMPORTANT: Only emit content that is visibly present in the page image or transcripts "
         f"provided. Do NOT infer, recall, or complete senses or sub-fields from prior knowledge "
         f"or earlier entries seen in this conversation.\n"
         f"</current_page>"
@@ -118,19 +118,14 @@ def format_current_page_block(page_context: PageContext, *, ocr: bool = False) -
 
 
 def format_page_image_order_note(page_context: PageContext) -> str:
-    """Explain how page images are ordered in the user message."""
-    parts: list[str] = []
-    if page_context.previous is not None:
-        parts.append(f"1. previous page ({page_context.previous.stem})")
-    if page_context.next is not None:
-        idx = len(parts) + 1
-        parts.append(f"{idx}. next page ({page_context.next.stem})")
-    current_idx = len(parts) + 1
-    parts.append(f"{current_idx}. CURRENT page ({page_context.current_stem}) — emit MDF for this page")
-    return (
-        "Page images in this message (in order):\n"
-        + "\n".join(f"  {line}" for line in parts)
+    """Explain which page the single page image in the user message shows."""
+    note = (
+        f"The page image in this message is the CURRENT page "
+        f"({page_context.current_stem}) — emit MDF for this page."
     )
+    if page_context.has_neighbors:
+        note += " Neighbor pages are provided as transcripts only, not as images."
+    return note
 
 
 def format_neighbor_text_block(
