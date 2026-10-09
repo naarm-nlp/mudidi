@@ -46,7 +46,7 @@ ranges, and pages beyond the uploaded PDF's page count are rejected.
 Introduction pages and representative MDF parsing-guide pages are optional and
 use the same grammar and PDF bounds. Representative pages must also be included
 in the dictionary-page selection. Placeholder examples use faded text with an
-`ex:` prefix and show every accepted form (`ex: 30-35 or 30, 32, 35 or 32 or
+`ex:` prefix and show every accepted form (`ex: 30-35 or 30, 32, 35 or
 30, 33-35`) so they cannot be mistaken for submitted values.
 
 The browser marks required controls, but the server remains authoritative. A

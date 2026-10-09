@@ -300,9 +300,9 @@ def test_page_fields_show_faded_explicit_examples_and_complete_syntax_help(
     css = client.get("/static/app.css")
 
     assert response.status_code == 200
-    assert 'name="dictionary_pages" required placeholder="ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35"' in response.text
-    assert 'name="introduction_pages" placeholder="ex: 1-5 or 1, 3, 5 or 3 or 1, 3-5"' in response.text
-    assert 'name="parse_rules_pages" placeholder="ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35"' in response.text
+    assert 'name="dictionary_pages" required placeholder="ex: 30-35 or 30, 32, 35 or 30, 33-35"' in response.text
+    assert 'name="introduction_pages" placeholder="ex: 1-5 or 1, 3, 5 or 1, 3-5"' in response.text
+    assert 'name="parse_rules_pages" placeholder="ex: 30-35 or 30, 32, 35 or 30, 33-35"' in response.text
     assert "one page number" in response.text
     assert "a page range" in response.text
     assert "comma-separated page numbers" in response.text

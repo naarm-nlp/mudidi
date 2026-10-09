@@ -174,8 +174,7 @@ pause later for explicit MDF parsing-guide approval; that human checkpoint is
 distinct from this pre-run configuration review.
 
 The grey values beginning with `ex:` are examples only; they are not submitted
-as values. Each one shows every accepted form: a range, a list, a single
-page, or a mix, for example `ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35`.
+as values. Each one shows the accepted forms: a range, a list, or a mix, for example `ex: 30-35 or 30, 32, 35 or 30, 33-35`.
 
 The web dashboard does not accept page images, multiple files, or a folder of
 images. Those input modes remain available through YAML and the CLI.

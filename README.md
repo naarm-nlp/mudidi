@@ -162,7 +162,7 @@ in the uploaded PDF.
 
 The introduction-page and representative MDF parsing-guide page fields are
 optional and use the same syntax. Examples shown in the fields, such as
-`ex: 30-35 or 30, 32, 35 or 32 or 30, 33-35`, are placeholders rather than prefilled values. If a required value
+`ex: 30-35 or 30, 32, 35 or 30, 33-35`, are placeholders rather than prefilled values. If a required value
 is missing or a page selection is invalid, the dashboard blocks the run and
 marks the affected field in red with an explanation.
 
