@@ -83,6 +83,7 @@ const ctx = "[data-wizard-panel='context'] ";
 await rect("cx.head", ctx + 'input[name="profile_headword_language"]');
 await rect("cx.headScript", ctx + 'input[name="profile_headword_script"]');
 await rect("cx.target", ctx + 'input[name="profile_target_languages"]');
+await rect("cx.targetScript", ctx + 'input[name="profile_target_scripts"]');
 await rect("cx.inventory", ctx + 'textarea[name="character_inventory"]');
 await rect("cx.layout", ctx + 'textarea[name="profile_page_layout"]');
 await rect("cx.types", ctx + ".profile-information-grid");

@@ -129,8 +129,8 @@ click("cx-hs-1");
 go("cx.target", 0.45);
 click();
 for (const name of ["cx-tl-1", "cx-tl-2"]) { wait(0.18); frame(name); }
-wait(0.3);
-frame("cx-ts-1");
+go("cx.targetScript", 0.4);
+click("cx-ts-1");
 go("cx.inventory", 0.5);
 click();
 for (const name of [1, 2, 3, 4].map((i) => `cx-inv-${i}`)) { wait(0.2); frame(name); }
