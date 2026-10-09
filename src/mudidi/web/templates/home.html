@@ -148,7 +148,9 @@
               <label class="path-label" for="output">Output directory</label>
               <div class="input-row{% if errors_by_field.output_directory %} field-invalid{% endif %}"{% if errors_by_field.output_directory %} data-field-error="output_directory"{% endif %}>
                 <input id="output" name="output_directory" value="{{ output_directory_default }}" required{% if errors_by_field.output_directory %} aria-invalid="true" aria-describedby="output-directory-error"{% endif %}>
+                {% if output_directory_picker %}<button type="button" data-choose-output-directory>Choose folder…</button>{% endif %}
               </div>
+              {% if output_directory_picker %}<small class="output-directory-status" data-output-directory-status role="status" aria-live="polite"></small>{% endif %}
               {% if errors_by_field.output_directory %}<small id="output-directory-error" class="field-error-message">{{ errors_by_field.output_directory }}</small>{% endif %}
               <div class="wizard-actions"><span>Configure these steps in any order.</span><button class="primary" type="button" data-wizard-next="pipeline">Continue to Pipeline →</button></div>
             </section>
@@ -496,5 +498,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-18" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-19" defer></script>
 {% endblock %}

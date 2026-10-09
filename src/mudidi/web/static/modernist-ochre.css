@@ -454,6 +454,9 @@ dl.snapshot-list dd{font-weight:400}
 
 /* new run wizard */
 .preset-loader select{width:220px;min-width:0}
+.output-directory-status{display:block;min-height:18px;margin-top:6px;color:var(--color-muted);font-size:12px}
+.output-directory-status:empty{display:none}
+.input-row [data-choose-output-directory]{flex:none;white-space:nowrap}
 .wizard-stepper li{display:block}
 .run-form{padding:24px}
 .wizard-panel-heading{align-items:baseline;margin-bottom:24px}

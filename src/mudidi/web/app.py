@@ -58,6 +58,13 @@ from mudidi.web.credentials import (
     subscription_store_path,
 )
 from mudidi.web.artifacts import ArtifactAccessError, ArtifactService
+from mudidi.web.folder_picker import (
+    FolderPickerUnavailable,
+    choose_directory,
+    display_path,
+    existing_start_directory,
+    folder_picker_available,
+)
 from mudidi.web.forms import (
     FormFieldError,
     NewRunForm,
@@ -239,6 +246,9 @@ def create_app(
         openapi_url=None,
     )
     app.state.data_dir = resolved_data_dir
+    app.state.folder_picker_available = folder_picker_available
+    app.state.choose_directory = choose_directory
+    app.state.folder_picker_lock = asyncio.Lock()
     app.state.max_request_bytes = max_request_bytes
     app.state.max_upload_bytes = max_upload_bytes
     app.state.credential_vault = credential_vault or CredentialVault(
@@ -502,6 +512,9 @@ def create_app(
             "errors_by_field": {error["key"]: error["message"] for error in errors},
             "output_directory_default": (
                 "outputs" if container_mode else "~/Documents/MUDIDI-runs"
+            ),
+            "output_directory_picker": (
+                not container_mode and app.state.folder_picker_available()
             ),
         }
 
@@ -1947,6 +1960,33 @@ def create_app(
         except (OSError, RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
+    @app.post("/output-directory/choose")
+    async def choose_output_directory(request: Request) -> JSONResponse:
+        """Open the native folder dialog on this machine and return the path."""
+
+        require_local_subscription_request(request)
+        if container_mode or not app.state.folder_picker_available():
+            raise HTTPException(status_code=404, detail="folder picker unavailable")
+        if app.state.folder_picker_lock.locked():
+            raise HTTPException(
+                status_code=409, detail="A folder dialog is already open"
+            )
+        submitted = await request.form()
+        initial = existing_start_directory(str(submitted.get("current", "")))
+        async with app.state.folder_picker_lock:
+            try:
+                selected = await asyncio.to_thread(app.state.choose_directory, initial)
+            except FolderPickerUnavailable as exc:
+                raise HTTPException(
+                    status_code=503, detail="Folder dialog could not be opened"
+                ) from exc
+        payload: dict[str, str] = (
+            {"status": "cancelled"}
+            if selected is None
+            else {"status": "chosen", "path": display_path(selected)}
+        )
+        return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
     @app.post("/credentials/{provider_name}")
     async def set_provider_credential(

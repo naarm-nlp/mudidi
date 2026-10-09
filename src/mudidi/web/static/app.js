@@ -2179,3 +2179,38 @@ subscriptionCards.forEach((card) => {
     }
   });
 });
+
+document.querySelectorAll("[data-choose-output-directory]").forEach((button) => {
+  const input = document.querySelector("#output");
+  const status = document.querySelector("[data-output-directory-status]");
+  if (!input) return;
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    if (status) status.textContent = "Choose a folder in the dialog that opened…";
+    try {
+      const response = await window.fetch("/output-directory/choose", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ current: input.value }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        if (status) status.textContent = payload.detail || "Could not open the folder dialog";
+        return;
+      }
+      if (payload.status === "chosen" && typeof payload.path === "string") {
+        input.value = payload.path;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (status) status.textContent = "";
+    } catch (_error) {
+      if (status) status.textContent = "Could not open the folder dialog";
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
