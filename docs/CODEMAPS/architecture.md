@@ -80,7 +80,7 @@ Web dashboard (web/)
 
 ## Agentic Extension
 
-`agentic/verifier_loop.py` — bounded evaluator-optimizer loop used by `TwoStageLLMExtraction` for Stage 1/2 quality checks. The Evaluator proposes targeted edits; the Editor verifies each against the source and approves or refuses it; approved edits are carried out by `apply_edit`, and the Editor's verdicts are fed back to the Evaluator. For a Stage 1 transcript that is wrong throughout the Evaluator can request a full redo, which re-transcribes the page image.
+`agentic/verifier_loop.py` — bounded evaluator-optimizer loop used by `TwoStageLLMExtraction` for Stage 1/2 quality checks. The Evaluator proposes targeted edits; the Editor verifies each against the source and approves or refuses it; approved edits are carried out by `apply_edit`, and the Editor's verdicts are fed back to the Evaluator. When line edits cannot repair an output, the Evaluator can request a full redo: Stage 1 re-transcribes the page image and Stage 2 parses the transcript again.
 
 ## Key Design Boundaries
 

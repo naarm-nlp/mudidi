@@ -287,8 +287,9 @@ source and approves or refuses it with a reason. Approved edits are applied as
 exact replacements, and the Editor's verdicts go back to the Evaluator, which
 checks the page again. This repeats until the page is accepted, the iteration
 cap is reached, or the loop detects that it is no longer making progress. For
-a Stage 1 page that is wrong throughout, the Evaluator can instead request a
-full redo, which re-transcribes the page from the image. It defaults to **Off**
+a page that cannot be repaired line by line, the Evaluator can instead request
+a full redo: Stage 1 re-transcribes the page from the image, and Stage 2 parses
+it again from the transcript. It defaults to **Off**
 because it adds model calls and cost. Select **On** to reveal the **Custom
 loop settings** panel. The applicable Stage 1 and Stage 2 checks
 start enabled; you can disable either one, then configure **Maximum

@@ -91,7 +91,7 @@ Pass 2:  pass_2.py → extract_direct_mdf → page MDF text
 Client:  client.py → litellm.completion (retries, reasoning, cache keys)
 ```
 
-Optional agentic loops run after Stage 1/2 output. The Evaluator proposes targeted edits and the Editor verifies and applies them; Stage 1 also allows a full redo (full-page re-transcription); artifacts are written below each page's `agentic/` directory.
+Optional agentic loops run after Stage 1/2 output. The Evaluator proposes targeted edits and the Editor verifies and applies them; either stage can be redone in full when line edits cannot repair it; artifacts are written below each page's `agentic/` directory.
 
 ## OCR / VLM Backends
 

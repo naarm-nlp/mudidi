@@ -33,7 +33,7 @@ Redis, PostgreSQL, or Node.js at runtime.
 - Every web Stage 2 path requires a durable MDF parsing guide approval checkpoint.
   Pass 2 accepts only a server-minted `ApprovedParseRules` capability bound to
   the run, review version, immutable managed snapshot, and SHA-256 digest.
-- A Stage 1 full redo is always available to the evaluator; there is no UI switch.
+- A full redo is always available to the Evaluator in both stages; there is no UI switch.
 - Exact verifier patches are unlimited; there is no patch-count UI setting.
 
 ## Primary users

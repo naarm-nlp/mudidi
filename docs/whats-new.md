@@ -16,7 +16,7 @@
 ## Unreleased — Agentic loop: Evaluator and Editor
 
 - The loop is now an evaluator-optimizer. The **Evaluator** chooses an explicit
-  action (`accept`, `targeted_edits`, `full_redo` for Stage 1, or `reject`) and
+  action (`accept`, `targeted_edits`, `full_redo`, or `reject`) and
   lists each edit as a line, the exact current text, and the replacement.
 - The **Editor** (previously "rewriter") verifies every proposed edit against
   the source and approves or refuses it with a reason. Approved edits are
@@ -32,7 +32,11 @@
   ignored.
 - Loop records use new fields (`action`, `edits`, `redo_reason`, per-round
   Editor verdicts) and stop reasons (`invalid_decision`, `no_progress`,
-  `oscillation`, `full_redo_unavailable`).
+  `oscillation`).
+- Subscription logins wait and retry when the provider reports that it is
+  overloaded or rate limiting, instead of failing the page.
+- `dictionary.mdf.txt` leaves out a page whose file holds no MDF (for example
+  a model refusal) and lists it under `pages_without_mdf`.
 
 ## Unreleased — Dashboard redesign
 

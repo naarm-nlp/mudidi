@@ -107,7 +107,7 @@ The loop is an evaluator-optimizer: two models check each other.
 | --- | --- |
 | `accept` | The page meets the acceptance criteria; the loop ends. |
 | `targeted_edits` | Specific lines are wrong. Each edit names the line, the exact current text, the replacement, and a reason. |
-| `full_redo` | The page is from the wrong page, largely hallucinated, or wrong on most lines. Stage 1 only: the page is re-transcribed from the image. |
+| `full_redo` | The output cannot be repaired line by line: a Stage 1 transcript from the wrong page or largely hallucinated, or a Stage 2 output that is not MDF at all (for example a refusal). The page is produced again: re-transcribed from the image for Stage 1, parsed again from the transcript for Stage 2. |
 | `reject` | Correction is unsafe; the current output is kept. |
 
 One iteration is one Evaluator-to-Editor round. `max_iterations` (default 3)
@@ -120,8 +120,9 @@ loop also stops, keeping the current output, when:
 | `invalid_decision` | The Evaluator proposed no usable edit, or a full redo without a reason. |
 | `repeated_issue` | The Evaluator re-proposed an edit the Editor refused, or the same edits as the round before. |
 | `no_progress` | Two rounds in a row changed nothing. |
+
+An Evaluator reply whose edits change nothing counts as `accept`.
 | `oscillation` | An edit would return the page to an earlier version. |
-| `full_redo_unavailable` | A full redo was requested for Stage 2. |
 
 Each page's `agentic/<stage>/` directory records every round:
 `attempt_N_verifier.json` holds the Evaluator's decision, `attempt_N_editor.json`
@@ -164,7 +165,8 @@ lines the right markers. It never sees the next page.
 `dictionary.mdf.txt` appends the page files in page order, which re-attaches
 those opening fields to the entry they belong to. `dictionary.mdf.report.json`
 lists every page that starts mid-entry (`pages_starting_mid_entry`) so the
-joins can be spot-checked. If the previous page is missing from the run, the
+joins can be spot-checked. A page file with no MDF marker at all, such
+as a model refusal, is left out and listed under `pages_without_mdf`. If the previous page is missing from the run, the
 fields are kept as a separate block and `joined_to_previous_page` is `false`.
 Both files are rebuilt at the end of every Stage 2 run and whenever a page's
 MDF is edited in the dashboard.
