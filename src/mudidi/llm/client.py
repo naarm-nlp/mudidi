@@ -37,7 +37,7 @@ import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, Iterator, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError
 from mudidi.llm.reasoning import (
@@ -1330,7 +1330,10 @@ def complete(
             reasoning_effort=reasoning_effort,
             prompt_cache_key=prompt_cache_key,
         )
-        result = _subscription_result(selected_backend.complete(request))
+        result = _call_subscription(
+            lambda: _subscription_result(selected_backend.complete(request)),
+            label=f"Subscription call to {model}",
+        )
         return _subscription_text(result)
 
     params = _build_params(
@@ -1383,7 +1386,10 @@ def complete_with_usage(
             reasoning_effort=reasoning_effort,
             prompt_cache_key=prompt_cache_key,
         )
-        result = _subscription_result(selected_backend.complete(request))
+        result = _call_subscription(
+            lambda: _subscription_result(selected_backend.complete(request)),
+            label=f"Subscription call to {model}",
+        )
         return _subscription_text(result), _subscription_usage(model, result)
 
     params = _build_params(
@@ -1471,6 +1477,62 @@ def _is_retryable_structured_response(
     return False
 
 
+_TRANSIENT_SUBSCRIPTION_REASONS = frozenset({"provider_unavailable", "rate_limited"})
+
+
+def _subscription_transient_max_retries() -> int:
+    """Return how many times an overloaded or rate-limited call is sent again."""
+    raw = os.getenv("SUBSCRIPTION_TRANSIENT_MAX_RETRIES", "5")
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return 5
+
+
+def _subscription_transient_delay(attempt: int) -> float:
+    """Seconds to wait before retry ``attempt`` (1-based): 5, 10, 20, 40, 60."""
+    raw = os.getenv("SUBSCRIPTION_TRANSIENT_BASE_DELAY", "5")
+    try:
+        base = max(0.0, float(raw))
+    except ValueError:
+        base = 5.0
+    return min(base * 2 ** (attempt - 1), 60.0) * random.uniform(0.85, 1.15)
+
+
+def _is_transient_subscription_failure(exc: Exception) -> bool:
+    """Whether the provider said it was overloaded or rate limiting."""
+    metadata = getattr(exc, "metadata", None)
+    return (
+        isinstance(metadata, dict)
+        and metadata.get("reason") in _TRANSIENT_SUBSCRIPTION_REASONS
+    )
+
+
+def _call_subscription(call: Callable[[], Any], *, label: str) -> Any:
+    """Run one subscription request, waiting out provider overload.
+
+    Subscription services report "overloaded" and rate limits as ordinary
+    failures. Sending the same request again after a pause usually succeeds,
+    so wait with a growing delay before giving up on the page.
+    """
+    max_retries = _subscription_transient_max_retries()
+    attempt = 0
+    while True:
+        try:
+            return call()
+        except Exception as exc:
+            if attempt >= max_retries or not _is_transient_subscription_failure(exc):
+                raise
+            attempt += 1
+            delay = _subscription_transient_delay(attempt)
+            print(
+                f"{label}: {exc}; waiting {delay:.0f}s before retry "
+                f"{attempt}/{max_retries}",
+                flush=True,
+            )
+            time.sleep(delay)
+
+
 _MALFORMED_STRUCTURED_REPLY_REASONS = frozenset(
     {
         "invalid_structured_output",
@@ -1533,8 +1595,11 @@ def complete_structured(
         max_attempts = _structured_max_retries()
         for attempt in range(max_attempts):
             try:
-                result = _subscription_result(
-                    selected_backend.complete_structured(request)
+                result = _call_subscription(
+                    lambda: _subscription_result(
+                        selected_backend.complete_structured(request)
+                    ),
+                    label=f"Subscription call to {model}",
                 )
                 content = _subscription_text(result)
                 if result.structured_json is None:

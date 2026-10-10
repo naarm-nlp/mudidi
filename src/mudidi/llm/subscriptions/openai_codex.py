@@ -490,6 +490,45 @@ def _response_payload(
     return "".join(text_parts), response
 
 
+_OVERLOAD_ERROR_CODES = frozenset(
+    {"server_is_overloaded", "server_error", "service_unavailable", "overloaded"}
+)
+_RATE_LIMIT_ERROR_CODES = frozenset({"rate_limit_exceeded", "rate_limited"})
+
+
+def _response_failure(response: Mapping[str, Any]) -> SubscriptionError | None:
+    """Return the provider's own error for a reply that failed mid-stream.
+
+    Codex reports some failures (for example an overloaded service) inside an
+    HTTP 200 stream, as a response whose status is ``failed`` and whose
+    ``error`` names the cause.
+    """
+    error = response.get("error")
+    if not isinstance(error, Mapping) and response.get("status") != "failed":
+        return None
+    code = error.get("code") if isinstance(error, Mapping) else None
+    code = code if isinstance(code, str) and code else "unknown_error"
+    if code in _RATE_LIMIT_ERROR_CODES:
+        return _error(
+            SubscriptionTransportError,
+            f"Codex subscription rate limit reached ({code})",
+            category="rate_limited",
+            reason="rate_limited",
+        )
+    if code in _OVERLOAD_ERROR_CODES:
+        return _error(
+            SubscriptionTransportError,
+            f"Codex subscription service is overloaded ({code})",
+            category="provider_unavailable",
+            reason="provider_unavailable",
+        )
+    return _error(
+        SubscriptionTransportError,
+        f"Codex request failed ({code})",
+        reason="provider_error",
+    )
+
+
 def _schema_matches(value: Any, schema: Mapping[str, Any]) -> bool:
     """Small fail-closed JSON Schema subset for provider structured output."""
 
@@ -2109,6 +2148,9 @@ class OpenAICodexBackend:
     ) -> CompletionResult:
         documents = _parse_json_documents(body)
         text, response = _response_payload(documents)
+        failure = _response_failure(response)
+        if failure is not None and not text:
+            raise failure
         if not text and "output_text" not in response and "output" not in response:
             raise _error(
                 SubscriptionTransportError,

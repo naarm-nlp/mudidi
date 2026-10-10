@@ -1015,6 +1015,40 @@ def test_invalid_structured_json_is_secret_safe_transport_error() -> None:
     assert _ACCESS_TOKEN not in repr(raised.value)
 
 
+@pytest.mark.parametrize(
+    ("code", "reason", "fragment"),
+    [
+        ("server_is_overloaded", "provider_unavailable", "overloaded"),
+        ("rate_limit_exceeded", "rate_limited", "rate limit"),
+        ("something_else", "provider_error", "request failed"),
+    ],
+)
+def test_failed_stream_reports_the_providers_error_not_invalid_json(
+    code: str, reason: str, fragment: str
+) -> None:
+    sse = (
+        'data: {"type":"response.failed","response":{"status":"failed","output":[],'
+        '"error":{"code":"%s","message":"Please try again later."}}}\n\n' % code
+    )
+    backend = OpenAICodexBackend(
+        store=_Store(_credential()), fetch=lambda *_args, **_kwargs: _Response(sse)
+    )
+
+    with pytest.raises(SubscriptionTransportError) as raised:
+        backend.complete_structured(
+            CompletionRequest(
+                model="gpt-5.1-codex",
+                messages=[{"role": "user", "content": "Return JSON"}],
+                schema={"type": "object", "additionalProperties": False},
+            )
+        )
+
+    assert raised.value.metadata["reason"] == reason
+    assert fragment in str(raised.value)
+    assert code in str(raised.value)
+    assert "invalid JSON" not in str(raised.value)
+
+
 def test_codex_translates_multimodal_image_content_for_responses() -> None:
     backend = OpenAICodexBackend(store=_Store(_credential()))
     data_uri = "data:image/png;base64,aGVsbG8="

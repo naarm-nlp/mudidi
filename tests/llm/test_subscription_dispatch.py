@@ -320,6 +320,71 @@ def test_subscription_structured_call_does_not_retry_other_failures() -> None:
     assert len(backend.requests) == 1
 
 
+def _overloaded_error(reason: str = "provider_unavailable"):
+    from mudidi.llm.subscriptions.types import SubscriptionTransportError
+
+    return SubscriptionTransportError(
+        "Codex subscription service is overloaded (server_is_overloaded)",
+        provider="openai",
+        metadata={"reason": reason},
+    )
+
+
+class _FlakyBackend(_FlakyStructuredBackend):
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        if self._errors:
+            self.requests.append(("complete", request))
+            raise self._errors.pop(0)
+        return super().complete(request)
+
+
+@pytest.mark.parametrize("reason", ["provider_unavailable", "rate_limited"])
+def test_subscription_calls_wait_and_retry_when_the_provider_is_overloaded(
+    monkeypatch: pytest.MonkeyPatch, reason: str
+) -> None:
+    waits: list[float] = []
+    monkeypatch.setattr(client.time, "sleep", waits.append)
+    monkeypatch.setattr(client.random, "uniform", lambda _low, _high: 1.0)
+
+    backend = _FlakyBackend([_overloaded_error(reason), _overloaded_error(reason)])
+    parsed, _raw, _usage = client.complete_structured(
+        "gpt-6-luna",
+        [{"role": "user", "content": "return JSON"}],
+        _Answer,
+        backend=backend,
+    )
+    assert parsed.answer == "structured"
+    assert waits == [5.0, 10.0]
+
+    backend = _FlakyBackend([_overloaded_error(reason)])
+    text, _usage = client.complete_with_usage(
+        "gpt-6-luna", [{"role": "user", "content": "hi"}], backend=backend
+    )
+    assert text == "subscription answer"
+    assert waits == [5.0, 10.0, 5.0]
+
+
+def test_subscription_overload_retries_are_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    waits: list[float] = []
+    monkeypatch.setattr(client.time, "sleep", waits.append)
+    monkeypatch.setattr(client.random, "uniform", lambda _low, _high: 1.0)
+    monkeypatch.setenv("SUBSCRIPTION_TRANSIENT_MAX_RETRIES", "2")
+    backend = _FlakyBackend([_overloaded_error() for _ in range(9)])
+
+    with pytest.raises(Exception, match="overloaded"):
+        client.complete_structured(
+            "gpt-6-luna",
+            [{"role": "user", "content": "return JSON"}],
+            _Answer,
+            backend=backend,
+        )
+
+    assert len(backend.requests) == 3
+    assert waits == [5.0, 10.0]
+
+
 def test_subscription_usage_and_structured_results_are_normalized(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
