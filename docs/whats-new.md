@@ -13,20 +13,26 @@
 - Pages run eight at a time by default (`--batch-size 8`).
 - Oversized page images are compressed once and reused across stages.
 
-## Unreleased — Agentic loop: targeted edits
+## Unreleased — Agentic loop: Evaluator and Editor
 
-- The evaluator now chooses an explicit action: `accept`, `targeted_edits`,
-  `full_redo` (Stage 1 only), or `reject`.
-- For `targeted_edits` it lists each change as a line, the exact current
-  text, and the replacement. The rewriter model verifies every proposed edit
-  against the source and applies the ones it confirms. Edits are no longer
-  applied by code.
+- The loop is now an evaluator-optimizer. The **Evaluator** chooses an explicit
+  action (`accept`, `targeted_edits`, `full_redo` for Stage 1, or `reject`) and
+  lists each edit as a line, the exact current text, and the replacement.
+- The **Editor** (previously "rewriter") verifies every proposed edit against
+  the source and approves or refuses it with a reason. Approved edits are
+  applied as exact replacements; the Editor no longer re-writes the page.
+- The Editor's verdicts are fed back to the Evaluator on the next round.
+- The loop stops early when it detects no progress: a refused edit proposed
+  again, two rounds that change nothing, or a page returning to an earlier
+  version.
+- **Maximum Iterations** replaces "Maximum correction iterations" and defaults
+  to 3.
 - **Deterministic patches** and **Concrete retry evidence** are removed from
   the dashboard. The matching YAML keys and CLI flags are still accepted but
   ignored.
-- Loop records use the new fields (`action`, `edits`, `redo_reason`) and stop
-  reasons (`invalid_decision`, `full_redo_unavailable` replace `vague_retry`
-  and `catastrophic_recovery`).
+- Loop records use new fields (`action`, `edits`, `redo_reason`, per-round
+  Editor verdicts) and stop reasons (`invalid_decision`, `no_progress`,
+  `oscillation`, `full_redo_unavailable`).
 
 ## Unreleased — Dashboard redesign
 

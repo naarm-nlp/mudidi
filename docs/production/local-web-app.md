@@ -280,24 +280,28 @@ instruction attachments, with the selected filename displayed beside it.
 ## Agentic loop
 
 The agentic loop is the fifth wizard step. After each page is produced, an
-evaluator model checks the output against its source. If it finds problems it
-proposes targeted edits, each naming a line, the exact current text, and the
-replacement. A correction model then verifies every proposed edit against the
-source, applies the ones it confirms, and the evaluator checks again, until the
-output is accepted or the iteration limit is reached. For a Stage 1 page that
-is wrong throughout, the evaluator can instead request a full redo, which
-re-transcribes the page from the image. It defaults to **Off**
+**Evaluator** model checks the output against its source. If it finds problems
+it proposes targeted edits, each naming a line, the exact current text, and the
+replacement. An **Editor** model then verifies every proposed edit against the
+source and approves or refuses it with a reason. Approved edits are applied as
+exact replacements, and the Editor's verdicts go back to the Evaluator, which
+checks the page again. This repeats until the page is accepted, the iteration
+cap is reached, or the loop detects that it is no longer making progress. For
+a Stage 1 page that is wrong throughout, the Evaluator can instead request a
+full redo, which re-transcribes the page from the image. It defaults to **Off**
 because it adds model calls and cost. Select **On** to reveal the **Custom
 loop settings** panel. The applicable Stage 1 and Stage 2 checks
-start enabled; you can disable either one, then configure maximum correction
-iterations, minimum retry confidence, and evaluator and rewriter models and
-reasoning.
+start enabled; you can disable either one, then configure **Maximum
+Iterations** (default 3; one iteration is one Evaluator-to-Editor round),
+minimum retry confidence, and the Evaluator and Editor models and reasoning.
+Choosing different models for the two roles makes their checks more
+independent.
 
 Only stages in the selected pipeline can be verified. Controls for inactive
 stages are disabled in the browser, and the server intersects submitted stage
 choices with the active pipeline rather than trusting a forged inactive value.
 The Stage 1 and Stage 2 production calls still use the one synchronized
-run-level provider described below; evaluator and rewriter settings retain
+run-level provider described below; Evaluator and Editor settings retain
 their existing optional role-specific model controls.
 
 ## Models and providers

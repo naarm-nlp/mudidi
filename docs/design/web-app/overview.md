@@ -101,7 +101,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Character inventory and direct stage-specific additional instructions
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
 - Bundled SIL MDF manual text, always added to the Pass 1 system prompt
-- Stage-specific agentic loop, iteration budget, evaluator/rewriter
+- Stage-specific agentic loop, iteration cap, Evaluator/Editor
   models, and minimum confidence
 - Batch size, page limit, and prompt caching
 

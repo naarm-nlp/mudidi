@@ -50,8 +50,8 @@ the existing API-key workflow.
 - Keep subscription credentials in a dedicated encrypted local store.
 - Discover live, account-scoped model catalogs with Google Pro models before
   Flash and newest-first ordering within each family.
-- Select independent Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, evaluator, and
-  rewriter models where supported.
+- Select independent Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, Evaluator, and
+  Editor models where supported.
 - Preserve entitlement-only split-model selections in saved presets while the
   live catalog refreshes.
 - Show Subscription billing first and select it by default for new dashboard
@@ -325,7 +325,7 @@ uv run mudidi run \
   --dry-run
 ```
 
-Enable bounded verifier-rewriter retries directly when needed:
+Enable the bounded Evaluator-Editor loop directly when needed:
 
 ```bash
 uv run mudidi run \

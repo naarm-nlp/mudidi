@@ -74,7 +74,7 @@ uv run mudidi run \
   --output-dir outputs/my-dictionary \
   --stage1-agentic \
   --stage2-agentic \
-  --agentic-max-iterations 2
+  --agentic-max-iterations 3
 ```
 
 The same settings can be stored in YAML for repeatable runs:
@@ -83,7 +83,7 @@ The same settings can be stored in YAML for repeatable runs:
 agentic:
   stage1: true
   stage2: true
-  max_iterations: 2
+  max_iterations: 3
 ```
 
 Every Boolean agentic option has an explicit negative form. For example,
@@ -92,30 +92,48 @@ enabled in YAML. Model, reasoning, and retry-confidence options are listed
 under the agentic group in the
 [CLI reference](../reference/cli.md#mudidi-run).
 
-After each page, the evaluator model chooses one action:
+The loop is an evaluator-optimizer: two models check each other.
 
-| Action | Meaning |
+1. The **Evaluator** judges the page against its source and chooses one action.
+2. For targeted edits, the **Editor** verifies every proposed edit against the
+   same source and returns a verdict for each: apply (with the exact text to
+   replace) or refuse (with a reason).
+3. Each approved edit is carried out as an exact replacement of the named text
+   on one line. An edit whose text is missing or ambiguous is not applied.
+4. The Editor's verdicts and notes go back to the Evaluator, which checks the
+   page again.
+
+| Evaluator action | Meaning |
 | --- | --- |
-| `accept` | The output is good enough; the loop ends. |
-| `targeted_edits` | Specific lines are wrong. The evaluator lists each edit: the line, the exact current text, the replacement, and a reason. |
+| `accept` | The page meets the acceptance criteria; the loop ends. |
+| `targeted_edits` | Specific lines are wrong. Each edit names the line, the exact current text, the replacement, and a reason. |
 | `full_redo` | The page is from the wrong page, largely hallucinated, or wrong on most lines. Stage 1 only: the page is re-transcribed from the image. |
 | `reject` | Correction is unsafe; the current output is kept. |
 
-Edits are never applied by code. For `targeted_edits`, the rewriter model
-receives the proposed edits, verifies each one against the source, applies the
-ones it confirms, and skips the rest. The evaluator then checks the result
-again. Each correction uses one `max_iterations` slot.
+One iteration is one Evaluator-to-Editor round. `max_iterations` (default 3)
+caps the rounds, and the Evaluator gets one more look after the last one. The
+loop also stops, keeping the current output, when:
 
-The loop keeps the current output and stops early when the evaluator's
-confidence is below `min_retry_confidence`, when it proposes no usable edit
-(`invalid_decision`), when it repeats the same edits (`repeated_issue`), or
-when the rewriter confirms none of them (`unchanged`). The stop reason is
-recorded in `agentic/<stage>/final_decision.json` under each page directory.
+| Stop reason | Cause |
+| --- | --- |
+| `low_confidence_retry` | The Evaluator's confidence is below `min_retry_confidence`. |
+| `invalid_decision` | The Evaluator proposed no usable edit, or a full redo without a reason. |
+| `repeated_issue` | The Evaluator re-proposed an edit the Editor refused, or the same edits as the round before. |
+| `no_progress` | Two rounds in a row changed nothing. |
+| `oscillation` | An edit would return the page to an earlier version. |
+| `full_redo_unavailable` | A full redo was requested for Stage 2. |
+
+Each page's `agentic/<stage>/` directory records every round:
+`attempt_N_verifier.json` holds the Evaluator's decision, `attempt_N_editor.json`
+the Editor's verdicts and what was applied, and `final_decision.json` the stop
+reason.
 
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
-transcript and reviewed MDF parsing guide. The `agentic.verifier_patches` and
-`agentic.require_concrete_retry` settings, and their CLI flags, are deprecated
-and ignored.
+transcript and reviewed MDF parsing guide. In YAML and on the command line the
+Editor is configured through the `rewriter_*` keys and `--agentic-rewriter-*`
+flags, which keep their names for compatibility. The
+`agentic.verifier_patches` and `agentic.require_concrete_retry` settings, and
+their CLI flags, are deprecated and ignored.
 
 ## Output layout
 

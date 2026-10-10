@@ -114,8 +114,8 @@ Stage 2 boxes
 are initially checked and may be unchecked. The backend intersects these values
 with active stages and ignores forged inactive values.
 
-Custom controls cover iterations, minimum confidence, and evaluator/rewriter
-models and reasoning. The UI states
+Custom controls cover **Maximum Iterations** (default 3), minimum confidence,
+and the Evaluator and Editor models and reasoning. The UI states
 what the loop does and that it adds model calls, time, and cost.
 
 ## Additional instructions
@@ -137,7 +137,7 @@ Stage 2 adds a Pass 1, Pass 2, or Both-passes scope. Both is the default.
 Changing sources after selecting a file requires confirmation because the
 browser cannot retain that file after it is cleared. Review and preset screens
 display attachment metadata, while the worker supplies the resolved content to
-the selected stage and agentic evaluator/rewriter paths.
+the selected stage and agentic Evaluator/Editor paths.
 
 ## MDF parsing guide and MDF manual
 
