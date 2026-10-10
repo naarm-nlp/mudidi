@@ -1,8 +1,7 @@
 # Local Web Application Design
 
 Status: first-release implementation completed and merged to `main`.
-This document is the product source of truth; the implementation blueprint is in
-`plans/local-web-app-blueprint.md`.
+This document is the product source of truth.
 
 ## Objective
 

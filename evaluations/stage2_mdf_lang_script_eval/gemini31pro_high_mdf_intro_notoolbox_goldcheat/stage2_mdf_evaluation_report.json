@@ -7,8 +7,8 @@
   "pages": [
     {
       "page_id": "Iñupiatun Eskimo-English/page_42",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_42/page_42.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Iñupiatun Eskimo-English/Stage 2 MDF file/page_42/page_42.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Iñupiatun Eskimo-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_42/page_42.mdf.txt",
       "n_pred_records": 62,
       "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.996324,
@@ -74,8 +74,8 @@
     },
     {
       "page_id": "Kashmiri-English/page_14",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Kashmiri-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_14/page_14.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Kashmiri-English/Stage 2 MDF file/page_14/page_14.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Kashmiri-English/stage-2/gemini31pro_high_mdf_intro_notoolbox_goldcheat/page_14/page_14.mdf.txt",
       "n_pred_records": 41,
       "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.954023,

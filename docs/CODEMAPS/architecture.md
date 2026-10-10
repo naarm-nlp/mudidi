@@ -76,7 +76,6 @@ Web dashboard (web/)
 | `scripts/` | Data prep, migration, audit utilities |
 | `evaluations/` | Published benchmark CSV results |
 | `dataset/MUDIDI/` | Gold pages, parquet exports |
-| `plans/` | Implemented blueprints retained as historical design records |
 
 ## Agentic Extension
 

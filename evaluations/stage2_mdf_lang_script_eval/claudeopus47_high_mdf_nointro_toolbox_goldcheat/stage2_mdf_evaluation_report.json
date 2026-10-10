@@ -7,8 +7,8 @@
   "pages": [
     {
       "page_id": "Evenki-Russian/page_1",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Evenki-Russian/Stage 2 MDF file/page_1/page_1.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Evenki-Russian/stage-2/claudeopus47_high_mdf_nointro_toolbox_goldcheat/page_1/page_1.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Evenki-Russian/Stage 2 MDF file/page_1/page_1.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Evenki-Russian/stage-2/claudeopus47_high_mdf_nointro_toolbox_goldcheat/page_1/page_1.mdf.txt",
       "n_pred_records": 28,
       "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.907731,

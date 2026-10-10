@@ -7,8 +7,8 @@
   "pages": [
     {
       "page_id": "Na-English-Chinese-French/page_19",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Na-English-Chinese-French/stage-2/gemini31pro_high_mdf_nointro_toolbox_goldcheat/page_19/page_19.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Na-English-Chinese-French/stage-2/gemini31pro_high_mdf_nointro_toolbox_goldcheat/page_19/page_19.mdf.txt",
       "n_pred_records": 7,
       "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.939655,
@@ -141,8 +141,8 @@
     },
     {
       "page_id": "Tiri-English/page_15",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Tiri-English/Stage 2 MDF file/page_15/page_15.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Tiri-English/stage-2/gemini31pro_high_mdf_nointro_toolbox_goldcheat/page_15/page_15.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Tiri-English/Stage 2 MDF file/page_15/page_15.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Tiri-English/stage-2/gemini31pro_high_mdf_nointro_toolbox_goldcheat/page_15/page_15.mdf.txt",
       "n_pred_records": 38,
       "Entry_F1": 0.972973,
       "MDF_Fields_F1": 0.909953,

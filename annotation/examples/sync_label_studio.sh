@@ -1,4 +1,4 @@
-cd /Users/davidsamuel/Documents/Code/MUDIDI
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -a; source .env; set +a
 
 # Preview what would change (always do this first):

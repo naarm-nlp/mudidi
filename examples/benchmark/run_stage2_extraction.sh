@@ -24,7 +24,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${PROJECT_ROOT}"
 export PYTHONPATH="${PROJECT_ROOT}/src:${PYTHONPATH:-}"
 
-SAMPLES_DIR="${SAMPLES_DIR:-/Users/davidsamuel/Documents/Code/dictionary-extractor/assets/dictionaries/samples}"
+SAMPLES_DIR="${SAMPLES_DIR:-assets/dictionaries/samples}"
 EXTRACT_EXTRA_ARGS=("$@")
 
 # Subset of language subfolders to process across every experiment below.

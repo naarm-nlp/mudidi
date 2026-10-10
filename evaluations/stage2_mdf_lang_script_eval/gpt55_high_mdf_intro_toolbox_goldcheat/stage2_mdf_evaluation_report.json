@@ -7,8 +7,8 @@
   "pages": [
     {
       "page_id": "Nahuatl-French/page_74",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2/Nahuatl-French/stage-2/gpt55_high_mdf_intro_toolbox_goldcheat/page_74/page_74.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Nahuatl-French/Stage 2 MDF file/page_74/page_74.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2/Nahuatl-French/stage-2/gpt55_high_mdf_intro_toolbox_goldcheat/page_74/page_74.mdf.txt",
       "n_pred_records": 30,
       "Entry_F1": 0.983607,
       "MDF_Fields_F1": 0.877778,

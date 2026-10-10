@@ -7,8 +7,8 @@
   "pages": [
     {
       "page_id": "Na-English-Chinese-French/page_19",
-      "gold_path": "/Users/davidsamuel/Documents/Code/MUDIDI/dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
-      "pred_path": "/Users/davidsamuel/Documents/Code/MUDIDI/outputs/benchmark/stage-2-e2e/Na-English-Chinese-French/stage-2/gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha/page_19/page_19.mdf.txt",
+      "gold_path": "dataset/MUDIDI/dictionaries/Na-English-Chinese-French/Stage 2 MDF file/page_19/page_19.mdf.txt",
+      "pred_path": "outputs/benchmark/stage-2-e2e/Na-English-Chinese-French/stage-2/gemini31pro_high_mdf_nointro_notoolbox_agentic_from_gemini31pro_flat_alpha/page_19/page_19.mdf.txt",
       "n_pred_records": 7,
       "Entry_F1": 1.0,
       "MDF_Fields_F1": 0.6,
