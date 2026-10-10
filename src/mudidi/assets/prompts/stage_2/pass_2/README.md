@@ -1,9 +1,12 @@
 # Stage 2, Pass 2: MDF extraction
 
 Every extraction request has a system message and a user message, plus the
-current dictionary-page image. In inference, neighboring pages are supplied as
-transcript excerpts inside the user message (the end of the previous page and
-the start of the next), never as images.
+current dictionary-page image. Inference parses each page locally: the MDF
+covers exactly the lines printed on that page, and per-page outputs are
+concatenated in page order to form the dictionary. The end of the previous
+page's transcript is supplied as text inside the user message, only so that
+lines continuing an earlier entry get the right markers. The next page is not
+sent, and neighboring pages are never sent as images.
 
 | Mode | System message | User message |
 | --- | --- | --- |

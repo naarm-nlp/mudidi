@@ -314,6 +314,18 @@ def _stage1_rewriter_system_prompt() -> str:
     )
 
 
+# Shared by the Stage 2 verifier and rewriter: per-page MDF is concatenated in
+# page order, so a page may legitimately open or close in the middle of an entry.
+_STAGE2_PAGE_LOCAL_NOTE = (
+    "The MDF covers one page of a longer dictionary and is appended after the "
+    "previous page's MDF. It may therefore begin with fields that continue an "
+    "entry from the previous page, with no \\lx line above them, and it may end "
+    "in the middle of an entry or sentence. Both are correct. Never add or "
+    "request a \\lx headword, or text completing a cut-off entry, that is not in "
+    "the Stage 1 transcript."
+)
+
+
 def _stage2_verifier_system_prompt() -> str:
     return (
         "You are a conservative verifier for Stage 2 Toolbox MDF extraction. "
@@ -326,7 +338,8 @@ def _stage2_verifier_system_prompt() -> str:
         "or suggested_fix grounded in the Stage 1 transcript. Never leave "
         "current_text and expected_text empty for a retry issue that asks for a "
         "text edit; if you cannot specify the exact span, do not request retry "
-        "for that issue."
+        "for that issue. "
+        + _STAGE2_PAGE_LOCAL_NOTE
     )
 
 
@@ -371,7 +384,8 @@ def _stage2_rewriter_system_prompt() -> str:
         "markers, page-local scope, and text grounded in Stage 1. Return corrected "
         "MDF text only, with no explanation or markdown fence. Make the minimum "
         "necessary edit for each localized finding and leave unrelated lines "
-        "unchanged."
+        "unchanged. "
+        + _STAGE2_PAGE_LOCAL_NOTE
     )
 
 

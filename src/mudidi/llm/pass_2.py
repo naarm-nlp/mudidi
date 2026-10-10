@@ -29,7 +29,7 @@ from mudidi.llm.prompts import page_boundary_rules_prompt
 from mudidi.utils.page_context import (
     PageContext,
     format_current_page_block,
-    format_neighbor_text_block,
+    format_previous_page_block,
     format_page_image_order_note,
 )
 
@@ -77,17 +77,11 @@ def _neighbor_format_kwargs(
         return {
             "current_page_context": "",
             "previous_page_context": "",
-            "next_page_context": "",
             "page_image_order": "",
         }
     return {
         "current_page_context": format_current_page_block(page_context),
-        "previous_page_context": format_neighbor_text_block(
-            page_context.previous, label="previous_page"
-        ),
-        "next_page_context": format_neighbor_text_block(
-            page_context.next, label="next_page"
-        ),
+        "previous_page_context": format_previous_page_block(page_context.previous),
         "page_image_order": format_page_image_order_note(page_context),
     }
 def _render_direct_mdf_user_parts(
@@ -203,8 +197,8 @@ def _build_direct_mdf_prompt(
         else []
     )
     mime = mime_type_for_path(image_path)
-    # Neighbor pages reach the model as transcripts only; the current page is
-    # the single page image.
+    # The previous page reaches the model as a transcript excerpt only; the
+    # current page is the single page image.
     dynamic_content: list[dict] = [{"type": "text", "text": dynamic_text}]
     dynamic_content.append(
         {

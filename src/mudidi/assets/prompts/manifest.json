@@ -86,7 +86,7 @@
     "description": "Stage 2 Pass 2 inference system message, including cross-page entry-boundary rules.",
     "file": "stage_2/pass_2/system_inference.j2",
     "variables": [
-      {"name": "page_boundary_rules", "description": "Cross-page entry ownership rules."}
+      {"name": "page_boundary_rules", "description": "Page-local parsing rules for entries that cross a page break."}
     ]
   },
   "stage_2_pass_2_user_benchmark": {
@@ -100,7 +100,7 @@
     ]
   },
   "stage_2_pass_2_user_inference": {
-    "description": "Complete Stage 2 Pass 2 inference user message with optional neighboring-page context.",
+    "description": "Complete Stage 2 Pass 2 inference user message with optional previous-page context.",
     "file": "stage_2/pass_2/user_inference.j2",
     "variables": [
       {"name": "transcription", "tag": "<transcription>", "description": "Authoritative Stage 1 text."},
@@ -109,8 +109,7 @@
       {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "current_page_context", "tag": "<current_page>", "description": "Current page identity."},
       {"name": "previous_page_context", "tag": "<previous_page>", "description": "Optional excerpt from the end of the previous page's transcript."},
-      {"name": "next_page_context", "tag": "<next_page>", "description": "Optional excerpt from the start of the next page's transcript."},
-      {"name": "page_image_order", "description": "Note that the only page image is the current page; neighbors are transcripts only."}
+      {"name": "page_image_order", "description": "Note that the only page image is the current page; the previous page is a transcript excerpt only."}
     ]
   },
   "page_boundary_rules": {

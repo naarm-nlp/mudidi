@@ -1,9 +1,9 @@
-Page boundary rules (entry ownership):
-- Assign each main dictionary entry (\lx headword block) to the page where that headword first appears.
-- INCLUDE in the current page MDF:
-  • Every entry whose \lx starts on this page — include ALL sub-fields (\se, \va, \sn, examples, inflection lists) even when those sub-fields print at the top of the next page. Copy characters verbatim from the <next_page> transcript into the parent entry on THIS page.
-  • Example: if \lx ala starts on page_53 and sub-forms like —alas nuwebi print at the top of page_54, page_53's MDF must include those sub-entries; page_54 must not emit them as orphan blocks.
-- EXCLUDE from the current page MDF:
-  • Lines at the top that continue an entry whose \lx started on the previous page (check <previous_page> transcript). Do not emit them as standalone \se/\ge records or new \lx entries.
-  • Em-dash sub-forms (e.g. —alas nuwebi) under a parent headword from the previous page belong in the previous page's entry block, not here.
-- Neighbor pages are provided as transcript excerpts only: <previous_page> holds the end of the previous page and <next_page> holds the start of the next page. The only page image is the CURRENT page; use the excerpts for cross-page entry completion as described above.
+Page boundary rules (page-local parsing):
+- Parse exactly what is printed on the CURRENT page. Every line of the current-page transcription becomes MDF, and no text from any other page does.
+- Each page's MDF is appended directly after the previous page's MDF to form the dictionary, so an entry that crosses a page break is split between the two pages' outputs.
+- Entry that starts on this page and runs past the bottom: emit only the part printed on this page. Stop where the page stops, even mid-entry or mid-sentence, and keep a trailing hyphen exactly as printed. Do not complete the entry from memory or guesswork; the next page's output continues it.
+- Lines at the top of this page that continue an entry begun on the previous page: emit them first, tagged with the markers they carry inside that entry (\sn, \ge, \xv, \xe, \se, …). Do NOT emit a \lx line for them, and do not repeat or invent the parent headword.
+  • Example: \lx ala starts on page_53 and its sub-forms like —alas nuwebi print at the top of page_54. page_53 emits \lx ala with only the fields printed on page_53. page_54 begins with the \se alas nuwebi block (no \lx above it), then continues with the entries whose headwords start on page_54.
+- Field broken by the page break (a gloss, definition or example sentence that the previous page left unfinished): begin this page by re-opening that same marker with the remaining words. Do not choose a different marker for the fragment.
+- <previous_page> holds the end of the previous page's transcription. Use it ONLY to work out which entry, sense and field the top-of-page lines continue, so they get the right markers. Never copy text from <previous_page> into the output.
+- The only page image is the CURRENT page. No next-page context is provided or needed.

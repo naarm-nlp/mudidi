@@ -98,9 +98,9 @@ def test_prompt_manifest_keeps_complete_message_templates_readable() -> None:
         "current_page_context",
         "page_image_order",
         "previous_page_context",
-        "next_page_context",
     ):
         assert f"{{% if {variable} %}}" in pass2_inference
+    assert "next_page" not in pass2_inference
 
 
 def test_prompt_layout_includes_human_request_assembly_maps() -> None:

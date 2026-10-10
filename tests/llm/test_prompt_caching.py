@@ -105,12 +105,10 @@ def test_pass2_benchmark_prompt_does_not_claim_transcript_is_gold(
 def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     page = tmp_path / "page_2.png"
     previous = tmp_path / "page_1.png"
-    next_page = tmp_path / "page_3.png"
-    for path in (page, previous, next_page):
+    for path in (page, previous):
         path.write_bytes(b"fake-image")
     page_context = PageContext(
         previous=NeighborPage("page_1", previous, "previous transcript"),
-        next=NeighborPage("page_3", next_page, "next transcript"),
         current_stem="page_2",
     )
 
@@ -132,7 +130,8 @@ def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     assert "current transcript" in dynamic_text
     assert "<current_page>" in dynamic_text
     assert "previous transcript" in dynamic_text
-    assert "next transcript" in dynamic_text
+    assert "<next_page>" not in dynamic_text
+    assert len(messages[2]["content"]) == 2
 
 
 def test_file_content_part_uses_uri_for_remote_pdf() -> None:
