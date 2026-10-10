@@ -15,6 +15,7 @@ from mudidi.config.run_config import (
     runs_stage2_pass1,
     runs_stage2_pass2,
 )
+from mudidi.utils.combined_mdf import write_combined_mdf
 from mudidi.web.jobs import JobController
 
 _TEXT_SUFFIXES = {".txt", ".tsv", ".mdf", ".json", ".jsonl", ".log"}
@@ -203,6 +204,10 @@ class ArtifactService:
             raise ArtifactAccessError("editable page artifact was not found")
         path = self.resolve(run_id, artifact.relative_path)
         path.write_text(text, encoding="utf-8")
+        if stage == "stage2":
+            # Keep the combined dictionary in step with the corrected page.
+            root = self.output_root(run_id)
+            write_combined_mdf(root / "stage-2", root)
 
     def preview_text(self, run_id: str, relative_path: Path) -> str:
         """Read a bounded text preview for a known textual artifact."""

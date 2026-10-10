@@ -76,6 +76,7 @@ from mudidi.config.run_config import (
     runs_stage2_pass1,
     runs_stage2_pass2,
 )
+from mudidi.utils.combined_mdf import write_combined_mdf
 from mudidi.utils.page_context import build_page_context
 from mudidi.utils.parse_rules_pages import (
     normalize_parse_rules_page_stems,
@@ -2652,6 +2653,21 @@ def _run_single_entry(args, parser) -> int:
             usage_roots=usage_roots,
             parse_rules_roots=[cheatsheet_root],
         )
+
+    # Inference parses each page locally, so join the pages into one dictionary.
+    if (
+        args.strategy == "two_stage"
+        and layout.inference
+        and runs_stage2_pass2(args.stage)
+    ):
+        combined_report = write_combined_mdf(stage2_dir, output_dir)
+        if combined_report is not None:
+            mid_entry = combined_report["pages_starting_mid_entry"]
+            print(
+                f"Combined MDF saved → {output_dir / combined_report['output']} "
+                f"({len(combined_report['pages'])} pages; "
+                f"{len(mid_entry)} start mid-entry)"
+            )
 
     return 0 if failed == 0 else 1
 

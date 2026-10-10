@@ -448,6 +448,9 @@ def test_page_editor_saves_stage_outputs_to_existing_artifacts(tmp_path: Path) -
     assert (output / "stage-2/page_1/page_1.mdf.txt").read_text(
         encoding="utf-8"
     ) == "\\lx corrected\n\\ge revised gloss"
+    assert (output / "dictionary.mdf.txt").read_text(
+        encoding="utf-8"
+    ) == "\\lx corrected\n\\ge revised gloss\n"
 
 
 def test_page_editor_has_natural_slider_navigation_and_no_event_panel(
