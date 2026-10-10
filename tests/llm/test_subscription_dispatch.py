@@ -247,6 +247,79 @@ def test_subscription_completion_rejects_a_different_provider_prefix() -> None:
     assert backend.requests == []
 
 
+class _FlakyStructuredBackend(_FakeBackend):
+    """Fails structured calls with ``errors`` before answering normally."""
+
+    def __init__(self, errors: list[Exception]) -> None:
+        super().__init__()
+        self._errors = list(errors)
+
+    def complete_structured(self, request: CompletionRequest) -> CompletionResult:
+        if self._errors:
+            self.requests.append(("structured", request))
+            raise self._errors.pop(0)
+        return super().complete_structured(request)
+
+
+def _malformed_reply_error(reason: str = "invalid_structured_output"):
+    from mudidi.llm.subscriptions.types import SubscriptionTransportError
+
+    return SubscriptionTransportError(
+        "Codex structured output is invalid JSON",
+        provider="openai",
+        metadata={"reason": reason},
+    )
+
+
+@pytest.mark.parametrize(
+    "reason",
+    ["invalid_structured_output", "structured_schema_mismatch", "missing_visible_text"],
+)
+def test_subscription_structured_call_retries_a_malformed_reply(reason: str) -> None:
+    backend = _FlakyStructuredBackend([_malformed_reply_error(reason)])
+
+    parsed, _raw, _usage = client.complete_structured(
+        "gpt-6.1-sol",
+        [{"role": "user", "content": "return JSON"}],
+        _Answer,
+        backend=backend,
+    )
+
+    assert parsed.answer == "structured"
+    assert len(backend.requests) == 2
+
+
+def test_subscription_structured_call_gives_up_after_the_retry_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRUCTURED_MAX_RETRIES", "3")
+    backend = _FlakyStructuredBackend([_malformed_reply_error() for _ in range(5)])
+
+    with pytest.raises(Exception, match="invalid JSON"):
+        client.complete_structured(
+            "gpt-6.1-sol",
+            [{"role": "user", "content": "return JSON"}],
+            _Answer,
+            backend=backend,
+        )
+
+    assert len(backend.requests) == 3
+
+
+def test_subscription_structured_call_does_not_retry_other_failures() -> None:
+    backend = _FlakyStructuredBackend([_malformed_reply_error("transport_error")])
+
+    with pytest.raises(Exception, match="invalid JSON"):
+        client.complete_structured(
+            "gpt-6.1-sol",
+            [{"role": "user", "content": "return JSON"}],
+            _Answer,
+            backend=backend,
+        )
+
+    assert len(backend.requests) == 1
+
+
 def test_subscription_usage_and_structured_results_are_normalized(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -1471,6 +1471,30 @@ def _is_retryable_structured_response(
     return False
 
 
+_MALFORMED_STRUCTURED_REPLY_REASONS = frozenset(
+    {
+        "invalid_structured_output",
+        "structured_schema_mismatch",
+        "missing_visible_text",
+    }
+)
+
+
+def _is_malformed_structured_reply(exc: Exception) -> bool:
+    """Whether a subscription structured call failed on the reply's content.
+
+    These failures come from what the model wrote, not from the request or the
+    account, so the same request can succeed when sent again.
+    """
+    if isinstance(exc, ValidationError):
+        return True
+    metadata = getattr(exc, "metadata", None)
+    return (
+        isinstance(metadata, dict)
+        and metadata.get("reason") in _MALFORMED_STRUCTURED_REPLY_REASONS
+    )
+
+
 def complete_structured(
     model: str,
     messages: List[Dict[str, Any]],
@@ -1504,15 +1528,35 @@ def complete_structured(
             schema=schema,
             prompt_cache_key=prompt_cache_key,
         )
-        result = _subscription_result(selected_backend.complete_structured(request))
-        content = _subscription_text(result)
-        if result.structured_json is None:
-            parsed = response_schema.model_validate_json(content)
-        elif isinstance(result.structured_json, str):
-            parsed = response_schema.model_validate_json(result.structured_json)
-        else:
-            parsed = response_schema.model_validate(result.structured_json)
-        return parsed, content, _subscription_usage(model, result)
+        # A model occasionally returns a truncated or malformed JSON reply. Ask
+        # again, as the API-key path below does, before failing the page.
+        max_attempts = _structured_max_retries()
+        for attempt in range(max_attempts):
+            try:
+                result = _subscription_result(
+                    selected_backend.complete_structured(request)
+                )
+                content = _subscription_text(result)
+                if result.structured_json is None:
+                    parsed = response_schema.model_validate_json(content)
+                elif isinstance(result.structured_json, str):
+                    parsed = response_schema.model_validate_json(
+                        result.structured_json
+                    )
+                else:
+                    parsed = response_schema.model_validate(result.structured_json)
+                return parsed, content, _subscription_usage(model, result)
+            except Exception as exc:
+                if attempt >= max_attempts - 1 or not _is_malformed_structured_reply(
+                    exc
+                ):
+                    raise
+                print(
+                    f"Structured reply for {response_schema.__name__} was "
+                    f"malformed ({exc}); retrying "
+                    f"(attempt {attempt + 2}/{max_attempts})",
+                    flush=True,
+                )
     params = _build_params(
         model,
         messages,

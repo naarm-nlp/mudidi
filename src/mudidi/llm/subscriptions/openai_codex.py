@@ -2131,9 +2131,15 @@ class OpenAICodexBackend:
                 try:
                     candidate = json.loads(text)
                 except (TypeError, json.JSONDecodeError):
+                    finish = _finish_reason(response)
+                    detail = (
+                        f" (reply ended early: {finish}, {len(text)} characters)"
+                        if finish not in (None, "stop")
+                        else f" ({len(text)} characters)"
+                    )
                     raise _error(
                         SubscriptionTransportError,
-                        "Codex structured output is invalid JSON",
+                        "Codex structured output is invalid JSON" + detail,
                         reason="invalid_structured_output",
                     ) from None
             if not _schema_matches(candidate, request.schema or {}):
