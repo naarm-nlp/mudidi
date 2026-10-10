@@ -11,7 +11,6 @@ import pytest
 
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.runs import (
-    ActiveRunExistsError,
     InvalidRunTransition,
     RunStatus,
     RunStore,
@@ -92,16 +91,33 @@ def test_resume_requires_temporary_credentials(store: RunStore) -> None:
     assert run.provider == "anthropic"
 
 
-def test_database_enforces_one_active_run(store: RunStore) -> None:
+def test_database_allows_several_active_runs(store: RunStore) -> None:
     for run_id in ("run-1", "run-2"):
         store.create_run(run_id)
         store.transition(run_id, RunStatus.VALIDATED)
         store.transition(run_id, RunStatus.QUEUED)
+        store.transition(run_id, RunStatus.RUNNING_STAGE1)
 
-    store.transition("run-1", RunStatus.RUNNING_STAGE1)
+    assert {run.run_id for run in store.list_active_runs()} == {"run-1", "run-2"}
 
-    with pytest.raises(ActiveRunExistsError):
-        store.transition("run-2", RunStatus.RUNNING_STAGE1)
+
+def test_migration_drops_the_single_active_run_index(tmp_path: Path) -> None:
+    database = tmp_path / "runs.sqlite3"
+    RunStore(database)
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "CREATE UNIQUE INDEX one_active_run ON runs ((1)) "
+            "WHERE status IN ('running_stage1', 'running_stage2')"
+        )
+
+    store = RunStore(database)
+
+    for run_id in ("run-1", "run-2"):
+        store.create_run(run_id)
+        store.transition(run_id, RunStatus.VALIDATED)
+        store.transition(run_id, RunStatus.QUEUED)
+        store.transition(run_id, RunStatus.RUNNING_STAGE1)
+    assert len(store.list_active_runs()) == 2
 
 
 def test_api_keys_are_not_columns_or_serialized_values(store: RunStore) -> None:

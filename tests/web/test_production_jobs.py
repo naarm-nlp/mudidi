@@ -20,7 +20,7 @@ from mudidi.llm.subscriptions import SubscriptionCredential, SubscriptionProvide
 from mudidi.llm.subscriptions.storage import SubscriptionStore
 from mudidi.web import production_worker
 from mudidi.web.credentials import CredentialVault
-from mudidi.web.jobs import JobController, _OwnedWorker
+from mudidi.web.jobs import JobController, OutputDirectoryInUseError, _OwnedWorker
 from mudidi.web.models import Provider
 from mudidi.web.parse_rules import ParseRuleReviewService, ReviewStatus
 from mudidi.web.runs import RunStatus, RunStore
@@ -142,6 +142,64 @@ def test_pdf_page_count_uses_selected_dictionary_range(tmp_path: Path) -> None:
     pdf.touch()
 
     assert production_worker._page_count(pdf, "10-12,15") == 4
+
+
+def _mark_working(store: RunStore, run_id: str) -> None:
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+
+
+def test_start_is_refused_while_another_run_writes_to_the_same_folder(
+    tmp_path: Path,
+) -> None:
+    store, _reviews, controller = _controller(tmp_path)
+    config = _config(tmp_path)
+    for run_id in ("first", "second"):
+        controller.prepare_inference(run_id, config=config, provider=Provider.ANTHROPIC)
+    _mark_working(store, "first")
+
+    with pytest.raises(OutputDirectoryInUseError, match="first"):
+        controller.start_inference(
+            "second", credentials=(_credential(),), offline_executor=True
+        )
+
+    # The refused run is left ready to start, not stranded as queued.
+    assert store.get_run("second").status is RunStatus.VALIDATED
+
+
+def test_runs_with_different_output_folders_do_not_conflict(tmp_path: Path) -> None:
+    store, _reviews, controller = _controller(tmp_path)
+    first = _config(tmp_path)
+    second = first.model_copy(
+        update={
+            "output": first.output.model_copy(
+                update={"directory": tmp_path / "other-output"}
+            )
+        }
+    )
+    controller.prepare_inference("first", config=first, provider=Provider.ANTHROPIC)
+    controller.prepare_inference("second", config=second, provider=Provider.ANTHROPIC)
+    _mark_working(store, "first")
+
+    assert controller.runs_sharing_output_directory("second") == ()
+
+    controller.start_inference(
+        "second", credentials=(_credential(),), offline_executor=True
+    )
+    controller.wait("second", timeout=10)
+    assert store.get_run("first").status is RunStatus.RUNNING_STAGE1
+    assert store.get_run("second").status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+
+
+def test_finished_run_releases_its_output_folder(tmp_path: Path) -> None:
+    store, _reviews, controller = _controller(tmp_path)
+    config = _config(tmp_path)
+    for run_id in ("first", "second"):
+        controller.prepare_inference(run_id, config=config, provider=Provider.ANTHROPIC)
+    _mark_working(store, "first")
+    store.transition("first", RunStatus.FAILED)
+
+    assert controller.runs_sharing_output_directory("second") == ()
 
 
 def test_complete_production_path_pauses_then_resumes_approved_pass2(

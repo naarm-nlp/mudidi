@@ -82,7 +82,7 @@ for public or LAN deployment. Use `--no-browser` or `--port` when needed.
 
 ![MUDIDI New Run dashboard showing the Input step](../assets/dashboard-home.png)
 
-The dashboard has a dark navigation sidebar (**New run**, **Active run**,
+The dashboard has a dark navigation sidebar (**New run**, **Active runs**,
 **Run history**, **Saved presets**), a numbered six-step tab bar across the top
 of **New run**, and a live **Run summary** rail on the right. The header shows a
 status chip that follows the selected billing mode (subscription accounts
@@ -544,7 +544,21 @@ directory at `outputs/web-output`; Compose mounts `./outputs` at
 `/app/outputs`. Paths under `/data` are persisted in the host's `mudidi-data/`
 directory. Other absolute host paths are rejected because Docker cannot access
 an unmounted host directory. With `uv`, output paths refer directly to the host
-filesystem. The first release permits one inference worker at a time.
+filesystem.
+
+### Running several runs at once
+
+You can start a run while others are working; there is no limit on how many
+run at once. **Active runs** lists every working run with its stage, progress,
+and a **Cancel** action; select a run to open it.
+
+- A run is refused when another in-progress run (working, or paused for
+  parsing-guide review) writes to the same output folder. The Review page says
+  which run holds the folder. Wait for that run, cancel it, or prepare the new
+  run with a different output folder.
+- Runs that use the same provider login share that login's rate limit. The
+  Review page and the run page warn about this. Such runs still start, but they
+  may each go slower than they would alone.
 
 ## Troubleshooting
 

@@ -10,7 +10,8 @@ import pytest
 from fastapi.testclient import TestClient
 from mudidi.config.yaml_config import InferenceConfig
 from mudidi.web.app import create_app
-from mudidi.web.runs import RunStatus
+from mudidi.web.models import Provider
+from mudidi.web.runs import RunStatus, RunStore
 
 
 def _event(
@@ -133,39 +134,118 @@ def test_active_page_filters_runs_with_terminal_event_before_status_reconciliati
     assert "No inference is running" in response.text
 
 
-def test_active_page_exposes_progress_timeline_activity_and_elapsed_hook(
-    tmp_path: Path,
-) -> None:
-    app = create_app(data_dir=tmp_path)
-    store = app.state.run_store
-    run_id = "active-dashboard"
+def _working_run(store: RunStore, run_id: str, *, completed: int, total: int) -> None:
     store.create_run(run_id, provider="offline")
     store.transition(run_id, RunStatus.VALIDATED)
     store.transition(run_id, RunStatus.QUEUED)
     store.transition(run_id, RunStatus.RUNNING_STAGE1)
     store.append_event(
-        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=2)
+        run_id, _event(run_id, 1, "stage.started", "stage1", total_pages=total)
     )
-    store.append_event(run_id, _event(run_id, 2, "page.completed", "stage1", page=1))
-    store.append_event(run_id, _event(run_id, 3, "page.started", "stage1", page=2))
+    for page in range(1, completed + 1):
+        store.append_event(
+            run_id, _event(run_id, 1 + page, "page.completed", "stage1", page=page)
+        )
+
+
+def test_active_page_lists_every_working_run(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    _working_run(store, "active-one", completed=1, total=2)
+    _working_run(store, "active-two", completed=1, total=4)
 
     response = TestClient(app).get("/active")
 
     assert response.status_code == 200
+    assert "Active runs" in response.text
+    assert "2 workers live" in response.text
     assert "50%" in response.text
     assert "1 of 2 pages" in response.text
+    assert "25%" in response.text
+    assert "1 of 4 pages" in response.text
+    assert "Stage 1 — Transcription" in response.text
     assert 'data-elapsed-from="' in response.text
-    assert 'meta name="mudidi-events"' in response.text
-    for label in (
-        "Stage 1 — Transcription",
-        "MDF parsing guide discovery",
-        "Review parsing guide",
-        "Stage 2 — MDF conversion",
-    ):
-        assert label in response.text
-    assert "Recent activity" in response.text
-    assert 'href="/runs/active-dashboard"' in response.text
-    assert 'action="/runs/active-dashboard/cancel"' in response.text
+    for run_id in ("active-one", "active-two"):
+        assert f'href="/runs/{run_id}"' in response.text
+        assert f'action="/runs/{run_id}/cancel"' in response.text
+        assert f'content="/runs/{run_id}/events?after=' in response.text
+
+
+def _subscription_config(
+    tmp_path: Path, *, output: str, provider: str = "openai"
+) -> InferenceConfig:
+    pages = tmp_path / "pages"
+    pages.mkdir(exist_ok=True)
+    (pages / "page_1.png").write_bytes(b"page image")
+    model = {
+        "openai": "openai/gpt-5.6-terra",
+        "claude": "anthropic/claude-sonnet-5",
+    }[provider]
+    return InferenceConfig.model_validate(
+        {
+            "input": {"pages": pages},
+            "output": {"directory": tmp_path / output},
+            "pipeline": {"stage": "1"},
+            "models": {"default": model},
+            "auth": {"mode": "subscription", "providers": [provider]},
+        }
+    )
+
+
+def _prepare_working(app: object, run_id: str, config: InferenceConfig) -> None:
+    app.state.job_controller.prepare_inference(  # type: ignore[attr-defined]
+        run_id, config=config, provider=Provider.OPENAI
+    )
+    store = app.state.run_store  # type: ignore[attr-defined]
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.RUNNING_STAGE1)
+
+
+def test_start_shows_why_a_shared_output_folder_blocks_the_run(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    config = _subscription_config(tmp_path, output="shared-output")
+    _prepare_working(app, "working-run", config)
+    app.state.job_controller.prepare_inference(
+        "waiting-run", config=config, provider=Provider.OPENAI
+    )
+
+    response = TestClient(app).post("/runs/waiting-run/start")
+
+    assert response.status_code == 409
+    assert "Output folder in use" in response.text
+    assert "working-run" in response.text
+    assert app.state.run_store.get_run("waiting-run").status is RunStatus.VALIDATED
+
+
+def test_review_warns_when_a_working_run_uses_the_same_login(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    _prepare_working(
+        app, "working-run", _subscription_config(tmp_path, output="output-a")
+    )
+    app.state.job_controller.prepare_inference(
+        "same-login",
+        config=_subscription_config(tmp_path, output="output-b"),
+        provider=Provider.OPENAI,
+    )
+    app.state.job_controller.prepare_inference(
+        "other-login",
+        config=_subscription_config(tmp_path, output="output-c", provider="claude"),
+        provider=Provider.ANTHROPIC,
+    )
+    client = TestClient(app)
+
+    same = client.get("/runs/same-login/review")
+    other = client.get("/runs/other-login/review")
+
+    assert "Shared provider login" in same.text
+    assert "working-run" in same.text
+    assert "openai subscription login" in same.text
+    assert "Output folder in use" not in same.text
+    assert "Shared provider login" not in other.text
 
 
 def test_empty_active_page_links_to_history_and_new_run(tmp_path: Path) -> None:

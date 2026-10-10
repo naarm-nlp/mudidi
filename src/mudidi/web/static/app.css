@@ -625,6 +625,12 @@ dt { color: var(--color-muted); } dd { margin: 0; font-weight: 700; }
 .active-overview h2 { margin-bottom: 18px; font-size: 19px; }
 .active-overview dd { max-width: 18ch; overflow-wrap: anywhere; text-align: right; }
 .active-empty { margin-top: 18px; }
+.active-table .progress-track { height: 10px; margin: 4px 0 0; }
+.active-current-page { display: block; margin-top: 6px; color: var(--color-muted); }
+.run-notice { margin: 14px 0; }
+.review-actions .run-notice { margin: 14px 0; }
+.run-notice.failure-details { font-family: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.run-notice.failure-details strong { display: block; font-family: var(--font-mono); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .empty-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin-top: 16px; }
 
 .history-table-panel { padding: 0; overflow: hidden; }

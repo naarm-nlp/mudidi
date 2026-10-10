@@ -1837,7 +1837,7 @@ document.addEventListener("click", async (event) => {
   }
 });
 
-const liveRun = document.querySelector('meta[name="mudidi-events"]');
+const liveRuns = [...document.querySelectorAll('meta[name="mudidi-events"]')];
 const streamStatus = document.querySelector("[data-stream-status]");
 const liveToggle = document.querySelector("[data-live-toggle]");
 const livePauseLabel = liveToggle?.querySelector("[data-live-pause-label]");
@@ -1851,7 +1851,7 @@ const liveEventNames = [
   "run.failed",
   "run.cancelled",
 ];
-let liveEventSource = null;
+let liveEventSources = [];
 
 const setStreamStatus = (text) => {
   if (streamStatus) streamStatus.textContent = text;
@@ -1866,33 +1866,35 @@ const setLiveToggleState = (paused) => {
 };
 
 const stopLiveUpdates = () => {
-  if (!liveEventSource) return;
-  liveEventSource.close();
-  liveEventSource = null;
+  liveEventSources.forEach((source) => source.close());
+  liveEventSources = [];
 };
 
+// One stream per live run: the Active runs page lists several at once.
 const startLiveUpdates = () => {
-  if (!liveRun || !window.EventSource || liveEventSource) return false;
+  if (!liveRuns.length || !window.EventSource || liveEventSources.length) return false;
   setStreamStatus("Connecting…");
-  const source = new EventSource(liveRun.content);
-  liveEventSource = source;
-  source.addEventListener("open", () => {
-    if (source === liveEventSource) setStreamStatus("Live");
-  });
-  source.addEventListener("error", () => {
-    if (source === liveEventSource) setStreamStatus("Reconnecting…");
-  });
-  liveEventNames.forEach((eventName) => {
-    source.addEventListener(eventName, () => {
-      if (source !== liveEventSource) return;
-      stopLiveUpdates();
-      window.location.reload();
+  liveEventSources = liveRuns.map((liveRun) => {
+    const source = new EventSource(liveRun.content);
+    source.addEventListener("open", () => {
+      if (liveEventSources.includes(source)) setStreamStatus("Live");
     });
+    source.addEventListener("error", () => {
+      if (liveEventSources.includes(source)) setStreamStatus("Reconnecting…");
+    });
+    liveEventNames.forEach((eventName) => {
+      source.addEventListener(eventName, () => {
+        if (!liveEventSources.includes(source)) return;
+        stopLiveUpdates();
+        window.location.reload();
+      });
+    });
+    return source;
   });
   return true;
 };
 
-if (liveRun && window.EventSource) startLiveUpdates();
+if (liveRuns.length && window.EventSource) startLiveUpdates();
 if (liveToggle) {
   const initiallyPaused = liveResumeLabel ? !liveResumeLabel.hidden : false;
   setLiveToggleState(initiallyPaused);

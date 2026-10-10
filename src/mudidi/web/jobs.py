@@ -1,4 +1,4 @@
-"""Single-worker subprocess controller with persisted structured events."""
+"""Subprocess controller that runs one worker per run with persisted events."""
 
 from __future__ import annotations
 
@@ -56,8 +56,25 @@ _SUBSCRIPTION_ENVIRONMENT_ALLOWLIST = frozenset(
         "MUDIDI_AGENTIC_VERIFIER_MAX_TOKENS",
     }
 )
+# A run in one of these states still owns the files in its output folder.
+_OUTPUT_HOLDING_STATUSES = frozenset(
+    {
+        RunStatus.RUNNING_STAGE1,
+        RunStatus.DISCOVERING_PARSE_RULES,
+        RunStatus.AWAITING_PARSE_RULES_REVIEW,
+        RunStatus.RUNNING_STAGE2,
+    }
+)
 if TYPE_CHECKING:
     from mudidi.web.parse_rules import ParseRuleReviewService
+
+
+class OutputDirectoryInUseError(RuntimeError):
+    """Raised when another in-progress run writes to the same output folder."""
+
+
+def _resolved_output_directory(config: InferenceConfig) -> Path:
+    return Path(config.output.directory).expanduser().resolve()
 
 
 @dataclass(slots=True)
@@ -68,7 +85,7 @@ class _OwnedWorker:
 
 
 class JobController:
-    """Own exactly one child worker and mirror its events into SQLite."""
+    """Own one child worker per run and mirror its events into SQLite."""
 
     def __init__(
         self,
@@ -127,6 +144,41 @@ class JobController:
         self.store.create_run(run_id, provider=provider.value)
         self.store.transition(run_id, RunStatus.VALIDATED)
 
+    def runs_sharing_output_directory(self, run_id: str) -> tuple[str, ...]:
+        """Return other in-progress runs that write to this run's output folder."""
+
+        try:
+            target = _resolved_output_directory(self.load_inference_config(run_id))
+        except (OSError, ValidationError, ValueError):
+            return ()
+        sharing: list[str] = []
+        for other in self.store.list_runs():
+            if other.run_id == run_id or other.status not in _OUTPUT_HOLDING_STATUSES:
+                continue
+            try:
+                directory = _resolved_output_directory(
+                    self.load_inference_config(other.run_id)
+                )
+            except (OSError, ValidationError, ValueError):
+                continue
+            if directory == target:
+                sharing.append(other.run_id)
+        return tuple(sharing)
+
+    def _ensure_output_directory_free(self, run_id: str) -> None:
+        sharing = self.runs_sharing_output_directory(run_id)
+        if sharing:
+            raise OutputDirectoryInUseError(
+                f"Run {sharing[0]} is still in progress and writes to the same "
+                "output folder. Wait for it to finish or cancel it, or prepare "
+                "this run with a different output folder."
+            )
+
+    def _ensure_no_live_worker(self, run_id: str) -> None:
+        worker = self._workers.get(run_id)
+        if worker is not None and worker.process.poll() is None:
+            raise RuntimeError("this run already has a live worker")
+
     def load_inference_config(self, run_id: str) -> InferenceConfig:
         """Load and validate the managed non-secret config for one run."""
 
@@ -143,6 +195,7 @@ class JobController:
     ) -> None:
         """Launch Stage 1 and/or Pass 1 while preserving the review pause."""
 
+        self._ensure_output_directory_free(run_id)
         config = self.load_inference_config(run_id)
         phase = _initial_phase(config)
         subscription = config.auth.mode is AuthMode.SUBSCRIPTION
@@ -249,6 +302,7 @@ class JobController:
     ) -> None:
         """Resume the durable phase without bypassing parse-rule approval."""
 
+        self._ensure_output_directory_free(run_id)
         run = self.store.get_run(run_id)
         if run.status is RunStatus.FAILED:
             run = self.prepare_failed_retry(run_id)
@@ -323,8 +377,7 @@ class JobController:
         if page_count < 1 or delay_seconds < 0:
             raise ValueError("page_count must be positive and delay non-negative")
         with self._lock:
-            if any(worker.process.poll() is None for worker in self._workers.values()):
-                raise RuntimeError("another inference worker is active")
+            self._ensure_no_live_worker(run_id)
             self.store.transition(run_id, RunStatus.RUNNING_STAGE1)
             command = [
                 sys.executable,
@@ -410,8 +463,7 @@ class JobController:
         subscription: bool = False,
     ) -> None:
         with self._lock:
-            if any(worker.process.poll() is None for worker in self._workers.values()):
-                raise RuntimeError("another inference worker is active")
+            self._ensure_no_live_worker(run_id)
             if subscription and credentials:
                 raise ValueError("subscription workers cannot receive API credentials")
             # Command is a fixed Python module argv; user input is never executable.

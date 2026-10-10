@@ -78,7 +78,7 @@ def test_cancel_terminates_owned_worker_and_preserves_cancelled_state(
     assert store.get_run("run-cancel").status is RunStatus.CANCELLED
 
 
-def test_second_worker_is_rejected_while_first_is_active(
+def test_two_runs_work_in_parallel(
     store: RunStore,
     tmp_path: Path,
 ) -> None:
@@ -86,13 +86,17 @@ def test_second_worker_is_rejected_while_first_is_active(
     _queued_run(store, "run-2")
     controller = JobController(store=store, data_dir=tmp_path)
     controller.start_fake("run-1", page_count=100, delay_seconds=0.05)
-    _wait_for_status(store, "run-1", RunStatus.RUNNING_STAGE1)
+    controller.start_fake("run-2", page_count=100, delay_seconds=0.05)
 
-    with pytest.raises(RuntimeError, match="active"):
-        controller.start_fake("run-2", page_count=1, delay_seconds=0)
+    _wait_for_status(store, "run-1", RunStatus.RUNNING_STAGE1)
+    _wait_for_status(store, "run-2", RunStatus.RUNNING_STAGE1)
+    assert {run.run_id for run in store.list_active_runs()} == {"run-1", "run-2"}
 
     controller.cancel("run-1")
     controller.wait("run-1", timeout=5)
+    assert store.get_run("run-2").status is RunStatus.RUNNING_STAGE1
+    controller.cancel("run-2")
+    controller.wait("run-2", timeout=5)
 
 
 def test_worker_command_never_contains_api_credentials(

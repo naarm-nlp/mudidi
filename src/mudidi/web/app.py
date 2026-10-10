@@ -70,7 +70,7 @@ from mudidi.web.forms import (
     NewRunForm,
     instruction_review_summary,
 )
-from mudidi.web.jobs import JobController
+from mudidi.web.jobs import JobController, OutputDirectoryInUseError
 from mudidi.web.inputs import (
     InputMaterializer,
     InstructionMaterializationError,
@@ -1960,6 +1960,9 @@ def create_app(
                 "run_id": run_id,
                 "continuation_action": f"/runs/{run_id}/start",
                 "continuation_label": "Start run",
+                **_parallel_run_notices(
+                    app.state.job_controller, app.state.run_store, run_id, config
+                ),
             },
         )
 
@@ -1986,6 +1989,9 @@ def create_app(
                 "continuation_action": continuation_action,
                 "continuation_label": continuation_label,
                 "preset_saved": preset_saved,
+                **_parallel_run_notices(
+                    app.state.job_controller, app.state.run_store, run_id, config
+                ),
             },
         )
 
@@ -2024,9 +2030,35 @@ def create_app(
                 credentials=credentials,
                 offline_executor=app.state.offline_inference,
             )
+        except OutputDirectoryInUseError:
+            return _output_conflict_response(request, run, config)
         except (OSError, RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
+
+    def _output_conflict_response(
+        request: Request, run: RunRecord, config: InferenceConfig
+    ) -> HTMLResponse:
+        """Show the review page with the reason this run cannot start yet."""
+
+        continuation_action, continuation_label = _review_continuation(run)
+        return _TEMPLATES.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={
+                "summary": _config_summary(config),
+                "run_id": run.run_id,
+                "continuation_action": continuation_action,
+                "continuation_label": continuation_label,
+                **_parallel_run_notices(
+                    app.state.job_controller,
+                    app.state.run_store,
+                    run.run_id,
+                    config,
+                ),
+            },
+            status_code=409,
+        )
 
     @app.post("/output-directory/choose")
     async def choose_output_directory(request: Request) -> JSONResponse:
@@ -2147,13 +2179,17 @@ def create_app(
 
     @app.get("/active", response_class=HTMLResponse)
     async def active_run(request: Request) -> HTMLResponse:
-        """Render the currently active worker, if any."""
+        """List every run that currently has a live worker."""
 
-        active = [
-            view
-            for run in app.state.run_store.list_active_runs()
-            if (view := _run_view(app.state.run_store, run))["is_active"]
-        ]
+        active = []
+        for run in app.state.run_store.list_active_runs():
+            view = _run_view(app.state.run_store, run)
+            if not view["is_active"]:
+                continue
+            view["output_directory"] = _history_output_directory(
+                app.state.job_controller, run.run_id
+            )
+            active.append(view)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="active.html",
@@ -2308,7 +2344,13 @@ def create_app(
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",
-            context={"summary": _config_summary(config), "run_id": run_id},
+            context={
+                "summary": _config_summary(config),
+                "run_id": run_id,
+                **_parallel_run_notices(
+                    app.state.job_controller, app.state.run_store, run_id, config
+                ),
+            },
         )
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
@@ -2344,6 +2386,10 @@ def create_app(
                     ),
                 }
             )
+            if run_view["is_active"]:
+                run_view["shared_login_notice"] = _parallel_run_notices(
+                    app.state.job_controller, app.state.run_store, run_id, config
+                )["shared_login_notice"]
         run_view["workspace_available"] = _managed_config_available(
             app.state.job_controller,
             run_id,
@@ -2719,6 +2765,8 @@ def create_app(
                 credentials=credentials,
                 offline_executor=app.state.offline_inference,
             )
+        except OutputDirectoryInUseError:
+            return _output_conflict_response(request, run, config)
         except (OSError, RuntimeError, ValueError) as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return RedirectResponse(f"/runs/{run_id}", status_code=303)
@@ -3338,6 +3386,58 @@ def _all_models(app: FastAPI) -> tuple[object, ...]:
         seen.add(model.model_id)
         unique.append(model)
     return tuple(unique)
+
+
+def _config_logins(config: InferenceConfig) -> frozenset[tuple[str, str]]:
+    """Return the (billing mode, provider) logins a run sends requests through."""
+
+    providers = (
+        config.auth.providers
+        if config.auth.mode is AuthMode.SUBSCRIPTION
+        else _api_providers_for_config(config)
+    )
+    return frozenset((config.auth.mode.value, provider.value) for provider in providers)
+
+
+def _parallel_run_notices(
+    controller: JobController,
+    store: RunStore,
+    run_id: str,
+    config: InferenceConfig,
+) -> dict[str, str | None]:
+    """Describe how other in-progress runs affect starting this one."""
+
+    sharing = controller.runs_sharing_output_directory(run_id)
+    output_conflict = (
+        f"Run {sharing[0]} is still in progress and writes to the same output "
+        "folder. Wait for it to finish or cancel it, or prepare this run with a "
+        "different output folder."
+        if sharing
+        else None
+    )
+    logins = _config_logins(config)
+    shared_login = None
+    for other in store.list_active_runs():
+        if other.run_id == run_id:
+            continue
+        try:
+            other_config = controller.load_inference_config(other.run_id)
+        except (KeyError, OSError, ValidationError, ValueError):
+            continue
+        common = sorted(logins & _config_logins(other_config))
+        if common:
+            mode, provider = common[0]
+            login = "subscription login" if mode == "subscription" else "API key"
+            shared_login = (
+                f"Run {other.run_id} is working and also uses the {provider} "
+                f"{login}. Runs on the same login share one rate limit, so both "
+                "may slow down."
+            )
+            break
+    return {
+        "output_conflict_notice": output_conflict,
+        "shared_login_notice": shared_login,
+    }
 
 
 def _history_output_directory(controller: JobController, run_id: str) -> str:

@@ -68,10 +68,6 @@ class InvalidRunTransition(ValueError):
     """Raised when a caller attempts an illegal lifecycle transition."""
 
 
-class ActiveRunExistsError(RuntimeError):
-    """Raised when a second inference worker would become active."""
-
-
 _RUN_DELETION_BLOCKED = frozenset(
     {
         RunStatus.QUEUED,
@@ -224,13 +220,8 @@ class RunStore:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS one_active_run
-                ON runs ((1))
-                WHERE status IN (
-                    'running_stage1',
-                    'discovering_parse_rules',
-                    'running_stage2'
-                );
+                -- Earlier releases allowed one working run; runs now work in parallel.
+                DROP INDEX IF EXISTS one_active_run;
                 CREATE TABLE IF NOT EXISTS run_events (
                     run_id TEXT NOT NULL REFERENCES runs(run_id) ON DELETE CASCADE,
                     sequence INTEGER NOT NULL,
@@ -397,23 +388,17 @@ class RunStore:
             current = RunStatus(row["status"])
             if target not in _ALLOWED_TRANSITIONS[current]:
                 raise InvalidRunTransition(f"cannot transition {current} to {target}")
-            try:
-                resume_phase = (
-                    _RESUME_PHASE_BY_ACTIVE_STATUS.get(current)
-                    if target is RunStatus.FAILED
-                    else row["resume_phase"]
-                )
-                connection.execute(
-                    "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
-                    "WHERE run_id = ?",
-                    (target.value, resume_phase, _now().isoformat(), run_id),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            resume_phase = (
+                _RESUME_PHASE_BY_ACTIVE_STATUS.get(current)
+                if target is RunStatus.FAILED
+                else row["resume_phase"]
+            )
+            connection.execute(
+                "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
+                "WHERE run_id = ?",
+                (target.value, resume_phase, _now().isoformat(), run_id),
+            )
+            connection.commit()
         return self.get_run(run_id)
 
     def transition_if_current(
@@ -437,23 +422,17 @@ class RunStore:
             if RunStatus(row["status"]) is not expected:
                 connection.rollback()
                 return False
-            try:
-                resume_phase = (
-                    _RESUME_PHASE_BY_ACTIVE_STATUS.get(expected)
-                    if target is RunStatus.FAILED
-                    else row["resume_phase"]
-                )
-                connection.execute(
-                    "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
-                    "WHERE run_id = ?",
-                    (target.value, resume_phase, _now().isoformat(), run_id),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            resume_phase = (
+                _RESUME_PHASE_BY_ACTIVE_STATUS.get(expected)
+                if target is RunStatus.FAILED
+                else row["resume_phase"]
+            )
+            connection.execute(
+                "UPDATE runs SET status = ?, resume_phase = ?, updated_at = ? "
+                "WHERE run_id = ?",
+                (target.value, resume_phase, _now().isoformat(), run_id),
+            )
+            connection.commit()
         return True
 
     def authorize_pass2(
@@ -478,29 +457,23 @@ class RunStore:
                 raise InvalidRunTransition(
                     "Pass 2 authorization requires awaiting parse-rules review"
                 )
-            try:
-                connection.execute(
-                    """
-                    UPDATE runs
-                    SET status = ?, resume_phase = ?, review_id = ?,
-                        approval_digest = ?, updated_at = ?
-                    WHERE run_id = ?
-                    """,
-                    (
-                        RunStatus.RUNNING_STAGE2.value,
-                        "stage2_pass2",
-                        review_id,
-                        approval_digest,
-                        _now().isoformat(),
-                        run_id,
-                    ),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            connection.execute(
+                """
+                UPDATE runs
+                SET status = ?, resume_phase = ?, review_id = ?,
+                    approval_digest = ?, updated_at = ?
+                WHERE run_id = ?
+                """,
+                (
+                    RunStatus.RUNNING_STAGE2.value,
+                    "stage2_pass2",
+                    review_id,
+                    approval_digest,
+                    _now().isoformat(),
+                    run_id,
+                ),
+            )
+            connection.commit()
         return self.get_run(run_id)
 
     def interrupt(self, run_id: str) -> RunRecord:
@@ -590,17 +563,11 @@ class RunStore:
                 row["review_id"] and row["approval_digest"]
             ):
                 raise InvalidRunTransition("Pass 2 resume requires durable approval")
-            try:
-                connection.execute(
-                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
-                    (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            connection.execute(
+                "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
+            )
+            connection.commit()
         return self.get_run(run_id)
 
     def start_uploaded_guide_stage2(self, run_id: str) -> RunRecord:
@@ -617,17 +584,11 @@ class RunStore:
                 raise InvalidRunTransition(
                     "uploaded-guide Stage 2 requires a queued run"
                 )
-            try:
-                connection.execute(
-                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
-                    (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            connection.execute(
+                "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                (RunStatus.RUNNING_STAGE2.value, _now().isoformat(), run_id),
+            )
+            connection.commit()
         return self.get_run(run_id)
 
     def schema_columns(self, table: str) -> list[str]:
@@ -900,27 +861,21 @@ class RunStore:
                 """,
                 (str(snapshot_path), approval_digest, now, now, run_id),
             )
-            try:
-                connection.execute(
-                    """
-                    UPDATE runs SET status = ?, resume_phase = ?, review_id = ?,
-                        approval_digest = ?, updated_at = ? WHERE run_id = ?
-                    """,
-                    (
-                        RunStatus.RUNNING_STAGE2.value,
-                        "stage2_pass2",
-                        review["review_id"],
-                        approval_digest,
-                        now,
-                        run_id,
-                    ),
-                )
-                connection.commit()
-            except sqlite3.IntegrityError as exc:
-                connection.rollback()
-                raise ActiveRunExistsError(
-                    "another inference worker is active"
-                ) from exc
+            connection.execute(
+                """
+                UPDATE runs SET status = ?, resume_phase = ?, review_id = ?,
+                    approval_digest = ?, updated_at = ? WHERE run_id = ?
+                """,
+                (
+                    RunStatus.RUNNING_STAGE2.value,
+                    "stage2_pass2",
+                    review["review_id"],
+                    approval_digest,
+                    now,
+                    run_id,
+                ),
+            )
+            connection.commit()
         return self.get_parse_rule_review(run_id)
 
 

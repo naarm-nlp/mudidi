@@ -38,6 +38,17 @@
 - `dictionary.mdf.txt` leaves out a page whose file holds no MDF (for example
   a model refusal) and lists it under `pages_without_mdf`.
 
+## Unreleased — Parallel runs
+
+- The dashboard no longer limits you to one working run. Start as many as you
+  like.
+- **Active run** is now **Active runs**: a list of every working run with its
+  stage, progress, and a **Cancel** action.
+- A run is refused only when another in-progress run writes to the same output
+  folder. The Review page names that run.
+- The Review page and the run page warn when another working run uses the same
+  provider login, because those runs share one rate limit.
+
 ## Unreleased — Dashboard redesign
 
 The local dashboard has a new look and a reorganized **New run** flow. Routes,

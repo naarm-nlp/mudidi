@@ -33,7 +33,7 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert "New run" in response.text
-    assert "Active run" in response.text
+    assert "Active runs" in response.text
     assert "Run history" in response.text
     assert "Input" in response.text
     assert "Pipeline" in response.text
@@ -1392,10 +1392,12 @@ class Element {
   }
 }
 
-const makePage = ({withToggle}) => {
+const makePage = ({withToggle, runCount = 1}) => {
   const events = {};
   const sources = [];
-  const meta = {content: "/runs/live/events?after=3"};
+  const metas = Array.from({length: runCount}, (_, index) => ({
+    content: `/runs/live-${index}/events?after=3`,
+  }));
   const streamStatus = new Element();
   const toggle = withToggle ? new Element() : null;
   if (toggle) {
@@ -1436,12 +1438,13 @@ const makePage = ({withToggle}) => {
     addEventListener() {},
     createElement() { return new Element(); },
     querySelector(selector) {
-      if (selector === 'meta[name="mudidi-events"]') return meta;
       if (selector === "[data-stream-status]") return streamStatus;
       if (selector === "[data-live-toggle]") return toggle;
       return null;
     },
-    querySelectorAll() { return []; },
+    querySelectorAll(selector) {
+      return selector === 'meta[name="mudidi-events"]' ? metas : [];
+    },
   };
   const context = vm.createContext({
     URL,
@@ -1491,6 +1494,20 @@ otherLivePage.dispatch("pageshow", {persisted: true});
 assert(otherLivePage.sources.length === 2, "other live page did not restart");
 otherLivePage.dispatch("pageshow", {persisted: true});
 assert(otherLivePage.sources.length === 2, "other live page duplicated its source");
+
+const activeRuns = makePage({withToggle: false, runCount: 2});
+assert(activeRuns.sources.length === 2, "active runs did not open one source per run");
+assert(
+  activeRuns.sources[0].url !== activeRuns.sources[1].url,
+  "active runs opened the same stream twice",
+);
+activeRuns.dispatch("pageshow", {persisted: true});
+assert(activeRuns.sources.length === 2, "pageshow duplicated the active run sources");
+activeRuns.dispatch("pagehide", {persisted: true});
+assert(
+  activeRuns.sources.every((source) => source.closed),
+  "pagehide left an active run source open",
+);
 """
     result = subprocess.run(
         ["node", "-e", harness, str(app_js)],
