@@ -960,16 +960,6 @@ def _build_strategy(
             agentic_min_retry_confidence=float(
                 getattr(args, "agentic_min_retry_confidence", 0.55)
             ),
-            agentic_require_concrete_retry_issue=not getattr(
-                args,
-                "no_agentic_concrete_retry_gate",
-                False,
-            ),
-            agentic_prefer_verifier_patches=not getattr(
-                args,
-                "no_agentic_verifier_patches",
-                False,
-            ),
         )
     raise ValueError(f"Unknown strategy: {args.strategy}")
 
@@ -1624,15 +1614,15 @@ Examples:
         "--no-agentic-verifier-patches",
         action="store_true",
         dest="no_agentic_verifier_patches",
-        help="Disable exact current_text→expected_text verifier patches before "
-        "falling back to the correction model.",
+        help="Deprecated and ignored: the correction model now verifies and "
+        "applies every proposed edit itself.",
     )
     parser.add_argument(
         "--no-agentic-concrete-retry-gate",
         action="store_true",
         dest="no_agentic_concrete_retry_gate",
-        help="Allow retry decisions without localized evidence. Useful only for "
-        "ablation; the default gate is safer.",
+        help="Deprecated and ignored: the evaluator's targeted edits always "
+        "name the line and text to change.",
     )
 
     args = resolved_args if resolved_args is not None else parser.parse_args()

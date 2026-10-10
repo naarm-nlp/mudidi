@@ -35,25 +35,23 @@ class _LLMBoundaryStub:
                 if self._verifier_calls % 2:
                     content = json.dumps(
                         {
-                            "decision": "retry",
+                            "action": "targeted_edits",
                             "confidence": 1.0,
-                            "issues": [
+                            "edits": [
                                 {
-                                    "type": "localized_text_error",
-                                    "severity": "medium",
-                                    "evidence": "The first line needs correction.",
-                                    "suggested_fix": "Replace the first line.",
                                     "line_index": 0,
                                     "current_text": "dictionary line",
-                                    "expected_text": "corrected line",
+                                    "replacement_text": "corrected line",
+                                    "reason": "The first line needs correction.",
+                                    "severity": "medium",
                                 }
                             ],
-                            "retry_instruction": "Correct the first line.",
+                            "redo_reason": "",
                         }
                     )
                 else:
                     content = json.dumps(
-                        {"decision": "accept", "confidence": 1.0, "issues": []}
+                        {"action": "accept", "confidence": 1.0, "edits": [], "redo_reason": ""}
                     )
             elif schema_name in {
                 "FlatTranscriptionResponse",

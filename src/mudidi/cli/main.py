@@ -70,14 +70,14 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         "--agentic-verifier-patches",
         action=argparse.BooleanOptionalAction,
         default=argparse.SUPPRESS,
-        help="Enable or disable exact verifier patches before model rewriting.",
+        help="Deprecated and ignored: the correction model applies every edit itself.",
     )
     group.add_argument(
         "--agentic-concrete-retry-gate",
         action=argparse.BooleanOptionalAction,
         dest="agentic_require_concrete_retry",
         default=argparse.SUPPRESS,
-        help="Require or waive localized evidence before retrying.",
+        help="Deprecated and ignored: targeted edits always name the text to change.",
     )
 
 

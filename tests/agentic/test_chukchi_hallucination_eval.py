@@ -208,7 +208,7 @@ def test_chukchi_agentic_hallucination_recovery(
             final_decision_path.read_text(encoding="utf-8")
         )
         decisions = [
-            attempt["decision"]["decision"]
+            attempt["decision"]["action"]
             for attempt in final_decision.get("attempts", [])
         ]
-        assert "recover" in decisions
+        assert "full_redo" in decisions

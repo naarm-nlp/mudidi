@@ -1,12 +1,55 @@
 from pathlib import Path
 
 from mudidi.agentic.verifier_loop import (
-    AgenticIssue,
+    AgenticEdit,
     AgenticLoopConfig,
     AgenticVerifierDecision,
-    normalize_catastrophic_decision,
+    actionable_edits,
     run_bounded_verifier_loop,
 )
+
+
+def _edit(
+    line_index: int = 0,
+    current_text: str = "bad",
+    replacement_text: str = "good",
+) -> AgenticEdit:
+    return AgenticEdit(
+        line_index=line_index,
+        current_text=current_text,
+        replacement_text=replacement_text,
+        reason="the source shows the replacement",
+    )
+
+
+def _edits(*edits: AgenticEdit, confidence: float = 0.9) -> AgenticVerifierDecision:
+    return AgenticVerifierDecision(
+        action="targeted_edits",
+        confidence=confidence,
+        edits=list(edits) or [_edit()],
+    )
+
+
+def _accept() -> AgenticVerifierDecision:
+    return AgenticVerifierDecision(action="accept", confidence=0.95)
+
+
+def _run(tmp_path: Path, verify, rewrite, *, initial="bad line", **kwargs):
+    config = kwargs.pop("config", AgenticLoopConfig(max_iterations=2))
+    return run_bounded_verifier_loop(
+        stage="stage1",
+        initial_output=initial,
+        artifact_dir=tmp_path,
+        output_suffix=".txt",
+        verify=verify,
+        rewrite=rewrite,
+        config=config,
+        **kwargs,
+    )
+
+
+def _no_rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
+    raise AssertionError("rewrite should not run")
 
 
 def test_loop_accepts_initial_output_without_rewrite(tmp_path: Path) -> None:
@@ -14,20 +57,9 @@ def test_loop_accepts_initial_output_without_rewrite(tmp_path: Path) -> None:
 
     def verify(output: str, attempt: int) -> AgenticVerifierDecision:
         calls.append(f"verify:{attempt}:{output}")
-        return AgenticVerifierDecision(decision="accept", confidence=0.91)
+        return _accept()
 
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run after accept")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="initial transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
-    )
+    result = _run(tmp_path, verify, _no_rewrite, initial="initial transcript")
 
     assert result.output == "initial transcript"
     assert result.stop_reason == "accepted"
@@ -41,7 +73,7 @@ def test_loop_accepts_initial_output_without_rewrite(tmp_path: Path) -> None:
 def test_loop_records_verifier_usage_in_artifacts_and_final_decision(tmp_path: Path) -> None:
     def verify(output: str, attempt: int):
         return (
-            AgenticVerifierDecision(decision="accept", confidence=0.91),
+            _accept(),
             {
                 "model": "verifier",
                 "prompt_tokens": 10,
@@ -53,18 +85,7 @@ def test_loop_records_verifier_usage_in_artifacts_and_final_decision(tmp_path: P
             },
         )
 
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run after accept")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="initial transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
-    )
+    result = _run(tmp_path, verify, _no_rewrite)
 
     assert result.agentic_usage_summary["total_cost_usd"] == 0.25
     assert result.attempts[0].verifier_usage["reasoning_tokens"] == 2
@@ -73,782 +94,203 @@ def test_loop_records_verifier_usage_in_artifacts_and_final_decision(tmp_path: P
     assert '"agentic_usage_summary"' in final_decision
 
 
-def test_loop_rewrites_until_verifier_accepts(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.62,
-            issues=[
-                AgenticIssue(
-                    type="reading_order_error",
-                    severity="high",
-                    evidence="columns were read independently",
-                    suggested_fix="read aligned rows",
-                )
-            ],
-            retry_instruction="Read rows left to right.",
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.94),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        assert attempt == 1
-        assert decision.retry_instruction == "Read rows left to right."
-        return "corrected transcript"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="bad transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
+def test_loop_stops_when_verifier_rejects(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: AgenticVerifierDecision(action="reject", confidence=0.9),
+        _no_rewrite,
     )
 
-    assert result.output == "corrected transcript"
+    assert result.stop_reason == "rejected"
+    assert result.output == "bad line"
+
+
+def test_rewriter_receives_proposed_edits_and_applies_them_itself(tmp_path: Path) -> None:
+    decisions = [_edits(_edit(0, "bad", "good")), _accept()]
+    seen: list[tuple[str, AgenticVerifierDecision, int]] = []
+
+    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
+        seen.append((output, decision, attempt))
+        return "good line"
+
+    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
+
+    # The loop hands the untouched output to the rewriter; no edit is applied by code.
+    assert seen == [("bad line", decisions[0], 1)]
+    assert result.output == "good line"
     assert result.stop_reason == "accepted"
     assert result.rewrite_count == 1
-    assert (tmp_path / "attempt_1_output.txt").read_text() == "corrected transcript"
+    assert (tmp_path / "attempt_1_output.txt").read_text() == "good line"
     assert (tmp_path / "attempt_1_verifier.json").is_file()
 
 
-def test_loop_stops_when_rewrite_is_unchanged(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.8,
-            issues=[
-                AgenticIssue(
-                    type="ungrounded_text",
-                    severity="medium",
-                    evidence="same issue",
-                    suggested_fix="remove ungrounded text",
-                )
-            ],
-        )
-
+def test_loop_never_patches_text_without_the_rewriter(tmp_path: Path) -> None:
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        return "  same output\n"
+        return output  # the rewriter confirmed none of the proposed edits
 
-    result = run_bounded_verifier_loop(
-        stage="stage2",
-        initial_output="same output",
-        artifact_dir=tmp_path,
-        output_suffix=".mdf.txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
-    )
+    result = _run(tmp_path, lambda output, attempt: _edits(_edit(0, "bad", "good")), rewrite)
 
-    assert result.output == "same output"
+    assert result.output == "bad line"
     assert result.stop_reason == "unchanged"
     assert result.rewrite_count == 0
-    assert not (tmp_path / "attempt_1_output.mdf.txt").exists()
 
 
-def test_loop_stops_when_retry_confidence_is_too_low(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.2,
-            issues=[
-                AgenticIssue(
-                    type="possible_ocr_error",
-                    severity="low",
-                    evidence="maybe a bad character",
-                    suggested_fix="check it",
-                )
-            ],
-        )
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run for low-confidence retry")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="same output",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, min_retry_confidence=0.6),
+def test_loop_stops_when_edit_confidence_is_too_low(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: _edits(confidence=0.2),
+        _no_rewrite,
     )
 
-    assert result.output == "same output"
     assert result.stop_reason == "low_confidence_retry"
-    assert result.rewrite_count == 0
 
 
-def test_loop_stops_when_retry_has_no_concrete_issue(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[AgenticIssue(type="character_conflation", severity="medium")],
-        )
+def test_targeted_edits_without_edits_is_an_invalid_decision(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: AgenticVerifierDecision(
+            action="targeted_edits", confidence=0.9
+        ),
+        _no_rewrite,
+    )
+
+    assert result.stop_reason == "invalid_decision"
+
+
+def test_edits_that_change_nothing_are_dropped(tmp_path: Path) -> None:
+    decision = _edits(
+        _edit(0, "same", "same"),
+        _edit(1, "  ", ""),
+        _edit(2, "bad", "good"),
+    )
+    assert [edit.line_index for edit in actionable_edits(decision)] == [2]
+
+    received: list[AgenticVerifierDecision] = []
 
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run without concrete edit evidence")
+        received.append(decision)
+        return "good line"
 
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="same output",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, require_concrete_retry_issue=True),
+    decisions = [decision, _accept()]
+    _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
+
+    assert [edit.line_index for edit in received[0].edits] == [2]
+    assert (tmp_path / "attempt_0_verifier_raw.json").is_file()
+
+
+def test_only_no_op_edits_is_an_invalid_decision(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: _edits(_edit(0, "same", "same")),
+        _no_rewrite,
     )
 
-    assert result.output == "same output"
-    assert result.stop_reason == "vague_retry"
-    assert result.rewrite_count == 0
+    assert result.stop_reason == "invalid_decision"
 
 
-def test_loop_treats_retry_instruction_without_evidence_as_vague(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="format",
-                    severity="medium",
-                    line_index=3,
-                    suggested_fix="move this line",
-                )
-            ],
-            retry_instruction="Please fix this.",
-        )
+def test_insertions_and_deletions_are_actionable() -> None:
+    decision = _edits(_edit(3, "", "missing line"), _edit(4, "extra", ""))
+
+    assert len(actionable_edits(decision)) == 2
+
+
+def test_loop_stops_when_verifier_repeats_the_same_edits(tmp_path: Path) -> None:
+    rewrites: list[int] = []
 
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("rewrite should not run without evidence or exact span")
+        rewrites.append(attempt)
+        return f"rewrite {attempt}"
 
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="same output",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, require_concrete_retry_issue=True),
-    )
+    result = _run(tmp_path, lambda output, attempt: _edits(), rewrite)
 
-    assert result.stop_reason == "vague_retry"
-    assert result.rewrite_count == 0
-
-
-def test_loop_applies_safe_verifier_patch_before_calling_rewriter(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="localized_character_error",
-                    severity="medium",
-                    line_index=0,
-                    current_text="abc",
-                    expected_text="abd",
-                    evidence="line 1 has c where d is visible",
-                    suggested_fix="replace abc with abd",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("safe verifier patch should run before LLM rewrite")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="abc\nsecond line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "abd\nsecond line"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-    assert (tmp_path / "attempt_1_output.txt").read_text() == "abd\nsecond line"
-
-
-def test_loop_rewrites_only_unresolved_issues_after_applying_patches(
-    tmp_path: Path,
-) -> None:
-    patchable = AgenticIssue(
-        type="localized_character_error",
-        line_index=0,
-        current_text="contry",
-        expected_text="country",
-    )
-    missing_content = AgenticIssue(
-        type="missing_text",
-        line_index=1,
-        evidence="Two definition lines visible in the image are absent.",
-        suggested_fix="Restore the missing definition lines from the image.",
-    )
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[patchable, missing_content],
-            retry_instruction="Correct both transcription problems.",
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(
-        output: str,
-        decision: AgenticVerifierDecision,
-        attempt: int,
-    ) -> str:
-        assert output == "country\nheadword"
-        assert decision.issues == [missing_content]
-        assert decision.retry_instruction == (
-            "Restore the missing definition lines from the image."
-        )
-        assert attempt == 1
-        return "country\nheadword\nrestored definition"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="contry\nheadword",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=1, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "country\nheadword\nrestored definition"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-
-
-def test_loop_passes_failed_patches_to_rewriter_as_unresolved(tmp_path: Path) -> None:
-    applied = AgenticIssue(
-        type="localized_character_error",
-        line_index=0,
-        current_text="abc",
-        expected_text="abd",
-    )
-    failed = AgenticIssue(
-        type="localized_character_error",
-        line_index=1,
-        current_text="text-not-present",
-        expected_text="replacement",
-    )
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[applied, failed],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(
-        output: str,
-        decision: AgenticVerifierDecision,
-        attempt: int,
-    ) -> str:
-        assert output == "abd\nsecond line"
-        assert decision.issues == [failed]
-        return "abd\nreplacement"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="abc\nsecond line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=1, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "abd\nreplacement"
-    assert result.rewrite_count == 1
-
-
-def test_loop_records_rewriter_usage_when_rewriter_runs(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="reading_order_error",
-                    severity="medium",
-                    evidence="line order is wrong",
-                    suggested_fix="rewrite line order",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int):
-        return (
-            "corrected",
-            {
-                "model": "rewriter",
-                "prompt_tokens": 20,
-                "completion_tokens": 5,
-                "total_tokens": 25,
-                "cost_usd": 0.5,
-            },
-        )
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="bad",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            prefer_verifier_patches=False,
-        ),
-    )
-
-    assert result.output == "corrected"
-    assert result.agentic_usage_summary["total_cost_usd"] == 0.5
-    assert result.attempts[0].rewrite_usage["total_tokens"] == 25
-    assert (tmp_path / "attempt_1_rewrite_usage.json").is_file()
-
-
-def test_loop_applies_all_unambiguous_patches_without_a_count_limit(
-    tmp_path: Path,
-) -> None:
-    issues = [
-        AgenticIssue(
-            type="exact_text_patch",
-            line_index=i,
-            current_text=f"old{i}",
-            expected_text=f"new{i}",
-        )
-        for i in range(20)
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        if attempt == 1:
-            return AgenticVerifierDecision(decision="accept", confidence=0.95)
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=issues,
-        )
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("unambiguous patches should not call the rewriter")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="\n".join(f"old{i}" for i in range(20)),
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
-    )
-
-    assert result.output == "\n".join(f"new{i}" for i in range(20))
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-
-
-def test_loop_infers_line_patch_from_simple_suggested_fix(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="localized_character_error",
-                    severity="medium",
-                    line_index=0,
-                    suggested_fix="abc -> abd",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("safe inferred patch should run before LLM rewrite")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="abc\nsecond line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "abd\nsecond line"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-
-
-def test_loop_infers_line_patch_from_change_to_suggested_fix(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="localized_character_error",
-                    severity="medium",
-                    line_index=0,
-                    suggested_fix="Change 'abc' to 'abd' to correct the typo.",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("safe inferred patch should run before LLM rewrite")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="abc\nsecond line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "abd\nsecond line"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-
-
-def test_loop_infers_header_deletion_from_suggested_fix(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="tagging_error",
-                    severity="medium",
-                    line_index=0,
-                    suggested_fix="Remove header '<b>Aa</b>' as it is not present.",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        raise AssertionError("safe inferred deletion should run before LLM rewrite")
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="<b>Aa</b>\nfirst real line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2, prefer_verifier_patches=True),
-    )
-
-    assert result.output == "first real line"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
+    assert rewrites == [1]
+    assert result.stop_reason == "repeated_issue"
+    assert result.output == "rewrite 1"
 
 
 def test_loop_keeps_last_rewrite_when_budget_is_exhausted(tmp_path: Path) -> None:
     def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.8,
-            issues=[
-                AgenticIssue(
-                    type=f"issue_{attempt}",
-                    severity="high",
-                    evidence="still problematic",
-                    suggested_fix=f"apply rewrite {attempt + 1}",
-                )
-            ],
-        )
+        return _edits(_edit(attempt, f"bad {attempt}", "good"))
 
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
         return f"rewrite {attempt}"
 
-    result = run_bounded_verifier_loop(
-        stage="stage2",
-        initial_output="initial mdf",
-        artifact_dir=tmp_path,
-        output_suffix=".mdf.txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=1),
-    )
+    result = _run(tmp_path, verify, rewrite)
 
-    assert result.output == "rewrite 1"
     assert result.stop_reason == "max_iterations"
-    assert result.rewrite_count == 1
-    assert (tmp_path / "attempt_1_output.mdf.txt").read_text() == "rewrite 1"
+    assert result.rewrite_count == 2
+    assert result.output == "rewrite 2"
 
 
-def test_normalize_promotes_wrong_page_reject_to_recover() -> None:
-    raw = AgenticVerifierDecision(
-        decision="reject",
-        confidence=1.0,
-        issues=[
-            AgenticIssue(
-                type="wrong_page",
-                severity="high",
-                evidence="Transcript starts with bwo but image starts with bwi.",
-            )
-        ],
-    )
-    promoted = normalize_catastrophic_decision(raw)
-    assert promoted.decision == "recover"
-
-
-def test_loop_catastrophic_recovery_rewrites_whole_page(tmp_path: Path) -> None:
-    verifier_outputs = [
+def test_full_redo_rewrites_the_whole_output(tmp_path: Path) -> None:
+    decisions = [
         AgenticVerifierDecision(
-            decision="reject",
-            confidence=1.0,
-            issues=[
-                AgenticIssue(
-                    type="wrong_page",
-                    severity="high",
-                    evidence="Transcript is from a different dictionary page.",
-                )
-            ],
+            action="full_redo",
+            confidence=0.1,
+            redo_reason="The transcript is from a different page.",
         ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
+        _accept(),
     ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
+    seen: list[str] = []
 
     def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        assert decision.decision == "recover"
-        return "fresh page transcription"
+        seen.append(decision.action)
+        return "fresh transcription"
 
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="wrong page transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(max_iterations=2),
-    )
+    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
 
-    assert result.output == "fresh page transcription"
+    # A full redo is not held back by the confidence gate.
+    assert seen == ["full_redo"]
+    assert result.output == "fresh transcription"
     assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
-    assert (tmp_path / "attempt_0_verifier_raw.json").is_file()
-    assert (tmp_path / "attempt_1_catastrophic.txt").is_file()
+    assert (tmp_path / "attempt_1_full_redo.txt").read_text() == "fresh transcription"
 
 
-def test_loop_catastrophic_recovery_bypasses_low_confidence_gate(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="recover",
-            confidence=0.2,
-            issues=[
-                AgenticIssue(
-                    type="wrong_page",
-                    severity="high",
-                    evidence="Transcript is from a different dictionary page.",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        assert decision.decision == "recover"
-        return "fresh page transcription"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="wrong page transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            min_retry_confidence=0.8,
-        ),
+def test_full_redo_without_a_reason_is_an_invalid_decision(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: AgenticVerifierDecision(action="full_redo", confidence=0.9),
+        _no_rewrite,
     )
 
-    assert result.output == "fresh page transcription"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
+    assert result.stop_reason == "invalid_decision"
 
 
-def test_loop_catastrophic_recovery_bypasses_vague_retry(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.7,
-            issues=[
-                AgenticIssue(
-                    type="missing_text",
-                    severity="medium",
-                    line_index=17,
-                    suggested_fix="Correct entry headword to limal and restore all missing examples.",
-                )
-            ],
-            retry_instruction="Perform a complete pass to restore all missing text.",
+def test_full_redo_is_refused_where_the_stage_cannot_redo(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        lambda output, attempt: AgenticVerifierDecision(
+            action="full_redo", confidence=0.9, redo_reason="mostly wrong"
         ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        assert decision.decision == "recover"
-        return "retranscribed page"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="bad transcript",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            require_concrete_retry_issue=True,
-        ),
+        _no_rewrite,
+        allow_full_redo=False,
     )
 
-    assert result.output == "retranscribed page"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
+    assert result.stop_reason == "full_redo_unavailable"
+    assert result.output == "bad line"
 
 
-def test_whole_page_retry_promotes_to_recover_from_retry_instruction() -> None:
-    decision = AgenticVerifierDecision(
-        decision="retry",
-        confidence=0.7,
-        issues=[
-            AgenticIssue(
-                type="missing_text",
-                severity="medium",
-                suggested_fix="Restore the full page from the image.",
-            ),
-            AgenticIssue(
-                type="missing_text",
-                severity="medium",
-                suggested_fix="The entire page needs a fresh transcription.",
-            ),
-        ],
-        retry_instruction="Perform a complete fresh transcription of the full page.",
-    )
+def test_loop_records_rewriter_usage_when_rewriter_runs(tmp_path: Path) -> None:
+    decisions = [_edits(), _accept()]
 
-    promoted = normalize_catastrophic_decision(decision)
+    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return "good line", {"prompt_tokens": 3, "completion_tokens": 1, "total_tokens": 4}
 
-    assert promoted.decision == "recover"
+    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
 
-
-def test_loop_allows_large_rewrite_when_delta_gate_disabled(tmp_path: Path) -> None:
-    verifier_outputs = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="localized_character_error",
-                    severity="medium",
-                    evidence="line 1 has one wrong character",
-                    suggested_fix="change abc to abd",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
-
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return verifier_outputs[attempt]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        return "completely unrelated regenerated page"
-
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="abc\nsecond line\nthird line",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            prefer_verifier_patches=False,
-        ),
-    )
-
-    assert result.output == "completely unrelated regenerated page"
-    assert result.stop_reason == "accepted"
-    assert result.rewrite_count == 1
+    assert result.attempts[0].rewrite_usage == {
+        "prompt_tokens": 3,
+        "completion_tokens": 1,
+        "total_tokens": 4,
+    }
+    assert (tmp_path / "attempt_1_rewrite_usage.json").is_file()
+    assert result.agentic_usage_summary["rewriter"]["total_tokens"] == 4
 
 
 def test_subscription_billing_mode_survives_agentic_usage_aggregation(
     tmp_path: Path,
 ) -> None:
-    decisions = [
-        AgenticVerifierDecision(
-            decision="retry",
-            confidence=0.9,
-            issues=[
-                AgenticIssue(
-                    type="text_error",
-                    evidence="wrong spelling",
-                    suggested_fix="replace it",
-                )
-            ],
-        ),
-        AgenticVerifierDecision(decision="accept", confidence=0.95),
-    ]
+    decisions = [_edits(), _accept()]
 
     def verify(output: str, attempt: int):
         return (
@@ -874,18 +316,7 @@ def test_subscription_billing_mode_survives_agentic_usage_aggregation(
             },
         )
 
-    result = run_bounded_verifier_loop(
-        stage="stage1",
-        initial_output="incorrect",
-        artifact_dir=tmp_path,
-        output_suffix=".txt",
-        verify=verify,
-        rewrite=rewrite,
-        config=AgenticLoopConfig(
-            max_iterations=2,
-            prefer_verifier_patches=False,
-        ),
-    )
+    result = _run(tmp_path, verify, rewrite, initial="incorrect")
 
     assert result.agentic_usage_summary["billing_mode"] == "subscription"
     assert result.agentic_usage_summary["verifier"]["billing_mode"] == "subscription"

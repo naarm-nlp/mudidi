@@ -23,7 +23,7 @@ def test_stage1_verifier_retains_page_context_and_dispatches(tmp_path: Path, mon
 
     def fake_complete_structured(**kwargs):
         captured.update(kwargs)
-        return {"decision": "accept"}, None, {"input_tokens": 1}
+        return {"action": "accept"}, None, {"input_tokens": 1}
 
     monkeypatch.setattr(
         "mudidi.extraction.llm_two_stage.llm.complete_structured",
@@ -174,7 +174,7 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
     def fake_structured(**kwargs):
         structured_calls.append(kwargs)
         if kwargs["response_schema"].__name__ == "AgenticVerifierDecision":
-            result = AgenticVerifierDecision(decision="accept", confidence=1.0)
+            result = AgenticVerifierDecision(action="accept", confidence=1.0)
         else:
             result = SimpleNamespace(header=[], lines=["rewritten"], footer=[])
         return result, "{}", {}
@@ -196,7 +196,7 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
     )
     strategy._rewrite_stage1_output(
         transcribed,
-        decision=AgenticVerifierDecision(decision="retry", confidence=1.0),
+        decision=AgenticVerifierDecision(action="targeted_edits", confidence=1.0),
         image_path=str(image),
         ocr_result=ocr,
         page_context=None,
@@ -301,7 +301,7 @@ def test_stage2_text_generation_and_agentic_share_scoped_guide(
     def fake_complete_structured(*, model, messages, **kwargs):
         del kwargs
         evaluator_calls.append({"model": model, "messages": messages})
-        return AgenticVerifierDecision(decision="accept", confidence=1.0), "{}", {}
+        return AgenticVerifierDecision(action="accept", confidence=1.0), "{}", {}
 
     monkeypatch.setattr(
         "mudidi.extraction.llm_two_stage.llm.complete_with_usage",
@@ -443,7 +443,7 @@ def test_stage2_pdf_generation_and_agentic_use_selected_model_media(
     def fake_complete_structured(*, model, messages, **kwargs):
         del kwargs
         evaluator_calls.append({"model": model, "messages": messages})
-        return AgenticVerifierDecision(decision="accept", confidence=1.0), "{}", {}
+        return AgenticVerifierDecision(action="accept", confidence=1.0), "{}", {}
 
     monkeypatch.setattr(
         "mudidi.extraction.llm_two_stage.llm.complete_with_usage",

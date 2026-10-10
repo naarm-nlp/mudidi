@@ -46,22 +46,30 @@ def test_stage2_verifier_prompt_includes_grounding_summary() -> None:
     assert "Use the deterministic grounding summary as a warning signal" in prompt
 
 
-def test_agentic_prompts_require_localized_retry_evidence() -> None:
-    verifier_prompt = _stage1_verifier_system_prompt() + _stage2_verifier_system_prompt()
-    rewriter_prompt = _stage1_rewriter_system_prompt() + _stage2_rewriter_system_prompt()
-
-    assert "line_index" in verifier_prompt
-    assert "current_text" in verifier_prompt
-    assert "expected_text" in verifier_prompt
-    assert "Never leave current_text and expected_text empty" in verifier_prompt
-    assert "minimum necessary edit" in rewriter_prompt
+def test_verifier_prompts_ask_for_exact_targeted_edits() -> None:
+    for prompt in (_stage1_verifier_system_prompt(), _stage2_verifier_system_prompt()):
+        assert "action=targeted_edits" in prompt
+        assert "line_index" in prompt
+        assert "current_text copied exactly" in prompt
+        assert "replacement_text" in prompt
+        assert "Only propose an edit you can specify exactly" in prompt
 
 
-def test_stage1_verifier_always_allows_catastrophic_recovery() -> None:
-    prompt = _stage1_verifier_system_prompt()
+def test_rewriter_prompts_verify_each_edit_before_applying_it() -> None:
+    for prompt in (_stage1_rewriter_system_prompt(), _stage2_rewriter_system_prompt()):
+        assert "verify the proposal against the source" in prompt
+        assert "Apply an edit only when you confirm it" in prompt
+        assert "Skip any edit you cannot confirm" in prompt
+        assert "minimum necessary edit" in prompt
 
-    assert "use decision=recover instead of reject" in prompt
-    assert "re-transcribe the entire page" in prompt
+
+def test_only_stage1_verifier_may_request_a_full_redo() -> None:
+    stage1 = _stage1_verifier_system_prompt()
+    stage2 = _stage2_verifier_system_prompt()
+
+    assert "action=full_redo only when" in stage1
+    assert "re-transcribe the entire page" in stage1
+    assert "Do not use action=full_redo" in stage2
 
 
 def test_agentic_verifier_max_tokens_defaults_to_safe_budget(monkeypatch) -> None:

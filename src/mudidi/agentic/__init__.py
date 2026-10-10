@@ -1,7 +1,7 @@
 """Bounded verifier-rewriter helpers for optional agentic extraction modes."""
 
 from mudidi.agentic.verifier_loop import (
-    AgenticIssue,
+    AgenticEdit,
     AgenticLoopConfig,
     AgenticLoopResult,
     AgenticVerifierDecision,
@@ -9,7 +9,7 @@ from mudidi.agentic.verifier_loop import (
 )
 
 __all__ = [
-    "AgenticIssue",
+    "AgenticEdit",
     "AgenticLoopConfig",
     "AgenticLoopResult",
     "AgenticVerifierDecision",

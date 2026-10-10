@@ -301,7 +301,7 @@ def test_all_extraction_call_paths_receive_subscription_backend(
         structured_calls.append(kwargs)
         if kwargs["response_schema"] is AgenticVerifierDecision:
             return (
-                AgenticVerifierDecision(decision="accept", confidence=1.0),
+                AgenticVerifierDecision(action="accept", confidence=1.0),
                 "{}",
                 {"total_tokens": 1},
             )
@@ -360,7 +360,7 @@ def test_all_extraction_call_paths_receive_subscription_backend(
     )
     strategy._rewrite_stage1_output(
         "line",
-        decision=AgenticVerifierDecision(decision="retry", confidence=1.0),
+        decision=AgenticVerifierDecision(action="targeted_edits", confidence=1.0),
         image_path=str(page),
         ocr_result=ocr,
         page_context=None,
@@ -376,7 +376,7 @@ def test_all_extraction_call_paths_receive_subscription_backend(
         "\\lx foo",
         transcribed_text="foo",
         field_map=_FieldMap(),
-        decision=AgenticVerifierDecision(decision="retry", confidence=1.0),
+        decision=AgenticVerifierDecision(action="targeted_edits", confidence=1.0),
         attempt=1,
     )
 

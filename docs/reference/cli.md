@@ -114,10 +114,11 @@ agentic verifier-rewriter options:
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.
   --agentic-verifier-patches, --no-agentic-verifier-patches
-                        Enable or disable exact verifier patches before model
-                        rewriting.
+                        Deprecated and ignored: the correction model applies
+                        every edit itself.
   --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
-                        Require or waive localized evidence before retrying.
+                        Deprecated and ignored: targeted edits always name the
+                        text to change.
 ```
 
 ## `mudidi auth`
@@ -308,10 +309,11 @@ agentic verifier-rewriter options:
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.
   --agentic-verifier-patches, --no-agentic-verifier-patches
-                        Enable or disable exact verifier patches before model
-                        rewriting.
+                        Deprecated and ignored: the correction model applies
+                        every edit itself.
   --agentic-concrete-retry-gate, --no-agentic-concrete-retry-gate
-                        Require or waive localized evidence before retrying.
+                        Deprecated and ignored: targeted edits always name the
+                        text to change.
 ```
 
 ## `mudidi benchmark sweep`

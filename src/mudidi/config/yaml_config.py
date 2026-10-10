@@ -297,6 +297,7 @@ class AgenticConfig(_StrictModel):
     evaluator_reasoning: ReasoningEffort | None = None
     rewriter_reasoning: ReasoningEffort | None = None
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
+    # Deprecated and ignored; accepted so existing configs and saved runs load.
     verifier_patches: bool = True
     require_concrete_retry: bool = True
 

@@ -3,21 +3,24 @@
 The loop is deliberately small and stage-agnostic. Stage-specific code supplies
 the verifier and rewriter callables; this module owns stop criteria and audit
 artifacts.
+
+The verifier chooses one action. ``targeted_edits`` proposes localized changes
+that the rewriter model checks against the source and applies itself; no edit
+is applied by code. ``full_redo`` asks the rewriter to produce the whole output
+again.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
 import json
 from pathlib import Path
-import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 
-AgenticDecision = Literal["accept", "retry", "reject", "recover"]
+AgenticAction = Literal["accept", "targeted_edits", "full_redo", "reject"]
 AgenticSeverity = Literal["low", "medium", "high"]
 AgenticStopReason = Literal[
     "accepted",
@@ -26,70 +29,62 @@ AgenticStopReason = Literal[
     "unchanged",
     "repeated_issue",
     "low_confidence_retry",
-    "vague_retry",
-    "catastrophic_recovery",
+    "invalid_decision",
+    "full_redo_unavailable",
 ]
 
-CATASTROPHIC_ISSUE_TYPES = frozenset(
-    {
-        "wrong_page",
-        "page_mismatch",
-        "wrong_page_content",
-        "hallucinated_page",
-        "catastrophic_mismatch",
-        "wrong_content",
-    }
-)
 
-WHOLE_PAGE_RETRY_PHRASES = (
-    "complete pass",
-    "full page",
-    "entire page",
-    "from scratch",
-    "re-transcribe",
-    "retranscribe",
-    "whole page",
-    "fresh transcription",
-)
+class AgenticEdit(BaseModel):
+    """One localized change proposed by the verifier."""
 
-
-class AgenticIssue(BaseModel):
-    """One verifier finding."""
-
-    type: str = Field(description="Short stable issue type, e.g. reading_order_error.")
-    severity: AgenticSeverity = "medium"
-    evidence: str = ""
-    suggested_fix: str = ""
-    line_index: int | None = Field(
-        default=None,
+    line_index: int = Field(
+        ge=0,
         description=(
-            "0-based output line index for retry findings. Required whenever the "
-            "issue can be localized to one output line."
+            "0-based index of the output line to change. For a missing line, "
+            "the index the new line should take."
         ),
     )
     current_text: str = Field(
-        default="",
         description=(
-            "Exact current output span to change. Required for retry text edits; "
-            "leave empty only when the issue is not a direct text replacement."
+            "Exact text as it appears now on that line: the smallest span that "
+            "must change. Empty only when adding a missing line."
         ),
     )
-    expected_text: str = Field(
-        default="",
+    replacement_text: str = Field(
         description=(
-            "Exact replacement span or expected visible text. Required for retry "
-            "text edits; use an empty string only when deleting current_text."
+            "Text that should stand in place of current_text, exactly as the "
+            "source shows it. Empty only when current_text must be deleted."
         ),
     )
+    reason: str = Field(
+        description="What in the source shows that the current text is wrong.",
+    )
+    severity: AgenticSeverity = "medium"
 
 
 class AgenticVerifierDecision(BaseModel):
     """Structured verifier response used by both stages."""
 
-    decision: AgenticDecision
+    action: AgenticAction = Field(
+        description=(
+            "accept: the output is good enough. targeted_edits: specific lines "
+            "need the changes listed in edits. full_redo: the output is too "
+            "wrong for localized edits and must be produced again. reject: "
+            "correction is unsafe."
+        ),
+    )
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    issues: list[AgenticIssue] = Field(default_factory=list)
-    retry_instruction: str = ""
+    edits: list[AgenticEdit] = Field(
+        default_factory=list,
+        description="Required for targeted_edits; empty for every other action.",
+    )
+    redo_reason: str = Field(
+        default="",
+        description=(
+            "Required for full_redo: why localized edits cannot repair the "
+            "output. Empty for every other action."
+        ),
+    )
 
 
 class AgenticLoopConfig(BaseModel):
@@ -98,8 +93,6 @@ class AgenticLoopConfig(BaseModel):
     max_iterations: int = Field(default=2, ge=0)
     stop_on_repeated_issue: bool = True
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
-    require_concrete_retry_issue: bool = True
-    prefer_verifier_patches: bool = True
 
 
 class AgenticAttempt(BaseModel):
@@ -123,15 +116,6 @@ class AgenticLoopResult(BaseModel):
     agentic_usage_summary: dict[str, Any] = Field(default_factory=dict)
 
 
-@dataclass(frozen=True)
-class VerifierPatchResult:
-    """Output and issue disposition from deterministic verifier patches."""
-
-    output: str
-    applied_issues: tuple[AgenticIssue, ...]
-    unresolved_issues: tuple[AgenticIssue, ...]
-
-
 VerifyReturn = AgenticVerifierDecision | tuple[AgenticVerifierDecision, dict[str, Any]]
 RewriteReturn = str | tuple[str, dict[str, Any]]
 VerifyFn = Callable[[str, int], VerifyReturn]
@@ -143,82 +127,30 @@ def _normalized_for_change_check(text: str) -> str:
     return "\n".join(line.rstrip() for line in text.strip().splitlines())
 
 
-def _issue_signature(decision: AgenticVerifierDecision) -> tuple[str, ...]:
-    """Return stable issue types used to catch repeated verifier loops."""
-    return tuple(issue.type for issue in decision.issues if issue.type)
+def actionable_edits(decision: AgenticVerifierDecision) -> list[AgenticEdit]:
+    """Return the proposed edits that ask for an actual change.
 
-
-def _has_catastrophic_issue(decision: AgenticVerifierDecision) -> bool:
-    """Whether verifier findings indicate a whole-page failure."""
-    for issue in decision.issues:
-        issue_type = issue.type.casefold()
-        if issue_type in CATASTROPHIC_ISSUE_TYPES:
-            return True
-        evidence = issue.evidence.casefold()
-        if any(
-            phrase in evidence
-            for phrase in (
-                "wrong page",
-                "different page",
-                "page mismatch",
-                "entirely different page",
-                "not this page",
-            )
-        ):
-            return True
-    return False
-
-
-def _is_whole_page_retry(decision: AgenticVerifierDecision) -> bool:
-    """Whether a retry asks for broad re-transcription instead of localized edits."""
-    if decision.decision != "retry":
-        return False
-    instruction = decision.retry_instruction.casefold()
-    if any(phrase in instruction for phrase in WHOLE_PAGE_RETRY_PHRASES):
-        return True
-    if not decision.issues:
-        return False
-    vague_issues = [
-        issue
-        for issue in decision.issues
-        if not issue.current_text.strip() and not issue.expected_text.strip()
+    An edit that names no text, or whose replacement equals the current text,
+    gives the rewriter nothing to do and is dropped.
+    """
+    return [
+        edit
+        for edit in decision.edits
+        if (edit.current_text.strip() or edit.replacement_text.strip())
+        and edit.current_text != edit.replacement_text
     ]
-    return len(vague_issues) >= max(2, len(decision.issues) // 2 + 1)
 
 
-def normalize_catastrophic_decision(
-    decision: AgenticVerifierDecision,
-) -> AgenticVerifierDecision:
-    """Promote catastrophic reject or whole-page retry decisions to recover."""
-    if decision.decision == "recover":
-        return decision
-    if decision.decision == "reject" and _has_catastrophic_issue(decision):
-        return decision.model_copy(update={"decision": "recover"})
-    if decision.decision != "retry":
-        return decision
-    if _has_catastrophic_issue(decision):
-        return decision.model_copy(update={"decision": "recover"})
-    if not _has_concrete_retry_issue(decision) and _is_whole_page_retry(decision):
-        return decision.model_copy(update={"decision": "recover"})
-    return decision
-
-
-def _has_concrete_retry_issue(decision: AgenticVerifierDecision) -> bool:
-    """Whether a retry has enough localized evidence to justify rewriting."""
-    for issue in decision.issues:
-        has_text_evidence = bool(issue.evidence.strip()) and bool(issue.suggested_fix.strip())
-        has_span_edit = bool(issue.current_text.strip()) and (
-            issue.expected_text.strip() or issue.expected_text == ""
+def _decision_signature(decision: AgenticVerifierDecision) -> tuple[Any, ...]:
+    """Return a stable identity used to catch a verifier repeating itself."""
+    if decision.action == "full_redo":
+        return ("full_redo",)
+    return tuple(
+        sorted(
+            (edit.line_index, edit.current_text, edit.replacement_text)
+            for edit in decision.edits
         )
-        has_location = issue.line_index is not None and (
-            bool(issue.evidence.strip()) or has_span_edit
-        )
-        has_parseable_fix = issue.line_index is not None and (
-            _infer_issue_patch(issue) is not None
-        )
-        if has_text_evidence or has_span_edit or has_location or has_parseable_fix:
-            return True
-    return False
+    )
 
 
 def _split_verify_result(result: VerifyReturn) -> tuple[AgenticVerifierDecision, dict[str, Any] | None]:
@@ -283,110 +215,6 @@ def _agentic_usage_summary(attempts: list[AgenticAttempt]) -> dict[str, Any]:
     return summary
 
 
-def _replace_once(text: str, old: str, new: str) -> str | None:
-    if not old or old == new:
-        return None
-    if text.count(old) != 1:
-        return None
-    return text.replace(old, new, 1)
-
-
-def _strip_patch_token(text: str) -> str:
-    text = text.strip()
-    text = text.strip("`")
-    text = text.strip()
-    if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
-        text = text[1:-1]
-    return text.strip()
-
-
-def _infer_issue_patch(issue: AgenticIssue) -> tuple[str, str] | None:
-    old = issue.current_text
-    new = issue.expected_text
-    if old.strip():
-        return old, new
-
-    suggested = issue.suggested_fix.strip()
-    arrow_match = re.match(r"^(.{1,120}?)\s*(?:->|→)\s*(.{0,120})$", suggested)
-    if arrow_match:
-        inferred_old = _strip_patch_token(arrow_match.group(1))
-        inferred_new = _strip_patch_token(arrow_match.group(2))
-        if inferred_old and inferred_old != inferred_new:
-            return inferred_old, inferred_new
-
-    change_match = re.match(
-        r"(?i)^change\s+(['\"`])(.{1,120}?)\1\s+to\s+(['\"`])(.{0,120}?)\3",
-        suggested,
-    )
-    if change_match:
-        inferred_old = change_match.group(2).strip()
-        inferred_new = change_match.group(4).strip()
-        if inferred_old and inferred_old != inferred_new:
-            return inferred_old, inferred_new
-
-    remove_match = re.match(
-        r"(?i)^remove\s+(?:header|line|text)\s+(['\"`])(.{1,120}?)\1",
-        suggested,
-    )
-    if remove_match:
-        return remove_match.group(2), ""
-
-    return None
-
-
-def _apply_verifier_patches(
-    output: str,
-    decision: AgenticVerifierDecision,
-) -> VerifierPatchResult:
-    """Apply unambiguous edits and retain every issue that was not fixed."""
-
-    lines = output.splitlines()
-    trailing_newline = output.endswith("\n")
-    patched_output = output
-    applied: list[AgenticIssue] = []
-    unresolved: list[AgenticIssue] = []
-
-    for issue in decision.issues:
-        patch = _infer_issue_patch(issue)
-        if patch is None:
-            unresolved.append(issue)
-            continue
-        current_text, expected_text = patch
-        if issue.line_index is not None:
-            if issue.line_index < 0 or issue.line_index >= len(lines):
-                unresolved.append(issue)
-                continue
-            patched_line = _replace_once(
-                lines[issue.line_index],
-                current_text,
-                expected_text,
-            )
-            if patched_line is None:
-                unresolved.append(issue)
-                continue
-            lines[issue.line_index] = patched_line
-            if patched_line == "":
-                lines.pop(issue.line_index)
-            patched_output = "\n".join(lines) + ("\n" if trailing_newline else "")
-            applied.append(issue)
-            continue
-
-        patched = _replace_once(patched_output, current_text, expected_text)
-        if patched is None:
-            unresolved.append(issue)
-            continue
-        patched_output = patched
-        lines = patched_output.splitlines()
-        trailing_newline = patched_output.endswith("\n")
-        applied.append(issue)
-
-    return VerifierPatchResult(
-        output=patched_output,
-        applied_issues=tuple(applied),
-        unresolved_issues=tuple(unresolved),
-    )
-
-
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -439,23 +267,40 @@ def run_bounded_verifier_loop(
     verify: VerifyFn,
     rewrite: RewriteFn,
     config: AgenticLoopConfig,
+    allow_full_redo: bool = True,
 ) -> AgenticLoopResult:
     """Run a bounded stage-local verifier-rewriter loop.
 
     ``max_iterations`` counts rewrite attempts after the initial output. Attempt
     0 is always the normal stage output; attempt 1 is the first correction.
+    ``allow_full_redo`` is False for stages whose rewriter cannot produce the
+    output again from scratch.
     """
     artifact_dir.mkdir(parents=True, exist_ok=True)
     current = initial_output
     attempts: list[AgenticAttempt] = []
-    previous_retry_signature: tuple[str, ...] | None = None
+    previous_signature: tuple[Any, ...] | None = None
     rewrite_count = 0
+
+    def finish(stop_reason: AgenticStopReason) -> AgenticLoopResult:
+        return _finish(
+            stage=stage,
+            output=current,
+            stop_reason=stop_reason,
+            rewrite_count=rewrite_count,
+            attempts=attempts,
+            artifact_dir=artifact_dir,
+        )
 
     _write_text(artifact_dir / f"attempt_0_output{output_suffix}", current)
 
     for attempt in range(config.max_iterations + 1):
         raw_decision, verifier_usage = _split_verify_result(verify(current, attempt))
-        decision = normalize_catastrophic_decision(raw_decision)
+        decision = raw_decision
+        if raw_decision.action == "targeted_edits":
+            usable = actionable_edits(raw_decision)
+            if len(usable) != len(raw_decision.edits):
+                decision = raw_decision.model_copy(update={"edits": usable})
         attempt_record = AgenticAttempt(
             attempt=attempt,
             decision=decision,
@@ -474,142 +319,55 @@ def run_bounded_verifier_loop(
                 verifier_usage,
             )
 
-        if decision.decision == "accept":
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="accepted",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
+        if decision.action == "accept":
+            return finish("accepted")
+        if decision.action == "reject":
+            return finish("rejected")
 
-        if decision.decision == "reject":
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="rejected",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
+        is_full_redo = decision.action == "full_redo"
+        if is_full_redo:
+            if not allow_full_redo:
+                return finish("full_redo_unavailable")
+            if not decision.redo_reason.strip():
+                return finish("invalid_decision")
+        else:
+            if decision.confidence < config.min_retry_confidence:
+                return finish("low_confidence_retry")
+            if not decision.edits:
+                return finish("invalid_decision")
 
-        is_catastrophic = decision.decision == "recover"
-
-        if not is_catastrophic and decision.confidence < config.min_retry_confidence:
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="low_confidence_retry",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
-
-        if (
-            not is_catastrophic
-            and config.require_concrete_retry_issue
-            and not _has_concrete_retry_issue(decision)
-        ):
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="vague_retry",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
-
-        signature = _issue_signature(decision)
+        signature = _decision_signature(decision)
         if (
             config.stop_on_repeated_issue
             and attempt > 0
-            and signature
-            and signature == previous_retry_signature
+            and signature == previous_signature
         ):
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="repeated_issue",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
-        previous_retry_signature = signature
+            return finish("repeated_issue")
+        previous_signature = signature
 
         if rewrite_count >= config.max_iterations:
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason="max_iterations",
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
+            return finish("max_iterations")
 
         next_attempt = attempt + 1
-        rewritten = None
-        rewrite_input = current
-        rewrite_decision = decision
-        needs_rewriter = True
-        if not is_catastrophic and config.prefer_verifier_patches:
-            patch_result = _apply_verifier_patches(current, decision)
-            rewrite_input = patch_result.output
-            if patch_result.unresolved_issues:
-                decision_updates: dict[str, Any] = {
-                    "issues": list(patch_result.unresolved_issues)
-                }
-                if patch_result.applied_issues:
-                    unresolved_instructions = [
-                        issue.suggested_fix.strip()
-                        for issue in patch_result.unresolved_issues
-                        if issue.suggested_fix.strip()
-                    ]
-                    decision_updates["retry_instruction"] = (
-                        "\n".join(unresolved_instructions)
-                        or "Resolve only the remaining verifier issues."
-                    )
-                rewrite_decision = decision.model_copy(update=decision_updates)
-            elif patch_result.applied_issues:
-                rewritten = patch_result.output
-                needs_rewriter = False
-        if needs_rewriter:
-            rewritten, rewrite_usage = _split_rewrite_result(
-                rewrite(rewrite_input, rewrite_decision, next_attempt)
+        rewritten, rewrite_usage = _split_rewrite_result(
+            rewrite(current, decision, next_attempt)
+        )
+        if rewrite_usage:
+            attempt_record.rewrite_usage = rewrite_usage
+            _write_json_data(
+                artifact_dir / f"attempt_{next_attempt}_rewrite_usage.json",
+                rewrite_usage,
             )
-            if rewrite_usage:
-                attempt_record.rewrite_usage = rewrite_usage
-                _write_json_data(
-                    artifact_dir / f"attempt_{next_attempt}_rewrite_usage.json",
-                    rewrite_usage,
-                )
         if _normalized_for_change_check(rewritten) == _normalized_for_change_check(current):
-            stop_reason: AgenticStopReason = (
-                "catastrophic_recovery" if is_catastrophic else "unchanged"
-            )
-            return _finish(
-                stage=stage,
-                output=current,
-                stop_reason=stop_reason,
-                rewrite_count=rewrite_count,
-                attempts=attempts,
-                artifact_dir=artifact_dir,
-            )
+            return finish("unchanged")
 
         rewrite_count += 1
         current = rewritten
         _write_text(artifact_dir / f"attempt_{next_attempt}_output{output_suffix}", current)
-        if is_catastrophic:
+        if is_full_redo:
             _write_text(
-                artifact_dir / f"attempt_{next_attempt}_catastrophic{output_suffix}",
+                artifact_dir / f"attempt_{next_attempt}_full_redo{output_suffix}",
                 current,
             )
 
-    return _finish(
-        stage=stage,
-        output=current,
-        stop_reason="max_iterations",
-        rewrite_count=rewrite_count,
-        attempts=attempts,
-        artifact_dir=artifact_dir,
-    )
+    return finish("max_iterations")

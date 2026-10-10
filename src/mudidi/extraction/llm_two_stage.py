@@ -267,27 +267,45 @@ def _transcription_to_tsv(result: TranscriptionResponse) -> str:
     return "\n".join(rows)
 
 
+_TARGETED_EDITS_VERIFIER_RULES = (
+    "For action=targeted_edits, list every needed change in edits. Each edit "
+    "names one output line: line_index (0-based), current_text copied exactly "
+    "from that line (the smallest span that must change), replacement_text "
+    "exactly as the source shows it, and a reason. To add a missing line, leave "
+    "current_text empty and give the index the new line should take; to delete "
+    "text, leave replacement_text empty. Only propose an edit you can specify "
+    "exactly; if you cannot name the text to change, leave that problem out. "
+    "A correction model will check each proposed edit against the source and "
+    "apply the ones it confirms."
+)
+
+_TARGETED_EDITS_REWRITER_RULES = (
+    "The verifier proposed targeted edits in verifier_json. Work through them "
+    "one at a time. First find the line and current_text in the previous "
+    "output. Then verify the proposal against the source: confirm that the "
+    "current text is wrong and that the replacement matches the source. Apply "
+    "an edit only when you confirm it, using the source's exact characters "
+    "even where they differ from the proposed replacement_text. Skip any edit "
+    "you cannot confirm or cannot locate. Change nothing that is not covered "
+    "by a confirmed edit, and return the complete corrected output."
+)
+
+
 def _stage1_verifier_system_prompt() -> str:
-    base = (
+    return (
         "You are a conservative verifier for Stage 1 dictionary OCR. "
         "Judge whether the transcript faithfully copies the current page image. "
         "Do not reward interpretation or correction. Return only structured JSON "
-        "matching the schema. Use decision=accept when the output is good enough, "
-        "decision=retry only for concrete fixable issues, and decision=reject only "
-        "when correction is unsafe. For every retry issue, provide localized "
-        "evidence: line_index when known, current_text copied from the current "
-        "output when applicable, and expected_text or suggested_fix grounded in "
-        "the page image. Never leave current_text and expected_text empty for a "
-        "retry issue that asks for a text edit; if you cannot specify the exact "
-        "span, do not request retry for that issue."
-    )
-    return (
-        base
-        + " When the transcript is from the wrong page, largely hallucinated, or "
-        "too corrupted for localized fixes, use decision=recover instead of reject. "
-        "For recover, describe the catastrophic problem in issues with evidence "
-        "grounded in the page image; localized current_text/expected_text spans "
-        "are optional because the correction will re-transcribe the entire page."
+        "matching the schema. Choose exactly one action. Use action=accept when "
+        "the output is good enough. Use action=targeted_edits when specific "
+        "lines are wrong; this is the normal way to request a correction. Use "
+        "action=full_redo only when the transcript is from the wrong page, "
+        "largely hallucinated, or wrong on most lines, so that localized edits "
+        "cannot repair it; state why in redo_reason and leave edits empty, "
+        "because the correction will re-transcribe the entire page. Use "
+        "action=reject only when correction is unsafe. "
+        + _TARGETED_EDITS_VERIFIER_RULES
+        + " The source is the page image."
     )
 
 
@@ -305,12 +323,12 @@ def _stage1_catastrophic_rewriter_system_prompt() -> str:
 
 def _stage1_rewriter_system_prompt() -> str:
     return (
-        "You are a conservative Stage 1 OCR correction model. Revise only the "
-        "previous transcript where the verifier identified concrete problems. "
-        "Use the page image as the authority. Do not parse entries or assign MDF "
-        "fields. Make the minimum necessary edit for each localized finding and "
-        "leave unrelated lines unchanged. Return only the requested structured "
-        "Stage 1 JSON."
+        "You are a conservative Stage 1 OCR correction model. The source is the "
+        "page image, and it is the authority. "
+        + _TARGETED_EDITS_REWRITER_RULES
+        + " Make the minimum necessary edit for each confirmed change. Do not "
+        "parse entries or assign MDF fields. Return only the requested "
+        "structured Stage 1 JSON."
     )
 
 
@@ -331,14 +349,12 @@ def _stage2_verifier_system_prompt() -> str:
         "You are a conservative verifier for Stage 2 Toolbox MDF extraction. "
         "Judge whether the MDF is syntactically plausible and grounded in the "
         "Stage 1 transcript. Return only structured JSON matching the schema. "
-        "Use decision=accept when the MDF is good enough, decision=retry only for "
-        "concrete fixable issues, and decision=reject only when correction is unsafe. "
-        "For every retry issue, provide localized evidence: line_index when known, "
-        "current_text copied from the current MDF when applicable, and expected_text "
-        "or suggested_fix grounded in the Stage 1 transcript. Never leave "
-        "current_text and expected_text empty for a retry issue that asks for a "
-        "text edit; if you cannot specify the exact span, do not request retry "
-        "for that issue. "
+        "Choose exactly one action. Use action=accept when the MDF is good "
+        "enough, action=targeted_edits when specific lines are wrong, and "
+        "action=reject when correction is unsafe. Do not use action=full_redo; "
+        "it is not available for Stage 2. "
+        + _TARGETED_EDITS_VERIFIER_RULES
+        + " The source is the Stage 1 transcript. "
         + _STAGE2_PAGE_LOCAL_NOTE
     )
 
@@ -379,12 +395,12 @@ def _stage2_grounding_summary(transcribed_text: str, output: str) -> str:
 
 def _stage2_rewriter_system_prompt() -> str:
     return (
-        "You are a conservative Stage 2 MDF correction model. Revise only the "
-        "previous MDF lines needed to address verifier findings. Preserve MDF "
-        "markers, page-local scope, and text grounded in Stage 1. Return corrected "
-        "MDF text only, with no explanation or markdown fence. Make the minimum "
-        "necessary edit for each localized finding and leave unrelated lines "
-        "unchanged. "
+        "You are a conservative Stage 2 MDF correction model. The source is the "
+        "Stage 1 transcript, and it is the authority for every character. "
+        + _TARGETED_EDITS_REWRITER_RULES
+        + " Make the minimum necessary edit for each confirmed change. Preserve "
+        "MDF markers and page-local scope. Return corrected MDF text only, with "
+        "no explanation or markdown fence. "
         + _STAGE2_PAGE_LOCAL_NOTE
     )
 
@@ -415,7 +431,7 @@ def _stage2_verifier_user_text(
         "field values, ungrounded lexical changes, and entry-boundary mistakes. "
         "Use the deterministic grounding summary as a warning signal, especially "
         "when many MDF value tokens do not appear in Stage 1. "
-        "Do not ask for a retry for harmless MDF-friendly punctuation or spacing "
+        "Do not propose edits for harmless MDF-friendly punctuation or spacing "
         "normalization."
     )
 
@@ -442,8 +458,9 @@ def _stage2_rewriter_user_text(
         "<previous_stage2_mdf>\n"
         f"{output}\n"
         "</previous_stage2_mdf>\n\n"
-        "Correct only the verifier-identified issues. Keep valid MDF markers and "
-        "do not introduce words or entries unsupported by the Stage 1 transcript."
+        "Verify each proposed edit against the Stage 1 transcript, then apply "
+        "only the edits you confirm. Keep valid MDF markers and do not introduce "
+        "words or entries unsupported by the Stage 1 transcript."
     )
 
 
@@ -501,8 +518,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         agentic_evaluator_reasoning_effort: Optional[str] = None,
         agentic_rewriter_reasoning_effort: Optional[str] = None,
         agentic_min_retry_confidence: float = 0.55,
-        agentic_require_concrete_retry_issue: bool = True,
-        agentic_prefer_verifier_patches: bool = True,
         stage1_instruction_context: PreparedInstructionContext | None = None,
         stage2_instruction_context: PreparedInstructionContext | None = None,
         stage2_guides_scope: str = "both",
@@ -558,8 +573,6 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         self.agentic_loop_config = AgenticLoopConfig(
             max_iterations=agentic_max_iterations,
             min_retry_confidence=agentic_min_retry_confidence,
-            require_concrete_retry_issue=agentic_require_concrete_retry_issue,
-            prefer_verifier_patches=agentic_prefer_verifier_patches,
         )
         self.agentic_evaluator_model = agentic_evaluator_model
         self.agentic_rewriter_model = agentic_rewriter_model
@@ -1255,6 +1268,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     attempt=attempt,
                 ),
                 config=self.agentic_loop_config,
+                allow_full_redo=False,
             )
             print(
                 "Stage 2 agentic loop → "
@@ -1348,7 +1362,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             flat=self.stage1_mode == "flat",
             typography=self.stage1_typography,
         )
-        is_catastrophic = decision.decision == "recover"
+        is_catastrophic = decision.action == "full_redo"
         if is_catastrophic:
             user_text = self._stage1_catastrophic_rewriter_user_text(
                 output,
@@ -1533,9 +1547,9 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             "<previous_stage1_output>\n"
             f"{output}\n"
             "</previous_stage1_output>\n\n"
-            "Correct only the verifier-identified problems. Preserve visible "
-            "characters and line/row order. Return only the required structured "
-            "Stage 1 JSON schema."
+            "Verify each proposed edit against the page image, then apply only "
+            "the edits you confirm. Preserve visible characters and line/row "
+            "order. Return only the required structured Stage 1 JSON schema."
             + self._stage1_agentic_guide_block()
         )
 
@@ -1552,7 +1566,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         del page_context
         del ocr_result
         return (
-            f"Catastrophic recovery attempt: {attempt}\n"
+            f"Full redo attempt: {attempt}\n"
             f"Stage 1 mode: {self.stage1_mode}\n"
             f"Typography tags expected: {self.stage1_typography}\n"
             "<ocr_reference>\n"
