@@ -1,18 +1,18 @@
 {% extends "_layout.html" %}
 {% block title %}Active runs · MUDIDI{% endblock %}
-{% block head_meta %}{% for run in runs %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endfor %}{% endblock %}
+{% block head_meta %}{% for run in runs if run.is_active %}<meta name="mudidi-events" content="/runs/{{ run.run_id }}/events?after={{ run.last_event_sequence }}">{% endfor %}{% endblock %}
 {% block head_scripts %}<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-21" defer></script>{% endblock %}
 {% block main %}
 <div class="page-shell active-page">
   <div class="providers-page">
     <div class="detail-nav">
       <a class="back-link" href="/">← New run</a>
-      {% if runs %}<span class="status-pill running">{{ runs|length }} {{ 'worker' if runs|length == 1 else 'workers' }} live</span>{% endif %}
+      {% if runs %}<span class="status-pill running">{{ runs|length }} {{ 'run' if runs|length == 1 else 'runs' }} in progress</span>{% endif %}
     </div>
     <header class="page-heading">
-      <span class="eyebrow">Live workers</span>
+      <span class="eyebrow">In progress</span>
       <h1>Active runs</h1>
-      <p>Every run that is working right now. Open a run for its pages, logs, and full event stream.</p>
+      <p>Every run that is working or waiting for you to review its parsing guide. Open a run for its pages, logs, and full event stream.</p>
     </header>
     {% if runs %}
     <section class="panel history-list history-table-panel">
@@ -43,7 +43,8 @@
                 <small class="history-output"><span class="sr-only">Output directory</span><code title="{{ run.output_directory }}">{{ run.output_directory }}</code></small>
               </td>
               <td>
-                <span class="status-pill running">{{ run.current_stage_label }}</span>
+                <span class="status-pill {{ 'running' if run.is_active else '' }}">{{ run.current_stage_label }}</span>
+                {% if run.awaiting_review %}<small class="active-current-page">Waiting for your review</small>{% endif %}
                 {% if run.current_page and run.total_pages %}<small class="active-current-page">Page {{ run.current_page }} of {{ run.total_pages }}</small>{% endif %}
               </td>
               <td class="history-progress">
@@ -57,10 +58,16 @@
               <td><time class="elapsed-time" datetime="{{ run.created_at.isoformat() }}" data-elapsed-from="{{ run.created_at.isoformat() }}" title="{{ run.created_at.strftime('%Y-%m-%d %H:%M UTC') }}">{{ run.created_at|short_datetime }}</time></td>
               <td class="history-action-cell">
                 <div class="history-actions">
+                  {% if run.awaiting_review %}
+                  <a class="history-primary-action" href="/runs/{{ run.run_id }}/parse-rules">Review guide</a>
+                  {% else %}
                   <a class="history-primary-action" href="/runs/{{ run.run_id }}">View</a>
+                  {% endif %}
+                  {% if run.is_active %}
                   <form method="post" action="/runs/{{ run.run_id }}/cancel">
                     <button class="history-delete" type="submit">Cancel</button>
                   </form>
+                  {% endif %}
                 </div>
               </td>
             </tr>
@@ -71,7 +78,7 @@
     </section>
     {% else %}
     <section class="panel empty-state active-empty">
-      <h2>No inference is running</h2>
+      <h2>No runs in progress</h2>
       <p>Start a new run or inspect previously completed work in Run history.</p>
       <div class="empty-actions">
         <a class="primary" href="/">New run</a>

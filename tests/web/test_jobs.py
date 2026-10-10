@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import sys
 from pathlib import Path
 
 import pytest
@@ -97,6 +98,34 @@ def test_two_runs_work_in_parallel(
     assert store.get_run("run-2").status is RunStatus.RUNNING_STAGE1
     controller.cancel("run-2")
     controller.wait("run-2", timeout=5)
+
+
+def test_worker_crash_is_recorded_with_its_last_error_line(
+    store: RunStore,
+    tmp_path: Path,
+) -> None:
+    _queued_run(store, "run-crash")
+    store.transition("run-crash", RunStatus.RUNNING_STAGE1)
+    controller = JobController(store=store, data_dir=tmp_path)
+    controller.log_path("run-crash").parent.mkdir(parents=True, exist_ok=True)
+    crash = (
+        "import sys; sys.stdin.read(); "
+        "sys.stderr.write('Traceback (most recent call last):\\n'); "
+        "sys.stderr.write(\"ModuleNotFoundError: No module named 'fastapi'\\n\"); "
+        "raise SystemExit(1)"
+    )
+
+    controller._spawn("run-crash", [sys.executable, "-c", crash], credentials=())
+    controller.wait("run-crash", timeout=10)
+
+    assert store.get_run("run-crash").status is RunStatus.FAILED
+    failure = store.list_events("run-crash")[-1]
+    assert failure["type"] == "run.failed"
+    assert "exit code 1" in failure["message"]
+    assert "No module named 'fastapi'" in failure["message"]
+    assert "No module named 'fastapi'" in controller.log_path("run-crash").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_worker_command_never_contains_api_credentials(

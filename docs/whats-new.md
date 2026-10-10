@@ -42,8 +42,10 @@
 
 - The dashboard no longer limits you to one working run. Start as many as you
   like.
-- **Active run** is now **Active runs**: a list of every working run with its
-  stage, progress, and a **Cancel** action.
+- **Active run** is now **Active runs**: a list of every run in progress with
+  its stage and progress, including runs waiting for parsing-guide review.
+- When a worker process crashes, the run page now shows the worker's last
+  error line instead of a bare "failed" status.
 - A run is refused only when another in-progress run writes to the same output
   folder. The Review page names that run.
 - The Review page and the run page warn when another working run uses the same

@@ -6,9 +6,12 @@ import json
 import os
 
 # Dedicated worker processes use fixed argument vectors and never invoke a shell.
+import sqlite3
 import subprocess  # nosec B404
 import sys
-from dataclasses import dataclass
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import RLock, Thread
 from typing import TYPE_CHECKING
@@ -18,6 +21,7 @@ from pydantic import ValidationError
 from mudidi.config.yaml_config import InferenceConfig, redacted_config_dict
 from mudidi.execution.approval import ApprovedParseRules
 from mudidi.execution.events import (
+    ExecutionStage,
     ParseRulesGenerated,
     RunCompleted,
     RunFailed,
@@ -65,8 +69,21 @@ _OUTPUT_HOLDING_STATUSES = frozenset(
         RunStatus.RUNNING_STAGE2,
     }
 )
+_STAGE_BY_WORKING_STATUS: dict[RunStatus, ExecutionStage] = {
+    RunStatus.RUNNING_STAGE1: "stage1",
+    RunStatus.DISCOVERING_PARSE_RULES: "stage2_pass1",
+    RunStatus.RUNNING_STAGE2: "stage2_pass2",
+}
 if TYPE_CHECKING:
     from mudidi.web.parse_rules import ParseRuleReviewService
+
+
+def _drain_stderr(worker: _OwnedWorker) -> None:
+    stderr = getattr(worker.process, "stderr", None)
+    if stderr is None:
+        return
+    for line in stderr:
+        worker.stderr_tail.append(line.rstrip("\n"))
 
 
 class OutputDirectoryInUseError(RuntimeError):
@@ -82,6 +99,8 @@ class _OwnedWorker:
     process: subprocess.Popen[str]
     command: tuple[str, ...]
     monitor: Thread | None = None
+    # Last lines the worker wrote to stderr, kept to explain a crash.
+    stderr_tail: deque[str] = field(default_factory=lambda: deque(maxlen=40))
 
 
 class JobController:
@@ -548,7 +567,17 @@ class JobController:
         if stdout is None:
             self._fail_if_active(run_id)
             return
+        # Drain stderr on its own thread so a chatty worker cannot block on a
+        # full pipe, and so a crash can be explained to the user.
+        stderr_reader = Thread(
+            target=_drain_stderr,
+            args=(worker,),
+            daemon=True,
+            name=f"mudidi-worker-stderr-{run_id}",
+        )
+        stderr_reader.start()
         protocol_failed = False
+        failure_reported = False
         for line in stdout:
             try:
                 payload = json.loads(line)
@@ -567,6 +596,7 @@ class JobController:
             if isinstance(event, RunCompleted):
                 self._complete_active(run_id)
             elif isinstance(event, RunFailed):
+                failure_reported = True
                 self._fail_if_active(run_id)
             elif isinstance(event, ParseRulesGenerated):
                 if self.parse_rule_reviews is None:
@@ -583,17 +613,46 @@ class JobController:
                     protocol_failed = True
                     break
         return_code = worker.process.wait()
+        stderr_reader.join(timeout=5)
         status = self.store.get_run(run_id).status
         if status is RunStatus.CANCELLED:
             return
-        if protocol_failed or return_code != 0:
+        still_working = status in _STAGE_BY_WORKING_STATUS
+        if protocol_failed or return_code != 0 or still_working:
+            if still_working and not failure_reported:
+                self._record_worker_crash(run_id, worker, status, return_code)
             self._fail_if_active(run_id)
-        elif status in {
-            RunStatus.RUNNING_STAGE1,
-            RunStatus.DISCOVERING_PARSE_RULES,
-            RunStatus.RUNNING_STAGE2,
-        }:
-            self._fail_if_active(run_id)
+
+    def _record_worker_crash(
+        self,
+        run_id: str,
+        worker: _OwnedWorker,
+        status: RunStatus,
+        return_code: int,
+    ) -> None:
+        """Persist why a worker died without reporting its own failure."""
+
+        tail = [line for line in worker.stderr_tail if line.strip()]
+        reason = tail[-1].strip() if tail else "it wrote no error output"
+        message = f"The worker stopped unexpectedly (exit code {return_code}): {reason}"
+        events = self.store.list_events(run_id)
+        sequence = max((int(event["sequence"]) for event in events), default=0) + 1
+        failure = RunFailed(
+            run_id=run_id,
+            sequence=sequence,
+            occurred_at=datetime.now(UTC),
+            stage=_STAGE_BY_WORKING_STATUS[status],
+            message=message[:500],
+        )
+        try:
+            self.store.append_event(run_id, failure.model_dump(mode="json"))
+            if tail:
+                with self.log_path(run_id).open("a", encoding="utf-8") as log:
+                    log.write("\nWorker stopped unexpectedly. Last error output:\n")
+                    log.write("\n".join(tail) + "\n")
+        except (KeyError, OSError, ValueError, sqlite3.Error):
+            # Reporting is best effort; the run is still marked failed below.
+            return
 
     def _fail_if_active(self, run_id: str) -> None:
         for expected in (

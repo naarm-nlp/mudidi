@@ -549,8 +549,10 @@ filesystem.
 ### Running several runs at once
 
 You can start a run while others are working; there is no limit on how many
-run at once. **Active runs** lists every working run with its stage, progress,
-and a **Cancel** action; select a run to open it.
+run at once. **Active runs** lists every run in progress with its stage and
+progress; select a run to open it. A working run has a **Cancel** action. A run
+that is waiting for you to review its parsing guide stays in the list with a
+**Review guide** action.
 
 - A run is refused when another in-progress run (working, or paused for
   parsing-guide review) writes to the same output folder. The Review page says

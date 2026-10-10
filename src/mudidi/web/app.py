@@ -2179,13 +2179,15 @@ def create_app(
 
     @app.get("/active", response_class=HTMLResponse)
     async def active_run(request: Request) -> HTMLResponse:
-        """List every run that currently has a live worker."""
+        """List every run in progress: working, or waiting for guide review."""
 
         active = []
-        for run in app.state.run_store.list_active_runs():
+        for run in app.state.run_store.list_runs():
             view = _run_view(app.state.run_store, run)
-            if not view["is_active"]:
+            awaiting_review = run.status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+            if not (view["is_active"] or awaiting_review):
                 continue
+            view["awaiting_review"] = awaiting_review
             view["output_directory"] = _history_output_directory(
                 app.state.job_controller, run.run_id
             )

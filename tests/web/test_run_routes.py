@@ -131,7 +131,7 @@ def test_active_page_filters_runs_with_terminal_event_before_status_reconciliati
 
     assert response.status_code == 200
     assert run_id not in response.text
-    assert "No inference is running" in response.text
+    assert "No runs in progress" in response.text
 
 
 def _working_run(store: RunStore, run_id: str, *, completed: int, total: int) -> None:
@@ -158,7 +158,7 @@ def test_active_page_lists_every_working_run(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert "Active runs" in response.text
-    assert "2 workers live" in response.text
+    assert "2 runs in progress" in response.text
     assert "50%" in response.text
     assert "1 of 2 pages" in response.text
     assert "25%" in response.text
@@ -169,6 +169,34 @@ def test_active_page_lists_every_working_run(tmp_path: Path) -> None:
         assert f'href="/runs/{run_id}"' in response.text
         assert f'action="/runs/{run_id}/cancel"' in response.text
         assert f'content="/runs/{run_id}/events?after=' in response.text
+
+
+def test_active_page_keeps_a_run_that_waits_for_guide_review(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path)
+    store = app.state.run_store
+    run_id = "review-run"
+    store.create_run(run_id, provider="offline")
+    store.transition(run_id, RunStatus.VALIDATED)
+    store.transition(run_id, RunStatus.QUEUED)
+    store.transition(run_id, RunStatus.DISCOVERING_PARSE_RULES)
+    store.append_event(
+        run_id, _event(run_id, 1, "stage.started", "stage2_pass1", total_pages=1)
+    )
+    store.transition_if_current(
+        run_id,
+        expected=RunStatus.DISCOVERING_PARSE_RULES,
+        target=RunStatus.AWAITING_PARSE_RULES_REVIEW,
+    )
+    assert store.get_run(run_id).status is RunStatus.AWAITING_PARSE_RULES_REVIEW
+
+    response = TestClient(app).get("/active")
+
+    assert response.status_code == 200
+    assert "Waiting for your review" in response.text
+    assert 'href="/runs/review-run/parse-rules"' in response.text
+    # No worker is live while the run waits, so there is nothing to cancel or stream.
+    assert 'action="/runs/review-run/cancel"' not in response.text
+    assert 'meta name="mudidi-events"' not in response.text
 
 
 def _subscription_config(
@@ -252,7 +280,7 @@ def test_empty_active_page_links_to_history_and_new_run(tmp_path: Path) -> None:
     response = TestClient(create_app(data_dir=tmp_path)).get("/active")
 
     assert response.status_code == 200
-    assert "No inference is running" in response.text
+    assert "No runs in progress" in response.text
     assert 'href="/history"' in response.text
     assert 'href="/"' in response.text
 
