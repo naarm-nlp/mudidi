@@ -44,8 +44,11 @@ appended to that system message as well.
 | Inference | `stage_2/pass_2/system_inference.j2` | `stage_2/pass_2/user_inference.j2` |
 
 Optional values are visible as Jinja conditionals in the user templates.
-Neighbor-page context and user guides are included only when supplied. Pass 2
-never receives the SIL MDF manual.
+User guides are included only when supplied. In inference the user message
+also carries the end of the previous page's Stage 1 transcript, as text, so
+lines that continue an earlier entry get the right markers; the next page is
+not sent, and the only page image is the current page. Pass 2 never receives
+the SIL MDF manual.
 
 The per-folder README files under `src/mudidi/assets/prompts/stage_1/` and
 `stage_2/pass_1/` and `stage_2/pass_2/` document the exact message pairings and

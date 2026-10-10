@@ -68,10 +68,10 @@ benchmark_sweep YAML
 
 Responsibilities:
 - Materialize page inputs (snippets dir, PDF split via PyMuPDF, rasterize via PyMuPDF)
-- Collect intro / alphabet / OCR-hint / neighbor context
+- Collect intro / alphabet / OCR-hint / previous-page context
 - Select strategy: `TwoStageLLMExtraction`, VLM OCR batch, or Mathpix OCR batch
 - ThreadPoolExecutor page concurrency with rate-limit backoff
-- Write manifests, usage JSON, stage outputs
+- Write manifests, usage JSON, stage outputs, and the combined `dictionary.mdf.txt`
 
 ## Extraction Strategies
 

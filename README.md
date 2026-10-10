@@ -341,9 +341,14 @@ Outputs are written under:
 outputs/my-dictionary/
 ├── resolved_config.json
 ├── mdf_parsing_guide.json
+├── dictionary.mdf.txt
 ├── stage-1/page_N/page_N_stage1_flat.txt
 └── stage-2/page_N/page_N.mdf.txt
 ```
+
+Each `page_N.mdf.txt` holds exactly the lines printed on that page, so an entry
+that crosses a page break is split between two page files.
+`dictionary.mdf.txt` joins the pages in order into the complete dictionary.
 
 For repeatable and advanced runs, use a validated YAML configuration:
 

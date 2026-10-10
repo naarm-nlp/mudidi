@@ -1,5 +1,18 @@
 # What's New
 
+## Unreleased — Faster, cheaper Stage 2
+
+- Stage 2 now parses each page locally. A page's MDF holds exactly the lines
+  printed on that page; an entry that crosses a page break is split between
+  the two page files instead of being completed from the next page.
+- New `dictionary.mdf.txt` joins the page files in order, and
+  `dictionary.mdf.report.json` lists the pages that start mid-entry.
+- Stage 2 Pass 2 sends one page image instead of three. The previous page is
+  supplied as the last 1,500 characters of its transcript; the next page is no
+  longer sent.
+- Pages run eight at a time by default (`--batch-size 8`).
+- Oversized page images are compressed once and reused across stages.
+
 ## Unreleased — Dashboard redesign
 
 The local dashboard has a new look and a reorganized **New run** flow. Routes,

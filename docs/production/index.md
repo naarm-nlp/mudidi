@@ -2,7 +2,7 @@
 
 ## Overview
 
-`mudidi run` digitizes a dictionary supplied as a page directory or source PDF. Production mode uses Stage 1 predictions as Stage 2's authoritative text and can use neighboring pages from the same run for context.
+`mudidi run` digitizes a dictionary supplied as a page directory or source PDF. Production mode uses Stage 1 predictions as Stage 2's authoritative text. Each page is parsed on its own, with the end of the previous page's transcript as context, and the per-page MDF is joined into one dictionary file.
 
 Use the minimal CLI for a quick run or a `kind: inference` YAML file for model,
 agentic, cache, MDF parsing guide, and runtime controls. The YAML compatibility
@@ -110,6 +110,8 @@ corrupted transcript; it does not require a separate option.
 output/
 ├── resolved_config.json
 ├── mdf_parsing_guide.json
+├── dictionary.mdf.txt
+├── dictionary.mdf.report.json
 ├── run_usage.json
 ├── stage-1/page_N/
 │   ├── page_N_stage1_flat.txt
@@ -118,6 +120,23 @@ output/
     ├── page_N.mdf.txt
     └── page_N_usage.json
 ```
+
+### Entries that cross a page break
+
+Stage 2 parses each page locally: a page's MDF holds exactly the lines printed
+on that page. When an entry runs over a page break, the first page's file ends
+mid-entry and the next page's file opens with the remaining fields, with no
+`\lx` line above them. The model sees the last 1,500 characters of the
+previous page's Stage 1 transcript, as text only, so it can give those opening
+lines the right markers. It never sees the next page.
+
+`dictionary.mdf.txt` appends the page files in page order, which re-attaches
+those opening fields to the entry they belong to. `dictionary.mdf.report.json`
+lists every page that starts mid-entry (`pages_starting_mid_entry`) so the
+joins can be spot-checked. If the previous page is missing from the run, the
+fields are kept as a separate block and `joined_to_previous_page` is `false`.
+Both files are rebuilt at the end of every Stage 2 run and whenever a page's
+MDF is edited in the dashboard.
 
 Existing stage-level `run_config.json` manifests retain their resume semantics.
 `resolved_config.json` records the redacted configuration used to start the
