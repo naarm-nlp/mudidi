@@ -33,7 +33,7 @@ Redis, PostgreSQL, or Node.js at runtime.
 - Every web Stage 2 path requires a durable MDF parsing guide approval checkpoint.
   Pass 2 accepts only a server-minted `ApprovedParseRules` capability bound to
   the run, review version, immutable managed snapshot, and SHA-256 digest.
-- Catastrophic Stage 1 recovery is always available; there is no UI switch.
+- A Stage 1 full redo is always available to the evaluator; there is no UI switch.
 - Exact verifier patches are unlimited; there is no patch-count UI setting.
 
 ## Primary users
@@ -102,7 +102,7 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
 - Bundled SIL MDF manual text, always added to the Pass 1 system prompt
 - Stage-specific agentic loop, iteration budget, evaluator/rewriter
-  models, minimum confidence, deterministic patches, and concrete-retry gate
+  models, and minimum confidence
 - Batch size, page limit, and prompt caching
 
 ### Deliberately omitted from the dashboard

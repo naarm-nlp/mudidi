@@ -92,17 +92,30 @@ enabled in YAML. Model, reasoning, and retry-confidence options are listed
 under the agentic group in the
 [CLI reference](../reference/cli.md#mudidi-run).
 
-When a verifier decision mixes exact patches with issues that require model
-rewriting, MUDIDI applies the unambiguous patches first and passes the patched
-output plus only the unresolved issues to the rewriter. The combined correction
-uses one `max_iterations` slot. Decisions containing only successful patches do
-not call the rewriter. There is no per-attempt patch-count limit; every
-unambiguous patch in the verifier decision is attempted.
+After each page, the evaluator model chooses one action:
+
+| Action | Meaning |
+| --- | --- |
+| `accept` | The output is good enough; the loop ends. |
+| `targeted_edits` | Specific lines are wrong. The evaluator lists each edit: the line, the exact current text, the replacement, and a reason. |
+| `full_redo` | The page is from the wrong page, largely hallucinated, or wrong on most lines. Stage 1 only: the page is re-transcribed from the image. |
+| `reject` | Correction is unsafe; the current output is kept. |
+
+Edits are never applied by code. For `targeted_edits`, the rewriter model
+receives the proposed edits, verifies each one against the source, applies the
+ones it confirms, and skips the rest. The evaluator then checks the result
+again. Each correction uses one `max_iterations` slot.
+
+The loop keeps the current output and stops early when the evaluator's
+confidence is below `min_retry_confidence`, when it proposes no usable edit
+(`invalid_decision`), when it repeats the same edits (`repeated_issue`), or
+when the rewriter confirms none of them (`unchanged`). The stop reason is
+recorded in `agentic/<stage>/final_decision.json` under each page directory.
 
 Stage 1 is grounded in the page image. Stage 2 is grounded in the Stage 1
-transcript and reviewed MDF parsing guide. Stage 1 catastrophic whole-page recovery is always
-available when its verifier identifies a wrong-page, hallucinated, or broadly
-corrupted transcript; it does not require a separate option.
+transcript and reviewed MDF parsing guide. The `agentic.verifier_patches` and
+`agentic.require_concrete_retry` settings, and their CLI flags, are deprecated
+and ignored.
 
 ## Output layout
 

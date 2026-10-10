@@ -280,14 +280,18 @@ instruction attachments, with the selected filename displayed beside it.
 ## Agentic loop
 
 The agentic loop is the fifth wizard step. After each page is produced, an
-evaluator model checks the output against its source; if it finds problems, a
-correction model rewrites the page and the evaluator checks again, until the
-output is accepted or the iteration limit is reached. It defaults to **Off**
+evaluator model checks the output against its source. If it finds problems it
+proposes targeted edits, each naming a line, the exact current text, and the
+replacement. A correction model then verifies every proposed edit against the
+source, applies the ones it confirms, and the evaluator checks again, until the
+output is accepted or the iteration limit is reached. For a Stage 1 page that
+is wrong throughout, the evaluator can instead request a full redo, which
+re-transcribes the page from the image. It defaults to **Off**
 because it adds model calls and cost. Select **On** to reveal the **Custom
 loop settings** panel. The applicable Stage 1 and Stage 2 checks
 start enabled; you can disable either one, then configure maximum correction
-iterations, minimum retry confidence, evaluator and rewriter models, reasoning,
-deterministic patches, and concrete retry evidence.
+iterations, minimum retry confidence, and evaluator and rewriter models and
+reasoning.
 
 Only stages in the selected pipeline can be verified. Controls for inactive
 stages are disabled in the browser, and the server intersects submitted stage

@@ -114,8 +114,8 @@ Stage 2 boxes
 are initially checked and may be unchecked. The backend intersects these values
 with active stages and ignores forged inactive values.
 
-Custom controls cover iterations, minimum confidence, evaluator/rewriter models
-and reasoning, deterministic patches, and concrete retry evidence. The UI states
+Custom controls cover iterations, minimum confidence, and evaluator/rewriter
+models and reasoning. The UI states
 what the loop does and that it adds model calls, time, and cost.
 
 ## Additional instructions
