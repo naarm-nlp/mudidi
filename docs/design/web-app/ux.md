@@ -114,8 +114,11 @@ Stage 2 boxes
 are initially checked and may be unchecked. The backend intersects these values
 with active stages and ignores forged inactive values.
 
-Custom controls cover **Maximum Iterations** (default 3), minimum confidence,
-and the Evaluator and Editor models and reasoning. The UI states
+The panel has three groups. **Stages to check** holds the two stage checkboxes
+on one row. **Loop limits** holds **Maximum Iterations** (default 3) and
+minimum confidence, which apply to every checked stage. **Models** shows one
+card per role, Evaluator and Editor side by side, each with its own provider,
+model and reasoning. The UI states
 what the loop does and that it adds model calls, time, and cost.
 
 ## Additional instructions

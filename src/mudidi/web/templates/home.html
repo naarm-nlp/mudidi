@@ -432,7 +432,7 @@
               <div class="wizard-validation-summary" data-wizard-validation-summary role="alert" hidden></div>
               <fieldset class="choice-group agentic-choice">
                 <legend>Agentic loop</legend>
-                <p>After each page is produced, a second model (the evaluator) checks the output against its source and lists specific problems. If it finds any, a correction model rewrites the page and the evaluator checks it again. This repeats until the output is accepted or the iteration limit is reached.</p>
+                <p>After each page is produced, an Evaluator model checks the output against its source and proposes specific edits. An Editor model verifies each edit against the same source and applies the ones it confirms, then the Evaluator checks again. This repeats until the page is accepted, the iteration limit is reached, or the loop stops making progress.</p>
                 <p>The loop catches more mistakes, but it adds model calls, so a run takes longer and costs more.</p>
                 <div class="task-card-grid">
                   <label class="task-card"><input type="radio" name="agentic" value="false" checked><span class="task-card-copy"><strong>Off</strong><small>Each page is produced once, with no second check. Fastest and cheapest.</small></span></label>
@@ -441,16 +441,33 @@
               </fieldset>
               <fieldset class="agentic-settings" data-agentic-settings hidden>
                 <legend>Custom loop settings</legend>
-                <p>Choose which active stages run the loop and optionally adjust the Evaluator and Editor.</p>
+                <p>Choose which stages the loop checks, how long it may run, and which model plays each role.</p>
                 <div class="form-grid">
-                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage1 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage1 %} data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
-                  <label class="agentic-stage-toggle{% if errors_by_field.verify_stage2 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage2 %} data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
+                  <div class="agentic-section">
+                    <h4 class="agentic-section-title">Stages to check</h4>
+                    <div class="agentic-stage-row">
+                      <label class="agentic-stage-toggle{% if errors_by_field.verify_stage1 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage1 %} data-field-error="verify_stage1"{% endif %}><span><input name="verify_stage1" type="checkbox" value="true" checked disabled> Verify Stage 1</span>{% if errors_by_field.verify_stage1 %}<small class="field-error-message">{{ errors_by_field.verify_stage1 }}</small>{% endif %}</label>
+                      <label class="agentic-stage-toggle{% if errors_by_field.verify_stage2 %} field-invalid{% endif %}"{% if errors_by_field.verify_stage2 %} data-field-error="verify_stage2"{% endif %}><span><input name="verify_stage2" type="checkbox" value="true" checked disabled> Verify Stage 2</span>{% if errors_by_field.verify_stage2 %}<small class="field-error-message">{{ errors_by_field.verify_stage2 }}</small>{% endif %}</label>
+                    </div>
+                  </div>
+                  <div class="agentic-section">
+                    <h4 class="agentic-section-title">Loop limits</h4>
+                    <p class="agentic-section-note">These apply to every checked stage.</p>
+                  </div>
                   <label{% if errors_by_field.max_iterations %} class="field-invalid" data-field-error="max_iterations"{% endif %}>Maximum Iterations<input name="max_iterations" type="number" min="0" max="10" value="3" disabled>{% if errors_by_field.max_iterations %}<small class="field-error-message">{{ errors_by_field.max_iterations }}</small>{% endif %}</label>
                   <label{% if errors_by_field.min_retry_confidence %} class="field-invalid" data-field-error="min_retry_confidence"{% endif %}>Minimum retry confidence<input name="min_retry_confidence" type="number" min="0" max="1" step="0.05" value="0.55" disabled>{% if errors_by_field.min_retry_confidence %}<small class="field-error-message">{{ errors_by_field.min_retry_confidence }}</small>{% endif %}</label>
-                  {% for role, label in [('evaluator', 'Evaluator'), ('rewriter', 'Editor')] %}
+                  <div class="agentic-section">
+                    <h4 class="agentic-section-title">Models</h4>
+                    <p class="agentic-section-note">Both roles are used for every checked stage. Different models make their checks more independent.</p>
+                  </div>
+                  {% for role, label, summary, default_reasoning in [('evaluator', 'Evaluator', 'Reviews each page and proposes edits.', 'high'), ('rewriter', 'Editor', 'Verifies each proposed edit and applies it.', 'low')] %}
                     <div class="agentic-model-group" data-agentic-model-group="{{ role }}">
-                      <label>{{ label }} provider
-                        <select name="{{ role }}_provider" data-agentic-provider disabled>
+                      <div class="agentic-role-heading">
+                        <h5>{{ label }}</h5>
+                        <p>{{ summary }}</p>
+                      </div>
+                      <label>Provider
+                        <select name="{{ role }}_provider" data-agentic-provider aria-label="{{ label }} provider" disabled>
                           <option value="anthropic">Anthropic</option>
                           <option value="openai">OpenAI</option>
                           <option value="gemini" selected>Google Gemini</option>
@@ -458,17 +475,16 @@
                           <option value="custom">Other / advanced provider</option>
                         </select>
                       </label>
-                      <label>{{ label }} model
-                        <select name="{{ role }}_model" data-agentic-model data-model-stage="verification" disabled>
+                      <label>Model
+                        <select name="{{ role }}_model" data-agentic-model data-model-stage="verification" aria-label="{{ label }} model" disabled>
                           <option value="">Authenticate a provider to choose a model</option>
                         </select>
-                        <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name" hidden disabled>
+                        <input name="{{ role }}_custom_model" data-agentic-custom-model placeholder="Enter a model name" aria-label="{{ label }} custom model" hidden disabled>
                         <small data-model-auth-hint>Authenticate a provider to choose a model.</small>
                       </label>
+                      <label>Reasoning<select aria-label="{{ label }} reasoning" name="{{ role }}_reasoning" data-reasoning-select disabled><option value="">Use default</option><option value="minimal">Minimal</option><option value="low"{{ ' selected' if default_reasoning == 'low' }}>Low</option><option value="medium">Medium</option><option value="high"{{ ' selected' if default_reasoning == 'high' }}>High</option><option value="xhigh">Extra high</option><option value="max">Max</option></select></label>
                     </div>
                   {% endfor %}
-                  <label>Evaluator reasoning<select name="evaluator_reasoning" data-reasoning-select disabled><option value="">Use default</option><option value="minimal">Minimal</option><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option><option value="xhigh">Extra high</option><option value="max">Max</option></select></label>
-                  <label>Editor reasoning<select name="rewriter_reasoning" data-reasoning-select disabled><option value="">Use default</option><option value="minimal">Minimal</option><option value="low" selected>Low</option><option value="medium">Medium</option><option value="high">High</option><option value="xhigh">Extra high</option><option value="max">Max</option></select></label>
                 </div>
               </fieldset>
               <div class="wizard-actions"><button type="button" data-wizard-back="model">← Back</button><button class="primary" type="submit" data-wizard-submit>Review run →</button></div>

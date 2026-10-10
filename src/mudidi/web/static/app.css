@@ -270,7 +270,15 @@ label { display: block; margin: 24px 0 8px; font-size: 13px; font-weight: 700; }
 .stage2-explanation { max-width: 70ch; margin: 8px 0 4px; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 .stage2-pass-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; margin-top: 12px; }
 .stage2-pass-card > label { display: grid; align-content: start; gap: 8px; margin: 0; }
-.agentic-model-group { display: contents; }
+.agentic-section { grid-column: 1 / -1; min-width: 0; }
+.agentic-section + .agentic-section, label + .agentic-section { margin-top: 8px; padding-top: 16px; border-top: var(--divider-width) solid var(--color-line); }
+.agentic-section-title { margin: 0; color: var(--color-ink); font-size: 13px; font-weight: 800; }
+.agentic-section-note { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
+.agentic-stage-row { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 10px; }
+.agentic-stage-row > label { display: grid; gap: 6px; margin: 0; font-weight: 600; }
+.agentic-model-group { display: grid; align-content: start; gap: 14px; min-width: 0; padding: 16px; border: var(--divider-width) solid var(--color-line); background: var(--color-accent-soft); }
+.agentic-role-heading h5 { margin: 0; color: var(--color-ink); font-size: 15px; font-weight: 800; }
+.agentic-role-heading p { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 .agentic-model-group > label { display: grid; align-content: start; gap: 8px; margin: 0; }
 .eye-icon { grid-area: 1 / 1; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .key-reveal[aria-pressed="false"] .eye-hide,
