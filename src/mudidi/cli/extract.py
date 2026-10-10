@@ -943,7 +943,7 @@ def _build_strategy(
             stage1_typography=bool(getattr(args, "stage1_typography", False)),
             stage1_agentic=bool(getattr(args, "stage1_agentic", False)),
             stage2_agentic=bool(getattr(args, "stage2_agentic", False)),
-            agentic_max_iterations=int(getattr(args, "agentic_max_iterations", 2) or 0),
+            agentic_max_iterations=int(getattr(args, "agentic_max_iterations", 3) or 0),
             agentic_evaluator_model=getattr(args, "agentic_evaluator_model", None),
             agentic_rewriter_model=getattr(args, "agentic_rewriter_model", None),
             agentic_reasoning_effort=getattr(args, "agentic_reasoning_effort", "low"),
@@ -1549,23 +1549,23 @@ Examples:
         "--stage1-agentic",
         action="store_true",
         dest="stage1_agentic",
-        help="After each Stage 1 page output, run a bounded verifier-rewriter "
+        help="After each Stage 1 page output, run a bounded Evaluator-Editor "
         "loop before saving the final Stage 1 artifact.",
     )
     parser.add_argument(
         "--stage2-agentic",
         action="store_true",
         dest="stage2_agentic",
-        help="After each Stage 2 MDF page output, run a bounded verifier-rewriter "
+        help="After each Stage 2 MDF page output, run a bounded Evaluator-Editor "
         "loop before saving the final MDF artifact.",
     )
     parser.add_argument(
         "--agentic-max-iterations",
         type=int,
-        default=2,
+        default=3,
         dest="agentic_max_iterations",
-        help="Maximum rewrite attempts for each enabled agentic stage after the "
-        "initial stage output (default: 2).",
+        help="Maximum Evaluator-to-Editor rounds for each enabled agentic stage "
+        "(default: 3).",
     )
     parser.add_argument(
         "--agentic-evaluator-model",
@@ -1584,7 +1584,7 @@ Examples:
         choices=REASONING_CHOICES,
         default="low",
         dest="agentic_reasoning_effort",
-        help="Reasoning effort for agentic verifier and rewriter calls (default: low).",
+        help="Reasoning effort for agentic Evaluator and Editor calls (default: low).",
     )
     parser.add_argument(
         "--agentic-evaluator-reasoning",

@@ -11,7 +11,7 @@ from mudidi.llm.reasoning import REASONING_CHOICES
 
 def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
     """Register agentic YAML overrides without implicit defaults."""
-    group = parser.add_argument_group("agentic verifier-rewriter options")
+    group = parser.add_argument_group("agentic Evaluator-Editor options")
     group.add_argument(
         "--stage1-agentic",
         action=argparse.BooleanOptionalAction,
@@ -30,7 +30,7 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         "--agentic-max-iterations",
         type=int,
         default=argparse.SUPPRESS,
-        help="Maximum rewrite attempts for each enabled agentic stage.",
+        help="Maximum Evaluator-to-Editor rounds for each enabled agentic stage.",
     )
     group.add_argument(
         "--agentic-evaluator-model",
@@ -46,7 +46,7 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         "--agentic-reasoning",
         choices=REASONING_CHOICES,
         default=argparse.SUPPRESS,
-        help="Shared reasoning effort for verifier and rewriter calls.",
+        help="Shared reasoning effort for Evaluator and Editor calls.",
     )
     group.add_argument(
         "--agentic-evaluator-reasoning",
@@ -58,7 +58,7 @@ def _add_sparse_agentic_arguments(parser: argparse.ArgumentParser) -> None:
         "--agentic-rewriter-reasoning",
         choices=REASONING_CHOICES,
         default=argparse.SUPPRESS,
-        help="Rewriter reasoning effort; overrides --agentic-reasoning.",
+        help="Editor reasoning effort; overrides --agentic-reasoning.",
     )
     group.add_argument(
         "--agentic-min-retry-confidence",

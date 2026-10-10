@@ -286,11 +286,15 @@ class ModelsConfig(_StrictModel):
 
 
 class AgenticConfig(_StrictModel):
-    """Optional verifier-rewriter controls."""
+    """Optional Evaluator-Editor loop controls.
+
+    ``rewriter_*`` keys configure the Editor; the names are kept for
+    compatibility with existing configs.
+    """
 
     stage1: bool = False
     stage2: bool = False
-    max_iterations: int = Field(default=2, ge=0)
+    max_iterations: int = Field(default=3, ge=0)
     evaluator_model: str | None = None
     rewriter_model: str | None = None
     reasoning: ReasoningEffort = "low"

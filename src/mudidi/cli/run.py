@@ -230,23 +230,23 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         "--stage1-agentic",
         action="store_true",
         dest="stage1_agentic",
-        help="After each Stage 1 page output, run a bounded verifier-rewriter "
+        help="After each Stage 1 page output, run a bounded Evaluator-Editor "
         "loop before saving the final Stage 1 artifact.",
     )
     parser.add_argument(
         "--stage2-agentic",
         action="store_true",
         dest="stage2_agentic",
-        help="After each Stage 2 MDF page output, run a bounded verifier-rewriter "
+        help="After each Stage 2 MDF page output, run a bounded Evaluator-Editor "
         "loop before saving the final MDF artifact.",
     )
     parser.add_argument(
         "--agentic-max-iterations",
         type=int,
-        default=2,
+        default=3,
         dest="agentic_max_iterations",
-        help="Maximum rewrite attempts for each enabled agentic stage after the "
-        "initial stage output (default: 2).",
+        help="Maximum Evaluator-to-Editor rounds for each enabled agentic stage "
+        "(default: 3).",
     )
     parser.add_argument(
         "--agentic-evaluator-model",
@@ -265,7 +265,7 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
         choices=REASONING_CHOICES,
         default="low",
         dest="agentic_reasoning_effort",
-        help="Reasoning effort for agentic verifier and rewriter calls (default: low).",
+        help="Reasoning effort for agentic Evaluator and Editor calls (default: low).",
     )
     parser.add_argument(
         "--agentic-evaluator-reasoning",
@@ -445,7 +445,7 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
         argv.append("--stage1-agentic")
     if run_args.stage2_agentic:
         argv.append("--stage2-agentic")
-    if run_args.agentic_max_iterations != 2:
+    if run_args.agentic_max_iterations != 3:
         argv.extend(["--agentic-max-iterations", str(run_args.agentic_max_iterations)])
     if run_args.agentic_evaluator_model:
         argv.extend(["--agentic-evaluator-model", run_args.agentic_evaluator_model])

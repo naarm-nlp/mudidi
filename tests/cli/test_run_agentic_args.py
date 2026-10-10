@@ -22,7 +22,7 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
             "--stage1-typography",
             "--stage2-agentic",
             "--agentic-max-iterations",
-            "3",
+            "4",
             "--agentic-evaluator-model",
             "provider/eval",
             "--agentic-rewriter-model",
@@ -55,7 +55,7 @@ def test_run_forwards_agentic_flags(monkeypatch, tmp_path: Path) -> None:
     assert "--stage1-typography" in forwarded
     assert "--stage1-agentic" in forwarded
     assert "--stage2-agentic" in forwarded
-    assert forwarded[forwarded.index("--agentic-max-iterations") + 1] == "3"
+    assert forwarded[forwarded.index("--agentic-max-iterations") + 1] == "4"
     assert forwarded[forwarded.index("--agentic-evaluator-model") + 1] == "provider/eval"
     assert forwarded[forwarded.index("--agentic-rewriter-model") + 1] == "provider/rewrite"
     assert forwarded[forwarded.index("--agentic-reasoning") + 1] == "medium"

@@ -240,7 +240,7 @@ class NewRunForm(BaseModel):
     agentic: bool = False
     verify_stage1: bool = False
     verify_stage2: bool = False
-    max_iterations: int = Field(default=2, ge=0, le=10)
+    max_iterations: int = Field(default=3, ge=0, le=10)
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
     verifier_patches: bool = True
     require_concrete_retry: bool = True
@@ -341,7 +341,7 @@ class NewRunForm(BaseModel):
             self.rewriter_provider,
             self.rewriter_model,
             self.rewriter_custom_model,
-            "Rewriter",
+            "Editor",
         )
         evaluator_reasoning = (
             _effective_reasoning(
@@ -562,7 +562,7 @@ class NewRunForm(BaseModel):
                         self.rewriter_provider,
                         self.rewriter_model,
                         self.rewriter_custom_model,
-                        "Rewriter",
+                        "Editor",
                     ),
                 )
                 if model is not None

@@ -86,7 +86,7 @@ options:
   --overwrite
   --dry-run
 
-agentic verifier-rewriter options:
+agentic Evaluator-Editor options:
   --stage1-agentic, --no-stage1-agentic
                         Enable or disable bounded Stage 1 verification and
                         rewriting.
@@ -94,8 +94,8 @@ agentic verifier-rewriter options:
                         Enable or disable bounded Stage 2 verification and
                         rewriting.
   --agentic-max-iterations AGENTIC_MAX_ITERATIONS
-                        Maximum rewrite attempts for each enabled agentic
-                        stage.
+                        Maximum Evaluator-to-Editor rounds for each enabled
+                        agentic stage.
   --agentic-evaluator-model AGENTIC_EVALUATOR_MODEL
                         Model used for verifier calls; defaults to the current
                         stage model.
@@ -103,13 +103,13 @@ agentic verifier-rewriter options:
                         Model used for correction calls; defaults to the
                         current stage model.
   --agentic-reasoning {none,minimal,low,medium,high,xhigh,max}
-                        Shared reasoning effort for verifier and rewriter
+                        Shared reasoning effort for Evaluator and Editor
                         calls.
   --agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Verifier reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}
-                        Rewriter reasoning effort; overrides --agentic-
+                        Editor reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.
@@ -281,7 +281,7 @@ options:
   --languages LANGUAGES [LANGUAGES ...]
   --experiment-name EXPERIMENT_NAME
 
-agentic verifier-rewriter options:
+agentic Evaluator-Editor options:
   --stage1-agentic, --no-stage1-agentic
                         Enable or disable bounded Stage 1 verification and
                         rewriting.
@@ -289,8 +289,8 @@ agentic verifier-rewriter options:
                         Enable or disable bounded Stage 2 verification and
                         rewriting.
   --agentic-max-iterations AGENTIC_MAX_ITERATIONS
-                        Maximum rewrite attempts for each enabled agentic
-                        stage.
+                        Maximum Evaluator-to-Editor rounds for each enabled
+                        agentic stage.
   --agentic-evaluator-model AGENTIC_EVALUATOR_MODEL
                         Model used for verifier calls; defaults to the current
                         stage model.
@@ -298,13 +298,13 @@ agentic verifier-rewriter options:
                         Model used for correction calls; defaults to the
                         current stage model.
   --agentic-reasoning {none,minimal,low,medium,high,xhigh,max}
-                        Shared reasoning effort for verifier and rewriter
+                        Shared reasoning effort for Evaluator and Editor
                         calls.
   --agentic-evaluator-reasoning {none,minimal,low,medium,high,xhigh,max}
                         Verifier reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-rewriter-reasoning {none,minimal,low,medium,high,xhigh,max}
-                        Rewriter reasoning effort; overrides --agentic-
+                        Editor reasoning effort; overrides --agentic-
                         reasoning.
   --agentic-min-retry-confidence AGENTIC_MIN_RETRY_CONFIDENCE
                         Minimum verifier confidence required before a rewrite.

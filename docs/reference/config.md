@@ -89,7 +89,7 @@ models:  # ModelsConfig; optional
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
   stage2: false  # boolean; default: false
-  max_iterations: 2  # integer; default: 2; >= 0
+  max_iterations: 3  # integer; default: 3; >= 0
   evaluator_model: null  # string | null; default: null
   rewriter_model: null  # string | null; default: null
   reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
@@ -204,7 +204,7 @@ models:  # ModelsConfig; optional
 agentic:  # AgenticConfig; optional
   stage1: false  # boolean; default: false
   stage2: false  # boolean; default: false
-  max_iterations: 2  # integer; default: 2; >= 0
+  max_iterations: 3  # integer; default: 3; >= 0
   evaluator_model: null  # string | null; default: null
   rewriter_model: null  # string | null; default: null
   reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
@@ -323,7 +323,7 @@ base:  # BenchmarkRunConfig; required
   agentic:  # AgenticConfig; optional
     stage1: false  # boolean; default: false
     stage2: false  # boolean; default: false
-    max_iterations: 2  # integer; default: 2; >= 0
+    max_iterations: 3  # integer; default: 3; >= 0
     evaluator_model: null  # string | null; default: null
     rewriter_model: null  # string | null; default: null
     reasoning: "low"  # one of "none", "minimal", "low", "medium", "high", "xhigh", "max"; default: "low"
