@@ -60,6 +60,7 @@ class AgenticEdit(BaseModel):
         ),
     )
     reason: str = Field(
+        default="",
         description="What in the source shows that the current text is wrong.",
     )
     severity: AgenticSeverity = "medium"
@@ -128,6 +129,7 @@ class AgenticEditVerdict(BaseModel):
         ),
     )
     reason: str = Field(
+        default="",
         description="What in the source supports this verdict.",
     )
 

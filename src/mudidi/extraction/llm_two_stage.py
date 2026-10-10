@@ -289,6 +289,8 @@ _STAGE2_ACCEPTANCE_CRITERIA = (
 )
 
 _TARGETED_EDITS_VERIFIER_RULES = (
+    "Reply with one JSON object whose keys are exactly action, confidence, "
+    "edits and redo_reason. "
     "For action=targeted_edits, list every needed change in edits. Each edit "
     "names one output line: line_index (0-based), current_text copied exactly "
     "from that line (the smallest span that must change), replacement_text "
@@ -308,7 +310,10 @@ _TARGETED_EDITS_VERIFIER_RULES = (
 )
 
 _EDITOR_RULES = (
-    "The Evaluator proposed targeted edits in evaluator_json. Rule on every "
+    "The Evaluator proposed targeted edits in evaluator_json. Reply with one "
+    "JSON object whose keys are exactly verdicts and notes; each verdict has "
+    "the keys proposal_index, verdict, line_index, current_text, "
+    "replacement_text and reason. Rule on every "
     "one of them and return one verdict per proposed edit, identified by its "
     "0-based proposal_index. For each proposal, find the line and current_text "
     "in the current output, then check the source: is the current text really "

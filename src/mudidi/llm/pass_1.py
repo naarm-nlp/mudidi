@@ -47,6 +47,9 @@ def pass_1_system_prompt(*, mdf_manual: bool = False) -> str:
     )
 
 
+_INVALID_JSON_ESCAPE = re.compile(r'(?<!\\)\\(?!["\\/bfnrtu])')
+
+
 def _extract_json_object(text: str) -> dict:
     text = text.strip()
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
@@ -56,7 +59,14 @@ def _extract_json_object(text: str) -> dict:
     end = text.rfind("}")
     if start == -1 or end == -1:
         raise ValueError("No JSON object found in field discovery response.")
-    return json.loads(text[start : end + 1])
+    payload = text[start : end + 1]
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError:
+        # MDF markers such as \lx are often written into JSON strings with a
+        # single backslash, which is not a valid JSON escape. Double those
+        # backslashes and parse again.
+        return json.loads(_INVALID_JSON_ESCAPE.sub(r"\\\\", payload))
 
 
 def _config_hint(
