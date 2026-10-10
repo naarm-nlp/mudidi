@@ -1,10 +1,15 @@
+import json
 from pathlib import Path
 
 from mudidi.agentic.verifier_loop import (
     AgenticEdit,
+    AgenticEditorResponse,
+    AgenticEditVerdict,
     AgenticLoopConfig,
     AgenticVerifierDecision,
     actionable_edits,
+    apply_edit,
+    apply_editor_verdicts,
     run_bounded_verifier_loop,
 )
 
@@ -34,32 +39,161 @@ def _accept() -> AgenticVerifierDecision:
     return AgenticVerifierDecision(action="accept", confidence=0.95)
 
 
-def _run(tmp_path: Path, verify, rewrite, *, initial="bad line", **kwargs):
-    config = kwargs.pop("config", AgenticLoopConfig(max_iterations=2))
+def _verdict(index: int, proposal: AgenticEdit, verdict: str = "apply", **changes):
+    fields = {
+        "proposal_index": index,
+        "verdict": verdict,
+        "line_index": proposal.line_index,
+        "current_text": proposal.current_text,
+        "replacement_text": proposal.replacement_text,
+        "reason": "checked against the source",
+    }
+    fields.update(changes)
+    return AgenticEditVerdict(**fields)
+
+
+def _approve_all(output: str, decision: AgenticVerifierDecision, attempt: int):
+    return AgenticEditorResponse(
+        verdicts=[_verdict(i, item) for i, item in enumerate(decision.edits)]
+    )
+
+
+def _refuse_all(output: str, decision: AgenticVerifierDecision, attempt: int):
+    return AgenticEditorResponse(
+        verdicts=[
+            _verdict(i, item, "refuse", reason="the source shows the current text")
+            for i, item in enumerate(decision.edits)
+        ],
+        notes="Nothing to change.",
+    )
+
+
+def _no_edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+    raise AssertionError("the Editor should not run")
+
+
+def _run(tmp_path: Path, verify, edit=_approve_all, *, initial="bad line", **kwargs):
+    config = kwargs.pop("config", AgenticLoopConfig())
     return run_bounded_verifier_loop(
         stage="stage1",
         initial_output=initial,
         artifact_dir=tmp_path,
         output_suffix=".txt",
         verify=verify,
-        rewrite=rewrite,
+        edit=edit,
         config=config,
         **kwargs,
     )
 
 
-def _no_rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-    raise AssertionError("rewrite should not run")
+def _scripted(*decisions: AgenticVerifierDecision):
+    def verify(output: str, attempt: int, rounds: list):
+        return decisions[min(attempt, len(decisions) - 1)]
+
+    return verify
 
 
-def test_loop_accepts_initial_output_without_rewrite(tmp_path: Path) -> None:
+# ── apply_edit ───────────────────────────────────────────────────────────────
+
+
+def test_apply_edit_replaces_text_on_the_named_line() -> None:
+    lines = ["ala fish", "alo water"]
+
+    assert apply_edit(lines, line_index=1, current_text="water", replacement_text="rain") == (
+        True,
+        "replaced on line 1",
+    )
+    assert lines == ["ala fish", "alo rain"]
+
+
+def test_apply_edit_finds_text_on_another_line_when_the_index_is_off() -> None:
+    lines = ["ala fish", "alo water"]
+
+    applied, detail = apply_edit(
+        lines, line_index=0, current_text="water", replacement_text="rain"
+    )
+
+    assert applied
+    assert detail == "replaced on line 1 (proposed line 0)"
+    assert lines == ["ala fish", "alo rain"]
+
+
+def test_apply_edit_refuses_missing_or_ambiguous_text() -> None:
+    lines = ["a a", "b", "c x", "d x"]
+
+    assert apply_edit(lines, line_index=1, current_text="zzz", replacement_text="q")[0] is False
+    assert apply_edit(lines, line_index=0, current_text="a", replacement_text="q")[0] is False
+    assert apply_edit(lines, line_index=1, current_text="x", replacement_text="q")[0] is False
+    assert lines == ["a a", "b", "c x", "d x"]
+
+
+def test_apply_edit_inserts_and_deletes_lines() -> None:
+    lines = ["one", "three"]
+
+    assert apply_edit(lines, line_index=1, current_text="", replacement_text="two")[0]
+    assert lines == ["one", "two", "three"]
+    assert apply_edit(lines, line_index=0, current_text="one", replacement_text="") == (
+        True,
+        "deleted line 0",
+    )
+    assert lines == ["two", "three"]
+    assert apply_edit(lines, line_index=9, current_text="", replacement_text="four")[0]
+    assert lines == ["two", "three", "four"]
+    assert apply_edit(lines, line_index=0, current_text="", replacement_text=" ")[0] is False
+
+
+def test_editor_verdicts_are_applied_and_every_proposal_gets_an_outcome() -> None:
+    decision = _edits(
+        _edit(0, "bad", "good"),
+        _edit(1, "wrong", "right"),
+        _edit(2, "gone", "back"),
+        _edit(2, "third", "3rd"),
+    )
+    response = AgenticEditorResponse(
+        verdicts=[
+            _verdict(0, decision.edits[0], replacement_text="better"),
+            _verdict(1, decision.edits[1], "refuse", reason="the source says wrong"),
+            _verdict(2, decision.edits[2]),
+            _verdict(9, decision.edits[0]),
+        ]
+    )
+
+    edited, outcomes = apply_editor_verdicts(
+        "bad line\nwrong line\nthird line\n", decision, response
+    )
+
+    assert edited == "better line\nwrong line\nthird line\n"
+    assert [item.status for item in outcomes] == [
+        "applied",
+        "refused",
+        "failed",
+        "unreviewed",
+    ]
+    assert outcomes[0].replacement_text == "better"
+    assert outcomes[1].reason == "the source says wrong"
+    assert outcomes[2].detail == "current_text was not found in the output"
+
+
+def test_insertions_do_not_shift_edits_higher_up_the_page() -> None:
+    decision = _edits(_edit(0, "", "new first"), _edit(1, "b", "B"))
+
+    edited, outcomes = apply_editor_verdicts("a\nb", decision, _approve_all("", decision, 1))
+
+    assert edited == "new first\na\nB"
+    assert [item.status for item in outcomes] == ["applied", "applied"]
+
+
+# ── loop ─────────────────────────────────────────────────────────────────────
+
+
+def test_loop_accepts_initial_output_without_an_editor_call(tmp_path: Path) -> None:
     calls: list[str] = []
 
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
+    def verify(output: str, attempt: int, rounds: list) -> AgenticVerifierDecision:
         calls.append(f"verify:{attempt}:{output}")
         return _accept()
 
-    result = _run(tmp_path, verify, _no_rewrite, initial="initial transcript")
+    result = _run(tmp_path, verify, _no_edit, initial="initial transcript")
 
     assert result.output == "initial transcript"
     assert result.stop_reason == "accepted"
@@ -70,77 +204,168 @@ def test_loop_accepts_initial_output_without_rewrite(tmp_path: Path) -> None:
     assert (tmp_path / "final_decision.json").is_file()
 
 
-def test_loop_records_verifier_usage_in_artifacts_and_final_decision(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int):
-        return (
-            _accept(),
-            {
-                "model": "verifier",
-                "prompt_tokens": 10,
-                "completion_tokens": 3,
-                "total_tokens": 13,
-                "reasoning_tokens": 2,
-                "response_text_tokens": 1,
-                "cost_usd": 0.25,
-            },
-        )
-
-    result = _run(tmp_path, verify, _no_rewrite)
-
-    assert result.agentic_usage_summary["total_cost_usd"] == 0.25
-    assert result.attempts[0].verifier_usage["reasoning_tokens"] == 2
-    assert (tmp_path / "attempt_0_verifier_usage.json").is_file()
-    final_decision = (tmp_path / "final_decision.json").read_text()
-    assert '"agentic_usage_summary"' in final_decision
+def test_default_iteration_cap_is_three() -> None:
+    assert AgenticLoopConfig().max_iterations == 3
 
 
-def test_loop_stops_when_verifier_rejects(tmp_path: Path) -> None:
+def test_loop_stops_when_evaluator_rejects(tmp_path: Path) -> None:
     result = _run(
         tmp_path,
-        lambda output, attempt: AgenticVerifierDecision(action="reject", confidence=0.9),
-        _no_rewrite,
+        _scripted(AgenticVerifierDecision(action="reject", confidence=0.9)),
+        _no_edit,
     )
 
     assert result.stop_reason == "rejected"
     assert result.output == "bad line"
 
 
-def test_rewriter_receives_proposed_edits_and_applies_them_itself(tmp_path: Path) -> None:
-    decisions = [_edits(_edit(0, "bad", "good")), _accept()]
-    seen: list[tuple[str, AgenticVerifierDecision, int]] = []
+def test_editor_approved_edit_is_applied_and_then_accepted(tmp_path: Path) -> None:
+    result = _run(tmp_path, _scripted(_edits(_edit(0, "bad", "good")), _accept()))
 
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        seen.append((output, decision, attempt))
-        return "good line"
-
-    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
-
-    # The loop hands the untouched output to the rewriter; no edit is applied by code.
-    assert seen == [("bad line", decisions[0], 1)]
     assert result.output == "good line"
     assert result.stop_reason == "accepted"
     assert result.rewrite_count == 1
     assert (tmp_path / "attempt_1_output.txt").read_text() == "good line"
-    assert (tmp_path / "attempt_1_verifier.json").is_file()
+    round_record = json.loads((tmp_path / "attempt_1_editor.json").read_text())
+    assert round_record["changed_output"] is True
+    assert round_record["outcomes"][0]["status"] == "applied"
+    assert result.attempts[0].round is not None
 
 
-def test_loop_never_patches_text_without_the_rewriter(tmp_path: Path) -> None:
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        return output  # the rewriter confirmed none of the proposed edits
+def test_only_the_editors_version_of_an_edit_is_applied(tmp_path: Path) -> None:
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return AgenticEditorResponse(
+            verdicts=[_verdict(0, decision.edits[0], replacement_text="fine")]
+        )
 
-    result = _run(tmp_path, lambda output, attempt: _edits(_edit(0, "bad", "good")), rewrite)
+    result = _run(tmp_path, _scripted(_edits(_edit(0, "bad", "good")), _accept()), edit)
 
+    assert result.output == "fine line"
+
+
+def test_evaluator_sees_what_the_editor_did_with_its_proposals(tmp_path: Path) -> None:
+    seen: list[list] = []
+    decisions = [_edits(_edit(0, "bad", "good")), _edits(_edit(0, "line", "LINE")), _accept()]
+
+    def verify(output: str, attempt: int, rounds: list) -> AgenticVerifierDecision:
+        seen.append(rounds)
+        return decisions[attempt]
+
+    result = _run(tmp_path, verify, _refuse_all)
+
+    assert seen[0] == []
+    assert len(seen[1]) == 1
+    feedback = seen[1][0]
+    assert feedback.changed_output is False
+    assert feedback.editor_notes == "Nothing to change."
+    assert feedback.outcomes[0].status == "refused"
+    assert feedback.outcomes[0].reason == "the source shows the current text"
+    # A second round in which nothing changes ends the loop.
+    assert result.stop_reason == "no_progress"
     assert result.output == "bad line"
-    assert result.stop_reason == "unchanged"
-    assert result.rewrite_count == 0
+
+
+def test_one_refused_round_does_not_end_the_loop(tmp_path: Path) -> None:
+    replies = iter([_refuse_all, _approve_all])
+
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return next(replies)(output, decision, attempt)
+
+    result = _run(
+        tmp_path,
+        _scripted(_edits(_edit(0, "bad", "good")), _edits(_edit(0, "line", "LINE")), _accept()),
+        edit,
+    )
+
+    assert result.output == "bad LINE"
+    assert result.stop_reason == "accepted"
+
+
+def test_loop_stops_when_evaluator_repeats_a_refused_edit(tmp_path: Path) -> None:
+    edits: list[int] = []
+
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        edits.append(attempt)
+        return _refuse_all(output, decision, attempt)
+
+    # The same edit comes back on a different line number; it is still a repeat.
+    result = _run(
+        tmp_path,
+        _scripted(_edits(_edit(0, "bad", "good")), _edits(_edit(4, "bad", "good"))),
+        edit,
+    )
+
+    assert edits == [1]
+    assert result.stop_reason == "repeated_issue"
+    assert (tmp_path / "attempt_1_verifier_raw.json").is_file()
+
+
+def test_refused_edits_are_dropped_from_later_proposals(tmp_path: Path) -> None:
+    received: list[list[str]] = []
+    replies = iter([_refuse_all, _approve_all])
+
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        received.append([item.current_text for item in decision.edits])
+        return next(replies)(output, decision, attempt)
+
+    _run(
+        tmp_path,
+        _scripted(
+            _edits(_edit(0, "bad", "good")),
+            _edits(_edit(0, "bad", "good"), _edit(0, "line", "LINE")),
+            _accept(),
+        ),
+        edit,
+    )
+
+    assert received == [["bad"], ["line"]]
+
+
+def test_loop_stops_when_the_output_returns_to_an_earlier_version(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        _scripted(
+            _edits(_edit(0, "bad", "good")),
+            _edits(_edit(0, "good", "bad")),
+            _accept(),
+        ),
+    )
+
+    assert result.stop_reason == "oscillation"
+    assert result.output == "good line"
+    assert result.rewrite_count == 1
+
+
+def test_loop_stops_when_evaluator_proposes_the_same_edits_again(tmp_path: Path) -> None:
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return AgenticEditorResponse(
+            verdicts=[_verdict(0, decision.edits[0], current_text="line", replacement_text=f"l{attempt}")]
+        )
+
+    result = _run(tmp_path, _scripted(_edits(_edit(0, "bad", "good"))), edit)
+
+    assert result.stop_reason == "repeated_issue"
+    assert result.output == "bad l1"
+
+
+def test_loop_stops_at_the_iteration_cap(tmp_path: Path) -> None:
+    verifier_calls: list[int] = []
+
+    def verify(output: str, attempt: int, rounds: list) -> AgenticVerifierDecision:
+        verifier_calls.append(attempt)
+        return _edits(_edit(0, f"w{attempt}", f"w{attempt + 1}"))
+
+    result = _run(tmp_path, verify, initial="w0", config=AgenticLoopConfig(max_iterations=3))
+
+    # Three Evaluator-to-Editor rounds, then one last Evaluator look.
+    assert verifier_calls == [0, 1, 2, 3]
+    assert result.stop_reason == "max_iterations"
+    assert result.rewrite_count == 3
+    assert result.output == "w3"
 
 
 def test_loop_stops_when_edit_confidence_is_too_low(tmp_path: Path) -> None:
-    result = _run(
-        tmp_path,
-        lambda output, attempt: _edits(confidence=0.2),
-        _no_rewrite,
-    )
+    result = _run(tmp_path, _scripted(_edits(confidence=0.2)), _no_edit)
 
     assert result.stop_reason == "low_confidence_retry"
 
@@ -148,10 +373,8 @@ def test_loop_stops_when_edit_confidence_is_too_low(tmp_path: Path) -> None:
 def test_targeted_edits_without_edits_is_an_invalid_decision(tmp_path: Path) -> None:
     result = _run(
         tmp_path,
-        lambda output, attempt: AgenticVerifierDecision(
-            action="targeted_edits", confidence=0.9
-        ),
-        _no_rewrite,
+        _scripted(AgenticVerifierDecision(action="targeted_edits", confidence=0.9)),
+        _no_edit,
     )
 
     assert result.stop_reason == "invalid_decision"
@@ -161,86 +384,43 @@ def test_edits_that_change_nothing_are_dropped(tmp_path: Path) -> None:
     decision = _edits(
         _edit(0, "same", "same"),
         _edit(1, "  ", ""),
-        _edit(2, "bad", "good"),
+        _edit(0, "bad", "good"),
     )
-    assert [edit.line_index for edit in actionable_edits(decision)] == [2]
+    assert [item.current_text for item in actionable_edits(decision)] == ["bad"]
 
     received: list[AgenticVerifierDecision] = []
 
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
         received.append(decision)
-        return "good line"
+        return _approve_all(output, decision, attempt)
 
-    decisions = [decision, _accept()]
-    _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
+    _run(tmp_path, _scripted(decision, _accept()), edit)
 
-    assert [edit.line_index for edit in received[0].edits] == [2]
+    assert [item.current_text for item in received[0].edits] == ["bad"]
     assert (tmp_path / "attempt_0_verifier_raw.json").is_file()
 
 
 def test_only_no_op_edits_is_an_invalid_decision(tmp_path: Path) -> None:
-    result = _run(
-        tmp_path,
-        lambda output, attempt: _edits(_edit(0, "same", "same")),
-        _no_rewrite,
-    )
+    result = _run(tmp_path, _scripted(_edits(_edit(0, "same", "same"))), _no_edit)
 
     assert result.stop_reason == "invalid_decision"
 
 
-def test_insertions_and_deletions_are_actionable() -> None:
-    decision = _edits(_edit(3, "", "missing line"), _edit(4, "extra", ""))
+def test_full_redo_replaces_the_whole_output(tmp_path: Path) -> None:
+    redo_request = AgenticVerifierDecision(
+        action="full_redo",
+        confidence=0.1,
+        redo_reason="The transcript is from a different page.",
+    )
 
-    assert len(actionable_edits(decision)) == 2
-
-
-def test_loop_stops_when_verifier_repeats_the_same_edits(tmp_path: Path) -> None:
-    rewrites: list[int] = []
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        rewrites.append(attempt)
-        return f"rewrite {attempt}"
-
-    result = _run(tmp_path, lambda output, attempt: _edits(), rewrite)
-
-    assert rewrites == [1]
-    assert result.stop_reason == "repeated_issue"
-    assert result.output == "rewrite 1"
-
-
-def test_loop_keeps_last_rewrite_when_budget_is_exhausted(tmp_path: Path) -> None:
-    def verify(output: str, attempt: int) -> AgenticVerifierDecision:
-        return _edits(_edit(attempt, f"bad {attempt}", "good"))
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        return f"rewrite {attempt}"
-
-    result = _run(tmp_path, verify, rewrite)
-
-    assert result.stop_reason == "max_iterations"
-    assert result.rewrite_count == 2
-    assert result.output == "rewrite 2"
-
-
-def test_full_redo_rewrites_the_whole_output(tmp_path: Path) -> None:
-    decisions = [
-        AgenticVerifierDecision(
-            action="full_redo",
-            confidence=0.1,
-            redo_reason="The transcript is from a different page.",
-        ),
-        _accept(),
-    ]
-    seen: list[str] = []
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int) -> str:
-        seen.append(decision.action)
-        return "fresh transcription"
-
-    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
+    result = _run(
+        tmp_path,
+        _scripted(redo_request, _accept()),
+        _no_edit,
+        redo=lambda output, decision, attempt: "fresh transcription",
+    )
 
     # A full redo is not held back by the confidence gate.
-    assert seen == ["full_redo"]
     assert result.output == "fresh transcription"
     assert result.stop_reason == "accepted"
     assert (tmp_path / "attempt_1_full_redo.txt").read_text() == "fresh transcription"
@@ -249,8 +429,9 @@ def test_full_redo_rewrites_the_whole_output(tmp_path: Path) -> None:
 def test_full_redo_without_a_reason_is_an_invalid_decision(tmp_path: Path) -> None:
     result = _run(
         tmp_path,
-        lambda output, attempt: AgenticVerifierDecision(action="full_redo", confidence=0.9),
-        _no_rewrite,
+        _scripted(AgenticVerifierDecision(action="full_redo", confidence=0.9)),
+        _no_edit,
+        redo=lambda output, decision, attempt: "unused",
     )
 
     assert result.stop_reason == "invalid_decision"
@@ -259,65 +440,56 @@ def test_full_redo_without_a_reason_is_an_invalid_decision(tmp_path: Path) -> No
 def test_full_redo_is_refused_where_the_stage_cannot_redo(tmp_path: Path) -> None:
     result = _run(
         tmp_path,
-        lambda output, attempt: AgenticVerifierDecision(
-            action="full_redo", confidence=0.9, redo_reason="mostly wrong"
+        _scripted(
+            AgenticVerifierDecision(
+                action="full_redo", confidence=0.9, redo_reason="mostly wrong"
+            )
         ),
-        _no_rewrite,
-        allow_full_redo=False,
+        _no_edit,
     )
 
     assert result.stop_reason == "full_redo_unavailable"
     assert result.output == "bad line"
 
 
-def test_loop_records_rewriter_usage_when_rewriter_runs(tmp_path: Path) -> None:
+def test_full_redo_that_changes_nothing_stops_the_loop(tmp_path: Path) -> None:
+    result = _run(
+        tmp_path,
+        _scripted(
+            AgenticVerifierDecision(
+                action="full_redo", confidence=0.9, redo_reason="mostly wrong"
+            )
+        ),
+        _no_edit,
+        redo=lambda output, decision, attempt: output,
+    )
+
+    assert result.stop_reason == "no_progress"
+
+
+def test_loop_records_usage_for_both_roles(tmp_path: Path) -> None:
     decisions = [_edits(), _accept()]
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int):
-        return "good line", {"prompt_tokens": 3, "completion_tokens": 1, "total_tokens": 4}
-
-    result = _run(tmp_path, lambda output, attempt: decisions[attempt], rewrite)
-
-    assert result.attempts[0].rewrite_usage == {
+    usage = {
         "prompt_tokens": 3,
         "completion_tokens": 1,
         "total_tokens": 4,
+        "cost_usd": None,
+        "billing_mode": "subscription",
     }
+
+    def verify(output: str, attempt: int, rounds: list):
+        return decisions[attempt], dict(usage, reasoning_tokens=2)
+
+    def edit(output: str, decision: AgenticVerifierDecision, attempt: int):
+        return _approve_all(output, decision, attempt), dict(usage)
+
+    result = _run(tmp_path, verify, edit)
+
+    assert result.attempts[0].verifier_usage["reasoning_tokens"] == 2
+    assert result.attempts[0].rewrite_usage == usage
+    assert (tmp_path / "attempt_0_verifier_usage.json").is_file()
     assert (tmp_path / "attempt_1_rewrite_usage.json").is_file()
     assert result.agentic_usage_summary["rewriter"]["total_tokens"] == 4
-
-
-def test_subscription_billing_mode_survives_agentic_usage_aggregation(
-    tmp_path: Path,
-) -> None:
-    decisions = [_edits(), _accept()]
-
-    def verify(output: str, attempt: int):
-        return (
-            decisions[attempt],
-            {
-                "prompt_tokens": 4,
-                "completion_tokens": 2,
-                "total_tokens": 6,
-                "cost_usd": None,
-                "billing_mode": "subscription",
-            },
-        )
-
-    def rewrite(output: str, decision: AgenticVerifierDecision, attempt: int):
-        return (
-            "corrected",
-            {
-                "prompt_tokens": 3,
-                "completion_tokens": 1,
-                "total_tokens": 4,
-                "cost_usd": None,
-                "billing_mode": "subscription",
-            },
-        )
-
-    result = _run(tmp_path, verify, rewrite, initial="incorrect")
-
     assert result.agentic_usage_summary["billing_mode"] == "subscription"
     assert result.agentic_usage_summary["verifier"]["billing_mode"] == "subscription"
-    assert result.agentic_usage_summary["rewriter"]["billing_mode"] == "subscription"
+    assert '"agentic_usage_summary"' in (tmp_path / "final_decision.json").read_text()

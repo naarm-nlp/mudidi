@@ -42,7 +42,9 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
 
 from mudidi.agentic.verifier_loop import (
+    AgenticEditorResponse,
     AgenticLoopConfig,
+    AgenticRound,
     AgenticVerifierDecision,
     run_bounded_verifier_loop,
 )
@@ -267,6 +269,25 @@ def _transcription_to_tsv(result: TranscriptionResponse) -> str:
     return "\n".join(rows)
 
 
+_STAGE1_ACCEPTANCE_CRITERIA = (
+    "Acceptance criteria, shared by the Evaluator and the Editor: (1) every "
+    "line of text visible on the page image is present exactly once; (2) "
+    "letters, diacritics and punctuation match the image; (3) lines are in "
+    "reading order; (4) nothing is included that is not printed on the page; "
+    "(5) the output structure and typography tags follow the Stage 1 mode. A "
+    "difference that affects none of these is not an error."
+)
+
+_STAGE2_ACCEPTANCE_CRITERIA = (
+    "Acceptance criteria, shared by the Evaluator and the Editor: (1) every "
+    "line of the Stage 1 transcript is represented in the MDF; (2) field "
+    "values copy the transcript's characters, apart from MDF-friendly "
+    "punctuation and spacing normalization; (3) each value sits under the "
+    "marker the field map assigns to it; (4) entry boundaries follow the "
+    "transcript; (5) nothing is included that the transcript does not contain. "
+    "A difference that affects none of these is not an error."
+)
+
 _TARGETED_EDITS_VERIFIER_RULES = (
     "For action=targeted_edits, list every needed change in edits. Each edit "
     "names one output line: line_index (0-based), current_text copied exactly "
@@ -275,19 +296,30 @@ _TARGETED_EDITS_VERIFIER_RULES = (
     "current_text empty and give the index the new line should take; to delete "
     "text, leave replacement_text empty. Only propose an edit you can specify "
     "exactly; if you cannot name the text to change, leave that problem out. "
-    "A correction model will check each proposed edit against the source and "
-    "apply the ones it confirms."
+    "An Editor model will check each proposed edit against the source and "
+    "apply the ones it confirms. When previous_rounds is present it shows what "
+    "the Editor did with your earlier proposals and why. Do not repeat an edit "
+    "the Editor refused: either accept its reasoning, or propose a different "
+    "edit whose reason cites what the source shows. Take the Editor's notes "
+    "into account, and judge the output as it stands now."
 )
 
-_TARGETED_EDITS_REWRITER_RULES = (
-    "The verifier proposed targeted edits in verifier_json. Work through them "
-    "one at a time. First find the line and current_text in the previous "
-    "output. Then verify the proposal against the source: confirm that the "
-    "current text is wrong and that the replacement matches the source. Apply "
-    "an edit only when you confirm it, using the source's exact characters "
-    "even where they differ from the proposed replacement_text. Skip any edit "
-    "you cannot confirm or cannot locate. Change nothing that is not covered "
-    "by a confirmed edit, and return the complete corrected output."
+_EDITOR_RULES = (
+    "The Evaluator proposed targeted edits in evaluator_json. Rule on every "
+    "one of them and return one verdict per proposed edit, identified by its "
+    "0-based proposal_index. For each proposal, find the line and current_text "
+    "in the current output, then check the source: is the current text really "
+    "wrong, and does the replacement match the source? Use verdict=apply only "
+    "when the source confirms the change. For apply, give the exact edit to "
+    "carry out: line_index, current_text copied exactly from the output, and "
+    "replacement_text using the source's exact characters, even where they "
+    "differ from what the Evaluator proposed. Use verdict=refuse when the "
+    "source does not confirm the change or you cannot find the text; give the "
+    "reason, because the Evaluator will read it. Each approved edit is applied "
+    "as an exact replacement of current_text on that line, so keep "
+    "current_text short and unique on its line. Do not rewrite the output and "
+    "do not add edits of your own; if you see a problem the Evaluator missed, "
+    "describe it in notes."
 )
 
 
@@ -297,7 +329,7 @@ def _stage1_verifier_system_prompt() -> str:
         "Judge whether the transcript faithfully copies the current page image. "
         "Do not reward interpretation or correction. Return only structured JSON "
         "matching the schema. Choose exactly one action. Use action=accept when "
-        "the output is good enough. Use action=targeted_edits when specific "
+        "the output meets the acceptance criteria. Use action=targeted_edits when specific "
         "lines are wrong; this is the normal way to request a correction. Use "
         "action=full_redo only when the transcript is from the wrong page, "
         "largely hallucinated, or wrong on most lines, so that localized edits "
@@ -305,7 +337,8 @@ def _stage1_verifier_system_prompt() -> str:
         "because the correction will re-transcribe the entire page. Use "
         "action=reject only when correction is unsafe. "
         + _TARGETED_EDITS_VERIFIER_RULES
-        + " The source is the page image."
+        + " The source is the page image. "
+        + _STAGE1_ACCEPTANCE_CRITERIA
     )
 
 
@@ -321,18 +354,18 @@ def _stage1_catastrophic_rewriter_system_prompt() -> str:
     )
 
 
-def _stage1_rewriter_system_prompt() -> str:
+def _stage1_editor_system_prompt() -> str:
     return (
-        "You are a conservative Stage 1 OCR correction model. The source is the "
-        "page image, and it is the authority. "
-        + _TARGETED_EDITS_REWRITER_RULES
-        + " Make the minimum necessary edit for each confirmed change. Do not "
-        "parse entries or assign MDF fields. Return only the requested "
-        "structured Stage 1 JSON."
+        "You are the Editor in a Stage 1 dictionary OCR review. The source is "
+        "the page image, and it is the authority. "
+        + _EDITOR_RULES
+        + " Do not parse entries or assign MDF fields. Return only structured "
+        "JSON matching the schema. "
+        + _STAGE1_ACCEPTANCE_CRITERIA
     )
 
 
-# Shared by the Stage 2 verifier and rewriter: per-page MDF is concatenated in
+# Shared by the Stage 2 Evaluator and Editor: per-page MDF is concatenated in
 # page order, so a page may legitimately open or close in the middle of an entry.
 _STAGE2_PAGE_LOCAL_NOTE = (
     "The MDF covers one page of a longer dictionary and is appended after the "
@@ -349,12 +382,14 @@ def _stage2_verifier_system_prompt() -> str:
         "You are a conservative verifier for Stage 2 Toolbox MDF extraction. "
         "Judge whether the MDF is syntactically plausible and grounded in the "
         "Stage 1 transcript. Return only structured JSON matching the schema. "
-        "Choose exactly one action. Use action=accept when the MDF is good "
-        "enough, action=targeted_edits when specific lines are wrong, and "
+        "Choose exactly one action. Use action=accept when the MDF meets the "
+        "acceptance criteria, action=targeted_edits when specific lines are wrong, and "
         "action=reject when correction is unsafe. Do not use action=full_redo; "
         "it is not available for Stage 2. "
         + _TARGETED_EDITS_VERIFIER_RULES
         + " The source is the Stage 1 transcript. "
+        + _STAGE2_ACCEPTANCE_CRITERIA
+        + " "
         + _STAGE2_PAGE_LOCAL_NOTE
     )
 
@@ -393,15 +428,28 @@ def _stage2_grounding_summary(transcribed_text: str, output: str) -> str:
     )
 
 
-def _stage2_rewriter_system_prompt() -> str:
+def _stage2_editor_system_prompt() -> str:
     return (
-        "You are a conservative Stage 2 MDF correction model. The source is the "
+        "You are the Editor in a Stage 2 Toolbox MDF review. The source is the "
         "Stage 1 transcript, and it is the authority for every character. "
-        + _TARGETED_EDITS_REWRITER_RULES
-        + " Make the minimum necessary edit for each confirmed change. Preserve "
-        "MDF markers and page-local scope. Return corrected MDF text only, with "
-        "no explanation or markdown fence. "
+        + _EDITOR_RULES
+        + " Preserve MDF markers and page-local scope. Return only structured "
+        "JSON matching the schema. "
+        + _STAGE2_ACCEPTANCE_CRITERIA
+        + " "
         + _STAGE2_PAGE_LOCAL_NOTE
+    )
+
+
+def _previous_rounds_block(previous_rounds: list[AgenticRound] | None) -> str:
+    """Render earlier Evaluator-to-Editor rounds for the Evaluator's next look."""
+    if not previous_rounds:
+        return ""
+    payload = [round_.model_dump() for round_ in previous_rounds]
+    return (
+        "<previous_rounds>\n"
+        f"{json.dumps(payload, indent=2, ensure_ascii=False)}\n"
+        "</previous_rounds>\n\n"
     )
 
 
@@ -411,10 +459,13 @@ def _stage2_verifier_user_text(
     transcribed_text: str,
     field_map: FieldMapPrompt,
     attempt: int,
+    previous_rounds: list[AgenticRound] | None = None,
 ) -> str:
     grounding_summary = _stage2_grounding_summary(transcribed_text, output)
     return (
         f"Attempt: {attempt}\n\n"
+        + _previous_rounds_block(previous_rounds)
+        +
         "<field_map>\n"
         f"{field_map.format_prompt_block()}\n"
         "</field_map>\n\n"
@@ -436,7 +487,7 @@ def _stage2_verifier_user_text(
     )
 
 
-def _stage2_rewriter_user_text(
+def _stage2_editor_user_text(
     output: str,
     *,
     transcribed_text: str,
@@ -445,22 +496,21 @@ def _stage2_rewriter_user_text(
     attempt: int,
 ) -> str:
     return (
-        f"Correction attempt: {attempt}\n\n"
+        f"Round: {attempt}\n\n"
         "<field_map>\n"
         f"{field_map.format_prompt_block()}\n"
         "</field_map>\n\n"
         "<stage1_transcript>\n"
         f"{transcribed_text}\n"
         "</stage1_transcript>\n\n"
-        "<verifier_json>\n"
+        "<evaluator_json>\n"
         f"{decision.model_dump_json(indent=2)}\n"
-        "</verifier_json>\n\n"
-        "<previous_stage2_mdf>\n"
+        "</evaluator_json>\n\n"
+        "<current_stage2_mdf>\n"
         f"{output}\n"
-        "</previous_stage2_mdf>\n\n"
-        "Verify each proposed edit against the Stage 1 transcript, then apply "
-        "only the edits you confirm. Keep valid MDF markers and do not introduce "
-        "words or entries unsupported by the Stage 1 transcript."
+        "</current_stage2_mdf>\n\n"
+        "Verify each proposed edit against the Stage 1 transcript and return a "
+        "verdict for every one. Approve only edits the transcript confirms."
     )
 
 
@@ -511,7 +561,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         stage1_typography: bool = False,
         stage1_agentic: bool = False,
         stage2_agentic: bool = False,
-        agentic_max_iterations: int = 2,
+        agentic_max_iterations: int = 3,
         agentic_evaluator_model: Optional[str] = None,
         agentic_rewriter_model: Optional[str] = None,
         agentic_reasoning_effort: str = "low",
@@ -1193,7 +1243,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         output_suffix: str,
         page_context: PageContext | None,
     ) -> tuple[str, Dict[str, Any]]:
-        """Verify/rewrite Stage 1 output, failing closed to the initial OCR."""
+        """Evaluate/edit Stage 1 output, failing closed to the initial OCR."""
         started = time.perf_counter()
         try:
             result = run_bounded_verifier_loop(
@@ -1201,14 +1251,22 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 initial_output=initial_output,
                 artifact_dir=artifact_dir,
                 output_suffix=output_suffix or ".txt",
-                verify=lambda output, attempt: self._verify_stage1_output(
+                verify=lambda output, attempt, rounds: self._verify_stage1_output(
                     output,
                     image_path=image_path,
                     ocr_result=ocr_result,
                     page_context=page_context,
                     attempt=attempt,
+                    previous_rounds=rounds,
                 ),
-                rewrite=lambda output, decision, attempt: self._rewrite_stage1_output(
+                edit=lambda output, decision, attempt: self._edit_stage1_output(
+                    output,
+                    decision=decision,
+                    image_path=image_path,
+                    ocr_result=ocr_result,
+                    attempt=attempt,
+                ),
+                redo=lambda output, decision, attempt: self._redo_stage1_output(
                     output,
                     decision=decision,
                     image_path=image_path,
@@ -1220,7 +1278,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             )
             print(
                 "Stage 1 agentic loop → "
-                f"{result.stop_reason} after {result.rewrite_count} rewrite(s)"
+                f"{result.stop_reason} after {result.rewrite_count} edit round(s)"
             )
             usage = dict(result.agentic_usage_summary)
             usage["elapsed_seconds"] = round(time.perf_counter() - started, 3)
@@ -1246,7 +1304,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         field_map: FieldMapPrompt,
         artifact_dir: Path,
     ) -> tuple[str, Dict[str, Any]]:
-        """Verify/rewrite Stage 2 MDF output, failing closed to initial MDF."""
+        """Evaluate/edit Stage 2 MDF output, failing closed to initial MDF."""
         started = time.perf_counter()
         try:
             result = run_bounded_verifier_loop(
@@ -1254,13 +1312,14 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 initial_output=initial_output,
                 artifact_dir=artifact_dir,
                 output_suffix=".mdf.txt",
-                verify=lambda output, attempt: self._verify_stage2_output(
+                verify=lambda output, attempt, rounds: self._verify_stage2_output(
                     output,
                     transcribed_text=transcribed_text,
                     field_map=field_map,
                     attempt=attempt,
+                    previous_rounds=rounds,
                 ),
-                rewrite=lambda output, decision, attempt: self._rewrite_stage2_output(
+                edit=lambda output, decision, attempt: self._edit_stage2_output(
                     output,
                     transcribed_text=transcribed_text,
                     field_map=field_map,
@@ -1268,11 +1327,10 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     attempt=attempt,
                 ),
                 config=self.agentic_loop_config,
-                allow_full_redo=False,
             )
             print(
                 "Stage 2 agentic loop → "
-                f"{result.stop_reason} after {result.rewrite_count} rewrite(s)"
+                f"{result.stop_reason} after {result.rewrite_count} edit round(s)"
             )
             usage = dict(result.agentic_usage_summary)
             usage["elapsed_seconds"] = round(time.perf_counter() - started, 3)
@@ -1298,6 +1356,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         ocr_result: OCRPageResult,
         page_context: PageContext | None,
         attempt: int,
+        previous_rounds: list[AgenticRound] | None = None,
     ) -> tuple[AgenticVerifierDecision, Dict[str, Any]]:
         mime = mime_type_for_path(image_path)
         evaluator_model = self._agentic_evaluator_model_for_stage("stage1")
@@ -1309,6 +1368,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     ocr_result=ocr_result,
                     page_context=page_context,
                     attempt=attempt,
+                    previous_rounds=previous_rounds,
                 ),
             }
         ]
@@ -1347,46 +1407,33 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         )
         return result, usage
 
-    def _rewrite_stage1_output(
+    def _edit_stage1_output(
         self,
         output: str,
         *,
         decision: AgenticVerifierDecision,
         image_path: str,
         ocr_result: OCRPageResult,
-        page_context: PageContext | None,
         attempt: int,
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[AgenticEditorResponse, Dict[str, Any]]:
+        """Have the Editor rule on each proposed Stage 1 edit against the page image."""
         mime = mime_type_for_path(image_path)
-        response_schema = _stage1_response_schema(
-            flat=self.stage1_mode == "flat",
-            typography=self.stage1_typography,
-        )
-        is_catastrophic = decision.action == "full_redo"
-        if is_catastrophic:
-            user_text = self._stage1_catastrophic_rewriter_user_text(
-                output,
-                decision=decision,
-                ocr_result=ocr_result,
-                page_context=page_context,
-                attempt=attempt,
-            )
-            system_prompt = _stage1_catastrophic_rewriter_system_prompt()
-        else:
-            user_text = self._stage1_rewriter_user_text(
-                output,
-                decision=decision,
-                ocr_result=ocr_result,
-                page_context=page_context,
-                attempt=attempt,
-            )
-            system_prompt = _stage1_rewriter_system_prompt()
-        rewriter_model = self._agentic_rewriter_model_for_stage("stage1")
-        content: list = [{"type": "text", "text": user_text}]
+        editor_model = self._agentic_rewriter_model_for_stage("stage1")
+        content: list = [
+            {
+                "type": "text",
+                "text": self._stage1_editor_user_text(
+                    output,
+                    decision=decision,
+                    ocr_result=ocr_result,
+                    attempt=attempt,
+                ),
+            }
+        ]
         if self.stage1_instruction_context is not None:
             content.extend(
                 self.stage1_instruction_context.content_parts(
-                    rewriter_model, stage_label="Stage 1 rewriter"
+                    editor_model, stage_label="Stage 1 editor"
                 )
             )
         content.append(
@@ -1402,11 +1449,68 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}}
         )
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": _stage1_editor_system_prompt()},
             {"role": "user", "content": content},
         ]
         result, _, usage = llm.complete_structured(
-            model=rewriter_model,
+            model=editor_model,
+            messages=messages,
+            response_schema=AgenticEditorResponse,
+            max_tokens=_agentic_verifier_max_tokens(),
+            reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage1"),
+            **({"backend": self.backend} if self.backend is not None else {}),
+        )
+        return result, usage
+
+    def _redo_stage1_output(
+        self,
+        output: str,
+        *,
+        decision: AgenticVerifierDecision,
+        image_path: str,
+        ocr_result: OCRPageResult,
+        page_context: PageContext | None,
+        attempt: int,
+    ) -> tuple[str, Dict[str, Any]]:
+        """Re-transcribe the whole page after the Evaluator requested a full redo."""
+        mime = mime_type_for_path(image_path)
+        response_schema = _stage1_response_schema(
+            flat=self.stage1_mode == "flat",
+            typography=self.stage1_typography,
+        )
+        user_text = self._stage1_catastrophic_rewriter_user_text(
+            output,
+            decision=decision,
+            ocr_result=ocr_result,
+            page_context=page_context,
+            attempt=attempt,
+        )
+        editor_model = self._agentic_rewriter_model_for_stage("stage1")
+        content: list = [{"type": "text", "text": user_text}]
+        if self.stage1_instruction_context is not None:
+            content.extend(
+                self.stage1_instruction_context.content_parts(
+                    editor_model, stage_label="Stage 1 editor"
+                )
+            )
+        content.append(
+            {
+                "type": "text",
+                "text": (
+                    "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final "
+                    "image is the page for correction, not an instruction reference."
+                ),
+            }
+        )
+        content.append(
+            {"type": "image_url", "image_url": {"url": image_data_url(image_path, mime)}}
+        )
+        messages = [
+            {"role": "system", "content": _stage1_catastrophic_rewriter_system_prompt()},
+            {"role": "user", "content": content},
+        ]
+        result, _, usage = llm.complete_structured(
+            model=editor_model,
             messages=messages,
             response_schema=response_schema,
             max_tokens=64000,
@@ -1427,6 +1531,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         transcribed_text: str,
         field_map: FieldMapPrompt,
         attempt: int,
+        previous_rounds: list[AgenticRound] | None = None,
     ) -> tuple[AgenticVerifierDecision, Dict[str, Any]]:
         evaluator_model = self._agentic_evaluator_model_for_stage("stage2")
         user_text = (
@@ -1435,6 +1540,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                 transcribed_text=transcribed_text,
                 field_map=field_map,
                 attempt=attempt,
+                previous_rounds=previous_rounds,
             )
             + self._stage2_agentic_guide_block()
         )
@@ -1458,7 +1564,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         )
         return result, usage
 
-    def _rewrite_stage2_output(
+    def _edit_stage2_output(
         self,
         output: str,
         *,
@@ -1466,10 +1572,11 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         field_map: FieldMapPrompt,
         decision: AgenticVerifierDecision,
         attempt: int,
-    ) -> tuple[str, Dict[str, Any]]:
-        rewriter_model = self._agentic_rewriter_model_for_stage("stage2")
+    ) -> tuple[AgenticEditorResponse, Dict[str, Any]]:
+        """Have the Editor rule on each proposed Stage 2 edit against the transcript."""
+        editor_model = self._agentic_rewriter_model_for_stage("stage2")
         user_text = (
-            _stage2_rewriter_user_text(
+            _stage2_editor_user_text(
                 output,
                 transcribed_text=transcribed_text,
                 field_map=field_map,
@@ -1482,20 +1589,21 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         context = self._stage2_context_for_pass2()
         if context is not None:
             content.extend(
-                context.content_parts(rewriter_model, stage_label="Stage 2 rewriter")
+                context.content_parts(editor_model, stage_label="Stage 2 editor")
             )
         messages = [
-            {"role": "system", "content": _stage2_rewriter_system_prompt()},
+            {"role": "system", "content": _stage2_editor_system_prompt()},
             {"role": "user", "content": content},
         ]
-        text, usage = llm.complete_with_usage(
-            model=rewriter_model,
+        result, _, usage = llm.complete_structured(
+            model=editor_model,
             messages=messages,
-            max_tokens=64000,
+            response_schema=AgenticEditorResponse,
+            max_tokens=_agentic_verifier_max_tokens(),
             reasoning_effort=self._agentic_rewriter_reasoning_for_stage("stage2"),
             **({"backend": self.backend} if self.backend is not None else {}),
         )
-        return text.strip(), usage
+        return result, usage
 
     def _stage1_verifier_user_text(
         self,
@@ -1504,6 +1612,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         ocr_result: OCRPageResult,
         page_context: PageContext | None,
         attempt: int,
+        previous_rounds: list[AgenticRound] | None = None,
     ) -> str:
         del page_context
         ocr_hint = ocr_result.raw_text if ocr_result else ""
@@ -1514,7 +1623,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             "<ocr_reference>\n"
             f"{ocr_hint}\n"
             "</ocr_reference>\n\n"
-            "<stage1_output>\n"
+            + _previous_rounds_block(previous_rounds)
+            + "<stage1_output>\n"
             f"{output}\n"
             "</stage1_output>\n\n"
             "Evaluate whether the Stage 1 output is faithful to the page image. "
@@ -1523,33 +1633,30 @@ class TwoStageLLMExtraction(ExtractionStrategy):
             + self._stage1_agentic_guide_block()
         )
 
-    def _stage1_rewriter_user_text(
+    def _stage1_editor_user_text(
         self,
         output: str,
         *,
         decision: AgenticVerifierDecision,
         ocr_result: OCRPageResult,
-        page_context: PageContext | None,
         attempt: int,
     ) -> str:
-        del page_context
         ocr_hint = ocr_result.raw_text if ocr_result else ""
         return (
-            f"Correction attempt: {attempt}\n"
+            f"Round: {attempt}\n"
             f"Stage 1 mode: {self.stage1_mode}\n"
             f"Typography tags expected: {self.stage1_typography}\n"
             "<ocr_reference>\n"
             f"{ocr_hint}\n"
             "</ocr_reference>\n\n"
-            "<verifier_json>\n"
+            "<evaluator_json>\n"
             f"{decision.model_dump_json(indent=2)}\n"
-            "</verifier_json>\n\n"
-            "<previous_stage1_output>\n"
+            "</evaluator_json>\n\n"
+            "<current_stage1_output>\n"
             f"{output}\n"
-            "</previous_stage1_output>\n\n"
-            "Verify each proposed edit against the page image, then apply only "
-            "the edits you confirm. Preserve visible characters and line/row "
-            "order. Return only the required structured Stage 1 JSON schema."
+            "</current_stage1_output>\n\n"
+            "Verify each proposed edit against the page image and return a "
+            "verdict for every one. Approve only edits the image confirms."
             + self._stage1_agentic_guide_block()
         )
 

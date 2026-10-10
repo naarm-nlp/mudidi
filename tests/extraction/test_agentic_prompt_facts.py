@@ -4,9 +4,9 @@ from mudidi.extraction.llm_two_stage import (
     AGENTIC_VERIFIER_MAX_TOKENS_ENV,
     DEFAULT_AGENTIC_VERIFIER_MAX_TOKENS,
     _agentic_verifier_max_tokens,
-    _stage1_rewriter_system_prompt,
+    _stage1_editor_system_prompt,
     _stage1_verifier_system_prompt,
-    _stage2_rewriter_system_prompt,
+    _stage2_editor_system_prompt,
     _stage2_grounding_summary,
     _stage2_verifier_system_prompt,
     _stage2_verifier_user_text,
@@ -55,12 +55,52 @@ def test_verifier_prompts_ask_for_exact_targeted_edits() -> None:
         assert "Only propose an edit you can specify exactly" in prompt
 
 
-def test_rewriter_prompts_verify_each_edit_before_applying_it() -> None:
-    for prompt in (_stage1_rewriter_system_prompt(), _stage2_rewriter_system_prompt()):
-        assert "verify the proposal against the source" in prompt
-        assert "Apply an edit only when you confirm it" in prompt
-        assert "Skip any edit you cannot confirm" in prompt
-        assert "minimum necessary edit" in prompt
+def test_editor_prompts_rule_on_every_proposed_edit() -> None:
+    for prompt in (_stage1_editor_system_prompt(), _stage2_editor_system_prompt()):
+        assert "return one verdict per proposed edit" in prompt
+        assert "Use verdict=apply only when the source confirms the change" in prompt
+        assert "Use verdict=refuse" in prompt
+        assert "Do not rewrite the output" in prompt
+        assert "describe it in notes" in prompt
+
+
+def test_evaluator_and_editor_share_acceptance_criteria() -> None:
+    for evaluator, editor in (
+        (_stage1_verifier_system_prompt(), _stage1_editor_system_prompt()),
+        (_stage2_verifier_system_prompt(), _stage2_editor_system_prompt()),
+    ):
+        start = evaluator.index("Acceptance criteria, shared by")
+        criteria = evaluator[start : evaluator.index("is not an error.", start)]
+        assert criteria in editor
+
+
+def test_evaluator_is_told_how_to_answer_a_refusal() -> None:
+    for prompt in (_stage1_verifier_system_prompt(), _stage2_verifier_system_prompt()):
+        assert "previous_rounds" in prompt
+        assert "Do not repeat an edit the Editor refused" in prompt
+
+
+def test_stage2_evaluator_prompt_carries_previous_rounds() -> None:
+    from mudidi.agentic.verifier_loop import AgenticRound
+
+    prompt = _stage2_verifier_user_text(
+        "\\lx alpha",
+        transcribed_text="alpha",
+        field_map=_DummyFieldMap(),
+        attempt=1,
+        previous_rounds=[
+            AgenticRound(attempt=0, action="targeted_edits", editor_notes="line 2 is fine")
+        ],
+    )
+
+    assert "<previous_rounds>" in prompt
+    assert "line 2 is fine" in prompt
+    assert "<previous_rounds>" not in _stage2_verifier_user_text(
+        "\\lx alpha",
+        transcribed_text="alpha",
+        field_map=_DummyFieldMap(),
+        attempt=0,
+    )
 
 
 def test_only_stage1_verifier_may_request_a_full_redo() -> None:

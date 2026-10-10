@@ -1,13 +1,14 @@
-"""Generic bounded verifier-rewriter loop.
+"""Bounded evaluator-optimizer loop.
 
-The loop is deliberately small and stage-agnostic. Stage-specific code supplies
-the verifier and rewriter callables; this module owns stop criteria and audit
-artifacts.
+Two models check each other. The Evaluator judges an output against its source
+and proposes targeted edits. The Editor verifies every proposed edit against
+the same source and decides which to apply; each applied edit is carried out
+by :func:`apply_edit`, an exact text replacement on one line. The Editor's
+verdicts go back to the Evaluator, which reviews the result and may accept,
+propose further edits, or answer a refusal.
 
-The verifier chooses one action. ``targeted_edits`` proposes localized changes
-that the rewriter model checks against the source and applies itself; no edit
-is applied by code. ``full_redo`` asks the rewriter to produce the whole output
-again.
+The loop is stage-agnostic: stage-specific code supplies the model calls, and
+this module owns the round structure, stop conditions and audit artifacts.
 """
 
 from __future__ import annotations
@@ -22,12 +23,14 @@ from pydantic import BaseModel, Field
 
 AgenticAction = Literal["accept", "targeted_edits", "full_redo", "reject"]
 AgenticSeverity = Literal["low", "medium", "high"]
+AgenticEditStatus = Literal["applied", "refused", "failed", "unreviewed"]
 AgenticStopReason = Literal[
     "accepted",
     "rejected",
     "max_iterations",
-    "unchanged",
     "repeated_issue",
+    "no_progress",
+    "oscillation",
     "low_confidence_retry",
     "invalid_decision",
     "full_redo_unavailable",
@@ -35,7 +38,7 @@ AgenticStopReason = Literal[
 
 
 class AgenticEdit(BaseModel):
-    """One localized change proposed by the verifier."""
+    """One localized change proposed by the Evaluator."""
 
     line_index: int = Field(
         ge=0,
@@ -63,14 +66,14 @@ class AgenticEdit(BaseModel):
 
 
 class AgenticVerifierDecision(BaseModel):
-    """Structured verifier response used by both stages."""
+    """Structured Evaluator response used by both stages."""
 
     action: AgenticAction = Field(
         description=(
-            "accept: the output is good enough. targeted_edits: specific lines "
-            "need the changes listed in edits. full_redo: the output is too "
-            "wrong for localized edits and must be produced again. reject: "
-            "correction is unsafe."
+            "accept: the output meets the acceptance criteria. targeted_edits: "
+            "specific lines need the changes listed in edits. full_redo: the "
+            "output is too wrong for localized edits and must be produced "
+            "again. reject: correction is unsafe."
         ),
     )
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -87,19 +90,90 @@ class AgenticVerifierDecision(BaseModel):
     )
 
 
+class AgenticEditVerdict(BaseModel):
+    """The Editor's ruling on one proposed edit."""
+
+    proposal_index: int = Field(
+        ge=0,
+        description="0-based position of the proposed edit in the Evaluator's edits list.",
+    )
+    verdict: Literal["apply", "refuse"] = Field(
+        description=(
+            "apply: the source confirms the change. refuse: the source does "
+            "not confirm it, or the text to change cannot be found."
+        ),
+    )
+    line_index: int = Field(
+        ge=0,
+        description="For apply: 0-based index of the output line to change.",
+    )
+    current_text: str = Field(
+        description=(
+            "For apply: exact text on that line to replace, copied from the "
+            "output. Empty only when adding a missing line."
+        ),
+    )
+    replacement_text: str = Field(
+        description=(
+            "For apply: the replacement exactly as the source shows it, which "
+            "may differ from the proposal. Empty only when deleting."
+        ),
+    )
+    reason: str = Field(
+        description="What in the source supports this verdict.",
+    )
+
+
+class AgenticEditorResponse(BaseModel):
+    """Structured Editor response: one verdict per proposed edit."""
+
+    verdicts: list[AgenticEditVerdict] = Field(default_factory=list)
+    notes: str = Field(
+        default="",
+        description=(
+            "Optional message to the Evaluator: problems it missed, or why a "
+            "group of proposals was refused."
+        ),
+    )
+
+
+class AgenticEditOutcome(BaseModel):
+    """What happened to one proposed edit in a round."""
+
+    proposal_index: int
+    status: AgenticEditStatus
+    detail: str = ""
+    line_index: int
+    current_text: str
+    replacement_text: str
+    reason: str = ""
+
+
+class AgenticRound(BaseModel):
+    """One Evaluator-to-Editor round, fed back to the Evaluator afterwards."""
+
+    attempt: int
+    action: AgenticAction
+    proposed_edits: list[AgenticEdit] = Field(default_factory=list)
+    outcomes: list[AgenticEditOutcome] = Field(default_factory=list)
+    editor_notes: str = ""
+    changed_output: bool = False
+
+
 class AgenticLoopConfig(BaseModel):
     """Loop controls shared by Stage 1 and Stage 2 agentic modes."""
 
-    max_iterations: int = Field(default=2, ge=0)
+    max_iterations: int = Field(default=3, ge=0)
     stop_on_repeated_issue: bool = True
     min_retry_confidence: float = Field(default=0.55, ge=0.0, le=1.0)
 
 
 class AgenticAttempt(BaseModel):
-    """Audit record for one verifier pass."""
+    """Audit record for one Evaluator pass and the round it started."""
 
     attempt: int
     decision: AgenticVerifierDecision
+    round: AgenticRound | None = None
     verifier_usage: dict[str, Any] | None = None
     rewrite_usage: dict[str, Any] | None = None
 
@@ -117,13 +191,15 @@ class AgenticLoopResult(BaseModel):
 
 
 VerifyReturn = AgenticVerifierDecision | tuple[AgenticVerifierDecision, dict[str, Any]]
-RewriteReturn = str | tuple[str, dict[str, Any]]
-VerifyFn = Callable[[str, int], VerifyReturn]
-RewriteFn = Callable[[str, AgenticVerifierDecision, int], RewriteReturn]
+EditReturn = AgenticEditorResponse | tuple[AgenticEditorResponse, dict[str, Any]]
+RedoReturn = str | tuple[str, dict[str, Any]]
+VerifyFn = Callable[[str, int, list[AgenticRound]], VerifyReturn]
+EditFn = Callable[[str, AgenticVerifierDecision, int], EditReturn]
+RedoFn = Callable[[str, AgenticVerifierDecision, int], RedoReturn]
 
 
 def _normalized_for_change_check(text: str) -> str:
-    """Normalize only insignificant edges when detecting no-op rewrites."""
+    """Normalize only insignificant edges when detecting no-op rounds."""
     return "\n".join(line.rstrip() for line in text.strip().splitlines())
 
 
@@ -131,7 +207,7 @@ def actionable_edits(decision: AgenticVerifierDecision) -> list[AgenticEdit]:
     """Return the proposed edits that ask for an actual change.
 
     An edit that names no text, or whose replacement equals the current text,
-    gives the rewriter nothing to do and is dropped.
+    gives the Editor nothing to do and is dropped.
     """
     return [
         edit
@@ -141,8 +217,12 @@ def actionable_edits(decision: AgenticVerifierDecision) -> list[AgenticEdit]:
     ]
 
 
+def _edit_key(edit: AgenticEdit) -> tuple[str, str]:
+    return (edit.current_text, edit.replacement_text)
+
+
 def _decision_signature(decision: AgenticVerifierDecision) -> tuple[Any, ...]:
-    """Return a stable identity used to catch a verifier repeating itself."""
+    """Return a stable identity used to catch an Evaluator repeating itself."""
     if decision.action == "full_redo":
         return ("full_redo",)
     return tuple(
@@ -153,13 +233,118 @@ def _decision_signature(decision: AgenticVerifierDecision) -> tuple[Any, ...]:
     )
 
 
-def _split_verify_result(result: VerifyReturn) -> tuple[AgenticVerifierDecision, dict[str, Any] | None]:
-    if isinstance(result, tuple):
-        return result[0], result[1]
-    return result, None
+def apply_edit(
+    lines: list[str],
+    *,
+    line_index: int,
+    current_text: str,
+    replacement_text: str,
+) -> tuple[bool, str]:
+    """Carry out one Editor-approved edit on ``lines`` in place.
+
+    Replaces ``current_text`` with ``replacement_text`` on one line. An empty
+    ``current_text`` inserts ``replacement_text`` as a new line at
+    ``line_index``; a line left empty by a deletion is removed. The edit is
+    refused, and ``lines`` left untouched, when the text is missing or
+    ambiguous. Returns whether it was applied and a short explanation.
+    """
+    if not current_text:
+        if not replacement_text.strip():
+            return False, "nothing to insert"
+        position = min(line_index, len(lines))
+        lines.insert(position, replacement_text)
+        return True, f"inserted as line {position}"
+
+    target: int | None = None
+    if line_index < len(lines) and current_text in lines[line_index]:
+        target = line_index
+    else:
+        holders = [i for i, line in enumerate(lines) if current_text in line]
+        if not holders:
+            return False, "current_text was not found in the output"
+        if len(holders) > 1:
+            return False, (
+                f"current_text is not on line {line_index} and appears on "
+                f"{len(holders)} other lines"
+            )
+        target = holders[0]
+    if lines[target].count(current_text) > 1:
+        return False, f"current_text appears more than once on line {target}"
+
+    updated = lines[target].replace(current_text, replacement_text, 1)
+    if not replacement_text and not updated.strip():
+        del lines[target]
+        return True, f"deleted line {target}"
+    lines[target] = updated
+    detail = f"replaced on line {target}"
+    if target != line_index:
+        detail += f" (proposed line {line_index})"
+    return True, detail
 
 
-def _split_rewrite_result(result: RewriteReturn) -> tuple[str, dict[str, Any] | None]:
+def apply_editor_verdicts(
+    output: str,
+    decision: AgenticVerifierDecision,
+    response: AgenticEditorResponse,
+) -> tuple[str, list[AgenticEditOutcome]]:
+    """Apply the Editor's approved edits and report what happened to each proposal."""
+    lines = output.splitlines()
+    trailing_newline = output.endswith("\n")
+    outcomes: dict[int, AgenticEditOutcome] = {}
+
+    ruled: dict[int, AgenticEditVerdict] = {}
+    for verdict in response.verdicts:
+        if verdict.proposal_index < len(decision.edits):
+            ruled.setdefault(verdict.proposal_index, verdict)
+
+    # Work from the bottom of the output up so that inserting or deleting a
+    # line does not shift the lines that later edits refer to.
+    for index, verdict in sorted(
+        ruled.items(), key=lambda item: item[1].line_index, reverse=True
+    ):
+        if verdict.verdict == "refuse":
+            proposed = decision.edits[index]
+            outcomes[index] = AgenticEditOutcome(
+                proposal_index=index,
+                status="refused",
+                line_index=proposed.line_index,
+                current_text=proposed.current_text,
+                replacement_text=proposed.replacement_text,
+                reason=verdict.reason,
+            )
+            continue
+        applied, detail = apply_edit(
+            lines,
+            line_index=verdict.line_index,
+            current_text=verdict.current_text,
+            replacement_text=verdict.replacement_text,
+        )
+        outcomes[index] = AgenticEditOutcome(
+            proposal_index=index,
+            status="applied" if applied else "failed",
+            detail=detail,
+            line_index=verdict.line_index,
+            current_text=verdict.current_text,
+            replacement_text=verdict.replacement_text,
+            reason=verdict.reason,
+        )
+
+    for index, proposed in enumerate(decision.edits):
+        if index not in outcomes:
+            outcomes[index] = AgenticEditOutcome(
+                proposal_index=index,
+                status="unreviewed",
+                detail="the Editor returned no verdict for this edit",
+                line_index=proposed.line_index,
+                current_text=proposed.current_text,
+                replacement_text=proposed.replacement_text,
+            )
+
+    edited = "\n".join(lines) + ("\n" if trailing_newline and lines else "")
+    return edited, [outcomes[index] for index in sorted(outcomes)]
+
+
+def _split_usage(result: Any) -> tuple[Any, dict[str, Any] | None]:
     if isinstance(result, tuple):
         return result[0], result[1]
     return result, None
@@ -265,22 +450,31 @@ def run_bounded_verifier_loop(
     artifact_dir: Path,
     output_suffix: str,
     verify: VerifyFn,
-    rewrite: RewriteFn,
+    edit: EditFn,
     config: AgenticLoopConfig,
-    allow_full_redo: bool = True,
+    redo: RedoFn | None = None,
 ) -> AgenticLoopResult:
-    """Run a bounded stage-local verifier-rewriter loop.
+    """Run a bounded stage-local evaluator-optimizer loop.
 
-    ``max_iterations`` counts rewrite attempts after the initial output. Attempt
-    0 is always the normal stage output; attempt 1 is the first correction.
-    ``allow_full_redo`` is False for stages whose rewriter cannot produce the
-    output again from scratch.
+    One iteration is one Evaluator-to-Editor round. ``max_iterations`` caps the
+    rounds; the Evaluator gets one more look after the last one. ``verify`` is
+    given every earlier round so the Evaluator can see what the Editor did with
+    its proposals. ``redo`` produces the output again from scratch and is
+    omitted for stages that cannot do that.
+
+    Besides the cap, the loop stops when it detects no progress: the Evaluator
+    repeats a proposal the Editor refused or the same set of edits, two rounds
+    in a row change nothing, or the output returns to an earlier version.
     """
     artifact_dir.mkdir(parents=True, exist_ok=True)
     current = initial_output
     attempts: list[AgenticAttempt] = []
+    rounds: list[AgenticRound] = []
+    seen_versions = [_normalized_for_change_check(current)]
+    refused: set[tuple[str, str]] = set()
     previous_signature: tuple[Any, ...] | None = None
     rewrite_count = 0
+    stalled_rounds = 0
 
     def finish(stop_reason: AgenticStopReason) -> AgenticLoopResult:
         return _finish(
@@ -295,12 +489,17 @@ def run_bounded_verifier_loop(
     _write_text(artifact_dir / f"attempt_0_output{output_suffix}", current)
 
     for attempt in range(config.max_iterations + 1):
-        raw_decision, verifier_usage = _split_verify_result(verify(current, attempt))
+        raw_decision, verifier_usage = _split_usage(
+            verify(current, attempt, list(rounds))
+        )
         decision = raw_decision
+        repeats_refusal = False
         if raw_decision.action == "targeted_edits":
             usable = actionable_edits(raw_decision)
-            if len(usable) != len(raw_decision.edits):
-                decision = raw_decision.model_copy(update={"edits": usable})
+            fresh = [item for item in usable if _edit_key(item) not in refused]
+            repeats_refusal = bool(usable) and not fresh
+            if len(fresh) != len(raw_decision.edits):
+                decision = raw_decision.model_copy(update={"edits": fresh})
         attempt_record = AgenticAttempt(
             attempt=attempt,
             decision=decision,
@@ -326,13 +525,15 @@ def run_bounded_verifier_loop(
 
         is_full_redo = decision.action == "full_redo"
         if is_full_redo:
-            if not allow_full_redo:
+            if redo is None:
                 return finish("full_redo_unavailable")
             if not decision.redo_reason.strip():
                 return finish("invalid_decision")
         else:
             if decision.confidence < config.min_retry_confidence:
                 return finish("low_confidence_retry")
+            if repeats_refusal:
+                return finish("repeated_issue")
             if not decision.edits:
                 return finish("invalid_decision")
 
@@ -345,24 +546,53 @@ def run_bounded_verifier_loop(
             return finish("repeated_issue")
         previous_signature = signature
 
-        if rewrite_count >= config.max_iterations:
+        if attempt >= config.max_iterations:
             return finish("max_iterations")
 
         next_attempt = attempt + 1
-        rewritten, rewrite_usage = _split_rewrite_result(
-            rewrite(current, decision, next_attempt)
+        round_record = AgenticRound(
+            attempt=attempt,
+            action=decision.action,
+            proposed_edits=list(decision.edits),
         )
-        if rewrite_usage:
-            attempt_record.rewrite_usage = rewrite_usage
+        if is_full_redo:
+            candidate, editor_usage = _split_usage(redo(current, decision, next_attempt))
+        else:
+            response, editor_usage = _split_usage(edit(current, decision, next_attempt))
+            candidate, outcomes = apply_editor_verdicts(current, decision, response)
+            round_record.outcomes = outcomes
+            round_record.editor_notes = response.notes
+            refused.update(
+                (item.current_text, item.replacement_text)
+                for item in outcomes
+                if item.status == "refused"
+            )
+        if editor_usage:
+            attempt_record.rewrite_usage = editor_usage
             _write_json_data(
                 artifact_dir / f"attempt_{next_attempt}_rewrite_usage.json",
-                rewrite_usage,
+                editor_usage,
             )
-        if _normalized_for_change_check(rewritten) == _normalized_for_change_check(current):
-            return finish("unchanged")
 
+        normalized = _normalized_for_change_check(candidate)
+        changed = normalized != seen_versions[-1]
+        round_record.changed_output = changed
+        attempt_record.round = round_record
+        rounds.append(round_record)
+        _write_json(artifact_dir / f"attempt_{next_attempt}_editor.json", round_record)
+
+        if not changed:
+            stalled_rounds += 1
+            if is_full_redo or stalled_rounds >= 2:
+                return finish("no_progress")
+            continue
+        if normalized in seen_versions:
+            return finish("oscillation")
+
+        stalled_rounds = 0
+        seen_versions.append(normalized)
         rewrite_count += 1
-        current = rewritten
+        current = candidate
         _write_text(artifact_dir / f"attempt_{next_attempt}_output{output_suffix}", current)
         if is_full_redo:
             _write_text(

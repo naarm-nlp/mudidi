@@ -53,6 +53,22 @@ class _LLMBoundaryStub:
                     content = json.dumps(
                         {"action": "accept", "confidence": 1.0, "edits": [], "redo_reason": ""}
                     )
+            elif schema_name == "AgenticEditorResponse":
+                content = json.dumps(
+                    {
+                        "verdicts": [
+                            {
+                                "proposal_index": 0,
+                                "verdict": "apply",
+                                "line_index": 0,
+                                "current_text": "dictionary line",
+                                "replacement_text": "corrected line",
+                                "reason": "The page shows the corrected line.",
+                            }
+                        ],
+                        "notes": "",
+                    }
+                )
             elif schema_name in {
                 "FlatTranscriptionResponse",
                 "FlatTranscriptionResponsePlain",
@@ -241,7 +257,7 @@ def _assert_instruction_media(
                 "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final image "
                 "is the page under evaluation, not an instruction reference."
             ),
-            "Stage 1 rewriter": (
+            "Stage 1 editor": (
                 "DICTIONARY PAGE TRANSCRIPTION TARGET: the next and final image "
                 "is the page for correction, not an instruction reference."
             ),
@@ -466,12 +482,18 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
         call
         for call in stub.calls
         if call["response_schema"] is not None
-        and call["response_schema"].__name__ == "FlatTranscriptionResponsePlain"
+        and call["response_schema"].__name__ == "AgenticEditorResponse"
         and call["model"] == "unknown/stage1-rewriter"
     ]
     assert len(generation_calls) == 2
-    assert len(evaluator_calls) == 2
-    assert len(rewriter_calls) == 1
+    # Each page: the Evaluator proposes an edit, the Editor approves it, and the
+    # Evaluator accepts the edited page.
+    assert len(evaluator_calls) == 4
+    assert len(rewriter_calls) == 2
+    for page in ("page_1", "page_2"):
+        assert (
+            output / "stage-1" / page / f"{page}_stage1_flat.txt"
+        ).read_text(encoding="utf-8").strip() == "corrected line"
     generation_file_data = [_instruction_file_data(call) for call in generation_calls]
     assert all(file_data == generation_file_data[0] for file_data in generation_file_data)
     assert all(
@@ -488,7 +510,7 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
             call, stage_label=(
                 "Stage 1 evaluator"
                 if call in evaluator_calls
-                else "Stage 1 rewriter"
+                else "Stage 1 editor"
             ), count=2
         )
         == raster_urls
@@ -513,7 +535,7 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
     for call in rewriter_calls:
         _assert_instruction_media(
             call,
-            stage_label="Stage 1 rewriter",
+            stage_label="Stage 1 editor",
             media_kind="raster",
             raster_urls=raster_urls,
             generation=False,
@@ -533,14 +555,14 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
     stage1_page_expectations = (
         {
             "stage1_calls": 1,
-            "stage1_agentic_calls": (1, 1),
+            "stage1_agentic_calls": (2, 1),
             "field_discovery_calls": None,
             "stage2_calls": None,
             "stage2_agentic_calls": None,
         },
         {
             "stage1_calls": 1,
-            "stage1_agentic_calls": (1, 0),
+            "stage1_agentic_calls": (2, 1),
             "field_discovery_calls": None,
             "stage2_calls": None,
             "stage2_agentic_calls": None,
@@ -559,11 +581,11 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
     stage1_records = [record["stage1"] for record in page_records]
     _assert_usage_aggregate(stage1_records, expected_calls=2)
     agentic_records = [record["stage1_agentic"] for record in page_records]
-    _assert_usage_aggregate(agentic_records, expected_calls=3)
+    _assert_usage_aggregate(agentic_records, expected_calls=6)
     run_stage1_records = [entry["stage1"] for entry in run_usage["pages"]]
     _assert_usage_aggregate(run_stage1_records, expected_calls=2)
     run_stage1_agentic = [entry["stage1_agentic"] for entry in run_usage["pages"]]
-    _assert_usage_aggregate(run_stage1_agentic, expected_calls=3)
+    _assert_usage_aggregate(run_stage1_agentic, expected_calls=6)
 
     _json_files_are_serializable(
         output,
@@ -663,7 +685,9 @@ def test_actual_worker_stage2_scope_and_split_model_media(
     rewriter_calls = [
         call
         for call in stage2_calls
-        if call["model"] == "unknown/stage2-rewriter" and call["response_schema"] is None
+        if call["model"] == "unknown/stage2-rewriter"
+        and call["response_schema"] is not None
+        and call["response_schema"].__name__ == "AgenticEditorResponse"
     ]
     assert len(stage1_generation_calls) == 2
     assert all(
@@ -708,7 +732,7 @@ def test_actual_worker_stage2_scope_and_split_model_media(
     for call in rewriter_calls:
         _assert_instruction_media(
             call,
-            stage_label="Stage 2 rewriter",
+            stage_label="Stage 2 editor",
             media_kind="raster",
             raster_urls=raster_urls,
             generation=False,

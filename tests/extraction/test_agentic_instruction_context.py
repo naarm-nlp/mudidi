@@ -109,7 +109,10 @@ def test_pass1_single_and_multi_include_shared_context_before_samples(
 def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
     tmp_path: Path, monkeypatch
 ) -> None:
-    from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+    from mudidi.agentic.verifier_loop import (
+        AgenticEditorResponse,
+        AgenticVerifierDecision,
+    )
     from mudidi.instructions import prepare_instruction_context
     import mudidi.instructions as instructions
 
@@ -175,6 +178,8 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
         structured_calls.append(kwargs)
         if kwargs["response_schema"].__name__ == "AgenticVerifierDecision":
             result = AgenticVerifierDecision(action="accept", confidence=1.0)
+        elif kwargs["response_schema"].__name__ == "AgenticEditorResponse":
+            result = AgenticEditorResponse()
         else:
             result = SimpleNamespace(header=[], lines=["rewritten"], footer=[])
         return result, "{}", {}
@@ -194,12 +199,11 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
         page_context=None,
         attempt=0,
     )
-    strategy._rewrite_stage1_output(
+    strategy._edit_stage1_output(
         transcribed,
         decision=AgenticVerifierDecision(action="targeted_edits", confidence=1.0),
         image_path=str(image),
         ocr_result=ocr,
-        page_context=None,
         attempt=1,
     )
 
@@ -213,7 +217,7 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
 
     for call, stage_label in zip(
         structured_calls,
-        ("Stage 1", "Stage 1 evaluator", "Stage 1 rewriter"),
+        ("Stage 1", "Stage 1 evaluator", "Stage 1 editor"),
     ):
         content = call["messages"][1]["content"]
         reference_text = [
@@ -257,7 +261,10 @@ def test_stage1_generation_evaluator_and_rewriter_use_real_pdf_context(
 def test_stage2_text_generation_and_agentic_share_scoped_guide(
     tmp_path: Path, monkeypatch, scope: str, includes_guide: bool
 ) -> None:
-    from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+    from mudidi.agentic.verifier_loop import (
+        AgenticEditorResponse,
+        AgenticVerifierDecision,
+    )
     from mudidi.instructions import prepare_instruction_context
     from mudidi.schemas.field_cheatsheet import DictionaryMarkerCheatsheet, MarkerLine
 
@@ -292,14 +299,15 @@ def test_stage2_text_generation_and_agentic_share_scoped_guide(
         del kwargs
         if model == "generation-model":
             generation_calls.append({"model": model, "messages": messages})
-        elif model == "rewriter-model":
-            rewriter_calls.append({"model": model, "messages": messages})
         else:
             raise AssertionError(f"unexpected Stage 2 complete_with_usage model: {model}")
         return "\\lx foo\n\\gn bar", {"total_tokens": 1}
 
-    def fake_complete_structured(*, model, messages, **kwargs):
+    def fake_complete_structured(*, model, messages, response_schema, **kwargs):
         del kwargs
+        if response_schema is AgenticEditorResponse:
+            rewriter_calls.append({"model": model, "messages": messages})
+            return AgenticEditorResponse(), "{}", {}
         evaluator_calls.append({"model": model, "messages": messages})
         return AgenticVerifierDecision(action="accept", confidence=1.0), "{}", {}
 
@@ -332,7 +340,7 @@ def test_stage2_text_generation_and_agentic_share_scoped_guide(
         field_map=field_map,
         attempt=1,
     )
-    strategy._rewrite_stage2_output(
+    strategy._edit_stage2_output(
         "\\lx foo\n\\gn bar",
         transcribed_text="foo bar",
         field_map=field_map,
@@ -380,7 +388,10 @@ def test_stage2_text_generation_and_agentic_share_scoped_guide(
 def test_stage2_pdf_generation_and_agentic_use_selected_model_media(
     tmp_path: Path, monkeypatch, scope: str
 ) -> None:
-    from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+    from mudidi.agentic.verifier_loop import (
+        AgenticEditorResponse,
+        AgenticVerifierDecision,
+    )
     from mudidi.instructions import prepare_instruction_context
     from mudidi.utils.image import image_data_url
     from mudidi.utils.pdf_render import render_pdf_pages
@@ -434,14 +445,15 @@ def test_stage2_pdf_generation_and_agentic_use_selected_model_media(
         del kwargs
         if model == direct_model:
             generation_calls.append({"model": model, "messages": messages})
-        elif model == raster_model:
-            rewriter_calls.append({"model": model, "messages": messages})
         else:
             raise AssertionError(f"unexpected Stage 2 complete_with_usage model: {model}")
         return "\\lx foo\n\\gn bar", {"total_tokens": 1}
 
-    def fake_complete_structured(*, model, messages, **kwargs):
+    def fake_complete_structured(*, model, messages, response_schema, **kwargs):
         del kwargs
+        if response_schema is AgenticEditorResponse:
+            rewriter_calls.append({"model": model, "messages": messages})
+            return AgenticEditorResponse(), "{}", {}
         evaluator_calls.append({"model": model, "messages": messages})
         return AgenticVerifierDecision(action="accept", confidence=1.0), "{}", {}
 
@@ -469,7 +481,7 @@ def test_stage2_pdf_generation_and_agentic_use_selected_model_media(
         field_map=field_map,
         attempt=1,
     )
-    strategy._rewrite_stage2_output(
+    strategy._edit_stage2_output(
         "\\lx foo\n\\gn bar",
         transcribed_text="foo bar",
         field_map=field_map,
@@ -487,7 +499,7 @@ def test_stage2_pdf_generation_and_agentic_use_selected_model_media(
     contents = (
         ("Stage 2 Pass 2", generation_content),
         ("Stage 2 evaluator", evaluator_content),
-        ("Stage 2 rewriter", rewriter_content),
+        ("Stage 2 editor", rewriter_content),
     )
     if scope == "pass1":
         for _stage_label, content in contents:

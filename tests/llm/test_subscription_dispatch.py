@@ -9,7 +9,10 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from mudidi.agentic.verifier_loop import AgenticVerifierDecision
+from mudidi.agentic.verifier_loop import (
+    AgenticEditorResponse,
+    AgenticVerifierDecision,
+)
 from mudidi.extraction.llm_two_stage import TwoStageLLMExtraction
 from mudidi.llm import client
 from mudidi.llm.pass_1 import discover_field_cheatsheet, discover_field_cheatsheet_multi
@@ -305,6 +308,8 @@ def test_all_extraction_call_paths_receive_subscription_backend(
                 "{}",
                 {"total_tokens": 1},
             )
+        if kwargs["response_schema"] is AgenticEditorResponse:
+            return AgenticEditorResponse(), "{}", {"total_tokens": 1}
         return (
             SimpleNamespace(header=[], lines=["line"], footer=[]),
             "{}",
@@ -358,9 +363,18 @@ def test_all_extraction_call_paths_receive_subscription_backend(
         page_context=None,
         attempt=0,
     )
-    strategy._rewrite_stage1_output(
+    strategy._edit_stage1_output(
         "line",
         decision=AgenticVerifierDecision(action="targeted_edits", confidence=1.0),
+        image_path=str(page),
+        ocr_result=ocr,
+        attempt=1,
+    )
+    strategy._redo_stage1_output(
+        "line",
+        decision=AgenticVerifierDecision(
+            action="full_redo", confidence=1.0, redo_reason="wrong page"
+        ),
         image_path=str(page),
         ocr_result=ocr,
         page_context=None,
@@ -372,7 +386,7 @@ def test_all_extraction_call_paths_receive_subscription_backend(
         field_map=_FieldMap(),
         attempt=0,
     )
-    strategy._rewrite_stage2_output(
+    strategy._edit_stage2_output(
         "\\lx foo",
         transcribed_text="foo",
         field_map=_FieldMap(),
