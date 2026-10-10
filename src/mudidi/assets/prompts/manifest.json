@@ -108,9 +108,9 @@
       {"name": "guides", "description": "Optional user-defined guidelines."},
       {"name": "guides_source", "description": "Source filename for the optional guidelines."},
       {"name": "current_page_context", "tag": "<current_page>", "description": "Current page identity."},
-      {"name": "previous_page_context", "tag": "<previous_page>", "description": "Optional previous-page text context."},
-      {"name": "next_page_context", "tag": "<next_page>", "description": "Optional next-page text context."},
-      {"name": "page_image_order", "description": "Neighboring image order note."}
+      {"name": "previous_page_context", "tag": "<previous_page>", "description": "Optional excerpt from the end of the previous page's transcript."},
+      {"name": "next_page_context", "tag": "<next_page>", "description": "Optional excerpt from the start of the next page's transcript."},
+      {"name": "page_image_order", "description": "Note that the only page image is the current page; neighbors are transcripts only."}
     ]
   },
   "page_boundary_rules": {
