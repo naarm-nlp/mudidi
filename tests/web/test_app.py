@@ -157,10 +157,10 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
         "rewriter_provider",
         "rewriter_model",
         "rewriter_reasoning",
-        "verifier_patches",
-        "require_concrete_retry",
     ):
         assert f'name="{field}"' in response.text
+    for removed in ("verifier_patches", "require_concrete_retry"):
+        assert f'name="{removed}"' not in response.text
     assert 'data-agentic-model-group="evaluator"' in response.text
     assert 'data-agentic-model-group="rewriter"' in response.text
     assert 'list="model-catalog"' not in response.text
