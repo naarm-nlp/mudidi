@@ -296,7 +296,10 @@ _TARGETED_EDITS_VERIFIER_RULES = (
     "current_text empty and give the index the new line should take; to delete "
     "text, leave replacement_text empty. Only propose an edit you can specify "
     "exactly; if you cannot name the text to change, leave that problem out. "
-    "An Editor model will check each proposed edit against the source and "
+    "Keep each edit within one line where you can. If nothing needs to change, "
+    "use action=accept; never send a placeholder edit or one whose replacement "
+    "equals the current text. Always state confidence: how sure you are that "
+    "the chosen action is right. An Editor model will check each proposed edit against the source and "
     "apply the ones it confirms. When previous_rounds is present it shows what "
     "the Editor did with your earlier proposals and why. Do not repeat an edit "
     "the Editor refused: either accept its reasoning, or propose a different "
@@ -383,9 +386,13 @@ def _stage2_verifier_system_prompt() -> str:
         "Judge whether the MDF is syntactically plausible and grounded in the "
         "Stage 1 transcript. Return only structured JSON matching the schema. "
         "Choose exactly one action. Use action=accept when the MDF meets the "
-        "acceptance criteria, action=targeted_edits when specific lines are wrong, and "
-        "action=reject when correction is unsafe. Do not use action=full_redo; "
-        "it is not available for Stage 2. "
+        "acceptance criteria and action=targeted_edits when specific lines are "
+        "wrong; this is the normal way to request a correction. Use "
+        "action=full_redo only when the output is not MDF at all (for example a "
+        "refusal or commentary), or is wrong on most lines, so that localized "
+        "edits cannot repair it; state why in redo_reason and leave edits empty, "
+        "because the page will be parsed again from the transcript. Use "
+        "action=reject only when correction is unsafe. "
         + _TARGETED_EDITS_VERIFIER_RULES
         + " The source is the Stage 1 transcript. "
         + _STAGE2_ACCEPTANCE_CRITERIA
@@ -767,6 +774,8 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     transcribed_text=transcribed_text,
                     field_map=field_map,
                     artifact_dir=stage2_base.parent / "agentic" / "stage2",
+                    image_path=image_path,
+                    page_context=page_context,
                 )
             stage2_usage = _with_elapsed(stage2_usage, stage2_started)
             print(f"Direct MDF ({len(mdf_text)} chars).")
@@ -1303,8 +1312,23 @@ class TwoStageLLMExtraction(ExtractionStrategy):
         transcribed_text: str,
         field_map: FieldMapPrompt,
         artifact_dir: Path,
+        image_path: str | None = None,
+        page_context: PageContext | None = None,
     ) -> tuple[str, Dict[str, Any]]:
         """Evaluate/edit Stage 2 MDF output, failing closed to initial MDF."""
+
+        def redo(
+            output: str, decision: AgenticVerifierDecision, attempt: int
+        ) -> tuple[str, Dict[str, Any]]:
+            del output, decision, attempt
+            mdf_text, _raw, usage, _messages = self._stage2_direct_mdf(
+                transcribed_text,
+                image_path,
+                field_map,
+                page_context=page_context,
+            )
+            return mdf_text, usage
+
         started = time.perf_counter()
         try:
             result = run_bounded_verifier_loop(
@@ -1326,6 +1350,7 @@ class TwoStageLLMExtraction(ExtractionStrategy):
                     decision=decision,
                     attempt=attempt,
                 ),
+                redo=redo if image_path is not None else None,
                 config=self.agentic_loop_config,
             )
             print(

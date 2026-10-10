@@ -19,6 +19,7 @@ COMBINED_MDF_FILENAME = "dictionary.mdf.txt"
 COMBINED_MDF_REPORT_FILENAME = "dictionary.mdf.report.json"
 
 _HEADWORD_LINE = re.compile(r"^\\lx(\s|$)")
+_MARKER_LINE = re.compile(r"^\\[A-Za-z]", re.MULTILINE)
 
 
 def _first_line(text: str) -> str:
@@ -38,6 +39,9 @@ def _is_adjacent(previous_stem: str, stem: str) -> bool:
 
 def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | None:
     """Write the combined dictionary MDF and its join report under ``output_dir``.
+
+    A page whose file holds no MDF marker at all (for example a model's
+    refusal) is left out and listed under ``pages_without_mdf``.
 
     A page that opens mid-entry is appended directly to the previous page so
     its fields join that page's last entry. Every such page is listed in the
@@ -62,6 +66,7 @@ def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | 
     combined = ""
     pages: list[str] = []
     empty_pages: list[str] = []
+    pages_without_mdf: list[str] = []
     mid_entry: list[dict[str, Any]] = []
     previous_stem: str | None = None
     for page_file in page_files:
@@ -69,6 +74,9 @@ def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | 
         text = page_file.read_text(encoding="utf-8").strip()
         if not text:
             empty_pages.append(stem)
+            continue
+        if not _MARKER_LINE.search(text):
+            pages_without_mdf.append(stem)
             continue
         pages.append(stem)
         first_line = _first_line(text)
@@ -92,6 +100,7 @@ def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | 
         "output": COMBINED_MDF_FILENAME,
         "pages": pages,
         "empty_pages": empty_pages,
+        "pages_without_mdf": pages_without_mdf,
         "pages_starting_mid_entry": mid_entry,
     }
     output_dir.mkdir(parents=True, exist_ok=True)

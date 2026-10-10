@@ -87,6 +87,23 @@ def test_empty_pages_are_reported_and_skipped(tmp_path: Path) -> None:
     assert report["empty_pages"] == ["page_2"]
 
 
+def test_page_without_any_mdf_marker_is_left_out(tmp_path: Path) -> None:
+    stage2 = tmp_path / "stage-2"
+    _write_page(stage2, "page_1", "\\lx a\n")
+    _write_page(stage2, "page_2", "I can't produce MDF for this page.\n")
+    _write_page(stage2, "page_3", "\\ge left over\n")
+
+    report = write_combined_mdf(stage2, tmp_path)
+
+    assert (tmp_path / COMBINED_MDF_FILENAME).read_text(encoding="utf-8") == (
+        "\\lx a\n\n\\ge left over\n"
+    )
+    assert report is not None
+    assert report["pages"] == ["page_1", "page_3"]
+    assert report["pages_without_mdf"] == ["page_2"]
+    assert report["pages_starting_mid_entry"][0]["joined_to_previous_page"] is False
+
+
 def test_nothing_is_written_without_page_mdf(tmp_path: Path) -> None:
     (tmp_path / "stage-2" / "page_1").mkdir(parents=True)
 

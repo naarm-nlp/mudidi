@@ -400,10 +400,38 @@ def test_edits_that_change_nothing_are_dropped(tmp_path: Path) -> None:
     assert (tmp_path / "attempt_0_verifier_raw.json").is_file()
 
 
-def test_only_no_op_edits_is_an_invalid_decision(tmp_path: Path) -> None:
+def test_only_no_op_edits_means_nothing_needs_changing(tmp_path: Path) -> None:
     result = _run(tmp_path, _scripted(_edits(_edit(0, "same", "same"))), _no_edit)
 
-    assert result.stop_reason == "invalid_decision"
+    assert result.stop_reason == "accepted"
+    assert result.output == "bad line"
+
+
+def test_evaluator_must_state_its_confidence() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        AgenticVerifierDecision(action="accept")
+    assert "confidence" in AgenticVerifierDecision.model_json_schema()["required"]
+
+
+def test_apply_edit_handles_a_span_across_several_lines() -> None:
+    lines = ["\\lx a", "\\se extra", "\\ge made up", "\\lx b"]
+
+    applied, detail = apply_edit(
+        lines, line_index=1, current_text="\\se extra\n\\ge made up", replacement_text=""
+    )
+
+    assert applied and detail == "deleted 2 lines starting at line 1"
+    assert lines == ["\\lx a", "\\lx b"]
+
+    lines = ["one", "two", "three"]
+    assert apply_edit(
+        lines, line_index=0, current_text="one\ntwo", replacement_text="1\n2"
+    ) == (True, "replaced 2 lines starting at line 0")
+    assert lines == ["1", "2", "three"]
+    assert apply_edit(lines, line_index=0, current_text="x\ny", replacement_text="")[0] is False
 
 
 def test_full_redo_replaces_the_whole_output(tmp_path: Path) -> None:

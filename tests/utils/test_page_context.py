@@ -61,7 +61,8 @@ def test_current_page_block_is_page_local() -> None:
     assert "next_page" not in block
 
     order = format_page_image_order_note(ctx)
-    assert "CURRENT page (page_54)" in order
+    assert "CURRENT page (file page_54)" in order
+    assert "not the page number printed on the page" in block
     assert "transcript excerpt only" in order
     assert "page_53" not in order
 

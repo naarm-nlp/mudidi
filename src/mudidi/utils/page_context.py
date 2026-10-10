@@ -97,6 +97,9 @@ def format_current_page_block(page_context: PageContext, *, ocr: bool = False) -
     return (
         f"<current_page>\n"
         f"page: {page_context.current_stem}\n"
+        f"\"{page_context.current_stem}\" is this page's file name in the run. It is "
+        f"not the page number printed on the page, which may differ; the "
+        f"transcription above and the page image are this page.\n"
         f"Emit MDF for every line printed on this page, and only those lines.\n"
         f"If the top of the page continues an entry begun on the previous page, emit those "
         f"lines first with the markers they carry inside that entry, without a \\lx line "
@@ -114,7 +117,7 @@ def format_page_image_order_note(page_context: PageContext) -> str:
     """Explain which page the single page image in the user message shows."""
     note = (
         f"The page image in this message is the CURRENT page "
-        f"({page_context.current_stem}) — emit MDF for this page."
+        f"(file {page_context.current_stem}) — emit MDF for this page."
     )
     if page_context.has_previous:
         note += (

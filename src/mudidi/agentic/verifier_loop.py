@@ -76,7 +76,15 @@ class AgenticVerifierDecision(BaseModel):
             "again. reject: correction is unsafe."
         ),
     )
-    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description=(
+            "How sure you are, from 0 to 1, that the chosen action is right. "
+            "This is not a quality score for the output: a clear error you can "
+            "point to deserves high confidence."
+        ),
+    )
     edits: list[AgenticEdit] = Field(
         default_factory=list,
         description="Required for targeted_edits; empty for every other action.",
@@ -255,6 +263,11 @@ def apply_edit(
         lines.insert(position, replacement_text)
         return True, f"inserted as line {position}"
 
+    if "\n" in current_text:
+        return _apply_multiline_edit(
+            lines, current_text=current_text, replacement_text=replacement_text
+        )
+
     target: int | None = None
     if line_index < len(lines) and current_text in lines[line_index]:
         target = line_index
@@ -280,6 +293,34 @@ def apply_edit(
     if target != line_index:
         detail += f" (proposed line {line_index})"
     return True, detail
+
+
+def _apply_multiline_edit(
+    lines: list[str],
+    *,
+    current_text: str,
+    replacement_text: str,
+) -> tuple[bool, str]:
+    """Replace a span that covers several whole or partial consecutive lines."""
+    text = "\n".join(lines)
+    occurrences = text.count(current_text)
+    if occurrences == 0:
+        return False, "current_text was not found in the output"
+    if occurrences > 1:
+        return False, f"current_text appears {occurrences} times in the output"
+    first_line = text[: text.index(current_text)].count("\n")
+    updated = text.replace(current_text, replacement_text, 1).split("\n")
+    if not replacement_text:
+        # A deletion must not leave an empty line behind where the span was.
+        updated = [
+            line
+            for index, line in enumerate(updated)
+            if line.strip() or index != first_line
+        ]
+    lines[:] = updated
+    span = current_text.count("\n") + 1
+    verb = "deleted" if not replacement_text else "replaced"
+    return True, f"{verb} {span} lines starting at line {first_line}"
 
 
 def apply_editor_verdicts(
@@ -494,8 +535,12 @@ def run_bounded_verifier_loop(
         )
         decision = raw_decision
         repeats_refusal = False
+        nothing_to_change = False
         if raw_decision.action == "targeted_edits":
             usable = actionable_edits(raw_decision)
+            # Edits that change nothing are the Evaluator saying the output
+            # needs no change, so treat them as acceptance.
+            nothing_to_change = bool(raw_decision.edits) and not usable
             fresh = [item for item in usable if _edit_key(item) not in refused]
             repeats_refusal = bool(usable) and not fresh
             if len(fresh) != len(raw_decision.edits):
@@ -518,7 +563,7 @@ def run_bounded_verifier_loop(
                 verifier_usage,
             )
 
-        if decision.action == "accept":
+        if decision.action == "accept" or nothing_to_change:
             return finish("accepted")
         if decision.action == "reject":
             return finish("rejected")

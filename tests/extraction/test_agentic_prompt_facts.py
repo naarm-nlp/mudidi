@@ -103,13 +103,17 @@ def test_stage2_evaluator_prompt_carries_previous_rounds() -> None:
     )
 
 
-def test_only_stage1_verifier_may_request_a_full_redo() -> None:
+def test_both_evaluators_may_request_a_full_redo() -> None:
     stage1 = _stage1_verifier_system_prompt()
     stage2 = _stage2_verifier_system_prompt()
 
     assert "action=full_redo only when" in stage1
     assert "re-transcribe the entire page" in stage1
-    assert "Do not use action=full_redo" in stage2
+    assert "action=full_redo only when the output is not MDF at all" in stage2
+    assert "parsed again from the transcript" in stage2
+    for prompt in (stage1, stage2):
+        assert "never send a placeholder edit" in prompt
+        assert "Always state confidence" in prompt
 
 
 def test_agentic_verifier_max_tokens_defaults_to_safe_budget(monkeypatch) -> None:
