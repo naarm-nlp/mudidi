@@ -1,110 +1,53 @@
 # MUDIDI
 
-**[Read the MUDIDI documentation](https://naarm-nlp.github.io/mudidi/)**
+MUDIDI digitizes scanned multilingual dictionaries with language models. It
+creates a faithful page transcription, discovers the dictionary's structure,
+and converts the transcription into
+[SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
-## Unreleased: dashboard redesign
-
-- **New run** is a six-step wizard: Input, Pipeline, Context, Model, Agentic,
-  and Review. The new **Context** step holds the Dictionary Profile, MDF
-  parsing-guide inputs, and advanced stage instructions.
-- The dashboard uses the Modernist Ochre theme with light and dark modes.
-- Every run page shows the same workspace tab bar.
-- Native installs add **Choose folder…** for the output directory.
-- Agentic verification is renamed **Agentic loop** and explained in place.
-- Request and upload size limits are opt-in.
-
-## What's new in 0.1.1
-
-MUDIDI 0.1.1 improves Google subscription authentication and live model
-selection while preserving API-key billing as a separate mode.
-
-### Google subscription workflow
-
-- Log in and out from the dashboard through Google Antigravity's browser OAuth;
-  no Antigravity CLI login is required.
-- Refresh the authenticated model catalog on demand, including after login or
-  logout changes the active subscription session.
-- List Gemini Pro models before Flash models while preserving newest-first
-  ordering within each family.
-- Present the account as **Google subscription** while keeping the Antigravity
-  transport detail out of the primary dashboard label.
-
-### Compatibility
-
-- Migrate older dashboard presets containing the retired
-  `models.temperature` field instead of failing during startup.
-- Keep subscription tokens in MUDIDI's encrypted local store and out of run
-  configuration, browser storage, and subprocess arguments.
-- Translate Stage 2 Pass 1 and Pass 2 PDF attachments into each subscription
-  provider's native document format.
-
-## What's new in 0.1.0
-
-MUDIDI 0.1.0 adds local subscription-backed dictionary inference alongside
-the existing API-key workflow.
-
-### Subscription inference
-
-- Authenticate with OpenAI, Google Gemini, or Claude through the local web
-  dashboard or `mudidi auth`.
-- Keep subscription credentials in a dedicated encrypted local store.
-- Discover live, account-scoped model catalogs with Google Pro models before
-  Flash and newest-first ordering within each family.
-- Select independent Stage 1, Stage 2 Pass 1, Stage 2 Pass 2, Evaluator, and
-  Editor models where supported.
-- Preserve entitlement-only split-model selections in saved presets while the
-  live catalog refreshes.
-- Show Subscription billing first and select it by default for new dashboard
-  runs; API-key billing remains available below it.
-
-### Production workflow
-
-- Run complete web or CLI extraction with human MDF-guide review and approval.
-- Resume compatible CLI output safely; changed instruction attachments require
-  explicit overwrite.
-- Cancel active web runs without producing page output or usage for unfinished
-  work.
-- Pass `--alphabet PATH` to enable a supplied character inventory automatically.
-- Migrate older saved dashboard presets that contain retired configuration
-  fields instead of failing during dashboard startup.
-
-### What changed
-
-- Dashboard preset storage now runs schema migration 5 for existing local
-  databases.
-- Legacy `models.temperature` values are removed before strict configuration
-  validation, so old presets no longer crash dashboard startup.
-- The migration preserves current preset settings and keeps new YAML and API
-  configurations strict; `temperature` remains rejected for newly submitted
-  configurations.
-
-### Provider support
-
-- **OpenAI:** Codex subscription authentication, account model discovery,
-  structured output, image and PDF input, reasoning controls, and usage
-  normalization.
-- **Google:** MUDIDI-owned OAuth, direct Cloud Code routing, image and PDF input,
-  canonical Gemini aliases, effort routing, and project-aware requests.
-- **Claude:** OAuth-backed Messages requests, paginated model discovery, image
-  and PDF input, structured output, and adaptive or extended thinking.
-
-Google subscription login uses Google Antigravity's installed-app OAuth
-registration by default. `MUDIDI_GOOGLE_OAUTH_CLIENT_ID` and
-`MUDIDI_GOOGLE_OAUTH_CLIENT_SECRET` are optional overrides for a compatible
-Antigravity registration. Inference workers do not inherit an override client
-secret from the parent environment.
-
-The release was smoke-tested through web and CLI workflows with all three
-authenticated providers. The current repository verification suite passes
-**1,398 tests**, with 10 intentional skips, alongside strict MkDocs,
-generated-reference, Ruff, dependency-audit, Docker smoke, and main-branch CI
-checks.
-
-MUDIDI digitizes scanned multilingual dictionaries with language models. It first creates a faithful page transcription and then converts that transcription into [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
+**[Documentation](https://naarm-nlp.github.io/mudidi/)** ·
+**[Quickstart](https://naarm-nlp.github.io/mudidi/getting-started/quickstart/)** ·
+**[Release history](https://naarm-nlp.github.io/mudidi/whats-new/)**
 
 ```text
-dictionary pages → Stage 1 OCR → Stage 2 parse rules → MDF records
+dictionary PDF or page images
+  → Stage 1 transcription
+  → MDF parsing-guide discovery and review
+  → Stage 2 per-page MDF + combined dictionary
 ```
+
+## Current capabilities
+
+- **Redesigned local dashboard:** a six-step New run wizard with Input,
+  Pipeline, Context, Model, Agentic, and Review; light and dark themes; and a
+  consistent run workspace for guide review, page editing, logs, files, and usage.
+- **Three workflows:** complete digitization, transcription only, or parsing
+  an existing transcription into MDF. Use a PDF in the dashboard, or a PDF or
+  page directory through the CLI and YAML.
+- **Subscription or API-key inference:** sign in with OpenAI, Google, or
+  Claude subscriptions, or use provider API keys. Model catalogs and reasoning
+  controls follow the selected provider and billing mode.
+- **Human-reviewed parsing guides:** generate a dictionary-specific MDF guide
+  or supply an existing one. Dashboard discovery includes the bundled SIL MDF
+  manual and pauses for guide approval before conversion.
+- **Optional Evaluator–Editor loop:** verify output against its source, apply
+  source-checked targeted edits, or redo a page. The loop defaults to three
+  rounds when enabled and stops early when it detects no progress.
+- **Page-local MDF output:** preserve each page's printed content in its own
+  MDF file and join the pages into `dictionary.mdf.txt`. Page processing
+  defaults to eight concurrent workers.
+- **Parallel dashboard runs:** monitor multiple active runs, including those
+  waiting for guide review. Runs cannot share an active output folder; runs
+  sharing a provider login also share its rate limit.
+
+### Release status
+
+This README describes the current `main` branch. The latest published release
+is **[0.1.1](https://github.com/naarm-nlp/mudidi/releases/tag/v0.1.1)**;
+the dashboard redesign, new agentic loop, page-local Stage 2, and parallel-run
+support are already implemented on `main` but are not part of that release.
+See [What's New](docs/whats-new.md) for the changes since 0.1.1 and earlier
+release notes.
 
 ## Installation
 
@@ -166,6 +109,13 @@ optional and use the same syntax. Examples shown in the fields, such as
 is missing or a page selection is invalid, the dashboard blocks the run and
 marks the affected field in red with an explanation.
 
+In **Context**, choose **Create a guide for me** or supply an existing MDF
+parsing guide. When **Pages to learn from** is blank, discovery uses every
+selected dictionary page—not every page in the uploaded PDF. For a long
+dictionary, choose two or three representative pages to limit the size and cost
+of this single discovery request. Generated guides pause the run for review and
+approval before MDF conversion.
+
 Page-image and directory inputs remain available through the CLI and YAML
 workflows; they are not accepted by the web dashboard.
 
@@ -203,7 +153,7 @@ which opens the operating system's folder dialog; in Docker, type the path.
 
 ### CLI and YAML workflows with uv (recommended)
 
-### Install uv on macOS or Linux
+#### Install uv on macOS or Linux
 
 Use the official standalone installer:
 
@@ -218,7 +168,7 @@ available:
 uv --version
 ```
 
-### Install uv on Windows through WSL2
+#### Install uv on Windows through WSL2
 
 MUDIDI does not currently support native Windows PowerShell. First install
 WSL2 with Ubuntu from an Administrator PowerShell terminal:
@@ -236,7 +186,7 @@ sudo apt install -y curl git
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Install MUDIDI
+#### Install MUDIDI
 
 Clone the repository and reproduce its locked Python environment:
 
@@ -247,10 +197,39 @@ uv sync --frozen
 ```
 
 
-## API setup
+## Authentication
 
-For the web dashboard, enter any of the four supported keys directly under
-**API credentials** on **New Run**: Gemini, OpenAI, Anthropic, or OpenRouter.
+Choose **Subscription billing** or **API-key billing** in the dashboard's
+**Model** step. These are separate authentication modes; a subscription login
+does not require a provider API key.
+
+### Subscription accounts
+
+Select OpenAI, Google, or Claude, click **Log in**, and complete the provider's
+browser flow. Use **Refresh models** to reload the authenticated account's
+catalog. Subscription credentials stay in MUDIDI's encrypted local store, not
+in YAML run configuration.
+
+For CLI workflows, authenticate before selecting subscription mode:
+
+```bash
+uv run mudidi auth login openai
+uv run mudidi auth status openai
+uv run mudidi run \
+  --auth-mode subscription \
+  --auth-provider openai \
+  --pages path/to/dictionary-pages \
+  --output-dir outputs/my-dictionary
+```
+
+Use `google` or `claude` instead of `openai` for the other subscription
+providers. Subscription adapters use provider-specific consumer interfaces;
+review provider terms before relying on them in production.
+
+### API keys
+
+For the web dashboard, enter the selected provider's key under
+**API credentials** in **Model**: Gemini, OpenAI, Anthropic, or OpenRouter.
 Click **Save key** beside the credential you entered. Inputs are masked and can
 be revealed explicitly with the eye button. Keys persist across restarts as
 encrypted ciphertext in `mudidi-web.sqlite3`; the encryption key is stored
@@ -277,7 +256,7 @@ GEMINI_API_KEY=replace-me
 
 Never place credentials in YAML run configuration.
 
-### Google subscription setup
+### Google subscription details
 
 Google subscription runs use Antigravity's browser OAuth and Cloud Code Assist
 transport directly. In the dashboard, choose **Subscription billing**, select
@@ -316,6 +295,19 @@ uv run mudidi run \
   --output-dir outputs/my-dictionary
 ```
 
+To select pages from one PDF instead:
+
+```bash
+uv run mudidi run \
+  --pages path/to/dictionary.pdf \
+  --dict-pages "1,5,10-20" \
+  --output-dir outputs/my-dictionary
+```
+
+Use `--stage 1` for transcription only. See the
+[production guide](https://naarm-nlp.github.io/mudidi/production/) for Stage 2
+workflows using existing transcriptions.
+
 Inspect the selected defaults without making API calls:
 
 ```bash
@@ -335,6 +327,10 @@ uv run mudidi run \
   --stage2-agentic
 ```
 
+The loop is off by default because it adds model calls and cost. When enabled,
+the Evaluator proposes changes and the Editor checks them against the source.
+Use `--agentic-max-iterations` to override the default of three rounds.
+
 Outputs are written under:
 
 ```text
@@ -342,6 +338,7 @@ outputs/my-dictionary/
 ├── resolved_config.json
 ├── mdf_parsing_guide.json
 ├── dictionary.mdf.txt
+├── dictionary.mdf.report.json
 ├── stage-1/page_N/page_N_stage1_flat.txt
 └── stage-2/page_N/page_N.mdf.txt
 ```
@@ -349,12 +346,23 @@ outputs/my-dictionary/
 Each `page_N.mdf.txt` holds exactly the lines printed on that page, so an entry
 that crosses a page break is split between two page files.
 `dictionary.mdf.txt` joins the pages in order into the complete dictionary.
+The report identifies pages that start mid-entry and pages with no MDF; pages
+without MDF are excluded from the combined dictionary.
 
-For repeatable and advanced runs, use a validated YAML configuration:
+For repeatable and advanced runs, copy a YAML template:
 
 ```bash
-uv run mudidi config validate examples/configs/production/directory-inference.yaml
-uv run mudidi run --config examples/configs/production/directory-inference.yaml
+cp examples/configs/production/directory-inference.yaml mudidi.yaml
+```
+
+Edit `input.pages`, the optional `input.alphabet`, `input.dictionary_profile`,
+and `output.directory` for your dictionary before validating. Paths are
+relative to the YAML file; the template's dataset paths are examples, not
+bundled inputs. Then run:
+
+```bash
+uv run mudidi config validate mudidi.yaml
+uv run mudidi run --config mudidi.yaml
 ```
 
 For every available option, see the
