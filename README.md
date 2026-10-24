@@ -6,8 +6,7 @@ and converts the transcription into
 [SIL Toolbox MDF](https://software.sil.org/toolbox/) lexicon records.
 
 **[Documentation](https://naarm-nlp.github.io/mudidi/)** ·
-**[Quickstart](https://naarm-nlp.github.io/mudidi/getting-started/quickstart/)** ·
-**[Release history](https://naarm-nlp.github.io/mudidi/whats-new/)**
+**[Quickstart](https://naarm-nlp.github.io/mudidi/getting-started/quickstart/)**
 
 ```text
 dictionary PDF or page images
@@ -39,15 +38,6 @@ dictionary PDF or page images
 - **Parallel dashboard runs:** monitor multiple active runs, including those
   waiting for guide review. Runs cannot share an active output folder; runs
   sharing a provider login also share its rate limit.
-
-### Release status
-
-This README describes the current `main` branch. The latest published release
-is **[0.1.1](https://github.com/naarm-nlp/mudidi/releases/tag/v0.1.1)**;
-the dashboard redesign, new agentic loop, page-local Stage 2, and parallel-run
-support are already implemented on `main` but are not part of that release.
-See [What's New](docs/whats-new.md) for the changes since 0.1.1 and earlier
-release notes.
 
 ## Installation
 
@@ -383,6 +373,9 @@ The site is rebuilt and deployed automatically from `main` with GitHub Pages.
 Documentation sources are under [`docs/`](docs/), and canonical configurations
 are under [`examples/configs/`](examples/configs/). Tracked benchmark report
 provenance is documented in [`evaluations/README.md`](evaluations/README.md).
+
+Version **[0.2.0](https://github.com/naarm-nlp/mudidi/releases/tag/v0.2.0)**:
+see the [release notes](docs/whats-new.md) for changes and upgrade guidance.
 
 ## Dataset and paper
 

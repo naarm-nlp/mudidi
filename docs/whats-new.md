@@ -1,6 +1,14 @@
-# What's New
+# Release notes
 
-## Unreleased — Faster, cheaper Stage 2
+## 0.2.0 — Dashboard and extraction redesign
+
+Released October 24, 2026.
+
+MUDIDI 0.2.0 brings the redesigned dashboard, parallel runs, page-local MDF
+conversion, and an Evaluator–Editor loop. Subscription response handling and
+dependency security fixes are included.
+
+### Page-local Stage 2
 
 - Stage 2 now parses each page locally. A page's MDF holds exactly the lines
   printed on that page; an entry that crosses a page break is split between
@@ -13,7 +21,7 @@
 - Pages run eight at a time by default (`--batch-size 8`).
 - Oversized page images are compressed once and reused across stages.
 
-## Unreleased — Agentic loop: Evaluator and Editor
+### Agentic loop: Evaluator and Editor
 
 - The loop is now an evaluator-optimizer. The **Evaluator** chooses an explicit
   action (`accept`, `targeted_edits`, `full_redo`, or `reject`) and
@@ -38,7 +46,7 @@
 - `dictionary.mdf.txt` leaves out a page whose file holds no MDF (for example
   a model refusal) and lists it under `pages_without_mdf`.
 
-## Unreleased — Parallel runs
+### Parallel runs
 
 - The dashboard no longer limits you to one working run. Start as many as you
   like.
@@ -51,7 +59,7 @@
 - The Review page and the run page warn when another working run uses the same
   provider login, because those runs share one rate limit.
 
-## Unreleased — Dashboard redesign
+### Dashboard redesign
 
 The local dashboard has a new look and a reorganized **New run** flow. Routes,
 form fields, saved presets, and run data are unchanged.
@@ -71,6 +79,32 @@ form fields, saved presets, and run data are unchanged.
   the manual menu is removed.
 - Request and upload size limits are off by default and opt-in through
   `--max-request-bytes` and `--max-upload-bytes`.
+
+### Reliability and maintenance
+
+- Subscription adapters support PDF attachments and retry malformed structured
+  replies. Gemini guide discovery and agentic checks accept the provider's
+  looser JSON responses.
+- OpenAI subscription discovery lists every model the account can use.
+- Worker crashes expose the last error line, and runs waiting for guide review
+  remain visible under **Active runs**.
+- Evaluation results and tooling are migrated, with Python replacing the
+  previous R table generators.
+- Locked dependencies are updated to address published security advisories.
+
+### Upgrade notes
+
+- Per-page MDF no longer completes an entry using the next page. Use
+  `dictionary.mdf.txt` for the joined dictionary and
+  `dictionary.mdf.report.json` to inspect boundaries and pages without MDF.
+- Consumers of agentic JSON records must handle the new action, edit, Editor
+  verdict, and stop-reason fields described above.
+- The retired deterministic-patch and concrete-retry settings remain accepted
+  but have no effect.
+- Leaving parsing-guide sample pages blank now uses every selected dictionary
+  page. For large dictionaries, choose representative pages explicitly to
+  control the size and cost of the discovery request.
+
 
 ## 0.1.1 — Google subscription workflow
 
@@ -159,5 +193,5 @@ Three defects found during that smoke were repaired before release:
 
 The release candidate passed 1,383 repository tests with 10 intentional skips,
 the strict MkDocs build, generated-reference verification, Ruff, and live
-post-repair web and CLI checks. Current main passes 1,385 tests, including the
-legacy-preset migration regression.
+post-repair web and CLI checks. The subsequent legacy-preset migration
+regression brought that historical suite to 1,385 tests.

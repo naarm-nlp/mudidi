@@ -5,8 +5,6 @@
 MUDIDI's documentation is published at
 [naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/) from
 the repository's `main` branch.
-See [What's New](whats-new.md) for the current release highlights and verified
-provider coverage.
 
 
 ## Pipeline
@@ -54,3 +52,5 @@ the [Python API reference](reference/python-api.md) for maintainer-facing
 interfaces. Contributors can continue with the
 [architecture overview](development/architecture.md) and
 [CLI migration guide](development/cli-migration.md).
+
+See the [release notes](whats-new.md) for version history and upgrade guidance.
