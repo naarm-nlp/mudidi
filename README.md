@@ -15,29 +15,12 @@ dictionary PDF or page images
   → Stage 2 per-page MDF + combined dictionary
 ```
 
-## Current capabilities
+## Demo
 
-- **Redesigned local dashboard:** a six-step New run wizard with Input,
-  Pipeline, Context, Model, Agentic, and Review; light and dark themes; and a
-  consistent run workspace for guide review, page editing, logs, files, and usage.
-- **Three workflows:** complete digitization, transcription only, or parsing
-  an existing transcription into MDF. Use a PDF in the dashboard, or a PDF or
-  page directory through the CLI and YAML.
-- **Subscription or API-key inference:** sign in with OpenAI, Google, or
-  Claude subscriptions, or use provider API keys. Model catalogs and reasoning
-  controls follow the selected provider and billing mode.
-- **Human-reviewed parsing guides:** generate a dictionary-specific MDF guide
-  or supply an existing one. Dashboard discovery includes the bundled SIL MDF
-  manual and pauses for guide approval before conversion.
-- **Optional Evaluator–Editor loop:** verify output against its source, apply
-  source-checked targeted edits, or redo a page. The loop defaults to three
-  rounds when enabled and stops early when it detects no progress.
-- **Page-local MDF output:** preserve each page's printed content in its own
-  MDF file and join the pages into `dictionary.mdf.txt`. Page processing
-  defaults to eight concurrent workers.
-- **Parallel dashboard runs:** monitor multiple active runs, including those
-  waiting for guide review. Runs cannot share an active output folder; runs
-  sharing a provider login also share its rate limit.
+[![Watch the MUDIDI demo: scanned dictionary pages become structured MDF records](docs/assets/demo-poster.jpg)](https://naarm-nlp.github.io/mudidi/#demo)
+
+**[Watch the 90-second demo](https://naarm-nlp.github.io/mudidi/#demo)** —
+from uploading a scanned dictionary to configuring the digitization pipeline.
 
 ## Installation
 

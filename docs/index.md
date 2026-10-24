@@ -1,10 +1,21 @@
 # MUDIDI
 
-## About MUDIDI
+MUDIDI turns scanned multilingual dictionaries into faithful transcriptions
+and structured SIL Toolbox MDF records.
 
-MUDIDI's documentation is published at
-[naarm-nlp.github.io/mudidi](https://naarm-nlp.github.io/mudidi/) from
-the repository's `main` branch.
+## Demo
+
+<video controls playsinline preload="metadata"
+       poster="assets/demo-poster.jpg"
+       width="1920" height="1080"
+       style="display: block; width: 100%; height: auto;"
+       aria-label="MUDIDI dashboard demo">
+  <source src="assets/mudidi-demo.mp4" type="video/mp4">
+  <a href="assets/mudidi-demo.mp4">Watch the MUDIDI demo (MP4).</a>
+</video>
+
+Watch the 90-second dashboard walkthrough, or
+[open the video directly](assets/mudidi-demo.mp4).
 
 
 ## Pipeline
