@@ -10,6 +10,8 @@ requires-python = ">=3.11"
 
 dependencies = [
     "certifi>=2024.2.2",
+    # Security floor for filelock pulled in by the model-provider stack.
+    "filelock>=4.2.1",
     "litellm>=1.87.0",
     "python-docx",
     "Pillow",

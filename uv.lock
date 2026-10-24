@@ -1814,6 +1814,7 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
+    { name = "filelock" },
     { name = "grapheme" },
     { name = "jinja2" },
     { name = "jiwer" },
@@ -1858,6 +1859,7 @@ requires-dist = [
     { name = "certifi", specifier = ">=2024.2.2" },
     { name = "cryptography", marker = "extra == 'web'", specifier = ">=45.0" },
     { name = "fastapi", marker = "extra == 'web'", specifier = ">=0.115" },
+    { name = "filelock", specifier = ">=4.2.1" },
     { name = "grapheme" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "jinja2", specifier = ">=3.1" },
