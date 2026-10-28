@@ -17,10 +17,11 @@ dictionary PDF or page images
 
 ## Demo
 
-[![Watch the MUDIDI demo: scanned dictionary pages become structured MDF records](docs/assets/demo-poster.jpg)](https://naarm-nlp.github.io/mudidi/#demo)
+https://github.com/user-attachments/assets/309ccbed-5844-4bcd-8d21-695122cce887
 
-**[Watch the 90-second demo](https://naarm-nlp.github.io/mudidi/#demo)** —
-from uploading a scanned dictionary to configuring the digitization pipeline.
+The 90-second walkthrough goes from uploading a scanned dictionary to reviewing
+MDF output. It is also on the
+**[documentation site](https://naarm-nlp.github.io/mudidi/#demo)**.
 
 ## Installation
 
