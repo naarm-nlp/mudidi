@@ -2112,6 +2112,38 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
     )
 
 
+
+def test_new_run_accepts_partial_dictionary_profile(tmp_path: Path) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+
+    response = client.post(
+        "/runs/preview",
+        data={
+            "output_directory": str(tmp_path / "output"),
+            "pipeline": "complete",
+            "stage1_provider": "anthropic",
+            "stage2_provider": "anthropic",
+            "model": "anthropic/claude-sonnet-5",
+            "reasoning": "low",
+            "profile_headword_language": "Chukchi",
+            "profile_headword_script": "Cyrillic",
+            "dictionary_pages": "1",
+        },
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    profile = app.state.job_controller.load_inference_config(
+        run.run_id
+    ).input.dictionary_profile
+    assert profile is not None
+    assert profile.headword is not None
+    assert profile.headword.language == "Chukchi"
+    assert profile.targets == []
+    assert profile.page_layout is None
+
 def test_new_run_form_renders_validation_errors_without_echoing_secret(
     tmp_path: Path,
 ) -> None:

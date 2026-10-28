@@ -1480,11 +1480,9 @@ def create_app(
             "profile_information_types",
         ):
             values = [
-                str(value).strip()
-                for value in submitted.getlist(field_name)
-                if str(value).strip()
+                str(value).strip() for value in submitted.getlist(field_name)
             ]
-            if values:
+            if any(values):
                 payload[field_name] = values
         run_id = f"run-{uuid4().hex[:12]}"
         dictionary_pdfs = [

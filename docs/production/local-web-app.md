@@ -192,9 +192,11 @@ step and can improve extraction accuracy. It asks for:
 - a free-form description of the page arrangement;
 - the information types found in entries.
 
-Leave the whole section blank when you are unsure. If you answer any profile
-question other than the character inventory, complete the profile, including a
-matching script for every target language; the server rejects partial profiles. The profile is guidance, not
+Every profile question is optional. Leave the whole section blank, or provide
+only the context you know. Language and script are paired: when a headword or
+target language is supplied, its script is required; target languages must
+also have matching scripts. Page layout, information types, and character
+inventory can be supplied independently. The profile is guidance, not
 source text, and MUDIDI still checks the scanned page. It does not strictly
 limit discovery to the information types you enter: the model may identify
 additional entry structures and rules visible in the dictionary.

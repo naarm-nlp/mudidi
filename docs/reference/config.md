@@ -44,14 +44,14 @@ input:  # InputConfig; required
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
   dictionary_profile:  # DictionaryProfile | null; default: null
-    headword:  # ProfileLanguage; required
+    headword:  # ProfileLanguage | null; default: null
       language: "value"  # string; required
       script: "value"  # string; required
-    targets:  # list[ProfileLanguage]; required
+    targets:  # list[ProfileLanguage]; optional
       - language: "value"  # string; required
         script: "value"  # string; required
-    page_layout: "value"  # string; required
-    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    page_layout: null  # string | null; default: null
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; optional
     other_information_types: null  # string | null; default: null
   mdf_manual: false  # boolean; default: false
   languages: null  # list[string] | null; default: null
@@ -159,14 +159,14 @@ input:  # InputConfig; required
   ocr_text: null  # path | null; default: null
   dictionary_languages: null  # path | null; default: null
   dictionary_profile:  # DictionaryProfile | null; default: null
-    headword:  # ProfileLanguage; required
+    headword:  # ProfileLanguage | null; default: null
       language: "value"  # string; required
       script: "value"  # string; required
-    targets:  # list[ProfileLanguage]; required
+    targets:  # list[ProfileLanguage]; optional
       - language: "value"  # string; required
         script: "value"  # string; required
-    page_layout: "value"  # string; required
-    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+    page_layout: null  # string | null; default: null
+    information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; optional
     other_information_types: null  # string | null; default: null
   mdf_manual: false  # boolean; default: false
   languages: null  # list[string] | null; default: null
@@ -278,14 +278,14 @@ base:  # BenchmarkRunConfig; required
     ocr_text: null  # path | null; default: null
     dictionary_languages: null  # path | null; default: null
     dictionary_profile:  # DictionaryProfile | null; default: null
-      headword:  # ProfileLanguage; required
+      headword:  # ProfileLanguage | null; default: null
         language: "value"  # string; required
         script: "value"  # string; required
-      targets:  # list[ProfileLanguage]; required
+      targets:  # list[ProfileLanguage]; optional
         - language: "value"  # string; required
           script: "value"  # string; required
-      page_layout: "value"  # string; required
-      information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; required
+      page_layout: null  # string | null; default: null
+      information_types: []  # list[one of "translation", "definition", "gloss", "part_of_speech", "pronunciation", "example", "usage_note", "etymology", "cross_reference", "variant", "grammar", "other"]; optional
       other_information_types: null  # string | null; default: null
     mdf_manual: false  # boolean; default: false
     languages: null  # list[string] | null; default: null

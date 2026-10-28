@@ -832,57 +832,66 @@ class NewRunForm(BaseModel):
         return selected or "auto"
 
     def _dictionary_profile(self) -> DictionaryProfile | None:
-        """Build a profile only when the user answers the optional questionnaire."""
+        """Build a profile from whichever optional answers the user supplied."""
 
+        headword_language = _clean_optional(self.profile_headword_language)
+        headword_script = _clean_optional(self.profile_headword_script)
+        page_layout = _clean_optional(self.profile_page_layout)
+        target_languages = [
+            _clean_optional(language) for language in self.profile_target_languages
+        ]
+        target_scripts = [
+            _clean_optional(script) for script in self.profile_target_scripts
+        ]
         has_any_answer = any(
             (
-                _clean_optional(self.profile_headword_language),
-                _clean_optional(self.profile_headword_script),
-                self.profile_target_languages,
-                self.profile_target_scripts,
-                self.profile_page_layout,
+                headword_language,
+                headword_script,
+                any(target_languages),
+                any(target_scripts),
+                page_layout,
                 self.profile_information_types,
                 _clean_optional(self.profile_other_information_types),
             )
         )
         if not has_any_answer:
             return None
-        if not all(
-            (
-                _clean_optional(self.profile_headword_language),
-                _clean_optional(self.profile_headword_script),
-                self.profile_target_languages,
-                self.profile_target_scripts,
-                self.profile_page_layout,
-                self.profile_information_types,
-            )
-        ):
+
+        if headword_language and not headword_script:
             raise ValueError(
-                "Complete all Dictionary Profile questions, or leave all of them blank"
+                "Headword script is required when headword language is provided"
             )
-        if len(self.profile_target_languages) != len(self.profile_target_scripts):
+        if headword_script and not headword_language:
+            raise ValueError(
+                "Headword language is required when headword script is provided"
+            )
+        if len(target_languages) != len(target_scripts):
             raise ValueError(
                 "Each Dictionary Profile target language must have a matching script"
             )
-        headword_language = _clean_optional(self.profile_headword_language)
-        headword_script = _clean_optional(self.profile_headword_script)
-        page_layout = self.profile_page_layout
-        assert headword_language is not None
-        assert headword_script is not None
-        assert page_layout is not None
-        targets = [
-            ProfileLanguage(language=language, script=script)
-            for language, script in zip(
-                self.profile_target_languages,
-                self.profile_target_scripts,
-                strict=True,
-            )
-        ]
+        targets: list[ProfileLanguage] = []
+        for language, script in zip(target_languages, target_scripts, strict=True):
+            if language is None and script is None:
+                continue
+            if language and not script:
+                raise ValueError(
+                    "Each Dictionary Profile target language must have a matching script"
+                )
+            if script and not language:
+                raise ValueError(
+                    "Each Dictionary Profile target script must have a matching language"
+                )
+            assert language is not None
+            assert script is not None
+            targets.append(ProfileLanguage(language=language, script=script))
+
+        headword = (
+            ProfileLanguage(language=headword_language, script=headword_script)
+            if headword_language is not None and headword_script is not None
+            else None
+        )
         return DictionaryProfile(
-            headword=ProfileLanguage(
-                language=headword_language,
-                script=headword_script,
-            ),
+            headword=headword,
             targets=targets,
             page_layout=page_layout,
             information_types=self.profile_information_types,

@@ -44,18 +44,20 @@ class ProfileLanguage(_StrictModel):
 class DictionaryProfile(_StrictModel):
     """Optional user answers describing dictionary language and structure."""
 
-    headword: ProfileLanguage
-    targets: list[ProfileLanguage] = Field(min_length=1)
-    page_layout: str = Field(min_length=1, max_length=2000)
-    information_types: list[InformationType] = Field(min_length=1)
+    headword: ProfileLanguage | None = None
+    targets: list[ProfileLanguage] = Field(default_factory=list)
+    page_layout: str | None = Field(default=None, max_length=2000)
+    information_types: list[InformationType] = Field(default_factory=list)
     other_information_types: str | None = Field(default=None, max_length=1000)
 
     @field_validator("page_layout")
     @classmethod
-    def strip_page_layout(cls, value: str) -> str:
+    def strip_page_layout(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         value = value.strip()
         if not value:
-            raise ValueError("must not be blank")
+            return None
         return value
 
     @field_validator("other_information_types")
@@ -82,17 +84,29 @@ class DictionaryProfile(_StrictModel):
     def pass1_config_hint(self) -> str:
         """Return compact structural context for parse-rule discovery."""
 
-        targets = ", ".join(f"{item.language} ({item.script})" for item in self.targets)
-        other = (
-            f"\n- other entry information: {self.other_information_types}"
-            if self.other_information_types
-            else ""
-        )
-        return (
-            "Optional DictionaryProfile (use as context, verify against the page):\n"
-            f"- headword language/script: {self.headword.language} / {self.headword.script}\n"
-            f"- translation, gloss, or definition languages/scripts: {targets}\n"
-            f"- page arrangement: {self.page_layout}\n"
-            f"- entry information types: {', '.join(self.information_types)}"
-            f"{other}"
-        )
+        lines = [
+            "Optional DictionaryProfile (use as context, verify against the page):"
+        ]
+        if self.headword is not None:
+            lines.append(
+                f"- headword language/script: {self.headword.language} / "
+                f"{self.headword.script}"
+            )
+        if self.targets:
+            targets = ", ".join(
+                f"{item.language} ({item.script})" for item in self.targets
+            )
+            lines.append(
+                "- translation, gloss, or definition languages/scripts: "
+                f"{targets}"
+            )
+        if self.page_layout:
+            lines.append(f"- page arrangement: {self.page_layout}")
+        if self.information_types:
+            lines.append(
+                "- entry information types: "
+                f"{', '.join(self.information_types)}"
+            )
+        if self.other_information_types:
+            lines.append(f"- other entry information: {self.other_information_types}")
+        return "\n".join(lines)

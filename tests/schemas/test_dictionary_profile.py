@@ -27,14 +27,17 @@ def test_dictionary_profile_formats_pass1_context_from_five_answers() -> None:
     assert "dialect labels" in pass1
 
 
-def test_dictionary_profile_requires_at_least_one_target_and_information_type() -> None:
-    with pytest.raises(ValidationError):
-        DictionaryProfile(
-            headword=ProfileLanguage(language="Na", script="Latin"),
-            targets=[],
-            page_layout="aligned_language_columns",
-            information_types=[],
-        )
+def test_dictionary_profile_allows_missing_optional_context() -> None:
+    profile = DictionaryProfile(
+        headword=ProfileLanguage(language="Na", script="Latin"),
+    )
+
+    pass1 = profile.pass1_config_hint()
+
+    assert "Na / Latin" in pass1
+    assert "page arrangement" not in pass1
+    assert "entry information types" not in pass1
+
 
 
 def test_other_information_types_require_other_selection_and_free_text() -> None:

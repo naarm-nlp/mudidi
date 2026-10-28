@@ -396,6 +396,42 @@ def test_optional_dictionary_profile_maps_five_dashboard_answers(
     assert config.pipeline.stage1_typography is False
 
 
+def test_dictionary_profile_allows_only_headword_language_and_script(
+    tmp_path: Path,
+) -> None:
+    config = _form(
+        tmp_path,
+        profile_headword_language="Chukchi",
+        profile_headword_script="Cyrillic",
+    ).to_inference_config()
+
+    profile = config.input.dictionary_profile
+    assert profile is not None
+    assert profile.headword is not None
+    assert profile.headword.language == "Chukchi"
+    assert profile.targets == []
+    assert profile.page_layout is None
+    assert profile.information_types == []
+
+
+def test_dictionary_profile_requires_headword_script_when_language_is_supplied(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="Headword script is required"):
+        _form(tmp_path, profile_headword_language="Chukchi").to_inference_config()
+
+
+def test_dictionary_profile_requires_target_script_when_language_is_supplied(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(ValueError, match="target language must have a matching script"):
+        _form(
+            tmp_path,
+            profile_target_languages=["Russian"],
+            profile_target_scripts=[""],
+        ).to_inference_config()
+
+
 def test_dictionary_profile_is_optional_and_typography_is_not_a_web_field(
     tmp_path: Path,
 ) -> None:

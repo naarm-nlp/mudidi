@@ -1,5 +1,12 @@
 # Release notes
 
+## Unreleased — Partial Dictionary Profile context
+
+- Dictionary Profile questions are individually optional.
+- Supplying a headword or target language requires its matching script.
+- Page layout, information types, and character inventory can be supplied
+  independently; leaving the rest blank no longer blocks a run.
+
 ## 0.2.0 — Dashboard and extraction redesign
 
 Released October 24, 2026.
