@@ -139,6 +139,16 @@ beyond the uploaded PDF's page count are rejected. Browser-selected files are
 copied into an input bundle owned by the run so review, restart, and resume do
 not depend on the original browser selection.
 
+Each accepted upload is staged in a local server-side draft before the full form
+is validated. After a rejected form submission, the dashboard shows each
+retained filename; select another file to replace it, or use **Remove** to
+discard it. A standard browser still cannot refill a file picker, so the
+retained local copy is used when the form is resubmitted without choosing a
+replacement. The same-tab form
+state restores the draft identifier after a reload. Inactive drafts expire
+after one hour; successfully prepared runs take ownership of their selected
+uploads.
+
 A standard browser cannot disclose an arbitrary absolute folder path to a
 localhost server, so the output directory is a text field. When MUDIDI runs
 natively with `uv`, **Choose folder…** beside the field opens the operating

@@ -435,6 +435,7 @@ def create_app(
     )
     app.state.job_controller.reconcile_startup()
     app.state.inputs.reconcile({run.run_id for run in app.state.run_store.list_runs()})
+    app.state.inputs.reconcile_expired_drafts()
     allowed_hosts = ["127.0.0.1", "localhost", "testserver"]
     if container_mode:
         allowed_hosts.extend(
@@ -505,6 +506,8 @@ def create_app(
         *,
         preset_id: str = "",
         validation_errors: list[dict[str, str]] | None = None,
+        upload_draft_id: str | None = None,
+        draft_uploads: Mapping[str, str] | None = None,
     ) -> dict[str, object]:
         """Build the dashboard context for initial and rejected submissions."""
 
@@ -542,6 +545,7 @@ def create_app(
                 selected_preset,
                 presets_root=app.state.inputs.presets_root,
             )
+        draft_uploads = dict(draft_uploads or {})
         errors = validation_errors or []
         return {
             "request": request,
@@ -550,6 +554,8 @@ def create_app(
             "selected_preset": selected_preset,
             "preset_state": preset_state,
             "preset_assets": preset_assets,
+            "upload_draft_id": upload_draft_id or app.state.inputs.new_draft_id(),
+            "draft_uploads": draft_uploads,
             "credential_statuses": credential_statuses,
             "subscription_statuses": subscription_statuses,
             "credential_ready_count": sum(
@@ -569,12 +575,49 @@ def create_app(
     async def home(request: Request) -> HTMLResponse:
         """Render the local production-inference workspace."""
 
+        app.state.inputs.reconcile_expired_drafts()
         preset_id = request.query_params.get("preset", "").strip()
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="home.html",
             context=home_context(request, preset_id=preset_id),
         )
+
+    @app.get("/runs/drafts/{draft_id}")
+    def upload_draft_status(draft_id: str) -> dict[str, object]:
+        """Return retained upload labels without exposing draft file contents."""
+
+        app.state.inputs.reconcile_expired_drafts()
+        try:
+            state = app.state.inputs.load_draft_state(draft_id)
+        except ValueError:
+            state = None
+        if state is None:
+            return {"active": False, "uploads": {}}
+        raw_uploads = state.get("uploads")
+        uploads: dict[str, str] = {}
+        if isinstance(raw_uploads, dict):
+            for role, filename in raw_uploads.items():
+                if role not in {
+                    "pages",
+                    "mdf_guide",
+                    "stage1_instruction",
+                    "stage2_instruction",
+                } or not isinstance(filename, str):
+                    continue
+                try:
+                    path = app.state.inputs.draft_asset_path(
+                        draft_id,
+                        role,
+                        filename,
+                    )
+                except ValueError:
+                    continue
+                if path is not None:
+                    uploads[role] = path.name
+        state["uploads"] = uploads
+        app.state.inputs.save_draft_state(draft_id, state)
+        return {"active": True, "uploads": uploads}
 
     @app.get("/healthz")
     async def health() -> dict[str, str | int]:
@@ -1446,11 +1489,11 @@ def create_app(
             "stage2_instruction_keep_existing",
         }
         client_only_fields = {
-            # Browser-only Keep/Replace radio for a preset's saved attachment;
-            # process_instruction_stage() derives keep_existing itself and
-            # NewRunForm has no such field (extra="forbid").
+            # Browser-only preset choices are not fields in NewRunForm.
             "stage1_instruction_kept_choice",
             "stage2_instruction_kept_choice",
+            "upload_draft_id",
+            "clear_uploads",
         }
         payload = {
             key: value
@@ -1484,7 +1527,60 @@ def create_app(
             ]
             if any(values):
                 payload[field_name] = values
+        raw_draft_id = str(submitted.get("upload_draft_id", "")).strip()
+        try:
+            app.state.inputs.validate_draft_id(raw_draft_id)
+            draft_id = raw_draft_id
+        except ValueError:
+            draft_id = app.state.inputs.new_draft_id()
+        app.state.inputs.reconcile_expired_drafts()
+        try:
+            draft_state = app.state.inputs.load_draft_state(draft_id)
+        except ValueError:
+            draft_id = app.state.inputs.new_draft_id()
+            draft_state = None
+        if draft_state is None:
+            draft_state = {"uploads": {}}
+        raw_draft_uploads = draft_state.get("uploads")
+        allowed_draft_roles = {
+            "pages",
+            "mdf_guide",
+            "stage1_instruction",
+            "stage2_instruction",
+        }
+        draft_uploads = (
+            {
+                role: filename
+                for role, filename in raw_draft_uploads.items()
+                if role in allowed_draft_roles and isinstance(filename, str)
+            }
+            if isinstance(raw_draft_uploads, dict)
+            else {}
+        )
+        clear_uploads = {
+            role.strip()
+            for role in str(submitted.get("clear_uploads", "")).split(",")
+            if role.strip() in allowed_draft_roles
+        }
+        for role in clear_uploads.intersection(draft_uploads):
+            app.state.inputs.remove_draft_asset(draft_id, role)
+            draft_uploads.pop(role, None)
+        draft_state["uploads"] = draft_uploads
+        app.state.inputs.save_draft_state(draft_id, draft_state)
+
+        def remember_draft_upload(role: str, path: Path) -> None:
+            draft_uploads[role] = path.name
+            draft_state["uploads"] = draft_uploads
+            app.state.inputs.save_draft_state(draft_id, draft_state)
+
+        def retained_draft_upload(role: str) -> Path | None:
+            filename = draft_uploads.get(role)
+            if filename is None:
+                return None
+            return app.state.inputs.draft_asset_path(draft_id, role, filename)
+
         run_id = f"run-{uuid4().hex[:12]}"
+        draft_overlay_roles: set[str] = set()
         dictionary_pdfs = [
             value
             for value in submitted.getlist("dictionary_pdf")
@@ -1535,6 +1631,7 @@ def create_app(
             pages_field = f"{stage}_instruction_pdf_pages"
             keep_field = f"{stage}_instruction_keep_existing"
             guide_field = f"{stage}_guides"
+            draft_role = f"{stage}_instruction"
             source_raw, _source_submitted = instruction_scalar(
                 source_field,
                 default="typed",
@@ -1687,23 +1784,65 @@ def create_app(
             if len(files) > 1:
                 raise FormFieldError(file_field, "Upload exactly one instruction file.")
             if files:
+                staging_error = staging_errors.get(draft_role)
+                if staging_error is not None:
+                    if isinstance(staging_error, InstructionMaterializationError):
+                        error_field = (
+                            pages_field
+                            if staging_error.category == "pages"
+                            else file_field
+                        )
+                    else:
+                        error_field = file_field
+                    raise FormFieldError(error_field, str(staging_error))
                 try:
-                    payload[
-                        guide_field
-                    ] = await app.state.inputs.materialize_instruction_upload(
-                        run_id,
+                    path = retained_draft_upload(draft_role)
+                    if path is None:
+                        path = await app.state.inputs.materialize_instruction_upload(
+                            draft_id,
+                            stage,
+                            files[0],
+                            page_spec=None,
+                            stage2_scope="both" if stage == "stage2" else None,
+                            replace=True,
+                        )
+                        remember_draft_upload(draft_role, path)
+                    path = app.state.inputs.refresh_managed_instruction(
+                        draft_id,
                         stage,
-                        files[0],
+                        path,
                         page_spec=page_spec,
                         stage2_scope=scope,
-                        replace=preset_config is not None,
                     )
+                    draft_overlay_roles.add(draft_role)
+                    payload[guide_field] = path
                 except InstructionMaterializationError as exc:
                     error_field = pages_field if exc.category == "pages" else file_field
                     raise FormFieldError(error_field, str(exc)) from exc
                 except ValueError as exc:
                     raise FormFieldError(file_field, str(exc)) from exc
                 return
+            retained = retained_draft_upload(draft_role)
+            if retained is not None:
+                try:
+                    payload[guide_field] = app.state.inputs.refresh_managed_instruction(
+                        draft_id,
+                        stage,
+                        retained,
+                        page_spec=page_spec,
+                        stage2_scope=scope,
+                    )
+                except InstructionMaterializationError as exc:
+                    error_field = pages_field if exc.category == "pages" else file_field
+                    raise FormFieldError(error_field, str(exc)) from exc
+                except ValueError as exc:
+                    raise FormFieldError(file_field, str(exc)) from exc
+                draft_overlay_roles.add(draft_role)
+                return
+            if draft_role in draft_uploads:
+                draft_uploads.pop(draft_role, None)
+                draft_state["uploads"] = draft_uploads
+                app.state.inputs.save_draft_state(draft_id, draft_state)
             if keep_existing and managed_inherited_file():
                 effective_page_spec = (
                     page_spec if page_was_submitted else inherited_page_spec
@@ -1727,6 +1866,69 @@ def create_app(
                 file_field,
                 "Upload exactly one instruction file, or explicitly keep the saved file.",
             )
+
+        staging_errors: dict[str, ValueError] = {}
+        if len(dictionary_pdfs) > 1:
+            staging_errors["pages"] = FormFieldError(
+                "pages",
+                "Upload exactly one dictionary PDF.",
+            )
+        elif dictionary_pdfs:
+            filename = str(getattr(dictionary_pdfs[0], "filename", ""))
+            if Path(filename).suffix.lower() != ".pdf":
+                staging_errors["pages"] = FormFieldError(
+                    "pages",
+                    "Upload one PDF dictionary file.",
+                )
+            else:
+                try:
+                    path = await app.state.inputs.materialize_pages(
+                        draft_id,
+                        dictionary_pdfs,
+                        replace=True,
+                    )
+                    remember_draft_upload("pages", path)
+                except ValueError as exc:
+                    staging_errors["pages"] = exc
+
+        guide_uploads = uploaded("existing_mdf_guide_file")
+        if len(guide_uploads) > 1:
+            staging_errors["mdf_guide"] = FormFieldError(
+                "existing_mdf_guide_file",
+                "Select exactly one existing MDF parsing guide.",
+            )
+        elif guide_uploads:
+            try:
+                path = await app.state.inputs.materialize_mdf_guide(
+                    draft_id,
+                    guide_uploads[0],
+                    replace=True,
+                )
+                remember_draft_upload("mdf_guide", path)
+            except ValueError as exc:
+                staging_errors["mdf_guide"] = exc
+
+        for stage in ("stage1", "stage2"):
+            role = f"{stage}_instruction"
+            files = uploaded(f"{stage}_instruction_file")
+            if len(files) > 1:
+                staging_errors[role] = FormFieldError(
+                    f"{stage}_instruction_file",
+                    "Upload exactly one instruction file.",
+                )
+            elif files:
+                try:
+                    path = await app.state.inputs.materialize_instruction_upload(
+                        draft_id,
+                        stage,
+                        files[0],
+                        page_spec=None,
+                        stage2_scope="both" if stage == "stage2" else None,
+                        replace=True,
+                    )
+                    remember_draft_upload(role, path)
+                except ValueError as exc:
+                    staging_errors[role] = exc
 
         try:
             preset_config = None
@@ -1757,21 +1959,32 @@ def create_app(
                 raise ValueError("select dictionary files in the browser")
             if retired_page_uploads:
                 raise FormFieldError("pages", "Upload one PDF dictionary file.")
+            if "pages" in staging_errors:
+                raise staging_errors["pages"]
             if len(dictionary_pdfs) > 1:
                 raise FormFieldError("pages", "Upload exactly one dictionary PDF.")
+            retained_pages = retained_draft_upload("pages")
             if dictionary_pdfs:
                 filename = str(getattr(dictionary_pdfs[0], "filename", ""))
                 if Path(filename).suffix.lower() != ".pdf":
-                    raise FormFieldError("pages", "Upload one PDF dictionary file.")
-                payload["pages"] = await app.state.inputs.materialize_pages(
-                    run_id,
-                    dictionary_pdfs,
-                    replace=preset_config is not None,
-                )
+                    raise FormFieldError("pages", "Upload one dictionary PDF file.")
+                path = retained_pages
+                if path is None:
+                    path = await app.state.inputs.materialize_pages(
+                        draft_id,
+                        dictionary_pdfs,
+                        replace=True,
+                    )
+                    remember_draft_upload("pages", path)
+                draft_overlay_roles.add("pages")
+                payload["pages"] = path
+            elif retained_pages is not None:
+                draft_overlay_roles.add("pages")
+                payload["pages"] = retained_pages
             elif preset_config is not None:
                 payload["pages"] = preset_config.input.pages
             else:
-                raise FormFieldError("pages", "Upload one PDF dictionary file.")
+                raise FormFieldError("pages", "Upload one dictionary PDF file.")
 
             pipeline_value = str(payload.get("pipeline", "complete"))
             runs_stage1 = pipeline_value in {"complete", "transcription"}
@@ -1794,9 +2007,14 @@ def create_app(
             guide_files = (
                 [] if guide_source == "infer" else uploaded("existing_mdf_guide_file")
             )
+            retained_guide = (
+                None if guide_source == "infer" else retained_draft_upload("mdf_guide")
+            )
             if len(guide_files) > 1:
                 raise ValueError("select exactly one existing MDF parsing guide")
-            if guide_files and not runs_stage2:
+            if guide_files and "mdf_guide" in staging_errors:
+                raise staging_errors["mdf_guide"]
+            if (guide_files or retained_guide is not None) and not runs_stage2:
                 raise ValueError(
                     "an MDF parsing guide requires an MDF parsing pipeline"
                 )
@@ -1806,13 +2024,19 @@ def create_app(
             if guide_source == "infer":
                 pass
             elif guide_files:
-                payload[
-                    "parse_rules_file"
-                ] = await app.state.inputs.materialize_mdf_guide(
-                    run_id,
-                    guide_files[0],
-                    replace=preset_config is not None,
-                )
+                path = retained_guide
+                if path is None:
+                    path = await app.state.inputs.materialize_mdf_guide(
+                        draft_id,
+                        guide_files[0],
+                        replace=True,
+                    )
+                    remember_draft_upload("mdf_guide", path)
+                draft_overlay_roles.add("mdf_guide")
+                payload["parse_rules_file"] = path
+            elif retained_guide is not None:
+                draft_overlay_roles.add("mdf_guide")
+                payload["parse_rules_file"] = retained_guide
             elif preset_config is not None and runs_stage2:
                 payload["parse_rules_file"] = preset_config.pipeline.parse_rules_file
             if (
@@ -1928,9 +2152,33 @@ def create_app(
                                 f"Select a model currently available from the "
                                 f"{provider.value} subscription.",
                             )
+            if draft_overlay_roles:
+                app.state.inputs.copy_draft_assets(
+                    draft_id,
+                    run_id,
+                    draft_overlay_roles,
+                )
+                config = rebase_managed_config(
+                    config,
+                    source=app.state.inputs.bundle(draft_id),
+                    destination=app.state.inputs.bundle(run_id),
+                )
+                validate_config_paths(config)
         except (ValidationError, ValueError) as exc:
             app.state.inputs.discard(run_id)
             validation_errors = _validation_errors(exc)
+            visible_uploads: dict[str, str] = {}
+            for role, filename in draft_uploads.items():
+                try:
+                    path = app.state.inputs.draft_asset_path(
+                        draft_id,
+                        role,
+                        filename,
+                    )
+                except ValueError:
+                    continue
+                if path is not None:
+                    visible_uploads[role] = path.name
             return _TEMPLATES.TemplateResponse(
                 request=request,
                 name="home.html",
@@ -1938,6 +2186,8 @@ def create_app(
                     request,
                     preset_id=preset_id,
                     validation_errors=validation_errors,
+                    upload_draft_id=draft_id,
+                    draft_uploads=visible_uploads,
                 ),
                 status_code=422,
             )
@@ -1950,6 +2200,7 @@ def create_app(
         except Exception:
             app.state.inputs.discard(run_id)
             raise
+        app.state.inputs.discard_draft(draft_id)
         return _TEMPLATES.TemplateResponse(
             request=request,
             name="review.html",

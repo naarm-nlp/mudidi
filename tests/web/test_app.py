@@ -2328,6 +2328,178 @@ def test_new_run_accepts_uploaded_dictionary_pdf_into_managed_input(
     assert config.input.pages.is_file()
 
 
+def test_new_run_reuses_retained_dictionary_upload_after_validation_error(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    home = client.get("/")
+    draft_match = re.search(
+        r'name="upload_draft_id" value="([^"]+)"',
+        home.text,
+    )
+    assert draft_match is not None
+    draft_id = draft_match.group(1)
+    pdf_content = _pdf_bytes(2)
+    form = {
+        "upload_draft_id": draft_id,
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": "transcription",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "dictionary_pages": "3",
+    }
+
+    rejected = client.post(
+        "/runs/preview",
+        data=form,
+        files={"dictionary_pdf": ("dictionary.pdf", pdf_content, "application/pdf")},
+    )
+
+    assert rejected.status_code == 422
+    assert "Retained upload:" in rejected.text
+    assert "dictionary.pdf" in rejected.text
+    status = client.get(f"/runs/drafts/{draft_id}")
+    assert status.json() == {"active": True, "uploads": {"pages": "dictionary.pdf"}}
+    retained_path = app.state.inputs.draft_asset_path(
+        draft_id,
+        "pages",
+        "dictionary.pdf",
+    )
+    assert retained_path is not None and retained_path.read_bytes() == pdf_content
+
+    retried = client.post(
+        "/runs/preview",
+        data={**form, "dictionary_pages": "1"},
+    )
+
+    assert retried.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.input.pages is not None
+    assert config.input.pages.read_bytes() == pdf_content
+    assert (
+        config.input.pages.parent.parent
+        == (tmp_path / "app-data" / "runs" / run.run_id / "inputs").resolve()
+    )
+    assert client.get(f"/runs/drafts/{draft_id}").json() == {
+        "active": False,
+        "uploads": {},
+    }
+
+
+def test_new_run_remove_control_discards_retained_dictionary_upload(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    home = client.get("/")
+    draft_match = re.search(
+        r'name="upload_draft_id" value="([^"]+)"',
+        home.text,
+    )
+    assert draft_match is not None
+    draft_id = draft_match.group(1)
+    form = {
+        "upload_draft_id": draft_id,
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": "transcription",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "dictionary_pages": "99",
+    }
+
+    rejected = client.post(
+        "/runs/preview",
+        data=form,
+        files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(2), "application/pdf")},
+    )
+    assert rejected.status_code == 422
+
+    removed = client.post(
+        "/runs/preview",
+        data={**form, "clear_uploads": "pages"},
+    )
+
+    assert removed.status_code == 422
+    assert "dictionary.pdf" not in removed.text
+    assert (
+        app.state.inputs.draft_asset_path(
+            draft_id,
+            "pages",
+            "dictionary.pdf",
+        )
+        is None
+    )
+    assert client.get(f"/runs/drafts/{draft_id}").json() == {
+        "active": True,
+        "uploads": {},
+    }
+
+
+def test_instruction_upload_is_retained_when_dictionary_validation_fails(
+    tmp_path: Path,
+) -> None:
+    app = create_app(data_dir=tmp_path / "app-data")
+    client = TestClient(app)
+    home = client.get("/")
+    draft_match = re.search(
+        r'name="upload_draft_id" value="([^"]+)"',
+        home.text,
+    )
+    assert draft_match is not None
+    draft_id = draft_match.group(1)
+    form = {
+        "upload_draft_id": draft_id,
+        "output_directory": str(tmp_path / "output"),
+        "pipeline": "transcription",
+        "stage1_provider": "anthropic",
+        "stage2_provider": "anthropic",
+        "model": "anthropic/claude-sonnet-5",
+        "reasoning": "low",
+        "dictionary_pages": "99",
+        "stage1_instruction_source": "file",
+    }
+
+    rejected = client.post(
+        "/runs/preview",
+        data=form,
+        files=[
+            ("dictionary_pdf", ("dictionary.pdf", _pdf_bytes(2), "application/pdf")),
+            (
+                "stage1_instruction_file",
+                ("stage1.txt", b"Keep entries faithful.", "text/plain"),
+            ),
+        ],
+    )
+
+    assert rejected.status_code == 422
+    assert client.get(f"/runs/drafts/{draft_id}").json() == {
+        "active": True,
+        "uploads": {
+            "pages": "dictionary.pdf",
+            "stage1_instruction": "stage1.txt",
+        },
+    }
+
+    retried = client.post(
+        "/runs/preview",
+        data={**form, "dictionary_pages": "1"},
+    )
+
+    assert retried.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.pipeline.stage1_guides is not None
+    assert config.pipeline.stage1_guides.read_text(encoding="utf-8") == (
+        "Keep entries faithful."
+    )
+
+
 def test_upload_rejects_unsafe_filename_without_creating_run(tmp_path: Path) -> None:
     app = create_app(data_dir=tmp_path / "app-data")
     client = TestClient(app)

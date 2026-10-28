@@ -253,6 +253,76 @@ def test_instruction_replacement_rolls_back_after_validation_failure(
     assert read_managed_instruction_metadata(path) == metadata_before
     assert not list(path.parent.parent.glob(".stage1.*"))
 
+def test_page_file_replacement_keeps_original_after_invalid_pdf(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    original_bytes = _pdf_bytes(2)
+    original = UploadFile(filename="dictionary.pdf", file=BytesIO(original_bytes))
+    path = asyncio.run(materializer.materialize_pages("run-replace-pages", [original]))
+
+    invalid = UploadFile(filename="replacement.pdf", file=BytesIO(b"not a PDF"))
+    with pytest.raises(ValueError, match="signature is invalid"):
+        asyncio.run(
+            materializer.materialize_pages(
+                "run-replace-pages",
+                [invalid],
+                replace=True,
+            )
+        )
+
+    assert path.read_bytes() == original_bytes
+
+
+def test_expired_upload_drafts_are_removed_without_touching_recent_drafts(
+    tmp_path: Path,
+) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path)
+    expired_id = materializer.new_draft_id()
+    recent_id = materializer.new_draft_id()
+    expired_upload = UploadFile(filename="expired.pdf", file=BytesIO(_pdf_bytes(1)))
+    recent_upload = UploadFile(filename="recent.pdf", file=BytesIO(_pdf_bytes(1)))
+    expired_path = asyncio.run(
+        materializer.materialize_pages(expired_id, [expired_upload])
+    )
+    recent_path = asyncio.run(
+        materializer.materialize_pages(recent_id, [recent_upload])
+    )
+    materializer.save_draft_state(expired_id, {"uploads": {"pages": expired_path.name}})
+    materializer.save_draft_state(recent_id, {"uploads": {"pages": recent_path.name}})
+    expired_state = materializer.runs_root / expired_id / ".draft.json"
+    old_time = time.time() - 120
+    os.utime(expired_state, (old_time, old_time))
+    os.utime(materializer.runs_root / recent_id, (old_time, old_time))
+    assert materializer.reconcile(set(), grace_seconds=60) == set()
+
+    removed = materializer.reconcile_expired_drafts(grace_seconds=60)
+
+    assert removed == {expired_id}
+    assert materializer.load_draft_state(expired_id) is None
+    assert recent_path.is_file()
+
+
+def test_reconcile_does_not_follow_symlinked_draft_directories(tmp_path: Path) -> None:
+    materializer = InputMaterializer(data_dir=tmp_path / "data")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    partial = outside / "unfinished.part"
+    partial.write_text("keep", encoding="utf-8")
+    materializer.runs_root.mkdir(parents=True)
+    draft_id = materializer.new_draft_id()
+    (materializer.runs_root / draft_id).symlink_to(outside, target_is_directory=True)
+
+    assert materializer.reconcile(set(), grace_seconds=0) == set()
+    assert partial.is_file()
+    assert materializer.reconcile_expired_drafts(grace_seconds=0) == set()
+    root_materializer = InputMaterializer(data_dir=tmp_path / "rooted-data")
+    root_materializer.data_dir.mkdir()
+    root_materializer.runs_root.symlink_to(outside, target_is_directory=True)
+    assert root_materializer.reconcile(set(), grace_seconds=0) == set()
+    assert root_materializer.reconcile_expired_drafts(grace_seconds=0) == set()
+    assert partial.is_file()
+
 
 def test_instruction_uploads_enforce_aggregate_limit_across_stages(
     tmp_path: Path,

@@ -2,6 +2,133 @@
 
 const runForm = document.querySelector("form.run-form");
 const runFormStorageKey = "mudidi:new-run-form:v1";
+
+const draftUploadRoles = [
+  "pages",
+  "mdf_guide",
+  "stage1_instruction",
+  "stage2_instruction",
+];
+const draftIdField = runForm?.querySelector?.('[name="upload_draft_id"]');
+const clearDraftUploadsField = runForm?.querySelector?.('[name="clear_uploads"]');
+const pendingDraftUploadRemovals = () => new Set(
+  (clearDraftUploadsField?.value || "")
+    .split(",")
+    .map((role) => role.trim())
+    .filter(Boolean),
+);
+const retainedUploadName = (role) => runForm
+  ?.querySelector?.(`[data-retained-upload="${role}"] [data-retained-upload-name]`)
+  ?.textContent.trim() || "";
+const setRetainedUpload = (role, filename) => {
+  const status = runForm?.querySelector?.(`[data-retained-upload="${role}"]`);
+  if (!status) return;
+  const name = status.querySelector("[data-retained-upload-name]");
+  if (name) name.textContent = filename || "";
+  const visible = Boolean(filename) && !pendingDraftUploadRemovals().has(role);
+  status.hidden = !visible;
+
+  if (role === "pages") {
+    const input = runForm.querySelector("#dictionary-pdf");
+    const fileStatus = runForm.querySelector("[data-dictionary-file-status]");
+    const removalPending = pendingDraftUploadRemovals().has(role);
+    if (input) {
+      input.required = runForm.dataset.hasPreset !== "true" && !visible && !removalPending;
+    }
+    if (fileStatus && !input?.files?.length) {
+      fileStatus.textContent = visible
+        ? `Retained: ${filename}`
+        : fileStatus.dataset.emptyLabel;
+    }
+  } else if (role === "mdf_guide") {
+    const input = runForm.querySelector("[data-mdf-guide-file-input]");
+    const fileStatus = runForm.querySelector("[data-mdf-guide-file-status]");
+    if (fileStatus && !input?.files?.length) {
+      fileStatus.textContent = visible
+        ? `Retained: ${filename}`
+        : fileStatus.dataset.emptyLabel;
+    }
+  } else {
+    const stage = role.replace("_instruction", "");
+    const panel = runForm.querySelector(
+      `[data-instruction-source-panel][data-instruction-stage="${stage}"]`,
+    );
+    if (panel) synchronizeInstructionPanel(panel);
+  }
+};
+const updatePendingDraftRemoval = (role, remove) => {
+  if (!clearDraftUploadsField) return;
+  const roles = pendingDraftUploadRemovals();
+  if (remove) roles.add(role);
+  else roles.delete(role);
+  clearDraftUploadsField.value = [...roles].join(",");
+};
+const hydrateUploadDraft = async () => {
+  if (!runForm || !draftIdField) return;
+  const issuedDraftId = draftIdField.dataset.issuedUploadDraftId || draftIdField.value;
+  const dictionaryInput = runForm.querySelector("#dictionary-pdf");
+  if (dictionaryInput) dictionaryInput.required = false;
+  runForm.querySelectorAll("[data-instruction-file-input]").forEach((input) => {
+    input.required = false;
+  });
+  try {
+    const response = await window.fetch(
+      `/runs/drafts/${encodeURIComponent(draftIdField.value)}`,
+      {headers: {"Accept": "application/json"}},
+    );
+    if (!response.ok) return;
+    const payload = await response.json();
+    if (payload.active !== true || !payload.uploads || typeof payload.uploads !== "object") {
+      draftUploadRoles.forEach((role) => {
+        updatePendingDraftRemoval(role, false);
+        setRetainedUpload(role, "");
+      });
+      synchronizeInstructionPanels();
+      if (draftIdField.value !== issuedDraftId) {
+        draftIdField.value = issuedDraftId;
+        persistRunForm();
+      }
+      return;
+    }
+    draftUploadRoles.forEach((role) => {
+      const filename = typeof payload.uploads[role] === "string"
+        ? payload.uploads[role]
+        : "";
+      if (!filename && pendingDraftUploadRemovals().has(role)) {
+        updatePendingDraftRemoval(role, false);
+      }
+      setRetainedUpload(role, filename);
+      if (
+        filename
+        && !runForm.dataset?.restoredState
+        && role.endsWith("_instruction")
+      ) {
+        const stage = role.replace("_instruction", "");
+        const panel = runForm.querySelector(
+          `[data-instruction-source-panel][data-instruction-stage="${stage}"]`,
+        );
+        const fileChoice = panel?.querySelector(
+          '[data-instruction-source-radio][value="file"]',
+        );
+        if (fileChoice) {
+          fileChoice.checked = true;
+          panel.dataset.instructionActiveSource = "file";
+        }
+      }
+    });
+    if (payload.uploads.mdf_guide && !runForm.dataset?.restoredState) {
+      const existingChoice = runForm.querySelector(
+        '[data-mdf-guide-source][value="existing"]',
+      );
+      if (existingChoice) existingChoice.checked = true;
+      existingChoice?.dispatchEvent(new Event("change", {bubbles: true}));
+    }
+    synchronizeInstructionPanels();
+    if (!runForm.dataset.restoredState) persistRunForm();
+  } catch (_error) {
+    // A transient local status request must not block form editing.
+  }
+};
 const presetStateElement = document.querySelector("#preset-form-state");
 const wizard = document.querySelector("[data-new-run-wizard]");
 const wizardPanels = wizard ? [...wizard.querySelectorAll("[data-wizard-panel]")] : [];
@@ -219,6 +346,7 @@ const restoreRunForm = () => {
     return;
   }
   if (!state || typeof state !== "object") return;
+  if (runForm.dataset) runForm.dataset.restoredState = "true";
 
   const targetCount = Math.max(
     state.profile_target_languages?.length || 0,
@@ -250,11 +378,23 @@ const restoreRunForm = () => {
       }
     });
   });
+  const presetField = [...runForm.elements].find((field) => field.name === "preset_id");
+  if (runForm.dataset) {
+    runForm.dataset.hasPreset = String(Boolean(presetField?.value.trim()));
+  }
 };
 
 document.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
+
+  const draftRole = button.dataset.removeDraftUpload;
+  if (draftRole) {
+    updatePendingDraftRemoval(draftRole, true);
+    setRetainedUpload(draftRole, retainedUploadName(draftRole));
+    persistRunForm();
+    return;
+  }
 
   const kind = button.dataset.add;
   if (kind) {
@@ -304,9 +444,16 @@ if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
     }
     dictionaryFileInput.setCustomValidity("");
     dictionaryDropzone.classList.remove("is-drop-invalid");
+    if (files.length) updatePendingDraftRemoval("pages", false);
+    const retained = dictionaryDropzone.querySelector(
+      '[data-retained-upload="pages"]',
+    );
+    if (retained) retained.hidden = Boolean(files.length) || !retainedUploadName("pages");
     dictionaryFileStatus.textContent = files.length
       ? `Selected: ${files[0].name}`
-      : dictionaryFileStatus.dataset.emptyLabel;
+      : retainedUploadName("pages")
+        ? `Retained: ${retainedUploadName("pages")}`
+        : dictionaryFileStatus.dataset.emptyLabel;
     clearWizardFieldInvalid(dictionaryFileInput);
   };
 
@@ -344,19 +491,25 @@ if (dictionaryDropzone && dictionaryFileInput && dictionaryFileStatus) {
   });
 }
 
-const bindSingleFileStatus = (input, status) => {
+const bindSingleFileStatus = (input, status, role) => {
   if (!input || !status) return;
   input.addEventListener("change", () => {
     const file = input.files[0];
+    if (file) updatePendingDraftRemoval(role, false);
+    const retained = runForm?.querySelector?.(`[data-retained-upload="${role}"]`);
+    if (retained) retained.hidden = Boolean(file) || !retainedUploadName(role);
     status.textContent = file
       ? `Selected: ${file.name}`
-      : status.dataset.emptyLabel;
+      : retainedUploadName(role)
+        ? `Retained: ${retainedUploadName(role)}`
+        : status.dataset.emptyLabel;
   });
 };
 
 bindSingleFileStatus(
   document.querySelector("[data-mdf-guide-file-input]"),
   document.querySelector("[data-mdf-guide-file-status]"),
+  "mdf_guide",
 );
 
 const mdfGuideSourceChoices = [...document.querySelectorAll("[data-mdf-guide-source]")];
@@ -381,7 +534,11 @@ const instructionPanels = [...document.querySelectorAll("[data-instruction-sourc
 
 const instructionPanelHasKeptPreset = (panel) => panel.dataset.instructionHasPreset === "true";
 const instructionPanelPresetIsPdf = (panel) => panel.dataset.instructionPresetKind === "pdf";
-
+const instructionPanelDraftRole = (panel) => `${panel.dataset.instructionStage}_instruction`;
+const instructionPanelHasDraft = (panel) => {
+  const role = instructionPanelDraftRole(panel);
+  return Boolean(retainedUploadName(role)) && !pendingDraftUploadRemovals().has(role);
+};
 const instructionPanelRefs = (panel) => ({
   sourceRadios: [...panel.querySelectorAll("[data-instruction-source-radio]")],
   typedPanel: panel.querySelector("[data-instruction-typed-panel]"),
@@ -411,27 +568,39 @@ const synchronizeInstructionPanel = (panel) => {
   if (refs.filePanel) refs.filePanel.hidden = !isFile;
   const hasKeptPreset = instructionPanelHasKeptPreset(panel);
   const keptSelected = refs.keptRadios.find((radio) => radio.checked);
-  const isKeeping = hasKeptPreset && keptSelected?.value === "keep";
+  const draftRole = instructionPanelDraftRole(panel);
+  const removalPending = pendingDraftUploadRemovals().has(draftRole);
+  const hasDraft = instructionPanelHasDraft(panel);
+  const isKeeping = hasKeptPreset
+    && !hasDraft
+    && keptSelected?.value === "keep";
   refs.keptRadios.forEach((radio) => {
     radio.disabled = !isFile;
   });
-  if (refs.keptFileContainer) refs.keptFileContainer.hidden = !hasKeptPreset;
+  if (refs.keptFileContainer) refs.keptFileContainer.hidden = !hasKeptPreset || hasDraft;
   if (refs.uploadRow) refs.uploadRow.hidden = isFile && isKeeping;
   const selectedFile = refs.fileInput?.files?.[0] || null;
+  const retainedName = retainedUploadName(instructionPanelDraftRole(panel));
   if (refs.fileInput) {
     refs.fileInput.disabled = !isFile || isKeeping;
-    refs.fileInput.required = isFile && !isKeeping;
+    refs.fileInput.required = isFile && !isKeeping && !hasDraft && !removalPending;
   }
   if (refs.keepExisting) {
     refs.keepExisting.disabled = !isFile;
     refs.keepExisting.value = isFile && isKeeping ? "true" : "false";
   }
   if (refs.fileStatus) {
-    refs.fileStatus.textContent = selectedFile ? `Selected: ${selectedFile.name}` : "No file selected";
+    refs.fileStatus.textContent = selectedFile
+      ? `Selected: ${selectedFile.name}`
+      : hasDraft
+        ? `Retained: ${retainedName}`
+        : "No file selected";
   }
   const currentIsPdf = selectedFile
     ? selectedFile.name.toLowerCase().endsWith(".pdf")
-    : isKeeping && instructionPanelPresetIsPdf(panel);
+    : hasDraft
+      ? retainedName.toLowerCase().endsWith(".pdf")
+      : isKeeping && instructionPanelPresetIsPdf(panel);
   const showPdfPages = isFile && currentIsPdf;
   if (refs.pdfPagesField) refs.pdfPagesField.hidden = !showPdfPages;
   if (refs.pdfPagesInput) refs.pdfPagesInput.disabled = !showPdfPages;
@@ -455,9 +624,13 @@ const wireInstructionPanel = (panel) => {
         synchronizeInstructionPanel(panel);
         return;
       }
+      const draftRole = instructionPanelDraftRole(panel);
+      const hasDraft = instructionPanelHasDraft(panel);
       const clearing = previousMode === "typed"
         ? Boolean(refs.textarea?.value.trim())
-        : Boolean(refs.fileInput?.files?.length) || instructionPanelHasKeptPreset(panel);
+        : Boolean(refs.fileInput?.files?.length)
+          || hasDraft
+          || instructionPanelHasKeptPreset(panel);
       if (clearing) {
         const label = previousMode === "typed" ? "the typed instructions" : "the uploaded instruction file";
         if (!window.confirm(`Switching sources clears ${label}. Continue?`)) {
@@ -469,6 +642,10 @@ const wireInstructionPanel = (panel) => {
         }
         if (previousMode === "typed" && refs.textarea) refs.textarea.value = "";
         if (previousMode === "file" && refs.fileInput) refs.fileInput.value = "";
+        if (previousMode === "file" && hasDraft) {
+          updatePendingDraftRemoval(draftRole, true);
+          setRetainedUpload(draftRole, retainedUploadName(draftRole));
+        }
       }
       panel.dataset.instructionActiveSource = newMode;
       synchronizeInstructionPanel(panel);
@@ -483,7 +660,15 @@ const wireInstructionPanel = (panel) => {
       if (radio.value === "replace") refs.fileInput?.focus();
     });
   });
-  refs.fileInput?.addEventListener("change", () => synchronizeInstructionPanel(panel));
+  refs.fileInput?.addEventListener("change", () => {
+    const draftRole = instructionPanelDraftRole(panel);
+    if (refs.fileInput?.files?.length) {
+      updatePendingDraftRemoval(draftRole, false);
+      const retained = panel.querySelector(`[data-retained-upload="${draftRole}"]`);
+      if (retained) retained.hidden = true;
+    }
+    synchronizeInstructionPanel(panel);
+  });
 };
 
 const otherInformationToggle = document.querySelector("[data-profile-other-toggle]");
@@ -1494,9 +1679,11 @@ function instructionPanelIsSet(panel) {
   const refs = instructionPanelRefs(panel);
   const source = refs.sourceRadios.find((radio) => radio.checked)?.value || "typed";
   if (source === "file") {
+    const hasDraft = instructionPanelHasDraft(panel);
     const keeping = instructionPanelHasKeptPreset(panel)
+      && !hasDraft
       && refs.keptRadios.find((radio) => radio.checked)?.value === "keep";
-    return keeping || Boolean(refs.fileInput?.files?.length);
+    return keeping || hasDraft || Boolean(refs.fileInput?.files?.length);
   }
   return Boolean(refs.textarea?.value.trim());
 }
@@ -2235,3 +2422,5 @@ document.querySelectorAll("[data-choose-output-directory]").forEach((button) => 
     }
   });
 });
+
+hydrateUploadDraft();

@@ -1,28 +1,34 @@
 {% extends "_layout.html" %}
 {% from "_icons.html" import credential_eye %}
-{% macro instruction_source_panel(stage, stage_label, pipeline_stages, asset, errors_by_field) %}
+{% macro instruction_source_panel(stage, stage_label, pipeline_stages, asset, draft_upload, errors_by_field) %}
 {% set source_field = stage ~ '_instruction_source' %}
 {% set file_field = stage ~ '_instruction_file' %}
 {% set pages_field = stage ~ '_instruction_pdf_pages' %}
 {% set keep_field = stage ~ '_instruction_keep_existing' %}
 {% set text_field = stage ~ '_additional_instructions' %}
 {% set kept_choice_field = stage ~ '_instruction_kept_choice' %}
+{% set draft_role = stage ~ '_instruction' %}
 {% set status_id = stage ~ '-instruction-file-status' %}
 {% set has_kept = asset and asset.source_mode == 'file' %}
+{% set has_draft = draft_upload is string and draft_upload %}
 {% set scope_labels = {'pass1': 'Pass 1 only', 'pass2': 'Pass 2 only', 'both': 'Both passes'} %}
 {% set field_error_key = file_field if errors_by_field[file_field] else (pages_field if errors_by_field[pages_field] else '') %}
-<fieldset class="form-field instruction-source-panel{% if field_error_key %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}{% if field_error_key %} data-field-error="{{ field_error_key }}"{% endif %}>
+  <fieldset class="form-field instruction-source-panel{% if field_error_key %} field-invalid{% endif %}" data-instruction-source-panel data-instruction-stage="{{ stage }}" data-stage-control data-pipeline-stages="{{ pipeline_stages }}" data-instruction-has-preset="{{ 'true' if has_kept else 'false' }}"{% if has_kept %} data-instruction-preset-kind="{{ asset.kind }}"{% endif %}{% if field_error_key %} data-field-error="{{ field_error_key }}"{% endif %}>
   <legend>{{ stage_label }} instructions</legend>
   <div class="choice-card-grid instruction-source-choices">
-    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="typed" checked data-instruction-source-radio><span><strong>Type instructions</strong><small>Write instructions directly for this run.</small></span></label>
-    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="file" data-instruction-source-radio><span><strong>Upload instruction file</strong><small>Attach one .txt, .md, or .pdf file instead of typing.</small></span></label>
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="typed"{% if not has_draft %} checked{% endif %} data-instruction-source-radio><span><strong>Type instructions</strong><small>Write instructions directly for this run.</small></span></label>
+    <label class="choice-card"><input type="radio" name="{{ source_field }}" value="file"{% if has_draft %} checked{% endif %} data-instruction-source-radio><span><strong>Upload instruction file</strong><small>Attach one .txt, .md, or .pdf file instead of typing.</small></span></label>
+  </div>
+  <div class="draft-upload-status" data-retained-upload="{{ draft_role }}"{% if not has_draft %} hidden{% endif %}>
+    <span><strong>Retained upload:</strong> <span data-retained-upload-name>{{ draft_upload or '' }}</span></span>
+    <button type="button" data-remove-draft-upload="{{ draft_role }}">Remove</button>
   </div>
   <div class="instruction-source-body" data-instruction-typed-panel>
     <label><span class="field-heading">Typed instructions <button class="info-button" type="button" aria-label="About {{ stage_label }} additional instructions" data-help="Optional instructions appended to the {{ stage_label }} prompt for this run.">i</button></span><textarea name="{{ text_field }}" maxlength="20000" rows="4" placeholder="For example: Mark uncertain characters with square brackets."></textarea></label>
   </div>
   <div class="instruction-source-body instruction-file-panel" data-instruction-file-panel hidden>
     {% if has_kept %}
-    <div class="instruction-kept-file" data-instruction-kept-file>
+    <div class="instruction-kept-file" data-instruction-kept-file{% if has_draft %} hidden{% endif %}>
       <span class="saved-inputs"><strong>Saved file</strong><a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a></span>
       <dl class="instruction-kept-meta">
         <div><dt>Kind</dt><dd>{{ 'PDF' if asset.kind == 'pdf' else 'Text' }}</dd></div>
@@ -43,7 +49,7 @@
         <span>Choose file</span>
         <input class="mdf-guide-file-input" data-instruction-file-input name="{{ file_field }}" type="file" accept=".txt,.md,.pdf" disabled aria-describedby="{{ status_id }}{% if errors_by_field[file_field] %} {{ stage }}-instruction-file-error{% endif %}"{% if errors_by_field[file_field] %} aria-invalid="true"{% endif %}>
       </label>
-      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="No file selected">No file selected</span>
+      <span id="{{ status_id }}" class="mdf-guide-file-status" data-instruction-file-status aria-live="polite" data-empty-label="{% if has_draft %}Retained: {{ draft_upload }}{% else %}No file selected{% endif %}">{% if has_draft %}Retained: {{ draft_upload }}{% else %}No file selected{% endif %}</span>
     </div>
     {% if errors_by_field[file_field] %}<small id="{{ stage }}-instruction-file-error" class="field-error-message">{{ errors_by_field[file_field] }}</small>{% endif %}
     <input type="hidden" name="{{ keep_field }}" value="{{ 'true' if has_kept else 'false' }}" data-instruction-keep-existing disabled>
@@ -108,7 +114,9 @@
         </ol>
 
         <div class="content-grid">
-          <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data">
+          <form class="panel run-form" method="post" action="/runs/preview" enctype="multipart/form-data" data-has-preset="{{ 'true' if selected_preset else 'false' }}">
+            <input type="hidden" name="upload_draft_id" value="{{ upload_draft_id }}" data-issued-upload-draft-id="{{ upload_draft_id }}">
+            <input type="hidden" name="clear_uploads" value="" data-clear-draft-uploads>
             {% if validation_errors %}
             <section class="form-error-summary" role="alert" aria-labelledby="form-error-title">
               <h2 id="form-error-title">Check the highlighted configuration</h2>
@@ -116,8 +124,8 @@
               <ul>{% for error in validation_errors %}<li><strong>{{ error.field }}:</strong> {{ error.message }}</li>{% endfor %}</ul>
             </section>
             {% endif %}
+            <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id if selected_preset else '' }}">
             {% if selected_preset %}
-            <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id }}">
             <div class="checkpoint"><strong>Loaded preset: {{ selected_preset.name }}</strong><p>Its saved local inputs are reused unless you choose replacement files. Review and edit any setting before continuing.</p></div>
             {% endif %}
 
@@ -133,12 +141,16 @@
                   <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
                     <path d="M12 16V4M7 9l5-5 5 5M5 20h14"></path>
                   </svg>
-                  <input class="dictionary-file-input" id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset %} required{% endif %} aria-describedby="dictionary-file-status{% if errors_by_field.pages %} pages-error{% endif %}"{% if errors_by_field.pages %} aria-invalid="true"{% endif %}>
+                  <input class="dictionary-file-input" id="dictionary-pdf" name="dictionary_pdf" type="file" accept=".pdf"{% if not selected_preset and not draft_uploads.get('pages') %} required{% endif %} aria-describedby="dictionary-file-status{% if errors_by_field.pages %} pages-error{% endif %}"{% if errors_by_field.pages %} aria-invalid="true"{% endif %}>
                 </label>
                 <h3>Upload one dictionary PDF <span class="required-marker" aria-hidden="true">*</span></h3>
                 <p>{% if selected_preset %}The saved dictionary PDF will be reused unless you choose a replacement.{% else %}PDF only · copied into this run's local input bundle{% endif %}</p>
                 {% if preset_assets.pages %}<div class="saved-inputs"><strong>Saved files</strong>{% for asset in preset_assets.pages %}<a href="{{ asset.url }}" target="_blank" rel="noopener">{{ asset.name }}</a>{% endfor %}</div>{% endif %}
-                <span id="dictionary-file-status" class="dictionary-file-status" data-dictionary-file-status aria-live="polite" data-empty-label="{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}">{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}</span>
+                <div class="draft-upload-status" data-retained-upload="pages"{% if not draft_uploads.get('pages') %} hidden{% endif %}>
+                  <span><strong>Retained upload:</strong> <span data-retained-upload-name>{{ draft_uploads.get('pages', '') }}</span></span>
+                  <button type="button" data-remove-draft-upload="pages">Remove</button>
+                </div>
+                <span id="dictionary-file-status" class="dictionary-file-status" data-dictionary-file-status aria-live="polite" data-empty-label="{% if selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}">{% if draft_uploads.get('pages') %}Retained: {{ draft_uploads.get('pages') }}{% elif selected_preset %}Using saved PDF unless replaced{% else %}No PDF selected{% endif %}</span>
                 {% if errors_by_field.pages %}<small id="pages-error" class="field-error-message">{{ errors_by_field.pages }}</small>{% endif %}
               </div>
               <div class="form-grid dictionary-page-context-panel">
@@ -252,7 +264,11 @@
                         <span>Choose JSON</span>
                         <input class="mdf-guide-file-input" data-mdf-guide-file-input name="existing_mdf_guide_file" type="file" accept=".json" aria-describedby="mdf-guide-file-status">
                       </label>
-                      <span id="mdf-guide-file-status" class="mdf-guide-file-status" data-mdf-guide-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}">{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}</span>
+                      <span id="mdf-guide-file-status" class="mdf-guide-file-status" data-mdf-guide-file-status aria-live="polite" data-empty-label="{% if preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}">{% if draft_uploads.get('mdf_guide') %}Retained: {{ draft_uploads.get('mdf_guide') }}{% elif preset_assets.mdf_guide %}Using saved guide unless replaced{% else %}No guide selected{% endif %}</span>
+                    </div>
+                    <div class="draft-upload-status" data-retained-upload="mdf_guide"{% if not draft_uploads.get('mdf_guide') %} hidden{% endif %}>
+                      <span><strong>Retained upload:</strong> <span data-retained-upload-name>{{ draft_uploads.get('mdf_guide', '') }}</span></span>
+                      <button type="button" data-remove-draft-upload="mdf_guide">Remove</button>
                     </div>
                     {% if errors_by_field.existing_mdf_guide_file %}<small class="field-error-message">{{ errors_by_field.existing_mdf_guide_file }}</small>{% endif %}
                   </div>
@@ -266,10 +282,10 @@
                 </button>
                 <div id="advanced-stage-instructions" class="advanced-body" data-advanced-body hidden>
                   <section class="form-section" aria-label="Stage 1 instructions" data-stage-control data-pipeline-stages="stage1">
-                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), errors_by_field) }}
+                  {{ instruction_source_panel('stage1', 'Stage 1', 'stage1', preset_assets.get('instructions', {}).get('stage1'), draft_uploads.get('stage1_instruction'), errors_by_field) }}
                   </section>
                   <section class="form-section" aria-label="Stage 2 instructions" data-stage-control data-pipeline-stages="pass1 pass2">
-                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), errors_by_field) }}
+                  {{ instruction_source_panel('stage2', 'Stage 2', 'pass1 pass2', preset_assets.get('instructions', {}).get('stage2'), draft_uploads.get('stage2_instruction'), errors_by_field) }}
                   </section>
                 </div>
               </div>
@@ -520,5 +536,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-21" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-22" defer></script>
 {% endblock %}

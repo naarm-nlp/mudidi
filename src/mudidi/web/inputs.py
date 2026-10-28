@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
+import re
 import shutil
 import time
 import zipfile
@@ -21,6 +22,15 @@ _PAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 _MAX_FILES = 5_000
 _INSTRUCTION_SUFFIXES = {".txt", ".md", ".pdf"}
 _TEXT_CHARS = 20_000
+
+_UPLOAD_DRAFT_ID = re.compile(r"^draft-[0-9a-f]{32}$")
+_DRAFT_STATE_FILE = ".draft.json"
+_DRAFT_ASSET_PATHS = {
+    "pages": Path("pages"),
+    "mdf_guide": Path("mdf_guide"),
+    "stage1_instruction": Path("instructions/stage1"),
+    "stage2_instruction": Path("instructions/stage2"),
+}
 
 
 class InstructionMaterializationError(ValueError):
@@ -52,6 +62,174 @@ class InputMaterializer:
 
         _validate_owner_id(run_id)
         return self.runs_root / run_id / "inputs"
+
+    @staticmethod
+    def new_draft_id() -> str:
+        """Create an opaque, tab-scoped identifier for pending form uploads."""
+
+        return f"draft-{uuid4().hex}"
+
+    @staticmethod
+    def validate_draft_id(draft_id: str) -> None:
+        if not _UPLOAD_DRAFT_ID.fullmatch(draft_id):
+            raise ValueError("upload draft id is invalid")
+
+    def load_draft_state(self, draft_id: str) -> dict[str, Any] | None:
+        """Read safe upload labels and form provenance for a pending draft."""
+
+        self.validate_draft_id(draft_id)
+        run_root = self.runs_root / draft_id
+        if self.runs_root.is_symlink() or run_root.is_symlink():
+            raise ValueError("upload draft directory is not safe")
+        state_path = run_root / _DRAFT_STATE_FILE
+        if not state_path.exists():
+            return None
+        if state_path.is_symlink() or not state_path.is_file():
+            raise ValueError("upload draft state is not safe")
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("upload draft state is unreadable") from exc
+        if not isinstance(state, dict):
+            raise ValueError("upload draft state is invalid")
+        return state
+
+    def save_draft_state(self, draft_id: str, state: dict[str, Any]) -> None:
+        """Atomically persist safe metadata for one pending upload draft."""
+
+        self.validate_draft_id(draft_id)
+        run_root = self.runs_root / draft_id
+        if self.runs_root.is_symlink() or run_root.is_symlink():
+            raise ValueError("upload draft directory is not safe")
+        run_root.mkdir(parents=True, exist_ok=True)
+        state_path = run_root / _DRAFT_STATE_FILE
+        if state_path.is_symlink():
+            raise ValueError("upload draft state is not safe")
+        temporary = run_root / f"{_DRAFT_STATE_FILE}-{uuid4().hex}.part"
+        try:
+            with temporary.open("x", encoding="utf-8") as stream:
+                stream.write(json.dumps(state, sort_keys=True) + "\n")
+            temporary.replace(state_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def draft_asset_path(self, draft_id: str, role: str, filename: str) -> Path | None:
+        """Resolve a draft-owned upload only beneath its fixed role directory."""
+
+        self.validate_draft_id(draft_id)
+        relative_root = _DRAFT_ASSET_PATHS.get(role)
+        if relative_root is None:
+            raise ValueError("upload draft role is invalid")
+        name = _validated_name(filename, allow_relative=False)
+        bundle = self.bundle(draft_id)
+        target = bundle / relative_root / name
+        if any(path.is_symlink() for path in (self.runs_root, bundle, *target.parents)):
+            return None
+        return target if target.is_file() and not target.is_symlink() else None
+
+    def remove_draft_asset(self, draft_id: str, role: str) -> None:
+        """Remove one fixed-role upload from a pending draft."""
+
+        self.validate_draft_id(draft_id)
+        relative_path = _DRAFT_ASSET_PATHS.get(role)
+        if relative_path is None:
+            raise ValueError("upload draft role is invalid")
+        bundle = self.bundle(draft_id)
+        target = bundle / relative_path
+        if (
+            any(path.is_symlink() for path in (self.runs_root, bundle, *target.parents))
+            or target.is_symlink()
+        ):
+            raise ValueError("upload draft directory is not safe")
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
+
+    def copy_draft_assets(
+        self,
+        draft_id: str,
+        run_id: str,
+        roles: set[str],
+    ) -> None:
+        """Copy selected draft upload roles over their run-owned counterparts."""
+
+        self.validate_draft_id(draft_id)
+        _validate_owner_id(run_id)
+        source_bundle = self.bundle(draft_id)
+        destination_bundle = self.bundle(run_id)
+        if not source_bundle.is_dir():
+            return
+        if any(
+            path.is_symlink()
+            for path in (
+                self.runs_root,
+                *source_bundle.parents,
+                source_bundle,
+                *destination_bundle.parents,
+                destination_bundle,
+            )
+        ):
+            raise ValueError("managed input directory is not safe")
+        for role in roles:
+            relative_path = _DRAFT_ASSET_PATHS.get(role)
+            if relative_path is None:
+                raise ValueError("upload draft role is invalid")
+            source = source_bundle / relative_path
+            if not source.exists():
+                continue
+            destination = destination_bundle / relative_path
+            if any(
+                path.is_symlink()
+                for path in (*source.parents, source, *destination.parents, destination)
+            ):
+                raise ValueError("upload draft asset is not safe")
+            if not source.is_dir() or any(
+                path.is_symlink() for path in source.rglob("*")
+            ):
+                raise ValueError("upload draft asset is not safe")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            _remove_path(destination)
+            shutil.copytree(source, destination)
+
+    def discard_draft(self, draft_id: str) -> None:
+        """Remove a completed or abandoned pending upload draft."""
+
+        self.validate_draft_id(draft_id)
+        draft_root = self.runs_root / draft_id
+        if draft_root.is_symlink():
+            raise ValueError("upload draft directory is not safe")
+        shutil.rmtree(draft_root, ignore_errors=True)
+
+    def reconcile_expired_drafts(self, *, grace_seconds: float = 3_600) -> set[str]:
+        """Remove inactive upload drafts after the retention window."""
+
+        if grace_seconds < 0:
+            raise ValueError("draft retention must not be negative")
+        removed: set[str] = set()
+        if not self.runs_root.exists() or self.runs_root.is_symlink():
+            return removed
+        cutoff = time.time() - grace_seconds
+        for run_root in self.runs_root.glob("draft-*"):
+            if (
+                not _UPLOAD_DRAFT_ID.fullmatch(run_root.name)
+                or not run_root.is_dir()
+                or run_root.is_symlink()
+            ):
+                continue
+            state_path = run_root / _DRAFT_STATE_FILE
+            try:
+                modified = (
+                    state_path.stat().st_mtime
+                    if state_path.is_file() and not state_path.is_symlink()
+                    else run_root.stat().st_mtime
+                )
+            except OSError:
+                continue
+            if modified <= cutoff:
+                shutil.rmtree(run_root, ignore_errors=True)
+                removed.add(run_root.name)
+        return removed
 
     async def materialize(self, run_id: str, uploads: list[UploadFile]) -> Path:
         """Backward-compatible alias for page materialization."""
@@ -578,15 +756,17 @@ class InputMaterializer:
         """Remove stale partial files and old run directories with no DB owner."""
 
         removed: set[str] = set()
-        if not self.runs_root.exists():
+        if self.runs_root.is_symlink() or not self.runs_root.exists():
             return removed
         cutoff = time.time() - grace_seconds
         for run_root in self.runs_root.iterdir():
-            if not run_root.is_dir():
+            if run_root.is_symlink() or not run_root.is_dir():
                 continue
             for partial in run_root.rglob("*.part"):
                 if partial.is_file() and not partial.is_symlink():
                     partial.unlink(missing_ok=True)
+            if _UPLOAD_DRAFT_ID.fullmatch(run_root.name):
+                continue
             if run_root.name in known_run_ids:
                 continue
             try:
@@ -626,19 +806,23 @@ class InputMaterializer:
             allowed_text = ", ".join(sorted(allowed))
             raise ValueError(f"{role.replace('_', ' ')} files must use: {allowed_text}")
 
-        destination = self._new_role_dir(run_id, role, replace=replace)
+        bundle = self.bundle(run_id)
+        destination = bundle / role
+        working = self._new_role_dir(run_id, role, replace=replace)
         try:
             for upload, name, suffix in zip(uploads, names, suffixes, strict=True):
-                target = destination / name
+                target = working / name
                 temporary = target.with_suffix(target.suffix + ".part")
                 with temporary.open("wb") as stream:
                     while chunk := await upload.read(1024 * 1024):
-                        self._check_total(run_id, len(chunk))
+                        excluded = (destination, working) if replace else working
+                        self._check_total(run_id, len(chunk), exclude=excluded)
                         stream.write(chunk)
                 _validate_content(temporary, suffix, role=role)
                 temporary.replace(target)
+            self._commit_role_dir(working, destination, replace=replace)
         except Exception:
-            shutil.rmtree(destination, ignore_errors=True)
+            shutil.rmtree(working, ignore_errors=True)
             self._remove_empty_bundle(run_id)
             raise
         if multiple:
@@ -646,13 +830,44 @@ class InputMaterializer:
         return destination / names[0]
 
     def _new_role_dir(self, run_id: str, role: str, *, replace: bool = False) -> Path:
-        destination = self.bundle(run_id) / role
-        if destination.exists():
+        bundle = self.bundle(run_id)
+        run_root = bundle.parent
+        if any(path.is_symlink() for path in (self.runs_root, run_root, bundle)):
+            raise ValueError("managed input directory is not safe")
+        destination = bundle / role
+        if destination.exists() or destination.is_symlink():
             if not replace:
                 raise ValueError(f"{role.replace('_', ' ')} input already exists")
-            shutil.rmtree(destination)
-        destination.mkdir(parents=True)
-        return destination
+        working = bundle / f".{role}-{uuid4().hex}.part"
+        working.mkdir(parents=True)
+        return working
+
+    @staticmethod
+    def _commit_role_dir(
+        working: Path,
+        destination: Path,
+        *,
+        replace: bool,
+    ) -> None:
+        backup = destination.parent / f".{destination.name}.backup-{uuid4().hex}"
+        if destination.exists() or destination.is_symlink():
+            if not replace:
+                raise ValueError(
+                    f"{destination.name.replace('_', ' ')} input already exists"
+                )
+            destination.replace(backup)
+        try:
+            working.replace(destination)
+        except Exception:
+            if backup.exists() or backup.is_symlink():
+                backup.replace(destination)
+            raise
+        if backup.exists() or backup.is_symlink():
+            if backup.is_dir() and not backup.is_symlink():
+                shutil.rmtree(backup)
+            else:
+                backup.unlink(missing_ok=True)
+
 
     def _check_total(
         self,

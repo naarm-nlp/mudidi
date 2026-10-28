@@ -1,5 +1,11 @@
 # Release notes
 
+## Unreleased — Dashboard upload recovery
+
+- Browser uploads remain in a local server-side draft across validation errors
+  and same-tab reloads. The dashboard shows retained filenames and supports
+  replacing or removing draft uploads; inactive drafts expire after one hour.
+
 ## Unreleased — Partial Dictionary Profile context
 
 - Dictionary Profile questions are individually optional.
