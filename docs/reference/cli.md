@@ -35,8 +35,9 @@ usage: mudidi run [-h] [--config CONFIG] [--auth-mode {api_key,subscription}]
                   [--stage-2-guides-pages STAGE2_GUIDES_PAGES]
                   [--stage-2-guides-scope {pass1,pass2,both}]
                   [--output-dir OUTPUT_DIR]
-                  [--stage {1,2,all,2-pass-1,2-pass-2}] [--model MODEL]
-                  [--stage-1-model STAGE_1_MODEL]
+                  [--stage {1,2,all,2-pass-1,2-pass-2}]
+                  [--stage1-typography | --no-stage1-typography]
+                  [--model MODEL] [--stage-1-model STAGE_1_MODEL]
                   [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
                   [--stage-2-pass-2-model STAGE_2_PASS_2_MODEL] [--overwrite]
                   [--dry-run] [--stage1-agentic | --no-stage1-agentic]
@@ -79,6 +80,10 @@ options:
                         Stage 2 guide routing scope.
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
+  --stage1-typography, --no-stage1-typography
+                        Mark confident bold and italic text with <b>/<i> tags
+                        in Stage 1 (default: on). Use --no-stage1-typography
+                        for plain text.
   --model MODEL
   --stage-1-model STAGE_1_MODEL
   --stage-2-pass-1-model STAGE_2_PASS_1_MODEL
@@ -220,6 +225,7 @@ usage: mudidi benchmark run [-h] [--config CONFIG]
                             [--stage-2-guides-scope {pass1,pass2,both}]
                             [--output-dir OUTPUT_DIR]
                             [--stage {1,2,all,2-pass-1,2-pass-2}]
+                            [--stage1-typography | --no-stage1-typography]
                             [--model MODEL] [--stage-1-model STAGE_1_MODEL]
                             [--stage-2-pass-1-model STAGE_2_PASS_1_MODEL]
                             [--stage-2-pass-2-model STAGE_2_PASS_2_MODEL]
@@ -270,6 +276,10 @@ options:
                         Stage 2 guide routing scope.
   --output-dir OUTPUT_DIR
   --stage {1,2,all,2-pass-1,2-pass-2}
+  --stage1-typography, --no-stage1-typography
+                        Mark confident bold and italic text with <b>/<i> tags
+                        in Stage 1 (default: on). Use --no-stage1-typography
+                        for plain text.
   --model MODEL
   --stage-1-model STAGE_1_MODEL
   --stage-2-pass-1-model STAGE_2_PASS_1_MODEL
