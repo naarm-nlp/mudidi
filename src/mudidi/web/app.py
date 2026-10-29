@@ -69,6 +69,7 @@ from mudidi.web.forms import (
     FormFieldError,
     NewRunForm,
     instruction_review_summary,
+    stage1_typography_summary,
 )
 from mudidi.web.jobs import JobController, OutputDirectoryInUseError
 from mudidi.web.inputs import (
@@ -3154,6 +3155,7 @@ def _preset_form_state(
                 config.pipeline.stage
             ]
         ],
+        "stage1_typography": [str(config.pipeline.stage1_typography).lower()],
         "auth_mode": [config.auth.mode.value],
         "stage1_provider": [
             (config.models.stage1 or config.models.default).split("/", maxsplit=1)[0]
@@ -3460,6 +3462,10 @@ def _config_summary(config: InferenceConfig) -> dict[str, object]:
         "dictionary_pages": config.input.dictionary_pages or "All provided pages",
         "parse_rule_pages": parse_rule_pages,
         "stage_1_model": stage1_summary,
+        "stage_1_typography": stage1_typography_summary(
+            config.pipeline.stage1_typography,
+            runs_stage1=runs_stage1,
+        ),
         "stage_2_pass_1_model": pass1_summary,
         "stage_2_pass_2_model": pass2_summary,
         "agentic": " + ".join(verified_stages) if verified_stages else "Off",

@@ -11,6 +11,11 @@ import pymupdf
 from mudidi.cli.run import execute_extraction_config
 from mudidi.config.yaml_config import InferenceConfig
 
+_FLAT_TRANSCRIPTION_SCHEMAS = {
+    "FlatTranscriptionResponse",
+    "FlatTranscriptionResponsePlain",
+}
+
 
 class _LLMBoundaryStub:
     """Return deterministic provider responses while retaining full request messages."""
@@ -69,10 +74,7 @@ class _LLMBoundaryStub:
                         "notes": "",
                     }
                 )
-            elif schema_name in {
-                "FlatTranscriptionResponse",
-                "FlatTranscriptionResponsePlain",
-            }:
+            elif schema_name in _FLAT_TRANSCRIPTION_SCHEMAS:
                 content = json.dumps(
                     {"header": [], "lines": ["dictionary line"], "footer": []}
                 )
@@ -460,7 +462,7 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
         for call in stub.calls
         if call["model"] == "gemini/gemini-2.5-flash"
         and call["response_schema"] is not None
-        and call["response_schema"].__name__ == "FlatTranscriptionResponsePlain"
+        and call["response_schema"].__name__ in _FLAT_TRANSCRIPTION_SCHEMAS
     )).split(",", 1)[1])
     assert selected_payload == selected_path.read_bytes()
 
@@ -468,7 +470,7 @@ def test_actual_worker_stage1_selected_pdf_instructions_reuse_artifacts(
         call
         for call in stub.calls
         if call["response_schema"] is not None
-        and call["response_schema"].__name__ == "FlatTranscriptionResponsePlain"
+        and call["response_schema"].__name__ in _FLAT_TRANSCRIPTION_SCHEMAS
         and call["model"] == "gemini/gemini-2.5-flash"
     ]
     evaluator_calls = [
@@ -647,7 +649,7 @@ def test_actual_worker_stage2_scope_and_split_model_media(
         for call in stub.calls
         if call["model"] == "gemini/gemini-2.5-flash"
         and call["response_schema"] is not None
-        and call["response_schema"].__name__ == "FlatTranscriptionResponsePlain"
+        and call["response_schema"].__name__ in _FLAT_TRANSCRIPTION_SCHEMAS
     ]
     stage2_calls = [
         call

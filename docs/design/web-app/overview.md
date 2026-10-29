@@ -96,7 +96,8 @@ The UI uses progressive disclosure rather than displaying every internal flag.
 ### Advanced
 
 - Stage-specific models and reasoning
-- Flat Stage 1 output with typography preservation off
+- Flat Stage 1 output; bold/italic typography tags on by default, with a
+  plain-text option
 - Character inventory and direct stage-specific additional instructions
 - Representative MDF parsing guide pages or an existing MDF parsing guide file
 - Bundled SIL MDF manual text, always added to the Pass 1 system prompt

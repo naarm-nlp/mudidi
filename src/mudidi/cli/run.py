@@ -213,10 +213,12 @@ def register_run_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--stage1-typography",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         dest="stage1_typography",
         help="Inference mode: annotate confident bold and italic text with <b>/<i> "
-        "tags. Historical benchmark mode always enables typography.",
+        "tags (default: on). Use --no-stage1-typography for plain text. "
+        "Historical benchmark mode always enables typography.",
     )
     parser.add_argument(
         "--batch-size",
@@ -436,8 +438,11 @@ def run_from_args(run_args: argparse.Namespace, remaining: Sequence[str]) -> int
     argv.extend(["--media-reference", run_args.media_reference])
     if run_args.prompt_cache_key:
         argv.extend(["--prompt-cache-key", run_args.prompt_cache_key])
-    if run_args.stage1_typography:
-        argv.append("--stage1-typography")
+    argv.append(
+        "--stage1-typography"
+        if run_args.stage1_typography
+        else "--no-stage1-typography"
+    )
     # Always forwarded: the extract default is not 1, so an explicit 1 must survive.
     if getattr(run_args, "batch_size", None) is not None:
         argv.extend(["--batch-size", str(run_args.batch_size)])
@@ -512,6 +517,7 @@ _RUN_OVERRIDE_PATHS = {
     "languages": "input.languages",
     "output_dir": "output.directory",
     "stage": "pipeline.stage",
+    "stage1_typography": "pipeline.stage1_typography",
     "model": "models.default",
     "stage_1_model": "models.stage1",
     "stage_2_pass_1_model": "models.stage2_pass1",

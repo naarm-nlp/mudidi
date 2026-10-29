@@ -1,5 +1,13 @@
 # Release notes
 
+## Unreleased — Stage 1 typography on by default
+
+- Inference now asks Stage 1 to wrap confidently bold text in `<b>…</b>` and
+  italic text in `<i>…</i>` by default, in the CLI, YAML, and dashboard.
+- Disable it with `--no-stage1-typography`, `pipeline.stage1_typography: false`,
+  or **Plain text** under **Stage 1 typography** in the dashboard's Pipeline
+  step.
+
 ## Unreleased — Dashboard upload recovery
 
 - Browser uploads remain in a local server-side draft across validation errors

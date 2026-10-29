@@ -157,6 +157,14 @@ def _add_sparse_run_arguments(
         choices=["1", "2", "all", "2-pass-1", "2-pass-2"],
         default=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--stage1-typography",
+        action=argparse.BooleanOptionalAction,
+        dest="stage1_typography",
+        default=argparse.SUPPRESS,
+        help="Mark confident bold and italic text with <b>/<i> tags in Stage 1 "
+        "(default: on). Use --no-stage1-typography for plain text.",
+    )
     parser.add_argument("--model", default=argparse.SUPPRESS)
     parser.add_argument(
         "--stage-1-model", dest="stage_1_model", default=argparse.SUPPRESS

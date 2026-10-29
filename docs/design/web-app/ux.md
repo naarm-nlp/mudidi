@@ -92,9 +92,12 @@ help:
 Discovery-only and direct Pass 2 are not dashboard choices. Stage 2 always
 includes inference or import of an MDF parsing guide and mandatory review.
 
-Dashboard runs always use the two-stage LLM strategy, flat Stage 1 output, and
-typography preservation off. OCR hints, Stage 1 column mode, and expert
-OCR/VLM/Mathpix controls remain CLI/YAML features.
+The Pipeline step also offers **Stage 1 typography** (Stage 1 pipelines only):
+**Mark bold and italic** (default) or **Plain text**.
+
+Dashboard runs always use the two-stage LLM strategy and flat Stage 1 output.
+OCR hints, Stage 1 column mode, and expert OCR/VLM/Mathpix controls remain
+CLI/YAML features.
 
 ## Model
 

@@ -247,6 +247,36 @@ def test_agentic_cli_values_apply_without_yaml(tmp_path: Path) -> None:
     assert config.agentic.reasoning == "medium"
 
 
+@pytest.mark.parametrize(
+    ("yaml_value", "flags", "expected"),
+    [
+        (None, [], True),
+        (None, ["--no-stage1-typography"], False),
+        ("false", [], False),
+        ("false", ["--stage1-typography"], True),
+    ],
+)
+def test_stage1_typography_defaults_on_and_cli_overrides_yaml(
+    tmp_path: Path,
+    yaml_value: str | None,
+    flags: list[str],
+    expected: bool,
+) -> None:
+    path = tmp_path / "config.yaml"
+    pipeline = f"pipeline:\n  stage1_typography: {yaml_value}\n" if yaml_value else ""
+    path.write_text(
+        "version: 1\nkind: inference\ninput:\n  pages: pages\n"
+        "output:\n  directory: output\n" + pipeline,
+        encoding="utf-8",
+    )
+    args = build_parser().parse_args(["run", "--config", str(path), *flags])
+
+    config = resolve_extraction_config(args, kind="inference")
+
+    assert config.pipeline.stage1_typography is expected
+    assert execution_namespace_from_config(config).stage1_typography is expected
+
+
 def test_common_cli_input_paths_override_yaml_as_absolute_paths(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(

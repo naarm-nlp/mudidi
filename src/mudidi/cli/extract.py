@@ -704,7 +704,7 @@ def _build_stage1_manifest(
         "strategy": args.strategy,
         "stage1_mode": getattr(args, "stage1_mode", "column"),
         "stage1_typography": getattr(args, "prompt_mode", "benchmark") == "benchmark"
-        or bool(getattr(args, "stage1_typography", False)),
+        or bool(getattr(args, "stage1_typography", True)),
         "flat_spec_version": FLAT_SPEC_VERSION,
         "git_sha": _git_short_sha(),
         "model": args.stage_models.stage_1,
@@ -940,7 +940,7 @@ def _build_strategy(
             prompt_cache=getattr(args, "prompt_cache", "auto"),
             media_reference=getattr(args, "media_reference", "auto"),
             prompt_cache_key=getattr(args, "prompt_cache_key", None),
-            stage1_typography=bool(getattr(args, "stage1_typography", False)),
+            stage1_typography=bool(getattr(args, "stage1_typography", True)),
             stage1_agentic=bool(getattr(args, "stage1_agentic", False)),
             stage2_agentic=bool(getattr(args, "stage2_agentic", False)),
             agentic_max_iterations=int(getattr(args, "agentic_max_iterations", 3) or 0),
@@ -1271,10 +1271,12 @@ Examples:
     )
     parser.add_argument(
         "--stage1-typography",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         dest="stage1_typography",
         help="Inference mode: annotate confident bold and italic text with <b>/<i> "
-        "tags. Historical benchmark mode always enables typography.",
+        "tags (default: on). Use --no-stage1-typography for plain text. "
+        "Historical benchmark mode always enables typography.",
     )
     parser.add_argument(
         "--batch-size",

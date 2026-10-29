@@ -219,7 +219,8 @@ def test_home_page_exposes_primary_local_workflow(tmp_path: Path) -> None:
     assert 'name="profile_other_information_types"' in response.text
     assert 'class="profile-other-information"' in response.text
     assert 'name="dictionary_languages"' not in response.text
-    assert 'name="stage1_typography"' not in response.text
+    assert 'name="stage1_typography" value="true" checked' in response.text
+    assert 'name="stage1_typography" value="false">' in response.text
     assert "Start offline demo" not in response.text
     assert 'action="/runs/demo"' not in response.text
 
@@ -2092,6 +2093,7 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
             "profile_information_types": ["translation", "other"],
             "profile_other_information_types": "dialect labels, semantic domains",
             "dictionary_pages": "1",
+            "stage1_typography": "false",
         },
         files={"dictionary_pdf": ("dictionary.pdf", _pdf_bytes(), "application/pdf")},
     )
@@ -2106,6 +2108,7 @@ def test_new_run_collects_optional_dictionary_profile_questions(tmp_path: Path) 
         "Latin",
     ]
     assert config.pipeline.stage1_typography is False
+    assert "<dt>Stage 1 Typography</dt><dd>Plain text</dd>" in response.text
     assert (
         config.input.dictionary_profile.other_information_types
         == "dialect labels, semantic domains"

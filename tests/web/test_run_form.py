@@ -324,7 +324,7 @@ def test_advanced_form_controls_map_without_yaml(tmp_path: Path) -> None:
     ).to_inference_config()
 
     assert config.pipeline.stage1_mode == "flat"
-    assert config.pipeline.stage1_typography is False
+    assert config.pipeline.stage1_typography is True
     assert config.pipeline.stage1_guides == stage1_guides.resolve()
     assert config.pipeline.stage2_guides == stage2_guides.resolve()
     assert "temperature" not in config.models.model_dump()
@@ -393,7 +393,7 @@ def test_optional_dictionary_profile_maps_five_dashboard_answers(
         config.input.dictionary_profile.other_information_types
         == "dialect labels, semantic domains"
     )
-    assert config.pipeline.stage1_typography is False
+    assert config.pipeline.stage1_typography is True
 
 
 def test_dictionary_profile_allows_only_headword_language_and_script(
@@ -432,15 +432,22 @@ def test_dictionary_profile_requires_target_script_when_language_is_supplied(
         ).to_inference_config()
 
 
-def test_dictionary_profile_is_optional_and_typography_is_not_a_web_field(
+def test_dictionary_profile_is_optional_and_typography_defaults_on(
     tmp_path: Path,
 ) -> None:
     config = _form(tmp_path).to_inference_config()
     assert config.input.dictionary_profile is None
-    assert config.pipeline.stage1_typography is False
+    assert config.pipeline.stage1_typography is True
 
-    with pytest.raises(ValidationError, match="stage1_typography"):
-        _form(tmp_path, stage1_typography=True)
+    plain = _form(tmp_path, stage1_typography="false")
+    assert plain.to_inference_config().pipeline.stage1_typography is False
+    assert plain.to_summary()["stage_1_typography"] == "Plain text"
+    assert (
+        _form(tmp_path, pipeline=PipelineChoice.STRUCTURE).to_summary()[
+            "stage_1_typography"
+        ]
+        == "Not used"
+    )
 
 
 def test_overwrite_output_policy_marks_existing_artifacts_for_replacement(

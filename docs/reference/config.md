@@ -66,7 +66,7 @@ pipeline:  # PipelineConfig; optional
   stage1_mode: "flat"  # one of "flat", "column"; default: "flat"
   stage1_input: "auto"  # one of "auto", "flat", "column"; default: "auto"
   stage1_source: "predictions"  # one of "gold", "predictions"; default: "predictions"
-  stage1_typography: false  # boolean; default: false
+  stage1_typography: true  # boolean; default: true
   parse_rules_pages: []  # list[string]; optional
   parse_rules_file: null  # path | null; default: null
   parse_rules_gold: false  # boolean; default: false
@@ -181,7 +181,7 @@ pipeline:  # PipelineConfig; optional
   stage1_mode: "flat"  # one of "flat", "column"; default: "flat"
   stage1_input: "auto"  # one of "auto", "flat", "column"; default: "auto"
   stage1_source: "gold"  # one of "gold", "predictions"; effective default: "gold"
-  stage1_typography: false  # boolean; default: false
+  stage1_typography: true  # boolean; default: true
   parse_rules_pages: []  # list[string]; optional
   parse_rules_file: null  # path | null; default: null
   parse_rules_gold: false  # boolean; default: false
@@ -300,7 +300,7 @@ base:  # BenchmarkRunConfig; required
     stage1_mode: "flat"  # one of "flat", "column"; default: "flat"
     stage1_input: "auto"  # one of "auto", "flat", "column"; default: "auto"
     stage1_source: "gold"  # one of "gold", "predictions"; effective default: "gold"
-    stage1_typography: false  # boolean; default: false
+    stage1_typography: true  # boolean; default: true
     parse_rules_pages: []  # list[string]; optional
     parse_rules_file: null  # path | null; default: null
     parse_rules_gold: false  # boolean; default: false

@@ -99,8 +99,8 @@ The **New Run** screen is a six-step wizard:
 
 1. **Input** — upload exactly one dictionary PDF, enter the dictionary pages,
    optional introduction pages, and the output directory.
-2. **Pipeline** — choose one of the three supported workflows and an existing
-   output policy.
+2. **Pipeline** — choose one of the three supported workflows, an existing
+   output policy, and whether Stage 1 marks bold and italic text.
 3. **Context** — optionally describe the dictionary in the **Dictionary
    Profile**, supply MDF parsing-guide inputs, and, under the advanced toggle,
    add Stage 1 and Stage 2 instructions.
@@ -169,10 +169,19 @@ The **Pipeline** step presents these mutually exclusive choices:
 The existing output policy is separate: **Resume compatible artifacts** reuses
 compatible work, while **Overwrite existing artifacts**
 replaces it. The selected pipeline determines which later inputs and model
-controls are active. The dashboard always uses flat Stage 1 output and does not
-preserve typography. OCR hints, column mode, and expert OCR/VLM backends remain
-available through YAML and the CLI but are intentionally absent from the
-dashboard.
+controls are active. The dashboard always uses flat Stage 1 output.
+
+**Stage 1 typography** (shown when the pipeline includes Stage 1) defaults to
+**Mark bold and italic**: the transcription wraps confidently bold text in
+`<b>…</b>` and italic text in `<i>…</i>`, which often signals entry structure
+such as bold headwords. These tags appear in Stage 1 transcription files and in
+the Page Viewer & Editor; MDF parsing removes them when it writes MDF lines.
+Choose **Plain text** to transcribe characters only. Changing this setting does
+not invalidate existing pages under **Resume compatible artifacts**; choose
+**Overwrite existing artifacts** to re-transcribe them.
+
+OCR hints, column mode, and expert OCR/VLM backends remain available through
+YAML and the CLI but are intentionally absent from the dashboard.
 
 ![MUDIDI dashboard Pipeline step](../assets/dashboard-pipeline.png)
 

@@ -21,7 +21,9 @@ The benchmark user template preserves the historical experiment contract. It
 contains optional alphabet, OCR-reference, and user-guide sections. The
 inference user template additionally contains the optional Dictionary Profile
 block. Typography is always requested by the benchmark system prompt; it is an
-inference option in the inference and legacy-column system templates.
+inference option in the inference and legacy-column system templates, on by
+default (`--no-stage1-typography` or `pipeline.stage1_typography: false`
+disables it).
 
 ## Stage 2 Pass 1
 

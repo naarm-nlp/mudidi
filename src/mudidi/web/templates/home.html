@@ -187,6 +187,13 @@
                   <label class="choice-card"><input type="radio" name="output_policy" value="overwrite"><span><strong>Overwrite existing artifacts</strong><small>Replaces existing artifacts and reruns the selected work.</small></span><button class="info-button" type="button" aria-label="About overwriting existing artifacts" data-help="Use this when inputs, models, instructions, or settings changed, or when you intentionally want fresh outputs.">i</button></label>
                 </div>
               </fieldset>
+              <fieldset class="choice-group stage1-typography-choices" data-stage-control data-pipeline-stages="stage1">
+                <legend>Stage 1 typography</legend>
+                <div class="choice-card-grid">
+                  <label class="choice-card"><input type="radio" name="stage1_typography" value="true" checked><span><strong>Mark bold and italic</strong><small>Wraps confidently bold text in &lt;b&gt;…&lt;/b&gt; and italic text in &lt;i&gt;…&lt;/i&gt; in the transcription.</small></span><button class="info-button" type="button" aria-label="About marking bold and italic text" data-help="Typography often signals entry structure, such as bold headwords and italic part-of-speech labels. MDF parsing removes the tags when it writes MDF lines.">i</button></label>
+                  <label class="choice-card"><input type="radio" name="stage1_typography" value="false"><span><strong>Plain text</strong><small>Transcribes characters only, without bold or italic tags.</small></span></label>
+                </div>
+              </fieldset>
               <div class="wizard-actions"><button type="button" data-wizard-back="input">← Back</button><button class="primary" type="button" data-wizard-next="context">Continue to Context →</button></div>
             </section>
 

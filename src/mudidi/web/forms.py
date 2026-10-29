@@ -86,6 +86,14 @@ def _subscription_provider(
         ) from exc
 
 
+def stage1_typography_summary(enabled: bool, *, runs_stage1: bool) -> str:
+    """Return the Review label for Stage 1 bold/italic tagging."""
+
+    if not runs_stage1:
+        return "Not used"
+    return "Bold and italic tags" if enabled else "Plain text"
+
+
 def instruction_review_summary(
     path: Path | None,
     *,
@@ -206,6 +214,7 @@ class NewRunForm(BaseModel):
     profile_other_information_types: str | None = Field(default=None, max_length=1000)
 
     pipeline: PipelineChoice = PipelineChoice.COMPLETE
+    stage1_typography: bool = True
     stage1_guides: Path | None = None
     stage2_guides: Path | None = None
     stage1_instruction_source: InstructionSource = "typed"
@@ -405,7 +414,7 @@ class NewRunForm(BaseModel):
                 stage=stage,
                 strategy="two_stage",
                 stage1_mode="flat",
-                stage1_typography=False,
+                stage1_typography=self.stage1_typography,
                 parse_rules_pages=self.parse_rules_pages if runs_stage2 else [],
                 parse_rules_file=(
                     self.parse_rules_file.expanduser().resolve()
@@ -599,6 +608,10 @@ class NewRunForm(BaseModel):
             "dictionary_pages": self.dictionary_pages or "All provided pages",
             "parse_rule_pages": parse_rule_pages,
             "stage_1_model": stage1_summary,
+            "stage_1_typography": stage1_typography_summary(
+                self.stage1_typography,
+                runs_stage1=runs_stage1,
+            ),
             "stage_2_pass_1_model": pass1_summary,
             "stage_2_pass_2_model": pass2_summary,
             "agentic": self._agentic_summary(),

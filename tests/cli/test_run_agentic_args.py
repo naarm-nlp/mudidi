@@ -134,3 +134,34 @@ def test_run_always_forwards_batch_size(
 
     forwarded = captured["argv"]
     assert forwarded[forwarded.index("--batch-size") + 1] == expected
+
+
+@pytest.mark.parametrize(
+    ("extra", "expected", "absent"),
+    [
+        ([], "--stage1-typography", "--no-stage1-typography"),
+        (["--no-stage1-typography"], "--no-stage1-typography", "--stage1-typography"),
+    ],
+)
+def test_run_forwards_stage1_typography_default_and_opt_out(
+    monkeypatch, tmp_path: Path, extra: list[str], expected: str, absent: str
+) -> None:
+    parser = argparse.ArgumentParser()
+    run_cli.register_run_arguments(parser)
+    args = parser.parse_args(
+        ["--pages", str(tmp_path / "pages"), "--output-dir", str(tmp_path / "out"), *extra]
+    )
+    captured: dict[str, list[str]] = {}
+
+    def fake_extract_main() -> int:
+        captured["argv"] = list(sys.argv)
+        return 0
+
+    monkeypatch.setattr(run_cli, "configure_prompts", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("mudidi.cli.extract.main", fake_extract_main)
+
+    assert run_cli.run_from_args(args, []) == 0
+
+    forwarded = captured["argv"]
+    assert expected in forwarded
+    assert absent not in forwarded

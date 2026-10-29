@@ -204,7 +204,7 @@ class PipelineConfig(_StrictModel):
     stage1_mode: Literal["flat", "column"] = "flat"
     stage1_input: Literal["auto", "flat", "column"] = "auto"
     stage1_source: Literal["gold", "predictions"] = "predictions"
-    stage1_typography: bool = False
+    stage1_typography: bool = True
     parse_rules_pages: list[str] = Field(default_factory=list)
     parse_rules_file: Path | None = None
     parse_rules_gold: bool = False

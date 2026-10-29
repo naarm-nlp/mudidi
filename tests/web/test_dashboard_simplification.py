@@ -82,7 +82,7 @@ def test_dashboard_pipeline_is_flat_two_stage_without_ocr_hint(
     assert config.pipeline.stage == stage
     assert config.pipeline.strategy == "two_stage"
     assert config.pipeline.stage1_mode == "flat"
-    assert config.pipeline.stage1_typography is False
+    assert config.pipeline.stage1_typography is True
     assert config.input.ocr_text is None
     assert config.vlm.model is None
 
