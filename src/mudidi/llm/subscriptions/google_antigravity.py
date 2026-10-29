@@ -304,6 +304,44 @@ def _gemini_display_name(model_id: str) -> str:
     return f"Gemini {model_id.removeprefix('gemini-').replace('-', ' ').title()}"
 
 
+def _google_recommended_models(
+    payload: Mapping[str, Any],
+    raw_models: Mapping[str, Any],
+    available_model_ids: frozenset[str],
+) -> tuple[str | None, frozenset[str]]:
+    """Return Antigravity's default and recommended Gemini models, canonicalized.
+
+    Antigravity's catalog lists every model the account is entitled to,
+    including ones Google no longer serves, and flags most of them
+    ``recommended`` (Gemini 2.5 Pro included), so that per-model flag says
+    nothing. Its picker instead offers the ``Recommended`` group of
+    ``agentModelSorts`` and starts from ``defaultAgentModelId``.
+    """
+
+    def canonical(value: object) -> str | None:
+        if not isinstance(value, str) or value not in available_model_ids:
+            return None
+        return _canonical_model_id(value, raw_models.get(value), available_model_ids)
+
+    recommended: set[str] = set()
+    sorts = payload.get("agentModelSorts")
+    for sort in sorts if isinstance(sorts, Sequence) else ():
+        if not isinstance(sort, Mapping):
+            continue
+        if str(sort.get("displayName", "")).strip().casefold() != "recommended":
+            continue
+        groups = sort.get("groups")
+        for group in groups if isinstance(groups, Sequence) else ():
+            model_ids = group.get("modelIds") if isinstance(group, Mapping) else None
+            for value in model_ids if isinstance(model_ids, Sequence) else ():
+                if (model_id := canonical(value)) is not None:
+                    recommended.add(model_id)
+    default = canonical(payload.get("defaultAgentModelId"))
+    if default is not None:
+        recommended.add(default)
+    return default, frozenset(recommended)
+
+
 def _canonical_model_id(
     model_id: str,
     metadata: object,
@@ -2258,6 +2296,9 @@ class GoogleAntigravityBackend:
                 reason="model_discovery_failed",
                 credential=credential,
             )
+        default_model_id, recommended_model_ids = _google_recommended_models(
+            payload, raw_models, available_model_ids
+        )
         models = tuple(
             SubscriptionModel(
                 model_id=model_id,
@@ -2273,6 +2314,8 @@ class GoogleAntigravityBackend:
                     wire_model_map=tuple(group["wire_model_map"].items()),
                 ),
                 provider_order=group["provider_order"],
+                provider_recommended=model_id in recommended_model_ids,
+                provider_default=model_id == default_model_id,
             )
             for model_id, group in grouped.items()
         )

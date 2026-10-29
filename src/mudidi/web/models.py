@@ -113,6 +113,8 @@ class LiveModelOption:
     reasoning: ReasoningProfile | None = None
     release_at: datetime | None = None
     provider_order: int | None = None
+    provider_recommended: bool = False
+    provider_default: bool = False
 
     def __post_init__(self) -> None:
         if self.reasoning is None:
@@ -716,12 +718,21 @@ class ModelCatalogService:
         recommended: list[CatalogItem] = []
         available: list[CatalogItem] = []
         ordered_models = sort_models_newest_first(models)
-        if (
-            provider is Provider.GEMINI
-            and auth_mode is CatalogAuthMode.SUBSCRIPTION
-        ):
+        if auth_mode is CatalogAuthMode.SUBSCRIPTION:
+            # The provider's default model first, then its other recommended
+            # models; Gemini then lists Pro ahead of Flash. The first entry is
+            # what the Model step preselects and what a blank field defaults to.
             ordered_models = tuple(
-                sorted(ordered_models, key=_gemini_subscription_family_rank)
+                sorted(
+                    ordered_models,
+                    key=lambda model: (
+                        not model.provider_default,
+                        not model.provider_recommended,
+                        _gemini_subscription_family_rank(model)
+                        if provider is Provider.GEMINI
+                        else 0,
+                    ),
+                )
             )
         for model in ordered_models:
             known = curated.get(model.model_id)
@@ -732,6 +743,9 @@ class ModelCatalogService:
                 _reasoning_profile(model),
             )
             if (
+                auth_mode is CatalogAuthMode.SUBSCRIPTION
+                and model.provider_recommended
+            ) or (
                 auth_mode is not CatalogAuthMode.SUBSCRIPTION
                 and known is not None
                 and stage.value in known.recommended_for

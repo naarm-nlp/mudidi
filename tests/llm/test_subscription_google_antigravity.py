@@ -853,6 +853,59 @@ def test_authenticated_model_discovery_collapses_effort_variants() -> None:
     assert request.headers["User-agent"].startswith("antigravity/hub/")
 
 
+def test_model_discovery_marks_antigravity_default_and_recommended_models() -> None:
+    # The per-model "recommended" flag is set on nearly every model (Gemini
+    # 2.5 Pro included), so only the Recommended sort group and the default
+    # model count.
+    def fetch(request, **_kwargs: Any) -> _Response:
+        return _Response(
+            {
+                "models": {
+                    "gemini-2.5-pro": {
+                        "displayName": "Gemini 2.5 Pro",
+                        "recommended": True,
+                    },
+                    "gemini-3-flash": {"displayName": "Gemini 3 Flash"},
+                    "gemini-3.1-flash-lite": {"displayName": "Gemini 3.1 Flash Lite"},
+                    "gemini-3.8-flash-high": {"displayName": "Gemini 3.8 Flash (High)"},
+                    "gemini-3.8-flash-low": {"displayName": "Gemini 3.8 Flash (Low)"},
+                },
+                "defaultAgentModelId": "gemini-3.8-flash-high",
+                "agentModelSorts": [
+                    {
+                        "displayName": "Recommended",
+                        "groups": [
+                            {
+                                "modelIds": [
+                                    "gemini-3.8-flash-low",
+                                    "claude-opus-5-5-low",
+                                    "gemini-unlisted",
+                                    "gemini-3.1-flash-lite",
+                                ]
+                            }
+                        ],
+                    },
+                    {"displayName": "All", "groups": [{"modelIds": ["gemini-3-flash"]}]},
+                ],
+            }
+        )
+
+    backend = GoogleAntigravityBackend(store=_Store(_credential()), fetch=fetch)
+
+    models = {model.model_id: model for model in backend.list_models()}
+
+    assert {
+        model_id
+        for model_id, model in models.items()
+        if model.provider_recommended
+    } == {"gemini-3.8-flash", "gemini-3.1-flash-lite"}
+    assert [
+        model_id for model_id, model in models.items() if model.provider_default
+    ] == ["gemini-3.8-flash"]
+    assert not models["gemini-2.5-pro"].provider_recommended
+    assert not models["gemini-3-flash"].provider_recommended
+
+
 def test_authenticated_model_discovery_normalizes_internal_aliases() -> None:
     def fetch(request, **_kwargs: Any) -> _Response:
         return _Response(

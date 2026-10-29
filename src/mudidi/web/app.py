@@ -9,6 +9,7 @@ import logging
 import secrets
 import shutil
 import sqlite3
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from threading import RLock, Thread
@@ -31,11 +32,15 @@ from pydantic import ValidationError
 from mudidi.llm.client import resolve_subscription_runtime
 from mudidi.llm.subscriptions import (
     AuthMode,
+    CompletionRequest,
+    SubscriptionAuthError,
     SubscriptionError,
     SubscriptionLifecycleBackend,
     SubscriptionLoginTransaction,
     SubscriptionProvider,
     SubscriptionModel,
+    SubscriptionTokenExpired,
+    resolve_subscription_model,
     subscription_provider_for_model,
     SubscriptionStatus,
 )
@@ -167,6 +172,16 @@ _TEMPLATES.env.globals["run_workspace_tabs"] = _run_workspace_tabs
 _MAX_LOG_BYTES = 512_000
 
 _SUBSCRIPTION_TRANSACTION_TTL = timedelta(minutes=10)
+# How long a passing subscription model test request is reused before the next
+# New Run submission sends another one.
+_SUBSCRIPTION_PROBE_TTL_SECONDS = 600.0
+# A blank subscription model field tries at most this many catalog models.
+_SUBSCRIPTION_DEFAULT_CANDIDATES = 3
+_SUBSCRIPTION_BY_WEB_PROVIDER = {
+    Provider.OPENAI: SubscriptionProvider.OPENAI,
+    Provider.GEMINI: SubscriptionProvider.GOOGLE,
+    Provider.ANTHROPIC: SubscriptionProvider.CLAUDE,
+}
 _SUBSCRIPTION_CALLBACK_PATHS = {
     SubscriptionProvider.OPENAI: "/auth/callback",
     SubscriptionProvider.GOOGLE: "/oauth2callback",
@@ -405,6 +420,8 @@ def create_app(
                     reasoning=item.reasoning,
                     release_at=item.release_at,
                     provider_order=item.provider_order,
+                    provider_recommended=item.provider_recommended,
+                    provider_default=item.provider_default,
                 )
             )
         return tuple(models)
@@ -713,6 +730,59 @@ def create_app(
             SubscriptionProvider.CLAUDE: Provider.ANTHROPIC,
         }[provider]
         app.state.model_catalog_service.invalidate(catalog_provider)
+        app.state.subscription_model_probes = {
+            key: expires
+            for key, expires in app.state.subscription_model_probes.items()
+            if key[0] is not provider
+        }
+
+    # Successful test requests, keyed by (provider, model, reasoning), with the
+    # monotonic time they stop counting. Failures are never cached.
+    app.state.subscription_model_probes = {}
+
+    async def probe_subscription_model(
+        provider: SubscriptionProvider,
+        model: str,
+        reasoning: str | None,
+    ) -> SubscriptionError | None:
+        """Send one tiny request; return the provider error if it is refused.
+
+        A subscription catalog can list models the provider no longer serves
+        (Google's lists Gemini 2.5 Pro but answers every request with 503), so a
+        listed model is only known to work once a request succeeds. Offline
+        runs never call a provider, so nothing is sent for them. Anything other
+        than a provider refusal is inconclusive and does not block the run.
+        """
+
+        if app.state.offline_inference:
+            return None
+        key = (provider, model, reasoning)
+        if app.state.subscription_model_probes.get(key, 0.0) > time.monotonic():
+            return None
+        backend = app.state.subscription_backends.get(provider)
+        complete = getattr(backend, "complete", None)
+        if not callable(complete):
+            return None
+        try:
+            request = CompletionRequest(
+                model=resolve_subscription_model(provider, model),
+                messages=[{"role": "user", "content": "Reply with the single word: ok"}],
+                reasoning=reasoning,
+            )
+            await asyncio.to_thread(complete, request)
+        except SubscriptionError as exc:
+            return exc
+        except Exception:
+            _SUBSCRIPTION_LOGGER.warning(
+                "Subscription model test request for %s was inconclusive",
+                model,
+                exc_info=True,
+            )
+            return None
+        app.state.subscription_model_probes[key] = (
+            time.monotonic() + _SUBSCRIPTION_PROBE_TTL_SECONDS
+        )
+        return None
 
     def subscription_category(
         status: SubscriptionStatus,
@@ -1532,9 +1602,9 @@ def create_app(
             "model"
         ):
             # A blank stage model (a select that was still loading or disabled
-            # at submit) takes the first model this account's catalog offers,
-            # the same choice the Model step preselects, rather than a fixed
-            # provider default the account may not have.
+            # at submit) takes the first model in this account's catalog that
+            # answers a test request, starting from the provider's default:
+            # the same order the Model step preselects from.
             active_stage_fields = {
                 "complete": ("stage1_model", "stage2_pass1_model", "stage2_pass2_model"),
                 "transcription": ("stage1_model",),
@@ -1554,7 +1624,8 @@ def create_app(
                     )
                 except ValueError:
                     continue
-                if provider not in {Provider.OPENAI, Provider.GEMINI, Provider.ANTHROPIC}:
+                subscription_provider = _SUBSCRIPTION_BY_WEB_PROVIDER.get(provider)
+                if subscription_provider is None:
                     continue
                 catalog = app.state.model_catalog_service.list_models(
                     provider,
@@ -1563,9 +1634,18 @@ def create_app(
                 )
                 if catalog.source in {"authentication_required", "unavailable"}:
                     continue
-                first = next(iter((*catalog.recommended, *catalog.available)), None)
-                if first is not None:
-                    payload[model_field] = first.model_id
+                reasoning = payload.get(
+                    model_field.removesuffix("_model") + "_reasoning"
+                ) or payload.get("reasoning")
+                candidates = (*catalog.recommended, *catalog.available)
+                for candidate in candidates[:_SUBSCRIPTION_DEFAULT_CANDIDATES]:
+                    if await probe_subscription_model(
+                        subscription_provider,
+                        candidate.model_id,
+                        str(reasoning) if reasoning else None,
+                    ) is None:
+                        payload[model_field] = candidate.model_id
+                        break
         raw_draft_id = str(submitted.get("upload_draft_id", "")).strip()
         try:
             app.state.inputs.validate_draft_id(raw_draft_id)
@@ -2170,29 +2250,85 @@ def create_app(
                     # The dashboard's default model is always one of the stage
                     # models, so check those fields: each has a visible control
                     # the error summary can link to.
-                    configured_models: list[tuple[str, str | None]] = [
-                        ("stage1_model", config.models.stage1),
-                        ("stage2_pass1_model", config.models.stage2_pass1),
-                        ("stage2_pass2_model", config.models.stage2_pass2),
+                    config_models = config.models
+                    agentic = config.agentic
+                    stage2_reasoning = config_models.stage2_reasoning
+                    configured_models: list[tuple[str, str | None, str | None]] = [
+                        (
+                            "stage1_model",
+                            config_models.stage1,
+                            config_models.stage1_reasoning,
+                        ),
+                        (
+                            "stage2_pass1_model",
+                            config_models.stage2_pass1,
+                            config_models.stage2_pass1_reasoning or stage2_reasoning,
+                        ),
+                        (
+                            "stage2_pass2_model",
+                            config_models.stage2_pass2,
+                            config_models.stage2_pass2_reasoning or stage2_reasoning,
+                        ),
                     ]
-                    if config.agentic.stage1 or config.agentic.stage2:
+                    if agentic.stage1 or agentic.stage2:
                         configured_models.extend(
                             (
-                                ("evaluator_model", config.agentic.evaluator_model),
-                                ("rewriter_model", config.agentic.rewriter_model),
+                                (
+                                    "evaluator_model",
+                                    agentic.evaluator_model,
+                                    agentic.evaluator_reasoning or agentic.reasoning,
+                                ),
+                                (
+                                    "rewriter_model",
+                                    agentic.rewriter_model,
+                                    agentic.rewriter_reasoning or agentic.reasoning,
+                                ),
                             )
                         )
-                    for field, model_id in configured_models:
-                        if (
-                            model_id is not None
-                            and subscription_provider_for_model(model_id) is provider
-                            and model_id not in allowed_models
-                        ):
+                    provider_models = [
+                        (field, model_id, reasoning)
+                        for field, model_id, reasoning in configured_models
+                        if model_id is not None
+                        and subscription_provider_for_model(model_id) is provider
+                    ]
+                    for field, model_id, _ in provider_models:
+                        if model_id not in allowed_models:
                             raise FormFieldError(
                                 field,
                                 f"Select a model currently available from the "
                                 f"{provider.value} subscription.",
                             )
+                    # Listed is not the same as served: send each distinct
+                    # model/reasoning pair one tiny request before the run, and
+                    # report a refusal on the first field that uses it.
+                    probe_fields: dict[tuple[str, str | None], str] = {}
+                    for field, model_id, reasoning in provider_models:
+                        probe_fields.setdefault((model_id, reasoning), field)
+                    failures = await asyncio.gather(
+                        *(
+                            probe_subscription_model(provider, model_id, reasoning)
+                            for model_id, reasoning in probe_fields
+                        )
+                    )
+                    for ((model_id, _), field), failure in zip(
+                        probe_fields.items(), failures, strict=True
+                    ):
+                        if failure is None:
+                            continue
+                        if isinstance(
+                            failure, (SubscriptionAuthError, SubscriptionTokenExpired)
+                        ):
+                            raise FormFieldError(
+                                "auth_mode",
+                                f"Log in to the {provider.value} subscription again "
+                                "before starting a run.",
+                            )
+                        raise FormFieldError(
+                            field,
+                            f"{model_id} is listed by your {provider.value} "
+                            f"subscription but did not answer a test request "
+                            f"({failure}). Choose another model.",
+                        )
             if draft_overlay_roles:
                 app.state.inputs.copy_draft_assets(
                     draft_id,

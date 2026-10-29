@@ -935,12 +935,17 @@ const applyModelCatalog = (
     select.append(inherit);
   }
   if (subscription) {
+    const providerName = {gemini: "Google", openai: "OpenAI", anthropic: "Claude"}[provider] || provider;
+    const recommended = payload.recommended || [];
+    appendModelGroup(select, `Recommended by ${providerName}`, recommended, provider);
     appendModelGroup(
       select,
-      provider === "gemini"
-        ? "Available from your subscription — Pro first"
-        : "Available from your subscription — newest first",
-      [...(payload.recommended || []), ...(payload.available || [])],
+      recommended.length
+        ? "Other models from your subscription"
+        : provider === "gemini"
+          ? "Available from your subscription — Pro first"
+          : "Available from your subscription — newest first",
+      payload.available,
       provider,
     );
   } else {

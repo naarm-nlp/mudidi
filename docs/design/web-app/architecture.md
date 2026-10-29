@@ -148,8 +148,10 @@ The API-key model catalog combines a bundled tested registry, live provider
 model-list results held in process memory, and custom LiteLLM identifiers.
 Provider failures fall back to the bundled catalog and never block custom
 entry. Subscription catalogs are separate: authenticated backend discovery
-returns a flat entitlement-only list and server validation rejects identifiers
-outside that list.
+returns the account's entitlement list, with provider-declared default and
+recommended models listed first. Server validation rejects identifiers outside
+that list and sends each chosen model one test request before review, because a
+listed model is not necessarily served.
 
 ## Security boundaries
 

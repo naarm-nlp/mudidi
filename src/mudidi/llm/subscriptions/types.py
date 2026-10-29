@@ -345,6 +345,10 @@ class SubscriptionModel:
     reasoning: ReasoningProfile
     release_at: datetime | None = None
     provider_order: int | None = None
+    # The provider's own picker signals: models it recommends, and the single
+    # model it uses by default. Neither guarantees the model is served.
+    provider_recommended: bool = False
+    provider_default: bool = False
 
     def __post_init__(self) -> None:
         if (

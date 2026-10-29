@@ -371,14 +371,28 @@ compatibility is not verified. **Refresh models** bypasses that cache. A missing
 key or unavailable provider leaves the bundled fallback usable and reports the
 degraded state without exposing provider errors or credentials.
 
-Subscription billing instead lists every canonical model advertised to the
-authenticated OpenAI, Google, or Claude account in one group. Google places
-Pro models before Flash models. Within each Google family, and for other
-providers, release timestamps take precedence; provider order and numeric model
-revisions provide deterministic fallbacks, so revision
-`3.10` sorts ahead of `3.9`. Subscription mode has no **Other model** escape
-hatch: preview and run submission reject model identifiers absent from the
-current authenticated catalog.
+Subscription billing instead lists the models advertised to the authenticated
+OpenAI, Google, or Claude account. When the provider names its own default and
+recommended models (Google does), they appear first under **Recommended by
+Google**, default first, and the Model step preselects that default; every
+other advertised model follows under **Other models from your subscription**.
+Without such signals, all models share one group. Google then places Pro models
+before Flash models. Within each Google family, and for other providers,
+release timestamps take precedence; provider order and numeric model revisions
+provide deterministic fallbacks, so revision `3.10` sorts ahead of `3.9`.
+Subscription mode has no **Other model** escape hatch: preview and run
+submission reject model identifiers absent from the current authenticated
+catalog.
+
+A provider catalog can list models the provider no longer serves; Google's
+lists Gemini 2.5 Pro to accounts whose every request to it returns HTTP 503.
+Before the Review page, MUDIDI therefore sends each chosen subscription model
+one tiny request ("Reply with the single word: ok") with the selected reasoning
+level. A refused model is rejected with an error on its field; a model that
+answers is not tested again for ten minutes. If a stage's model field arrives
+blank, MUDIDI uses the first of up to three catalog models, starting with the
+provider's default, that answers. These test requests count toward the
+subscription's usage like any other request.
 
 Google's subscription catalog includes internal effort-qualified and agent
 aliases. MUDIDI collapses `-low`, `-medium`, and `-high` variants into one

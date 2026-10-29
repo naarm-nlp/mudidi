@@ -31,6 +31,7 @@ from mudidi.llm.subscriptions import (
     SubscriptionModel,
     SubscriptionStatus,
     SubscriptionTokenExpired,
+    SubscriptionTransportError,
 )
 from mudidi.llm.subscriptions.oauth import LoopbackOAuthReceiver
 from mudidi.llm.subscriptions.openai_codex import OpenAICodexBackend
@@ -1739,6 +1740,130 @@ def test_subscription_preview_defaults_blank_model_to_account_catalog(
     run = app.state.run_store.list_runs()[0]
     config = app.state.job_controller.load_inference_config(run.run_id)
     assert config.models.stage1 == "gemini/gemini-3.8-flash"
+
+
+class _ServedModelsBackend(_FakeBackend):
+    """Google account whose catalog lists models the provider will not serve."""
+
+    def __init__(self, *, refused: set[str]) -> None:
+        super().__init__(SubscriptionProvider.GOOGLE)
+        self.refused = refused
+        self.requests: list[tuple[str, str | None]] = []
+
+    def list_models(self) -> tuple[SubscriptionModel, ...]:
+        def model(model_id: str, **flags: bool) -> SubscriptionModel:
+            return SubscriptionModel(
+                model_id=model_id,
+                display_name=model_id,
+                reasoning=resolve_reasoning_profile("google-antigravity", model_id),
+                **flags,
+            )
+
+        return (
+            model("gemini-2.5-pro"),
+            model("gemini-3-flash", provider_recommended=True),
+            model(
+                "gemini-3.8-flash",
+                provider_recommended=True,
+                provider_default=True,
+            ),
+        )
+
+    def complete(self, request: Any) -> Any:
+        self.requests.append((request.model, request.reasoning))
+        if request.model in self.refused:
+            raise SubscriptionTransportError(
+                "Google subscription service is unavailable",
+                provider=self.provider,
+                metadata={"status": 503, "reason": "provider_unavailable"},
+            )
+        return None
+
+
+def test_subscription_catalog_lists_provider_default_then_recommended_first(
+    tmp_path: Path,
+) -> None:
+    backend = _ServedModelsBackend(refused=set())
+    backend.login()
+    client = TestClient(_app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend}))
+
+    payload = client.get(
+        "/models/gemini",
+        params={"stage": "stage1", "auth_mode": "subscription"},
+    ).json()
+
+    assert [item["model_id"] for item in payload["recommended"]] == [
+        "gemini/gemini-3.8-flash",
+        "gemini/gemini-3-flash",
+    ]
+    assert [item["model_id"] for item in payload["available"]] == [
+        "gemini/gemini-2.5-pro"
+    ]
+
+
+def test_subscription_preview_rejects_listed_model_that_refuses_a_test_request(
+    tmp_path: Path,
+) -> None:
+    backend = _ServedModelsBackend(refused={"gemini-2.5-pro"})
+    backend.login()
+    app = _app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend})
+    client = TestClient(app)
+
+    response = _preview_subscription(
+        client,
+        tmp_path,
+        stage1_provider="gemini",
+        stage2_provider="gemini",
+        model="",
+        stage1_model="gemini/gemini-2.5-pro",
+    )
+
+    assert response.status_code == 422
+    assert 'data-error-target="stage1_model"' in response.text
+    assert "did not answer a test request" in response.text
+    assert app.state.run_store.list_runs() == []
+
+
+def test_subscription_preview_blank_model_takes_first_model_that_answers(
+    tmp_path: Path,
+) -> None:
+    # Google's default (3.8 Flash) is refused, so the next recommended model
+    # that answers is used; 2.5 Pro, listed but not recommended, is not tried.
+    backend = _ServedModelsBackend(refused={"gemini-3.8-flash"})
+    backend.login()
+    app = _app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend})
+    client = TestClient(app)
+
+    response = _preview_subscription(
+        client,
+        tmp_path,
+        stage1_provider="gemini",
+        stage2_provider="gemini",
+        model="",
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.models.stage1 == "gemini/gemini-3-flash"
+    assert "gemini-2.5-pro" not in {model for model, _ in backend.requests}
+
+
+def test_subscription_preview_reuses_a_passing_test_request(tmp_path: Path) -> None:
+    backend = _ServedModelsBackend(refused=set())
+    backend.login()
+    client = TestClient(_app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend}))
+    form = {
+        "stage1_provider": "gemini",
+        "stage2_provider": "gemini",
+        "model": "",
+        "stage1_model": "gemini/gemini-3-flash",
+    }
+
+    assert _preview_subscription(client, tmp_path, **form).status_code == 200
+    assert _preview_subscription(client, tmp_path, **form).status_code == 200
+
+    assert backend.requests == [("gemini-3-flash", "low")]
 
 
 def test_subscription_preview_rejects_manual_model_entry(tmp_path: Path) -> None:

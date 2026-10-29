@@ -8,10 +8,14 @@
   the step of the first listed issue.
 - Subscription model-availability errors now name the Stage 1 or Stage 2 model
   field instead of a generic **Model** entry with no matching control.
-- With subscription billing, a stage model that reaches the server blank now
-  defaults to the first model the signed-in account's catalog offers (the same
-  model the Model step preselects) instead of a fixed provider default the
-  account may not have.
+- Subscription model menus list the provider's default and recommended models
+  first (**Recommended by Google**), so Google accounts now preselect
+  Gemini 3.8 Flash instead of Gemini 2.5 Pro, which Google lists but refuses
+  with HTTP 503.
+- Before the Review page, each chosen subscription model gets one tiny test
+  request; a model the provider refuses is rejected on its field instead of
+  failing the run after repeated retries. A blank stage model takes the first
+  catalog model, starting with the provider's default, that answers.
 
 ## Unreleased — Stage 1 typography on by default
 
