@@ -2129,8 +2129,10 @@ def create_app(
                             *catalog_result.available,
                         )
                     }
+                    # The dashboard's default model is always one of the stage
+                    # models, so check those fields: each has a visible control
+                    # the error summary can link to.
                     configured_models: list[tuple[str, str | None]] = [
-                        ("model", config.models.default),
                         ("stage1_model", config.models.stage1),
                         ("stage2_pass1_model", config.models.stage2_pass1),
                         ("stage2_pass2_model", config.models.stage2_pass2),

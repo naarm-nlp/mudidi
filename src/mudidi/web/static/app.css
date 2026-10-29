@@ -170,6 +170,10 @@ h1 { margin-bottom: 0; font-size: 32px; }
 .form-error-summary h2 { margin: 0 0 6px; font-size: 18px; }
 .form-error-summary p { margin: 0; }
 .form-error-summary ul { margin: 10px 0 0; padding-left: 20px; }
+.form-error-summary li + li { margin-top: 4px; }
+.form-error-link { display: inline; padding: 0; border: 0; color: inherit; background: none; font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.form-error-link:hover { color: var(--color-danger-text); }
+.form-error-link:focus-visible { outline: 3px solid var(--color-danger); outline-offset: 2px; }
 .wizard-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
 .wizard-panel-heading h2 { margin-bottom: 0; font-size: 22px; }
 .form-section { min-width: 0; margin: 0; padding: 24px 0 0; border: 0; border-top: 1px solid var(--color-hair); }

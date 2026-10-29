@@ -121,7 +121,7 @@
             <section class="form-error-summary" role="alert" aria-labelledby="form-error-title">
               <h2 id="form-error-title">Check the highlighted configuration</h2>
               <p>{{ validation_errors|length }} issue{% if validation_errors|length != 1 %}s{% endif %} prevented this run from being prepared.</p>
-              <ul>{% for error in validation_errors %}<li><strong>{{ error.field }}:</strong> {{ error.message }}</li>{% endfor %}</ul>
+              <ul>{% for error in validation_errors %}<li><button class="form-error-link" type="button" data-error-target="{{ error.key }}"><strong>{{ error.field }}:</strong> {{ error.message }}</button></li>{% endfor %}</ul>
             </section>
             {% endif %}
             <input type="hidden" name="preset_id" value="{{ selected_preset.preset_id if selected_preset else '' }}">
@@ -543,5 +543,5 @@
 {% endblock %}
 {% block body_end %}
 {% if preset_state %}<script id="preset-form-state" type="application/json">{{ preset_state|tojson }}</script>{% endif %}
-<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-22" defer></script>
+<script src="{{ url_for('static', path='/app.js') }}?v=dashboard-ui-23" defer></script>
 {% endblock %}

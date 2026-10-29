@@ -1710,6 +1710,11 @@ def test_subscription_preview_rejects_models_outside_authenticated_catalog(
 
     assert response.status_code == 422
     assert "currently available from the openai subscription" in response.text
+    # The error names the Stage 1 model select, not the control-less default
+    # model, so the summary link and the red highlight land on a real field.
+    assert 'data-error-target="stage1_model"' in response.text
+    assert 'data-field-error="stage1_model"' in response.text
+    assert 'data-error-target="model"' not in response.text
 
 
 def test_subscription_preview_rejects_manual_model_entry(tmp_path: Path) -> None:

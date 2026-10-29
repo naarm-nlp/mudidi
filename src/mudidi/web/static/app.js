@@ -1784,6 +1784,30 @@ synchronizePipeline();
 synchronizeAgentic();
 loadModelCatalog();
 updateRunSummary();
+// Every server error links to its field. Errors whose field has no
+// server-rendered error markup (Model-step selects checked against a
+// subscription catalog, for example) get a red owner here, so the link and the
+// initial wizard routing below both find them. Errors with no matching field
+// stay plain text.
+const serverErrorTarget = (key) => {
+  if (!wizard || !runForm || !key) return null;
+  const marked = wizard.querySelector(`[data-field-error="${CSS.escape(key)}"]`);
+  if (marked) return marked;
+  const named = runForm.elements.namedItem(key);
+  const field = named instanceof RadioNodeList ? named[0] : named;
+  if (!field || !wizard.contains(field)) return null;
+  const owner = wizardFieldOwner(field);
+  owner.classList.add("field-invalid");
+  owner.dataset.fieldError = key;
+  field.setAttribute("aria-invalid", "true");
+  return owner;
+};
+const serverErrorLinks = [...document.querySelectorAll("[data-error-target]")].filter((link) => {
+  if (serverErrorTarget(link.dataset.errorTarget)) return true;
+  link.replaceWith(...link.childNodes);
+  return false;
+});
+
 if (advancedBody && (activeInstructionStages().length || advancedBody.querySelector("[data-field-error]"))) {
   setAdvancedOpen(true);
 }
@@ -1823,7 +1847,10 @@ const scheduleWizardInvalidAttemptReset = () => {
 
 if (wizard) {
   let initialWizardStep = "input";
-  const firstServerError = wizard.querySelector("[data-field-error]");
+  const firstServerError = (
+    serverErrorTarget(serverErrorLinks[0]?.dataset.errorTarget)
+    || wizard.querySelector("[data-field-error]")
+  );
   const firstServerPanel = firstServerError && wizardPanelForField(firstServerError);
   if (firstServerPanel?.dataset.wizardPanel) {
     initialWizardStep = firstServerPanel.dataset.wizardPanel;
@@ -1833,6 +1860,22 @@ if (wizard) {
     }
   }
   setWizardStep(initialWizardStep, { focus: false });
+  serverErrorLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      const target = serverErrorTarget(link.dataset.errorTarget);
+      if (!target) return;
+      const step = wizardPanelForField(target)?.dataset.wizardPanel;
+      if (step && step !== activeWizardStep) setWizardStep(step, { focus: false });
+      if (advancedBody?.hidden && advancedBody.contains(target)) setAdvancedOpen(true);
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+      const control = target.matches("input, select, textarea")
+        ? target
+        : target.querySelector(
+          "input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea:not(:disabled)",
+        );
+      control?.focus({ preventScroll: true });
+    });
+  });
   wizard.querySelectorAll("[data-wizard-go]").forEach((button) => {
     button.addEventListener("click", () => {
       const step = button.dataset.wizardGo;

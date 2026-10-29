@@ -1,5 +1,14 @@
 # Release notes
 
+## Unreleased — Clickable dashboard errors
+
+- Each issue in the New Run error summary links to its field: selecting it
+  opens the wizard step that contains the field, scrolls to it, and focuses it.
+  Fields named by a server error are outlined in red, and the wizard opens on
+  the step of the first listed issue.
+- Subscription model-availability errors now name the Stage 1 or Stage 2 model
+  field instead of a generic **Model** entry with no matching control.
+
 ## Unreleased — Stage 1 typography on by default
 
 - Inference now asks Stage 1 to wrap confidently bold text in `<b>…</b>` and
