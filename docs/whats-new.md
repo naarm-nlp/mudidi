@@ -8,6 +8,10 @@
   the step of the first listed issue.
 - Subscription model-availability errors now name the Stage 1 or Stage 2 model
   field instead of a generic **Model** entry with no matching control.
+- With subscription billing, a stage model that reaches the server blank now
+  defaults to the first model the signed-in account's catalog offers (the same
+  model the Model step preselects) instead of a fixed provider default the
+  account may not have.
 
 ## Unreleased — Stage 1 typography on by default
 

@@ -1528,6 +1528,44 @@ def create_app(
             ]
             if any(values):
                 payload[field_name] = values
+        if payload.get("auth_mode") == AuthMode.SUBSCRIPTION.value and not payload.get(
+            "model"
+        ):
+            # A blank stage model (a select that was still loading or disabled
+            # at submit) takes the first model this account's catalog offers,
+            # the same choice the Model step preselects, rather than a fixed
+            # provider default the account may not have.
+            active_stage_fields = {
+                "complete": ("stage1_model", "stage2_pass1_model", "stage2_pass2_model"),
+                "transcription": ("stage1_model",),
+                "structure": ("stage2_pass1_model", "stage2_pass2_model"),
+            }.get(str(payload.get("pipeline", "complete")), ())
+            for model_field in active_stage_fields:
+                if payload.get(model_field):
+                    continue
+                stage1 = model_field == "stage1_model"
+                provider_field = "stage1_provider" if stage1 else "stage2_provider"
+                try:
+                    provider = Provider(
+                        payload.get(
+                            provider_field,
+                            NewRunForm.model_fields[provider_field].default,
+                        )
+                    )
+                except ValueError:
+                    continue
+                if provider not in {Provider.OPENAI, Provider.GEMINI, Provider.ANTHROPIC}:
+                    continue
+                catalog = app.state.model_catalog_service.list_models(
+                    provider,
+                    stage=CatalogStage.STAGE1 if stage1 else CatalogStage.STAGE2,
+                    auth_mode=CatalogAuthMode.SUBSCRIPTION,
+                )
+                if catalog.source in {"authentication_required", "unavailable"}:
+                    continue
+                first = next(iter((*catalog.recommended, *catalog.available)), None)
+                if first is not None:
+                    payload[model_field] = first.model_id
         raw_draft_id = str(submitted.get("upload_draft_id", "")).strip()
         try:
             app.state.inputs.validate_draft_id(raw_draft_id)

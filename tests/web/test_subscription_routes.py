@@ -1717,6 +1717,30 @@ def test_subscription_preview_rejects_models_outside_authenticated_catalog(
     assert 'data-error-target="model"' not in response.text
 
 
+def test_subscription_preview_defaults_blank_model_to_account_catalog(
+    tmp_path: Path,
+) -> None:
+    # The account offers only gemini-3.8-flash, not the fixed Google default
+    # (gemini-3.1-pro-low). A blank Stage 1 select must take the account's model.
+    backend = _FakeBackend(SubscriptionProvider.GOOGLE)
+    backend.login()
+    app = _app(tmp_path, backends={SubscriptionProvider.GOOGLE: backend})
+    client = TestClient(app)
+
+    response = _preview_subscription(
+        client,
+        tmp_path,
+        stage1_provider="gemini",
+        stage2_provider="gemini",
+        model="",
+    )
+
+    assert response.status_code == 200
+    run = app.state.run_store.list_runs()[0]
+    config = app.state.job_controller.load_inference_config(run.run_id)
+    assert config.models.stage1 == "gemini/gemini-3.8-flash"
+
+
 def test_subscription_preview_rejects_manual_model_entry(tmp_path: Path) -> None:
     backend = _FakeBackend(SubscriptionProvider.OPENAI)
     backend.login()
