@@ -2,7 +2,7 @@
 
 ## Overview
 
-`mudidi run` digitizes a dictionary supplied as a page directory or source PDF. Production mode uses Stage 1 predictions as Stage 2's authoritative text. Each page is parsed on its own, with the end of the previous page's transcript as context, and the per-page MDF is joined into one dictionary file.
+`mudidi run` digitizes a dictionary supplied as a page directory or source PDF. Production mode uses Stage 1 predictions as Stage 2's authoritative text. Each page is parsed on its own, with the end of the previous page's transcript and the start of the next page's transcript as context, and the per-page MDF is joined into one dictionary file.
 
 Use the minimal CLI for a quick run or a `kind: inference` YAML file for model,
 agentic, cache, MDF parsing guide, and runtime controls. The YAML compatibility
@@ -157,17 +157,36 @@ output/
 
 Stage 2 parses each page locally: a page's MDF holds exactly the lines printed
 on that page. When an entry runs over a page break, the first page's file ends
-mid-entry and the next page's file opens with the remaining fields, with no
-`\lx` line above them. The model sees the last 1,500 characters of the
-previous page's Stage 1 transcript, as text only, so it can give those opening
-lines the right markers. It never sees the next page.
+mid-entry and the next page's file opens with the rest, with no `\lx` line
+above it. The model sees the last 1,500 characters of the previous page's
+Stage 1 transcript and the first 1,500 characters of the next page's, as text
+only, so it can give the lines on both sides of the break the right markers.
+
+When a field itself is cut by the page break, the first page opens the field
+with its marker and the next page's file starts with the remaining words on a
+line **without a marker**. In Toolbox standard format such a line continues the
+field above it, so appending the pages yields one field:
+
+```text
+page_130.mdf.txt          page_131.mdf.txt
+\sn 2                     try to overpower someone in a wrestling match
+\ge To                    \cf bwááng
+```
+
+reads as `\ge To try to overpower someone in a wrestling match`. A word
+hyphenated across the page break is written whole on the page where it starts
+and its remainder is left out at the top of the next page. Tools that expect one
+field per line must join a marker-less line to the field above it, as Toolbox
+does; MUDIDI's own evaluator does.
 
 `dictionary.mdf.txt` appends the page files in page order, which re-attaches
-those opening fields to the entry they belong to. `dictionary.mdf.report.json`
-lists every page that starts mid-entry (`pages_starting_mid_entry`) so the
-joins can be spot-checked. A page file with no MDF marker at all, such
-as a model refusal, is left out and listed under `pages_without_mdf`. If the previous page is missing from the run, the
-fields are kept as a separate block and `joined_to_previous_page` is `false`.
+those opening lines to the entry and field they belong to, so the combined file
+needs no further merging. `dictionary.mdf.report.json` lists every page that
+starts mid-entry (`pages_starting_mid_entry`), with `continues_field: true` when
+its first line continues a field, so the joins can be spot-checked. A page file
+with no MDF marker at all, such as a model refusal, is left out and listed under
+`pages_without_mdf`. If the previous page is missing from the run, the opening
+lines are kept as a separate block and `joined_to_previous_page` is `false`.
 Both files are rebuilt at the end of every Stage 2 run and whenever a page's
 MDF is edited in the dashboard.
 

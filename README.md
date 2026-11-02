@@ -318,7 +318,9 @@ outputs/my-dictionary/
 ```
 
 Each `page_N.mdf.txt` holds exactly the lines printed on that page, so an entry
-that crosses a page break is split between two page files.
+that crosses a page break is split between two page files; a field cut by the
+break continues at the top of the next page file on a line without a marker,
+which Toolbox standard format joins to the field above.
 `dictionary.mdf.txt` joins the pages in order into the complete dictionary.
 The report identifies pages that start mid-entry and pages with no MDF; pages
 without MDF are excluded from the combined dictionary.

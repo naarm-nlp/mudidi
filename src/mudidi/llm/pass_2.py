@@ -29,6 +29,7 @@ from mudidi.llm.prompts import page_boundary_rules_prompt
 from mudidi.utils.page_context import (
     PageContext,
     format_current_page_block,
+    format_next_page_block,
     format_previous_page_block,
     format_page_image_order_note,
 )
@@ -77,13 +78,17 @@ def _neighbor_format_kwargs(
         return {
             "current_page_context": "",
             "previous_page_context": "",
+            "next_page_context": "",
             "page_image_order": "",
         }
     return {
         "current_page_context": format_current_page_block(page_context),
         "previous_page_context": format_previous_page_block(page_context.previous),
+        "next_page_context": format_next_page_block(page_context.next),
         "page_image_order": format_page_image_order_note(page_context),
     }
+
+
 def _render_direct_mdf_user_parts(
     *,
     transcription: str,

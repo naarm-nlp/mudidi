@@ -1,5 +1,21 @@
 # Release notes
 
+## Unreleased — Fields cut by a page break stay one field
+
+- Stage 2 Pass 2 now also sees the first 1,500 characters of the next page's
+  Stage 1 transcript (text only), so it can label the lines at the bottom of a
+  page by how they continue.
+- A field cut by a page break continues at the top of the next page's MDF on a
+  line without a marker, which Toolbox standard format joins to the field
+  above. `dictionary.mdf.txt` is plain concatenation and already holds the
+  whole field; previously the next page reopened a marker and could pick a
+  different one (for example `\ge To` followed by `\de try to …`).
+- A word hyphenated across a page break is written whole on the page where it
+  starts.
+- `dictionary.mdf.report.json` marks such pages with `continues_field: true`.
+  Tools reading page or combined MDF must join a marker-less line to the field
+  above it; MUDIDI's MDF normalization and Stage 2 evaluator do.
+
 ## Unreleased — Clickable dashboard errors
 
 - Each issue in the New Run error summary links to its field: selecting it

@@ -10,6 +10,7 @@ from mudidi.utils.combined_mdf import (
     COMBINED_MDF_REPORT_FILENAME,
     write_combined_mdf,
 )
+from mudidi.evaluation.stage2.mdf_parser import parse_mdf
 
 
 def _write_page(stage2_root: Path, stem: str, text: str) -> None:
@@ -39,12 +40,35 @@ def test_continuation_page_joins_the_previous_pages_last_entry(tmp_path: Path) -
             "page": "page_11",
             "previous_page": "page_10",
             "first_line": "\\se alo nu",
+            "continues_field": False,
             "joined_to_previous_page": True,
         }
     ]
     assert json.loads(
         (tmp_path / COMBINED_MDF_REPORT_FILENAME).read_text(encoding="utf-8")
     ) == report
+
+
+def test_unmarked_first_line_finishes_the_previous_pages_last_field(
+    tmp_path: Path,
+) -> None:
+    # Page 15 opens with the rest of page 14's cut \gn, without a marker. Plain
+    # concatenation must yield one field, which Toolbox reads as "von wegen uä".
+    stage2 = tmp_path / "stage-2"
+    _write_page(stage2, "page_14", "\\lx habayit\n\\ge das Haus\n\\gn von wegen\n")
+    _write_page(stage2, "page_15", "uä\n\\se habayta\n\\ge nach Hause\n")
+
+    report = write_combined_mdf(stage2, tmp_path)
+
+    combined = (tmp_path / COMBINED_MDF_FILENAME).read_text(encoding="utf-8")
+    assert combined == (
+        "\\lx habayit\n\\ge das Haus\n\\gn von wegen\nuä\n"
+        "\\se habayta\n\\ge nach Hause\n"
+    )
+    assert report is not None
+    assert report["pages_starting_mid_entry"][0]["continues_field"] is True
+    gn = [line for line in parse_mdf(combined)[0].lines if line.marker == "gn"]
+    assert [line.value for line in gn] == ["von wegen uä"]
 
 
 def test_continuation_after_a_missing_page_is_not_attached(tmp_path: Path) -> None:

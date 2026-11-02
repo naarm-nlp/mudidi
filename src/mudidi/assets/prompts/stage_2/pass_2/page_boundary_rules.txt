@@ -1,9 +1,18 @@
 Page boundary rules (page-local parsing):
-- Parse exactly what is printed on the CURRENT page. Every line of the current-page transcription becomes MDF, and no text from any other page does.
-- Each page's MDF is appended directly after the previous page's MDF to form the dictionary, so an entry that crosses a page break is split between the two pages' outputs.
-- Entry that starts on this page and runs past the bottom: emit only the part printed on this page. Stop where the page stops, even mid-entry or mid-sentence, and keep a trailing hyphen exactly as printed. Do not complete the entry from memory or guesswork; the next page's output continues it.
-- Lines at the top of this page that continue an entry begun on the previous page: emit them first, tagged with the markers they carry inside that entry (\sn, \ge, \xv, \xe, \se, …). Do NOT emit a \lx line for them, and do not repeat or invent the parent headword.
-  • Example: \lx ala starts on page_53 and its sub-forms like —alas nuwebi print at the top of page_54. page_53 emits \lx ala with only the fields printed on page_53. page_54 begins with the \se alas nuwebi block (no \lx above it), then continues with the entries whose headwords start on page_54.
-- Field broken by the page break (a gloss, definition or example sentence that the previous page left unfinished): begin this page by re-opening that same marker with the remaining words. Do not choose a different marker for the fragment.
-- <previous_page> holds the end of the previous page's transcription. Use it ONLY to work out which entry, sense and field the top-of-page lines continue, so they get the right markers. Never copy text from <previous_page> into the output.
-- The only page image is the CURRENT page. No next-page context is provided or needed.
+- Parse exactly what is printed on the CURRENT page. Every line of the current-page transcription becomes MDF, and no text from any other page does, except the one hyphenated-word case below.
+- Each page's MDF is appended directly after the previous page's MDF to form one dictionary file in Toolbox standard format. In that format a line with no leading \marker continues the field above it. Write each page so that the joined file is already correct MDF.
+- Top of the CURRENT page, continuing the previous page (see <previous_page>):
+  • A field cut by the page break (a gloss, definition or example sentence the previous page left unfinished): output the remaining words FIRST, on a line with NO marker. The previous page's MDF already opened that field; a marker here would split one field into two.
+    Example: page_14 ends "\gn von wegen". page_15 starts with the line "uä." and no marker, so the joined file reads "\gn von wegen" then "uä.", one \gn field.
+  • Further lines that continue the previous page's entry (senses, subentries, examples): emit them next, tagged with the markers they carry inside that entry (\sn, \ge, \xv, \xe, \se, …). Do NOT emit a \lx line for them, and do not repeat or invent the parent headword.
+    Example: \lx ala starts on page_53 and its sub-forms like —alas nuwebi print at the top of page_54. page_53 emits \lx ala with only the fields printed on page_53. page_54 begins with the \se alas nuwebi block (no \lx above it), then continues with the entries whose headwords start on page_54.
+  • When the page starts exactly at a field boundary, there is nothing to continue: begin with that field's marker as usual.
+- Bottom of the CURRENT page, continuing onto the next page (see <next_page>):
+  • Emit only the part printed on this page. Stop where the page stops, even mid-entry or mid-sentence; do not complete the entry. The next page's output continues it without repeating any marker.
+  • Because the next page will not restate the marker, choose the markers for these last lines here, using <next_page> to see how the text continues: a fragment that turns out to be the start of an example, cross-reference, subentry, variant, or a gloss in a particular language gets that marker on this page.
+- Word hyphenated across the page break:
+  • If the last word on this page is broken by a hyphen and completed at the very top of <next_page> (for example "Ge-" then "bäude"), write the whole word here ("Gebäude"). This is the only text ever taken from <next_page>.
+  • If the first word on this page is the remainder of a word hyphenated at the very end of <previous_page>, leave that remainder out: the previous page already wrote the whole word.
+  • A hyphen that belongs to the word itself (a compound such as "Nord-Süd") is not a break: keep it as printed and do not join or omit anything.
+- <previous_page> and <next_page> are transcript excerpts for working out entry, sense and field boundaries. Never copy their text into the output, apart from finishing a hyphenated word as described above.
+- The only page image is the CURRENT page.

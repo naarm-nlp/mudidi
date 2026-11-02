@@ -1,4 +1,4 @@
-"""Tests for previous-page context formatting."""
+"""Tests for neighbor-page context formatting."""
 
 from __future__ import annotations
 
@@ -9,8 +9,10 @@ from mudidi.utils.page_context import (
     PageContext,
     build_page_context,
     format_current_page_block,
+    format_next_page_block,
     format_page_image_order_note,
     format_previous_page_block,
+    next_page_excerpt,
     previous_page_excerpt,
 )
 
@@ -35,17 +37,20 @@ def test_build_previous_page_for_sparse_page_list(tmp_path: Path) -> None:
     assert ctx_54.previous.transcript == "text page_53"
 
 
-def test_build_page_context_loads_only_the_previous_transcript(tmp_path: Path) -> None:
+def test_build_page_context_loads_both_neighbor_transcripts(tmp_path: Path) -> None:
     pages = [tmp_path / f"page_{n}.pdf" for n in (1, 2, 3)]
     loaded: list[str] = []
 
     def loader(stem: str) -> str:
         loaded.append(stem)
-        return ""
+        return f"text {stem}"
 
-    build_page_context(pages, 1, transcript_loader=loader)
+    middle = build_page_context(pages, 1, transcript_loader=loader)
+    last = build_page_context(pages, 2, transcript_loader=loader)
 
-    assert loaded == ["page_1"]
+    assert loaded == ["page_1", "page_3", "page_2"]
+    assert middle.next is not None and middle.next.transcript == "text page_3"
+    assert last.next is None and not last.has_next
 
 
 def test_current_page_block_is_page_local() -> None:
@@ -58,7 +63,7 @@ def test_current_page_block_is_page_local() -> None:
     assert "<current_page>" in block
     assert "every line printed on this page, and only those lines" in block
     assert "without a \\lx line" in block
-    assert "next_page" not in block
+    assert "use <next_page> only to choose the right markers" in block
 
     order = format_page_image_order_note(ctx)
     assert "CURRENT page (file page_54)" in order
@@ -67,12 +72,18 @@ def test_current_page_block_is_page_local() -> None:
     assert "page_53" not in order
 
 
-def test_image_order_note_omits_previous_page_when_there_is_none() -> None:
-    order = format_page_image_order_note(
-        PageContext(previous=None, current_stem="page_1")
+def test_image_order_note_names_only_the_neighbors_that_exist() -> None:
+    first = format_page_image_order_note(PageContext(previous=None, current_stem="page_1"))
+    both = format_page_image_order_note(
+        PageContext(
+            previous=NeighborPage("page_1", Path("page_1.pdf")),
+            current_stem="page_2",
+            next=NeighborPage("page_3", Path("page_3.pdf")),
+        )
     )
 
-    assert "previous page" not in order
+    assert "previous" not in first and "next" not in first
+    assert "previous and next pages are provided as transcript excerpts" in both
 
 
 def test_previous_page_excerpt_keeps_whole_lines_from_the_end() -> None:
@@ -114,3 +125,26 @@ def test_previous_page_block_reports_a_whole_short_page() -> None:
 
 def test_previous_page_block_without_a_previous_page() -> None:
     assert format_previous_page_block(None) == "<previous_page>\n(none)\n</previous_page>"
+
+
+def test_next_page_block_holds_the_start_of_the_page_as_context_only() -> None:
+    transcript = "\n".join(f"entry {i:03d} " + "x" * 40 for i in range(100))
+    block = format_next_page_block(
+        NeighborPage("page_55", Path("page_55.pdf"), transcript)
+    )
+
+    assert block.startswith("<next_page>")
+    assert "only the START of the next page" in block
+    assert "entry 000" in block and "entry 099" not in block
+    assert block.index("entry 000") < block.index(
+        "[... later lines of page_55 omitted ...]"
+    )
+    assert "except to finish a word hyphenated across the page break" in block
+
+
+def test_next_page_excerpt_keeps_whole_lines_from_the_start() -> None:
+    transcript = "\n".join(f"line {i:02d}" for i in range(10))
+
+    assert next_page_excerpt(transcript, limit=24) == ("line 00\nline 01\nline 02", True)
+    assert next_page_excerpt("x" * 50, limit=10) == ("x" * 50, False)
+    assert format_next_page_block(None) == "<next_page>\n(none)\n</next_page>"

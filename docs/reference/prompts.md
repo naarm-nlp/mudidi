@@ -47,10 +47,11 @@ appended to that system message as well.
 
 Optional values are visible as Jinja conditionals in the user templates.
 User guides are included only when supplied. In inference the user message
-also carries the end of the previous page's Stage 1 transcript, as text, so
-lines that continue an earlier entry get the right markers; the next page is
-not sent, and the only page image is the current page. Pass 2 never receives
-the SIL MDF manual.
+also carries the end of the previous page's and the start of the next page's
+Stage 1 transcripts, as text, so lines on both sides of a page break get the
+right markers; the only page image is the current page. A field cut by the
+page break continues on the next page as a line without a marker. Pass 2 never
+receives the SIL MDF manual.
 
 The per-folder README files under `src/mudidi/assets/prompts/stage_1/` and
 `stage_2/pass_1/` and `stage_2/pass_2/` document the exact message pairings and

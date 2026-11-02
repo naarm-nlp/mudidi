@@ -105,11 +105,13 @@ def test_pass2_benchmark_prompt_does_not_claim_transcript_is_gold(
 def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     page = tmp_path / "page_2.png"
     previous = tmp_path / "page_1.png"
-    for path in (page, previous):
+    following = tmp_path / "page_3.png"
+    for path in (page, previous, following):
         path.write_bytes(b"fake-image")
     page_context = PageContext(
         previous=NeighborPage("page_1", previous, "previous transcript"),
         current_stem="page_2",
+        next=NeighborPage("page_3", following, "next transcript"),
     )
 
     messages = build_direct_mdf_messages(
@@ -125,12 +127,15 @@ def test_pass2_inference_context_stays_dynamic(tmp_path: Path) -> None:
     static_text = messages[1]["content"][0]["text"]
     dynamic_text = messages[2]["content"][0]["text"]
     assert "MDF parsing guide (use these markers exactly)" in static_text
-    assert "current transcript" not in static_text
-    assert "<current_page>" not in static_text
-    assert "current transcript" in dynamic_text
-    assert "<current_page>" in dynamic_text
-    assert "previous transcript" in dynamic_text
-    assert "<next_page>" not in dynamic_text
+    for page_specific in (
+        "current transcript",
+        "<current_page>",
+        "previous transcript",
+        "next transcript",
+    ):
+        assert page_specific not in static_text
+        assert page_specific in dynamic_text
+    # Neighbor pages arrive as text only: the current page is the single image.
     assert len(messages[2]["content"]) == 2
 
 

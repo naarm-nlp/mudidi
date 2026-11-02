@@ -377,11 +377,17 @@ def _stage1_editor_system_prompt() -> str:
 # page order, so a page may legitimately open or close in the middle of an entry.
 _STAGE2_PAGE_LOCAL_NOTE = (
     "The MDF covers one page of a longer dictionary and is appended after the "
-    "previous page's MDF. It may therefore begin with fields that continue an "
-    "entry from the previous page, with no \\lx line above them, and it may end "
-    "in the middle of an entry or sentence. Both are correct. Never add or "
-    "request a \\lx headword, or text completing a cut-off entry, that is not in "
-    "the Stage 1 transcript."
+    "previous page's MDF. It may therefore begin with a line that has no "
+    "marker: that line finishes a field the previous page left open, and "
+    "standard format joins it to that field. It may then continue with fields "
+    "of an entry from the previous page, with no \\lx line above them, and it "
+    "may end in the middle of an entry or sentence. All of these are correct; "
+    "never add a marker to that first unmarked line. A word hyphenated across "
+    "the page break is written whole on the page where it starts and left out "
+    "at the top of the next page, so one word at the end may be completed and "
+    "one fragment at the start may be missing; do not flag either. Otherwise "
+    "never add or request a \\lx headword, or text completing a cut-off entry, "
+    "that is not in the Stage 1 transcript."
 )
 
 
@@ -421,7 +427,8 @@ def _stage2_grounding_summary(transcribed_text: str, output: str) -> str:
     found_count = len(value_tokens) - len(missing_tokens)
     marker_counts: dict[str, int] = {}
     for line in field_lines:
-        marker_counts[line.marker] = marker_counts.get(line.marker, 0) + 1
+        marker = line.marker or "(continuation)"
+        marker_counts[marker] = marker_counts.get(marker, 0) + 1
     marker_summary = ", ".join(
         f"{marker}:{count}" for marker, count in sorted(marker_counts.items())
     )

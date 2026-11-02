@@ -44,9 +44,13 @@ def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | 
     refusal) is left out and listed under ``pages_without_mdf``.
 
     A page that opens mid-entry is appended directly to the previous page so
-    its fields join that page's last entry. Every such page is listed in the
-    report for spot-checking; when the previous page is missing from the run
-    the fields cannot be attached and stay a separate block.
+    its fields join that page's last entry; when its first line has no marker
+    it also continues that entry's last field, as Toolbox standard format
+    reads a marker-less line. Every such page is listed in the report for
+    spot-checking; when the previous page is missing from the run the fields
+    cannot be attached and stay a separate block. A page with no marker at all
+    is left out and reported, because it cannot be told apart from a model
+    refusal.
 
     Returns the report, or ``None`` when no page MDF exists yet.
     """
@@ -88,6 +92,7 @@ def write_combined_mdf(stage2_root: Path, output_dir: Path) -> dict[str, Any] | 
                     "page": stem,
                     "previous_page": previous_stem,
                     "first_line": first_line,
+                    "continues_field": not first_line.startswith("\\"),
                     "joined_to_previous_page": attached,
                 }
             )

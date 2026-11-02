@@ -4,9 +4,11 @@ Every extraction request has a system message and a user message, plus the
 current dictionary-page image. Inference parses each page locally: the MDF
 covers exactly the lines printed on that page, and per-page outputs are
 concatenated in page order to form the dictionary. The end of the previous
-page's transcript is supplied as text inside the user message, only so that
-lines continuing an earlier entry get the right markers. The next page is not
-sent, and neighboring pages are never sent as images.
+page's transcript and the start of the next page's transcript are supplied as
+text inside the user message, only so that lines at either page break get the
+right markers. A field cut by a page break continues on the next page as a
+line without a marker, which Toolbox standard format joins to the field above.
+Neighboring pages are never sent as images.
 
 | Mode | System message | User message |
 | --- | --- | --- |

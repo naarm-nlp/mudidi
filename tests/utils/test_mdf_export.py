@@ -21,3 +21,17 @@ def test_normalize_mdf_text_strips_leaked_bold_and_italic() -> None:
 def test_normalize_mdf_field_value_preserves_characters() -> None:
     assert normalize_mdf_field_value("<b>lemma</b>") == "lemma"
     assert normalize_mdf_field_value("gloss.") == "gloss"
+
+
+def test_normalize_treats_unmarked_lines_as_part_of_the_field_above() -> None:
+    # A page may open with the rest of a field the previous page left open.
+    raw = "uä <i>etc</i>.\n\\se habayta.\n\\ge nach Hause,\nzu Hause.\n\n\\lx x\n."
+
+    assert normalize_mdf_text(raw) == (
+        "uä etc\n"  # opening continuation: markup and final punctuation stripped
+        "\\se habayta\n"
+        "\\ge nach Hause,\n"  # field continues: no end-of-sentence stripping here
+        "zu Hause\n"
+        "\n"
+        "\\lx x"  # a continuation that was only punctuation is dropped
+    )
