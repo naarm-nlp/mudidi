@@ -1,6 +1,15 @@
 # Release notes
 
-## Unreleased — Fields cut by a page break stay one field
+## 0.3.0 — Page breaks, typography, and dashboard recovery
+
+Released November 2, 2026.
+
+MUDIDI 0.3.0 keeps fields cut by a page break as one MDF field, marks bold and
+italic text in Stage 1 by default, and makes the dashboard recover from errors:
+retained uploads, clickable validation errors, and subscription models that are
+checked before a run starts.
+
+### Fields cut by a page break stay one field
 
 - Stage 2 Pass 2 now also sees the first 500 characters of the next page's
   Stage 1 transcript (text only), so it can label the lines at the bottom of a
@@ -14,27 +23,8 @@
 - A word hyphenated across a page break is written whole on the page where it
   starts.
 - `dictionary.mdf.report.json` marks such pages with `continues_field: true`.
-  Tools reading page or combined MDF must join a marker-less line to the field
-  above it; MUDIDI's MDF normalization and Stage 2 evaluator do.
 
-## Unreleased — Clickable dashboard errors
-
-- Each issue in the New Run error summary links to its field: selecting it
-  opens the wizard step that contains the field, scrolls to it, and focuses it.
-  Fields named by a server error are outlined in red, and the wizard opens on
-  the step of the first listed issue.
-- Subscription model-availability errors now name the Stage 1 or Stage 2 model
-  field instead of a generic **Model** entry with no matching control.
-- Subscription model menus list the provider's default and recommended models
-  first (**Recommended by Google**), so Google accounts now preselect
-  Gemini 3.8 Flash instead of Gemini 2.5 Pro, which Google lists but refuses
-  with HTTP 503.
-- Before the Review page, each chosen subscription model gets one tiny test
-  request; a model the provider refuses is rejected on its field instead of
-  failing the run after repeated retries. A blank stage model takes the first
-  catalog model, starting with the provider's default, that answers.
-
-## Unreleased — Stage 1 typography on by default
+### Stage 1 typography on by default
 
 - Inference now asks Stage 1 to wrap confidently bold text in `<b>…</b>` and
   italic text in `<i>…</i>` by default, in the CLI, YAML, and dashboard.
@@ -42,18 +32,54 @@
   or **Plain text** under **Stage 1 typography** in the dashboard's Pipeline
   step.
 
-## Unreleased — Dashboard upload recovery
+### Subscription models
 
+- Subscription model menus list the provider's default and recommended models
+  first (**Recommended by Google**), so Google accounts now preselect
+  Gemini 3.8 Flash instead of Gemini 2.5 Pro, which Google lists but refuses
+  with HTTP 503.
+- Before the Review page, each chosen subscription model gets one tiny test
+  request; a model the provider refuses is rejected on its field instead of
+  failing the run after repeated retries. A blank stage model takes the first
+  catalog model, starting with the provider's default, that answers. These
+  requests count toward subscription usage.
+
+### Dashboard
+
+- Each issue in the New Run error summary links to its field: selecting it
+  opens the wizard step that contains the field, scrolls to it, and focuses it.
+  Fields named by a server error are outlined in red, and the wizard opens on
+  the step of the first listed issue.
+- Subscription model-availability errors name the Stage 1 or Stage 2 model
+  field instead of a generic **Model** entry with no matching control.
 - Browser uploads remain in a local server-side draft across validation errors
   and same-tab reloads. The dashboard shows retained filenames and supports
   replacing or removing draft uploads; inactive drafts expire after one hour.
+- Dictionary Profile questions are individually optional. Supplying a headword
+  or target language requires its matching script; page layout, information
+  types, and character inventory can be supplied independently.
 
-## Unreleased — Partial Dictionary Profile context
+### Reliability and maintenance
 
-- Dictionary Profile questions are individually optional.
-- Supplying a headword or target language requires its matching script.
-- Page layout, information types, and character inventory can be supplied
-  independently; leaving the rest blank no longer blocks a run.
+- Dependency floors are raised for published advisories: `litellm>=1.95.0`
+  (GHSA-g5ff-637f-6q2m) and, for development installs, `msgpack>=1.2.3`
+  (CVE-2026-114613).
+- The README embeds the demo video as a playable video.
+
+### Upgrade notes
+
+- **Page MDF format:** a page's MDF can now begin with a line that has no
+  `\marker`. It continues the previous page's last field, as Toolbox standard
+  format reads it. Tools that assume one field per line must join such a line
+  to the field above it; MUDIDI's MDF normalization and Stage 2 evaluator do.
+- **Typography in Stage 1:** Stage 1 transcriptions now contain `<b>`/`<i>`
+  tags unless typography is turned off. Stage 2 removes them from MDF. Saved
+  dashboard presets from earlier versions keep **Plain text**, the only
+  behavior those versions had.
+- **Resume:** existing Stage 1 and Stage 2 pages are reused under **Resume
+  compatible artifacts** even when produced with the old typography or
+  page-break behavior. Choose **Overwrite existing artifacts** to regenerate
+  them.
 
 ## 0.2.0 — Dashboard and extraction redesign
 

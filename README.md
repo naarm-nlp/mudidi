@@ -360,7 +360,7 @@ Documentation sources are under [`docs/`](docs/), and canonical configurations
 are under [`examples/configs/`](examples/configs/). Tracked benchmark report
 provenance is documented in [`evaluations/README.md`](evaluations/README.md).
 
-Version **[0.2.0](https://github.com/naarm-nlp/mudidi/releases/tag/v0.2.0)**:
+Version **[0.3.0](https://github.com/naarm-nlp/mudidi/releases/tag/v0.3.0)**:
 see the [release notes](docs/whats-new.md) for changes and upgrade guidance.
 
 ## Dataset and paper
