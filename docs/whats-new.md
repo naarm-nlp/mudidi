@@ -2,9 +2,10 @@
 
 ## Unreleased — Fields cut by a page break stay one field
 
-- Stage 2 Pass 2 now also sees the first 1,500 characters of the next page's
+- Stage 2 Pass 2 now also sees the first 500 characters of the next page's
   Stage 1 transcript (text only), so it can label the lines at the bottom of a
-  page by how they continue.
+  page by how they continue. The previous-page excerpt shrinks from 1,500 to
+  500 characters, its last few lines; both excerpts keep whole lines.
 - A field cut by a page break continues at the top of the next page's MDF on a
   line without a marker, which Toolbox standard format joins to the field
   above. `dictionary.mdf.txt` is plain concatenation and already holds the

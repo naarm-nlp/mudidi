@@ -158,9 +158,10 @@ output/
 Stage 2 parses each page locally: a page's MDF holds exactly the lines printed
 on that page. When an entry runs over a page break, the first page's file ends
 mid-entry and the next page's file opens with the rest, with no `\lx` line
-above it. The model sees the last 1,500 characters of the previous page's
-Stage 1 transcript and the first 1,500 characters of the next page's, as text
-only, so it can give the lines on both sides of the break the right markers.
+above it. The model sees the last 500 characters of the previous page's
+Stage 1 transcript and the first 500 characters of the next page's, as text
+only (whole lines, at least one line each), so it can give the lines on both
+sides of the break the right markers.
 
 When a field itself is cut by the page break, the first page opens the field
 with its marker and the next page's file starts with the remaining words on a

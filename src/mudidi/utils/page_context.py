@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # previous page, so lines at the top of the current page that continue an
 # earlier entry get the right MDF markers, and the start of the next page, so
 # the lines at the bottom of the current page do too.
-NEIGHBOR_EXCERPT_CHARS = 1500
+NEIGHBOR_EXCERPT_CHARS = 500
 
 
 @dataclass(frozen=True)
