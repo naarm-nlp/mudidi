@@ -60,6 +60,11 @@ mudidi = "mudidi.cli.main:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/mudidi"]
 
+[tool.hatch.build.targets.sdist]
+# The demo video and its source assets (about 55 MB) are for the README and
+# docs site only; the package neither builds nor runs with them.
+exclude = ["/demo-video", "/demo-video/.gitignore", "/docs/assets/mudidi-demo.mp4"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests", "annotation/tests"]
